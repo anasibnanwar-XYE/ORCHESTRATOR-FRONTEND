@@ -1,0 +1,3924 @@
+{
+  "meta": {
+    "source": "/Users/anas/Documents/orchestrator_erp/bigbrightpaints-erp/openapi.json",
+    "generated_at": "2026-02-23T18:20:38Z",
+    "source_sha256": "33ddd163c102607970ff0f4c45e95f0c2a9d2965749187f68beb5c012216efa1",
+    "total_operations": 276
+  },
+  "rows": [
+    {
+      "method": "GET",
+      "path": "/api/integration/health",
+      "prefix": "integration",
+      "tag": "integration-health-controller",
+      "operation_id": "health_1",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "accounts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/accounts",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "createAccount",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts/tree",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getChartOfAccountsTree",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts/tree/{type}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getAccountTreeByType",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts/{accountId}/activity",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getAccountActivity",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts/{accountId}/balance/as-of",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getBalanceAsOf",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/accounts/{accountId}/balance/compare",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "compareBalances",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/accruals",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "postAccrual",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/aging/dealers/{dealerId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "dealerAging_1",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/aging/dealers/{dealerId}/pdf",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "dealerAgingPdf",
+      "summary": "Download dealer aging PDF",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/aging/suppliers/{supplierId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "supplierAging",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/aging/suppliers/{supplierId}/pdf",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "supplierAgingPdf",
+      "summary": "Download supplier aging PDF",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/audit/digest",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "auditDigest",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/audit/digest.csv",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "auditDigestCsv",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/audit/transactions",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "transactionAudit",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/audit/transactions/{journalEntryId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "transactionAuditDetail",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/bad-debts/write-off",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "writeOffBadDebt",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/catalog/import",
+      "prefix": "accounting",
+      "tag": "accounting-catalog-controller",
+      "operation_id": "importCatalog",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/catalog/products",
+      "prefix": "accounting",
+      "tag": "accounting-catalog-controller",
+      "operation_id": "listProducts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/catalog/products",
+      "prefix": "accounting",
+      "tag": "accounting-catalog-controller",
+      "operation_id": "createProduct",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/catalog/products/bulk-variants",
+      "prefix": "accounting",
+      "tag": "accounting-catalog-controller",
+      "operation_id": "createVariants",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/accounting/catalog/products/{id}",
+      "prefix": "accounting",
+      "tag": "accounting-catalog-controller",
+      "operation_id": "updateProduct",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/configuration/health",
+      "prefix": "accounting",
+      "tag": "accounting-configuration-controller",
+      "operation_id": "health",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/credit-notes",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "postCreditNote",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/date-context",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getAccountingDateContext",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/debit-notes",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "postDebitNote",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/default-accounts",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "defaultAccounts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/accounting/default-accounts",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "updateDefaultAccounts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/gst/return",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "generateGstReturn",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/inventory/landed-cost",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordLandedCost",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/inventory/revaluation",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "revalueInventory",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/inventory/wip-adjustment",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "adjustWip",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/journal-entries",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "journalEntries",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/journal-entries",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "createJournalEntry",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/journal-entries/{entryId}/cascade-reverse",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "cascadeReverseJournalEntry",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/journal-entries/{entryId}/reverse",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "reverseJournalEntry",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/month-end/checklist",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "checklist",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/month-end/checklist/{periodId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "updateChecklist",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/payroll/payments",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordPayrollPayment",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/payroll/payments/batch",
+      "prefix": "accounting",
+      "tag": "payroll-controller",
+      "operation_id": "processBatchPayment",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/periods",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "listPeriods",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/periods/{periodId}/close",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "closePeriod",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/periods/{periodId}/lock",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "lockPeriod",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/periods/{periodId}/reopen",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "reopenPeriod",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/raw-materials",
+      "prefix": "accounting",
+      "tag": "raw-material-controller",
+      "operation_id": "listRawMaterials",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/raw-materials",
+      "prefix": "accounting",
+      "tag": "raw-material-controller",
+      "operation_id": "createRawMaterial",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/accounting/raw-materials/{id}",
+      "prefix": "accounting",
+      "tag": "raw-material-controller",
+      "operation_id": "updateRawMaterial",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/accounting/raw-materials/{id}",
+      "prefix": "accounting",
+      "tag": "raw-material-controller",
+      "operation_id": "deleteRawMaterial",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/receipts/dealer",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordDealerReceipt",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/receipts/dealer/hybrid",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordDealerHybridReceipt",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/aged-debtors",
+      "prefix": "accounting",
+      "tag": "report-controller",
+      "operation_id": "agedDebtors",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/aging/dealer/{dealerId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getDealerAging",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/aging/dealer/{dealerId}/detailed",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getDealerAgingDetailed",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/aging/receivables",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getAgedReceivables",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/balance-sheet/hierarchy",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getBalanceSheetHierarchy",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/dso/dealer/{dealerId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getDealerDSO",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/reports/income-statement/hierarchy",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getIncomeStatementHierarchy",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/sales/returns",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "listSalesReturns",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/sales/returns",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordSalesReturn",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/settlements/dealers",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "settleDealer",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/settlements/suppliers",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "settleSupplier",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/statements/dealers/{dealerId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "dealerStatement",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/statements/dealers/{dealerId}/pdf",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "dealerStatementPdf",
+      "summary": "Download dealer statement PDF",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/statements/suppliers/{supplierId}",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "supplierStatement",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/statements/suppliers/{supplierId}/pdf",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "supplierStatementPdf",
+      "summary": "Download supplier statement PDF",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounting/suppliers/payments",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "recordSupplierPayment",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounting/trial-balance/as-of",
+      "prefix": "accounting",
+      "tag": "accounting-controller",
+      "operation_id": "getTrialBalanceAsOf",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/approvals",
+      "prefix": "admin",
+      "tag": "admin-settings-controller",
+      "operation_id": "approvals",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/notify",
+      "prefix": "admin",
+      "tag": "admin-settings-controller",
+      "operation_id": "notifyUser",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/roles",
+      "prefix": "admin",
+      "tag": "role-controller",
+      "operation_id": "listRoles",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/roles",
+      "prefix": "admin",
+      "tag": "role-controller",
+      "operation_id": "createRole",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/roles/{roleKey}",
+      "prefix": "admin",
+      "tag": "role-controller",
+      "operation_id": "getRoleByKey",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/settings",
+      "prefix": "admin",
+      "tag": "admin-settings-controller",
+      "operation_id": "getSettings",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/settings",
+      "prefix": "admin",
+      "tag": "admin-settings-controller",
+      "operation_id": "updateSettings",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/users",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "list_2",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/users",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "create_2",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/users/{id}",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "update_2",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/users/{id}",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "delete_1",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/users/{id}/mfa/disable",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "disableMfa",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/users/{id}/suspend",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "suspend",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/users/{id}/unsuspend",
+      "prefix": "admin",
+      "tag": "admin-user-controller",
+      "operation_id": "unsuspend",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit/business-events",
+      "prefix": "audit",
+      "tag": "enterprise-audit-trail-controller",
+      "operation_id": "businessEvents",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit/ml-events",
+      "prefix": "audit",
+      "tag": "enterprise-audit-trail-controller",
+      "operation_id": "mlEvents",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/audit/ml-events",
+      "prefix": "audit",
+      "tag": "enterprise-audit-trail-controller",
+      "operation_id": "ingestMlEvents",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "login",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "logout",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "me",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/activate",
+      "prefix": "auth",
+      "tag": "mfa-controller",
+      "operation_id": "activate",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/disable",
+      "prefix": "auth",
+      "tag": "mfa-controller",
+      "operation_id": "disable",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/mfa/setup",
+      "prefix": "auth",
+      "tag": "mfa-controller",
+      "operation_id": "setup",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/change",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "changePassword",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/forgot",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "forgotPassword",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password/reset",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "resetPassword",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/profile",
+      "prefix": "auth",
+      "tag": "user-profile-controller",
+      "operation_id": "profile",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/auth/profile",
+      "prefix": "auth",
+      "tag": "user-profile-controller",
+      "operation_id": "update_1",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh-token",
+      "prefix": "auth",
+      "tag": "auth-controller",
+      "operation_id": "refresh",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/companies",
+      "prefix": "companies",
+      "tag": "company-controller",
+      "operation_id": "list_1",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/companies",
+      "prefix": "companies",
+      "tag": "company-controller",
+      "operation_id": "create_1",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/companies/{id}",
+      "prefix": "companies",
+      "tag": "company-controller",
+      "operation_id": "update",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/companies/{id}",
+      "prefix": "companies",
+      "tag": "company-controller",
+      "operation_id": "delete",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/credit/override-requests",
+      "prefix": "credit",
+      "tag": "credit-limit-override-controller",
+      "operation_id": "listRequests",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN",
+        "FACTORY"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/credit/override-requests",
+      "prefix": "credit",
+      "tag": "credit-limit-override-controller",
+      "operation_id": "createRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN",
+        "FACTORY"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/credit/override-requests/{id}/approve",
+      "prefix": "credit",
+      "tag": "credit-limit-override-controller",
+      "operation_id": "approveRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN",
+        "FACTORY"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/credit/override-requests/{id}/reject",
+      "prefix": "credit",
+      "tag": "credit-limit-override-controller",
+      "operation_id": "rejectRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN",
+        "FACTORY"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/aging",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getMyAging",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dealer-portal/credit-requests",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "createCreditRequest_1",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/dashboard",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getDashboard",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/invoices",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getMyInvoices",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/invoices/{invoiceId}/pdf",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getMyInvoicePdf",
+      "summary": "Download invoice PDF (dealer scoped)",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/ledger",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getMyLedger",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealer-portal/orders",
+      "prefix": "dealer-portal",
+      "tag": "dealer-portal-controller",
+      "operation_id": "getMyOrders",
+      "summary": "-",
+      "primary_portal": "DEALER",
+      "access_portals": [
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealers",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "listDealers_1",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dealers",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "createDealer",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealers/search",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "searchDealers_1",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/dealers/{dealerId}",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "updateDealer",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealers/{dealerId}/aging",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "dealerAging",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dealers/{dealerId}/dunning/hold",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "holdIfOverdue",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealers/{dealerId}/invoices",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "dealerInvoices_1",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dealers/{dealerId}/ledger",
+      "prefix": "dealers",
+      "tag": "dealer-controller",
+      "operation_id": "dealerLedger",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/demo/ping",
+      "prefix": "demo",
+      "tag": "demo-controller",
+      "operation_id": "ping",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dispatch/backorder/{slipId}/cancel",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "cancelBackorder",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dispatch/confirm",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "confirmDispatch_1",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dispatch/order/{orderId}",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "getPackagingSlipByOrder",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dispatch/pending",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "getPendingSlips",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dispatch/preview/{slipId}",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "getDispatchPreview",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dispatch/slip/{slipId}",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "getPackagingSlip",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/dispatch/slip/{slipId}/status",
+      "prefix": "dispatch",
+      "tag": "dispatch-controller",
+      "operation_id": "updateSlipStatus",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/bulk-batches/{finishedGoodId}",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "listBulkBatches",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/bulk-batches/{parentBatchId}/children",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "listChildBatches",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/cost-allocation",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "allocateCosts",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/dashboard",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "dashboard_1",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/pack",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "packBulkToSizes",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/packaging-mappings",
+      "prefix": "factory",
+      "tag": "packaging-mapping-controller",
+      "operation_id": "listMappings",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/packaging-mappings",
+      "prefix": "factory",
+      "tag": "packaging-mapping-controller",
+      "operation_id": "createMapping",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/packaging-mappings/active",
+      "prefix": "factory",
+      "tag": "packaging-mapping-controller",
+      "operation_id": "listActiveMappings",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/factory/packaging-mappings/{id}",
+      "prefix": "factory",
+      "tag": "packaging-mapping-controller",
+      "operation_id": "updateMapping",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/factory/packaging-mappings/{id}",
+      "prefix": "factory",
+      "tag": "packaging-mapping-controller",
+      "operation_id": "deactivateMapping",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/packing-records",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "recordPacking",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/packing-records/{productionLogId}/complete",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "completePacking",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/production-batches",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "batches_1",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/production-batches",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "logBatch",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/production-logs/{productionLogId}/packing-history",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "packingHistory",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/production-plans",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "plans",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/production-plans",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "createPlan",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/factory/production-plans/{id}",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "updatePlan",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/factory/production-plans/{id}",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "deletePlan",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/factory/production-plans/{id}/status",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "updatePlanStatus",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/production/logs",
+      "prefix": "factory",
+      "tag": "production-log-controller",
+      "operation_id": "list",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/production/logs",
+      "prefix": "factory",
+      "tag": "production-log-controller",
+      "operation_id": "create",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/production/logs/{id}",
+      "prefix": "factory",
+      "tag": "production-log-controller",
+      "operation_id": "detail",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/tasks",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "tasks",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/factory/tasks",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "createTask",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/factory/tasks/{id}",
+      "prefix": "factory",
+      "tag": "factory-controller",
+      "operation_id": "updateTask",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/factory/unpacked-batches",
+      "prefix": "factory",
+      "tag": "packing-controller",
+      "operation_id": "listUnpackedBatches",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finished-goods",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "listFinishedGoods",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finished-goods",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "createFinishedGood",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finished-goods/low-stock",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "getLowStockItems",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finished-goods/stock-summary",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "getStockSummary",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finished-goods/{id}",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "getFinishedGood",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/finished-goods/{id}",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "updateFinishedGood",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finished-goods/{id}/batches",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "listBatches",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finished-goods/{id}/batches",
+      "prefix": "finished-goods",
+      "tag": "finished-good-controller",
+      "operation_id": "registerBatch",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/attendance/bulk-mark",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "bulkMarkAttendance",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance/date/{date}",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "attendanceByDate",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance/employee/{employeeId}",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "employeeAttendance",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/attendance/mark/{employeeId}",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "markAttendance",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance/summary",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "attendanceSummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance/today",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "attendanceToday",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/employees",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "employees",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/employees",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "createEmployee",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/hr/employees/{id}",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "updateEmployee",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/hr/employees/{id}",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "deleteEmployee",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/leave-requests",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "leaveRequests",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/leave-requests",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "createLeaveRequest",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/hr/leave-requests/{id}/status",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "updateLeaveStatus",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/payroll-runs",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "payrollRuns",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/payroll-runs",
+      "prefix": "hr",
+      "tag": "hr-controller",
+      "operation_id": "createPayrollRun_1",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/inventory/adjustments",
+      "prefix": "inventory",
+      "tag": "inventory-adjustment-controller",
+      "operation_id": "listAdjustments",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inventory/adjustments",
+      "prefix": "inventory",
+      "tag": "inventory-adjustment-controller",
+      "operation_id": "createAdjustment",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inventory/opening-stock",
+      "prefix": "inventory",
+      "tag": "opening-stock-import-controller",
+      "operation_id": "importOpeningStock",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/invoices",
+      "prefix": "invoices",
+      "tag": "invoice-controller",
+      "operation_id": "listInvoices",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/invoices/dealers/{dealerId}",
+      "prefix": "invoices",
+      "tag": "invoice-controller",
+      "operation_id": "dealerInvoices",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/invoices/{id}",
+      "prefix": "invoices",
+      "tag": "invoice-controller",
+      "operation_id": "getInvoice",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/invoices/{id}/email",
+      "prefix": "invoices",
+      "tag": "invoice-controller",
+      "operation_id": "sendInvoiceEmail",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/invoices/{id}/pdf",
+      "prefix": "invoices",
+      "tag": "invoice-controller",
+      "operation_id": "downloadInvoicePdf",
+      "summary": "Download invoice PDF",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/multi-company/companies/switch",
+      "prefix": "multi-company",
+      "tag": "multi-company-controller",
+      "operation_id": "switchCompany",
+      "summary": "-",
+      "primary_portal": "SHARED",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTANT",
+        "SALES",
+        "FACTORY",
+        "DEALER"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/dashboard/admin",
+      "prefix": "orchestrator",
+      "tag": "dashboard-controller",
+      "operation_id": "adminDashboard",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/dashboard/factory",
+      "prefix": "orchestrator",
+      "tag": "dashboard-controller",
+      "operation_id": "factoryDashboard",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/dashboard/finance",
+      "prefix": "orchestrator",
+      "tag": "dashboard-controller",
+      "operation_id": "financeDashboard",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/dispatch",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "dispatchOrder",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/dispatch/{orderId}",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "dispatchOrderAlias",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/factory/dispatch/{batchId}",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "dispatch",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/health/events",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "eventHealth",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/health/integrations",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "integrationsHealth",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/orders/{orderId}/approve",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "approveOrder",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/orders/{orderId}/fulfillment",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "fulfillOrder",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/orchestrator/payroll/run",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "runPayroll",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orchestrator/traces/{traceId}",
+      "prefix": "orchestrator",
+      "tag": "orchestrator-controller",
+      "operation_id": "trace",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/runs",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "listPayrollRuns",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "createPayrollRun",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/runs/monthly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "listMonthlyPayrollRuns",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/monthly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "createMonthlyPayrollRun",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/runs/weekly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "listWeeklyPayrollRuns",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/weekly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "createWeeklyPayrollRun",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/runs/{id}",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getPayrollRun",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/{id}/approve",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "approvePayroll",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/{id}/calculate",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "calculatePayroll",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/runs/{id}/lines",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getPayrollRunLines",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/{id}/mark-paid",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "markAsPaid",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/payroll/runs/{id}/post",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "postPayroll",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/summary/current-month",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getCurrentMonthPaySummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/summary/current-week",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getCurrentWeekPaySummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/summary/monthly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getMonthlyPaySummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/payroll/summary/weekly",
+      "prefix": "payroll",
+      "tag": "hr-payroll-controller",
+      "operation_id": "getWeeklyPaySummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/dashboard",
+      "prefix": "portal",
+      "tag": "portal-insights-controller",
+      "operation_id": "dashboard",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/operations",
+      "prefix": "portal",
+      "tag": "portal-insights-controller",
+      "operation_id": "operations",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/portal/workforce",
+      "prefix": "portal",
+      "tag": "portal-insights-controller",
+      "operation_id": "workforce",
+      "summary": "-",
+      "primary_portal": "ADMIN",
+      "access_portals": [
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/production/brands",
+      "prefix": "production",
+      "tag": "production-catalog-controller",
+      "operation_id": "listBrands",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/production/brands/{brandId}/products",
+      "prefix": "production",
+      "tag": "production-catalog-controller",
+      "operation_id": "listBrandProducts",
+      "summary": "-",
+      "primary_portal": "FACTORY",
+      "access_portals": [
+        "FACTORY",
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/goods-receipts",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "listGoodsReceipts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/purchasing/goods-receipts",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "createGoodsReceipt",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/goods-receipts/{id}",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "getGoodsReceipt",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/purchase-orders",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "listPurchaseOrders",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/purchasing/purchase-orders",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "createPurchaseOrder",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/purchase-orders/{id}",
+      "prefix": "purchasing",
+      "tag": "purchasing-workflow-controller",
+      "operation_id": "getPurchaseOrder",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/raw-material-purchases",
+      "prefix": "purchasing",
+      "tag": "raw-material-purchase-controller",
+      "operation_id": "listPurchases",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/purchasing/raw-material-purchases",
+      "prefix": "purchasing",
+      "tag": "raw-material-purchase-controller",
+      "operation_id": "createPurchase",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/purchasing/raw-material-purchases/returns",
+      "prefix": "purchasing",
+      "tag": "raw-material-purchase-controller",
+      "operation_id": "recordPurchaseReturn",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/purchasing/raw-material-purchases/{id}",
+      "prefix": "purchasing",
+      "tag": "raw-material-purchase-controller",
+      "operation_id": "getPurchase",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/raw-material-batches/{rawMaterialId}",
+      "prefix": "raw-material-batches",
+      "tag": "raw-material-controller",
+      "operation_id": "batches",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/raw-material-batches/{rawMaterialId}",
+      "prefix": "raw-material-batches",
+      "tag": "raw-material-controller",
+      "operation_id": "createBatch",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/raw-materials/intake",
+      "prefix": "raw-materials",
+      "tag": "raw-material-controller",
+      "operation_id": "intake",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/raw-materials/stock",
+      "prefix": "raw-materials",
+      "tag": "raw-material-controller",
+      "operation_id": "stockSummary",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/raw-materials/stock/inventory",
+      "prefix": "raw-materials",
+      "tag": "raw-material-controller",
+      "operation_id": "inventory",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/raw-materials/stock/low-stock",
+      "prefix": "raw-materials",
+      "tag": "raw-material-controller",
+      "operation_id": "lowStock",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/account-statement",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "accountStatement",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/balance-sheet",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "balanceSheet",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/balance-warnings",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "balanceWarnings",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/cash-flow",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "cashFlow",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/inventory-reconciliation",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "inventoryReconciliation",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/inventory-valuation",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "inventoryValuation",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/monthly-production-costs",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "monthlyProductionCosts",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/production-logs/{id}/cost-breakdown",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "costBreakdown",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/profit-loss",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "profitLoss",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/reconciliation-dashboard",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "reconciliationDashboard",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/trial-balance",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "trialBalance",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports/wastage",
+      "prefix": "reports",
+      "tag": "report-controller",
+      "operation_id": "wastageReport",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/credit-requests",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "creditRequests",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/credit-requests",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "createCreditRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/sales/credit-requests/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "updateCreditRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/credit-requests/{id}/approve",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "approveCreditRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/credit-requests/{id}/reject",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "rejectCreditRequest",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/dealers",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "listDealers",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/dealers/search",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "searchDealers",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/dispatch/confirm",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "confirmDispatch",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/dispatch/reconcile-order-markers",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "reconcileOrderMarkers",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/orders",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "orders",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/orders",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "createOrder",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/sales/orders/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "updateOrder",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/sales/orders/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "deleteOrder",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/orders/{id}/cancel",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "cancelOrder",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/orders/{id}/confirm",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "confirmOrder",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/sales/orders/{id}/status",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "updateStatus",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/promotions",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "promotions",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/promotions",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "createPromotion",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/sales/promotions/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "updatePromotion",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/sales/promotions/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "deletePromotion",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sales/targets",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "targets",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sales/targets",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "createTarget",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/sales/targets/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "updateTarget",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/sales/targets/{id}",
+      "prefix": "sales",
+      "tag": "sales-controller",
+      "operation_id": "deleteTarget",
+      "summary": "-",
+      "primary_portal": "SALES",
+      "access_portals": [
+        "SALES",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/suppliers",
+      "prefix": "suppliers",
+      "tag": "supplier-controller",
+      "operation_id": "listSuppliers",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/suppliers",
+      "prefix": "suppliers",
+      "tag": "supplier-controller",
+      "operation_id": "createSupplier",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/suppliers/{id}",
+      "prefix": "suppliers",
+      "tag": "supplier-controller",
+      "operation_id": "getSupplier",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/suppliers/{id}",
+      "prefix": "suppliers",
+      "tag": "supplier-controller",
+      "operation_id": "updateSupplier",
+      "summary": "-",
+      "primary_portal": "ACCOUNTANT",
+      "access_portals": [
+        "ACCOUNTANT",
+        "FACTORY",
+        "ADMIN",
+        "SUPERADMIN"
+      ]
+    }
+  ]
+}
