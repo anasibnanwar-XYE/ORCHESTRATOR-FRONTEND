@@ -379,6 +379,24 @@ export const createCreditRequest = async (payload: CreditRequestPayload, session
   return unwrap<CreditRequestDto>(await SalesControllerService.createCreditRequest(req));
 };
 
+export const approveCreditRequest = async (id: number, session?: AuthSession | null): Promise<CreditRequestDto> => {
+  withSession(session);
+  return apiData<CreditRequestDto>(
+    `/api/v1/sales/credit-requests/${id}/approve`,
+    { method: 'POST' },
+    session ?? undefined
+  );
+};
+
+export const rejectCreditRequest = async (id: number, session?: AuthSession | null): Promise<CreditRequestDto> => {
+  withSession(session);
+  return apiData<CreditRequestDto>(
+    `/api/v1/sales/credit-requests/${id}/reject`,
+    { method: 'POST' },
+    session ?? undefined
+  );
+};
+
 // Credit Override Functions
 export type { CreditLimitOverrideRequestDto, CreditLimitOverrideDecisionRequest };
 export type { CreditLimitOverrideRequestCreateRequest } from './client/models/CreditLimitOverrideRequestCreateRequest';

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import {
   MagnifyingGlassIcon,
@@ -12,7 +11,19 @@ import {
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
-import { getDealerOrders } from '../../lib/dealerApi';
+import { getDealerOrders, type DealerPortalOrder } from '../../lib/dealerApi';
+import { StatusBadge } from '../../components/ui/StatusBadge';
+
+type UIStatus = 'confirmed' | 'in_transit' | 'delivered' | 'pending' | 'cancelled';
+
+interface TransformedOrder {
+  id: string;
+  orderNumber: string;
+  status: UIStatus;
+  totalAmount: number;
+  placedDate: string;
+  items: Array<{ description?: string; name?: string; quantity?: number; productCode?: string; sku?: string }>;
+}
 
 export default function OrdersPage() {
   const { session } = useAuth();
@@ -21,17 +32,7 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [orders, setOrders] = useState<Array<{
-    id: number;
-    orderNumber?: string;
-    status: string;
-    totalAmount?: number;
-    createdAt?: string;
-    dealerId?: number;
-    dealerName?: string;
-    items?: Array<any>;
-    [key: string]: any;
-  }>>([]);
+  const [orders, setOrders] = useState<DealerPortalOrder[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -39,18 +40,20 @@ export default function OrdersPage() {
       setLoading(true);
       setError(null);
       try {
-        // Use dealer-portal orders endpoint
         const dealerOrders = await getDealerOrders(session);
         setOrders(dealerOrders);
       } catch (err: unknown) {
         const e = err as { status?: number; message?: string };
-        // Handle specific error cases
         if (e?.status === 409 || e?.message?.toLowerCase().includes('no dealer account')) {
-          setError('No dealer account is linked to your user. Please contact your administrator to set up your dealer account.');
+          setError(
+            'No dealer account is linked to your user. Please contact your administrator to set up your dealer account.'
+          );
         } else if (e?.status === 403) {
-          setError('You do not have permission to access dealer orders. Please contact your administrator.');
+          setError(
+            'You do not have permission to access dealer orders. Please contact your administrator.'
+          );
         } else {
-          setError(e?.message || 'Failed to load orders. Please try refreshing the page.');
+          setError(e?.message ?? 'Failed to load orders. Please try refreshing the page.');
         }
       } finally {
         setLoading(false);
@@ -59,51 +62,36 @@ export default function OrdersPage() {
     load();
   }, [session]);
 
-  // Transform backend status to UI status
-  const getUIStatus = (status: string): 'confirmed' | 'in_transit' | 'delivered' | 'pending' | 'cancelled' => {
+  // Map backend status to UI status
+  const getUIStatus = (status: string): UIStatus => {
     const upper = status.toUpperCase();
     if (upper === 'CONFIRMED') return 'confirmed';
-    if (upper === 'SHIPPED' || upper === 'PROCESSING' || upper === 'READY_TO_SHIP') return 'in_transit';
+    if (upper === 'SHIPPED' || upper === 'PROCESSING' || upper === 'READY_TO_SHIP')
+      return 'in_transit';
     if (upper === 'DELIVERED') return 'delivered';
     if (upper === 'CANCELLED') return 'cancelled';
     return 'pending';
   };
 
-  // Transform backend orders to UI format
-  const transformedOrders = (Array.isArray(orders) ? orders : []).map((order) => {
-    const uiStatus = getUIStatus(order.status || 'PENDING');
-    // Align with SalesOrderDto: createdAt is the primary date
+  const transformedOrders: TransformedOrder[] = orders.map((order) => {
+    const uiStatus = getUIStatus(order.status ?? 'PENDING');
     const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
-
-    // Derived dates handling (backend might not have these specific fields, adapt as needed)
-    // If SalesOrderDto doesn't have confirmedAt etc, we might need to rely on history or just map what we have.
-    // For now, mapping what we can and using safe fallbacks.
-    const confirmedAt = (order as any).confirmedAt; // Fallback if property exists but not in local type
-    const shippedAt = (order as any).shippedAt;
-    const deliveredDate = (order as any).deliveredDate;
 
     return {
       id: String(order.id),
-      orderNumber: order.orderNumber || `SO-${order.id}`,
+      orderNumber: order.orderNumber ?? `SO-${order.id}`,
       status: uiStatus,
-      totalAmount: order.totalAmount || 0,
-      placedDate: orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-      items: (order as any).items || [], // SalesOrderDto has items
-      progress: {
-        placed: { completed: true, date: orderDate.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) },
-        confirmed: { completed: uiStatus !== 'pending', date: confirmedAt ? new Date(confirmedAt).toLocaleString('en-IN', { month: 'short', day: 'numeric' }) : (uiStatus !== 'pending' ? orderDate.toLocaleString('en-IN', { month: 'short', day: 'numeric' }) : undefined) },
-        transit: { completed: ['in_transit', 'delivered'].includes(uiStatus), date: shippedAt ? new Date(shippedAt).toLocaleString('en-IN', { month: 'short', day: 'numeric' }) : (['in_transit', 'delivered'].includes(uiStatus) ? orderDate.toLocaleString('en-IN', { month: 'short', day: 'numeric' }) : undefined) },
-        delivered: { completed: uiStatus === 'delivered', date: deliveredDate ? new Date(deliveredDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : undefined },
-      },
-      // Passthrough original fields for deeper components if needed
-      original: order,
-      deliveredDate: deliveredDate ? new Date(deliveredDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : undefined,
-      estimatedDelivery: (order as any).estimatedDelivery ? new Date((order as any).estimatedDelivery).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : undefined
+      totalAmount: order.totalAmount ?? 0,
+      placedDate: orderDate.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+      items: [],
     };
   });
 
-
-  const getStatusConfig = (status: 'confirmed' | 'in_transit' | 'delivered' | 'pending' | 'cancelled') => {
+  const getStatusConfig = (status: UIStatus) => {
     switch (status) {
       case 'confirmed':
         return {
@@ -146,10 +134,13 @@ export default function OrdersPage() {
   const finalFilteredOrders = transformedOrders.filter((order) => {
     const matchesTab =
       activeTab === 'all' ||
-      (activeTab === 'active' && ['confirmed', 'in_transit', 'pending'].includes(order.status)) ||
+      (activeTab === 'active' &&
+        ['confirmed', 'in_transit', 'pending'].includes(order.status)) ||
       (activeTab === 'completed' && ['delivered', 'cancelled'].includes(order.status));
 
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = order.orderNumber
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === 'all' || order.status === filterStatus;
 
     return matchesTab && matchesSearch && matchesFilter;
@@ -178,9 +169,7 @@ export default function OrdersPage() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-semibold text-primary">My Orders</h1>
-        <p className="mt-1 text-sm text-secondary">
-          Track and manage your orders
-        </p>
+        <p className="mt-1 text-sm text-secondary">Track and manage your orders</p>
       </div>
 
       {/* Tabs */}
@@ -210,10 +199,7 @@ export default function OrdersPage() {
             placeholder="Search orders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={clsx(
-              'w-full rounded-xl border border-border bg-surface px-10 py-2 text-sm text-primary transition focus:outline-none focus:ring-2 focus:ring-brand-400',
-              'dark:placeholder:text-tertiary'
-            )}
+            className="w-full rounded-xl border border-border bg-surface px-10 py-2 text-sm text-primary transition focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -221,9 +207,7 @@ export default function OrdersPage() {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className={clsx(
-              'rounded-xl border border-border bg-surface px-3 py-2 text-sm text-primary transition focus:outline-none focus:ring-2 focus:ring-brand-400'
-            )}
+            className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-primary transition focus:outline-none focus:ring-2 focus:ring-brand-400"
           >
             <option value="all">All Status</option>
             <option value="confirmed">Confirmed</option>
@@ -254,14 +238,9 @@ export default function OrdersPage() {
                     <ShoppingBagIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-semibold text-primary">
-                      Order #{order.orderNumber}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className={clsx('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold', statusConfig.colorClass)}>
-                        <statusConfig.icon className="h-3 w-3" />
-                        {statusConfig.label}
-                      </span>
+                    <p className="font-semibold text-primary">Order #{order.orderNumber}</p>
+                    <div className="mt-1">
+                      <StatusBadge status={order.status} />
                     </div>
                   </div>
                 </div>
@@ -269,103 +248,37 @@ export default function OrdersPage() {
                   <p className="text-lg font-bold text-primary">
                     ₹{order.totalAmount.toLocaleString('en-IN')}
                   </p>
-                  <p className="text-xs text-secondary">
-                    Placed: {order.placedDate}
-                  </p>
-                  {order.deliveredDate && (
-                    <p className="text-xs text-status-success-text">
-                      Delivered: {order.deliveredDate}
-                    </p>
-                  )}
-                  {order.estimatedDelivery && !order.deliveredDate && (
-                    <p className="text-xs text-brand-600 dark:text-brand-400">
-                      Est. Delivery: {order.estimatedDelivery}
-                    </p>
-                  )}
+                  <p className="text-xs text-secondary">Placed: {order.placedDate}</p>
                 </div>
               </div>
-
-              {/* Order Progress Timeline (for active orders) */}
-              {(order.status === 'in_transit' || order.status === 'confirmed') && (
-                <div className="mt-6 rounded-xl bg-surface-highlight p-4">
-                  <div className="relative flex items-center justify-between">
-                    {/* Progress Line */}
-                    <div className="absolute left-0 top-3 h-0.5 w-full bg-border" />
-                    <div
-                      className="absolute left-0 top-3 h-0.5 bg-brand-500 transition-all duration-500"
-                      style={{
-                        width: `${(Object.values(order.progress).filter((p) => p.completed).length / 4) * 100
-                          }%`,
-                      }}
-                    />
-
-                    {/* Steps */}
-                    {[
-                      { key: 'placed', label: 'Placed', date: order.progress.placed.date },
-                      { key: 'confirmed', label: 'Confirmed', date: order.progress.confirmed.date },
-                      { key: 'transit', label: 'In Transit', date: order.progress.transit.date },
-                      { key: 'delivered', label: 'Delivered', date: order.progress.delivered.date },
-                    ].map((step, index) => {
-                      const isCompleted = order.progress[step.key as keyof typeof order.progress].completed;
-                      return (
-                        <div key={step.key} className="relative z-10 flex flex-col items-center">
-                          <div
-                            className={clsx(
-                              'flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all',
-                              isCompleted
-                                ? 'border-brand-500 bg-brand-500 text-white'
-                                : 'border-border bg-surface text-tertiary'
-                            )}
-                          >
-                            {isCompleted && <CheckCircleIcon className="h-4 w-4" />}
-                          </div>
-                          <p className={clsx('mt-2 text-xs font-medium', isCompleted ? 'text-primary' : 'text-tertiary')}>
-                            {step.label}
-                          </p>
-                          {step.date && (
-                            <p className="mt-0.5 text-[10px] text-tertiary">
-                              {step.date}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Order Items */}
-              <div className="mt-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                  Items ({order.items.length})
-                </p>
-                <ul className="mt-2 space-y-1 text-sm text-primary">
-                  {order.items.map((item: any, idx: number) => (
-                    <li key={idx}>
-                      • {item.description ?? item.name ?? 'Item'} (x{item.quantity})
-                      <span className="ml-2 text-xs text-tertiary">SKU: {item.productCode ?? item.sku ?? 'N/A'}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {order.items.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                    Items ({order.items.length})
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-primary">
+                    {order.items.map((item, idx) => (
+                      <li key={idx}>
+                        • {item.description ?? item.name ?? 'Item'} (x{item.quantity})
+                        <span className="ml-2 text-xs text-tertiary">
+                          SKU: {item.productCode ?? item.sku ?? 'N/A'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="mt-4 flex flex-wrap gap-2">
                 {order.status === 'in_transit' && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-xl bg-status-info-bg px-4 py-2 text-sm font-semibold text-status-info-text"
-                  >
+                  <span className="inline-flex items-center gap-1 rounded-xl bg-status-info-bg px-4 py-2 text-sm font-semibold text-status-info-text">
                     <TruckIcon className="h-4 w-4" />
                     In Transit
                   </span>
                 )}
-                <Link
-                  to="/dealer/invoices"
-                  className="inline-flex items-center gap-1 rounded-xl border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary hover:bg-surface-highlight dark:bg-surface dark:hover:bg-surface-highlight"
-                >
-                  <DocumentTextIcon className="h-4 w-4" />
-                  View Invoices
-                </Link>
                 {order.status === 'pending' && (
                   <div className="flex items-center gap-2 text-xs text-status-warning-text">
                     <ClockIcon className="h-4 w-4" />
@@ -378,6 +291,13 @@ export default function OrdersPage() {
         })}
       </div>
 
+      {/* Showing count */}
+      {!loading && orders.length > 0 && (
+        <p className="text-center text-sm text-secondary">
+          Showing {finalFilteredOrders.length} of {orders.length} orders
+        </p>
+      )}
+
       {/* Empty State */}
       {finalFilteredOrders.length === 0 && (
         <div className="rounded-2xl border border-border bg-surface p-12 text-center">
@@ -388,7 +308,6 @@ export default function OrdersPage() {
           </p>
         </div>
       )}
-
     </div>
   );
 }

@@ -12,21 +12,29 @@ import {
 } from '../../lib/factoryApi';
 import { ResponsiveModal } from '../../design-system/ResponsiveModal';
 import { ResponsiveForm, FormInput, FormSelect } from '../../design-system/ResponsiveForm';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Badge } from '../../components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
-import { CheckCircleIcon, CubeIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { CheckCircle, Package, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../../lib/formatUtils';
 
 // Extended type for potentially missing properties
 interface ExtendedUnpackedBatchDto extends UnpackedBatchDto {
-    productionCode?: string;
-    productionLogId?: number; // Might be missing/renamed
-    brandName?: string;
-    unitOfMeasure?: string;
+  id?: number;
+  productionCode?: string;
+  productionLogId?: number;
+  brandName?: string;
+  unitOfMeasure?: string;
+}
+
+// Extended packing record fields
+interface ExtendedPackingRecordDto extends PackingRecordDto {
+  totalQuantityLiters?: number;
+  totalPieces?: number;
+  totalBoxes?: number;
 }
 
 export default function PackingQueuePage() {
@@ -38,7 +46,8 @@ export default function PackingQueuePage() {
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<ExtendedUnpackedBatchDto | null>(null);
   const [showPackModal, setShowPackModal] = useState(false);
-  const [history, setHistory] = useState<PackingRecordDto[]>([]);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [history, setHistory] = useState<ExtendedPackingRecordDto[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [packForm, setPackForm] = useState({
     productionLogId: 0,
@@ -49,15 +58,22 @@ export default function PackingQueuePage() {
     piecesPerBox: 6,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [completeLoading, setCompleteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const getBatchLogId = (batch: ExtendedUnpackedBatchDto): number | undefined => {
+    const id = batch.id ?? batch.productionLogId;
+    return id ? Number(id) : undefined;
+  };
 
   const loadBatches = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await listUnpackedBatches(session);
       setBatches(data as ExtendedUnpackedBatchDto[]);
-    } catch (err) {
-      console.error('Failed to load packing queue', err);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load packing queue');
     } finally {
       setLoading(false);
     }
@@ -70,7 +86,7 @@ export default function PackingQueuePage() {
   useEffect(() => {
     if (!requestedLogIdNum || batches.length === 0) return;
     const match = batches.find((batch) => {
-      const id = (batch as any).id ?? batch.productionLogId;
+      const id = getBatchLogId(batch);
       return id === requestedLogIdNum;
     });
     if (match) {
@@ -81,55 +97,52 @@ export default function PackingQueuePage() {
 
   const handleSelectBatch = async (batch: ExtendedUnpackedBatchDto) => {
     setSelectedBatch(batch);
-    // Use productionLogId or derive from something if missing. 
-    // Assuming backend DTO has ID even if named differently, casting to any might reveal 'id' or similar
-    const logId = (batch as any).id || batch.productionLogId; 
-    
+    const logId = getBatchLogId(batch);
+
     if (logId) {
-        setHistoryLoading(true);
-        try {
-            const historyData = await getPackingHistory(logId, session);
-            setHistory(historyData);
-        } catch (err) {
-            console.error('Failed to load history', err);
-        } finally {
-            setHistoryLoading(false);
-        }
+      setHistoryLoading(true);
+      try {
+        const historyData = await getPackingHistory(logId, session);
+        setHistory(historyData as ExtendedPackingRecordDto[]);
+      } catch {
+        // history load failed silently — panel shows empty state
+      } finally {
+        setHistoryLoading(false);
+      }
     }
   };
 
   const handlePackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatch) return;
-    
-    const logId = (selectedBatch as any).id || selectedBatch.productionLogId;
+
+    const logId = getBatchLogId(selectedBatch);
     if (!logId) {
-        setError("Invalid batch selection");
-        return;
+      setError('Invalid batch selection');
+      return;
     }
 
-	    setSubmitting(true);
-	    setError(null);
-	    try {
-	      const payload: PackingRequest = {
-	        productionLogId: logId,
-	        packedDate: new Date().toISOString().split('T')[0],
-	        lines: [
-	          {
-	            packagingSize: packForm.packagingSize,
-	            quantityLiters: packForm.quantityLiters,
-	            piecesCount: packForm.piecesCount,
-	            boxesCount: packForm.boxesCount,
-	            piecesPerBox: packForm.piecesPerBox,
-	          },
-	        ],
-	      };
-	      await createPackingRecord(payload, session);
-	      setShowPackModal(false);
-	      // Refresh history and batches
-	      handleSelectBatch(selectedBatch);
-	      loadBatches();
-    } catch (err) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const payload: PackingRequest = {
+        productionLogId: logId,
+        packedDate: new Date().toISOString().split('T')[0],
+        lines: [
+          {
+            packagingSize: packForm.packagingSize,
+            quantityLiters: packForm.quantityLiters,
+            piecesCount: packForm.piecesCount,
+            boxesCount: packForm.boxesCount,
+            piecesPerBox: packForm.piecesPerBox,
+          },
+        ],
+      };
+      await createPackingRecord(payload, session);
+      setShowPackModal(false);
+      handleSelectBatch(selectedBatch);
+      loadBatches();
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to record packing');
     } finally {
       setSubmitting(false);
@@ -137,18 +150,21 @@ export default function PackingQueuePage() {
   };
 
   const handleComplete = async () => {
-    if (!selectedBatch || !confirm('Mark this batch as fully packed? This will remove it from the queue.')) return;
-    
-    const logId = (selectedBatch as any).id || selectedBatch.productionLogId;
+    if (!selectedBatch) return;
+    const logId = getBatchLogId(selectedBatch);
     if (!logId) return;
 
+    setCompleteLoading(true);
     try {
       await completePackingForLog(logId, session);
       setSelectedBatch(null);
+      setShowCompleteConfirm(false);
       loadBatches();
-    } catch (err) {
-      console.error(err);
-      setError('Failed to complete batch');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to complete batch');
+      setShowCompleteConfirm(false);
+    } finally {
+      setCompleteLoading(false);
     }
   };
 
@@ -163,6 +179,18 @@ export default function PackingQueuePage() {
           Refresh Queue
         </Button>
       </div>
+
+      {error && (
+        <div className="rounded-lg bg-status-error-bg px-4 py-3 text-sm text-status-error-text flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="ml-4 font-bold hover:opacity-70"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -181,42 +209,58 @@ export default function PackingQueuePage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-secondary">Loading queue...</TableCell>
+                      <TableCell colSpan={5} className="text-center h-24 text-secondary">
+                        Loading queue...
+                      </TableCell>
                     </TableRow>
                   ) : batches.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-secondary">No pending batches</TableCell>
+                      <TableCell colSpan={5} className="text-center h-24 text-secondary">
+                        No pending batches
+                      </TableCell>
                     </TableRow>
                   ) : (
                     batches.map((batch) => (
-                      <TableRow 
-                        key={(batch as any).id || batch.productionCode} 
+                      <TableRow
+                        key={getBatchLogId(batch) ?? batch.productionCode}
                         onClick={() => handleSelectBatch(batch)}
-                        className={clsx("cursor-pointer", selectedBatch === batch && "bg-surface-highlight")}
+                        className={clsx(
+                          'cursor-pointer',
+                          selectedBatch === batch && 'bg-surface-highlight'
+                        )}
                       >
                         <TableCell label="Batch Code">
-                            <span className="font-mono font-medium text-primary">{batch.productionCode}</span>
+                          <span className="font-mono font-medium text-primary">
+                            {batch.productionCode}
+                          </span>
                         </TableCell>
                         <TableCell label="Product">
-                            <div>
-                                <div className="font-medium text-primary">{batch.productName}</div>
-                                <div className="text-xs text-secondary">{batch.brandName}</div>
-                            </div>
+                          <div>
+                            <div className="font-medium text-primary">{batch.productName}</div>
+                            <div className="text-xs text-secondary">{batch.brandName}</div>
+                          </div>
                         </TableCell>
                         <TableCell label="Produced">
-                            <span className="text-primary">
-                              {batch.mixedQuantity ?? 0} {batch.unitOfMeasure || 'UNIT'}
-                            </span>
+                          <span className="text-primary">
+                            {batch.mixedQuantity ?? 0} {batch.unitOfMeasure ?? 'UNIT'}
+                          </span>
                         </TableCell>
                         <TableCell label="Packed">
-                            <span className="text-secondary">
-                              {batch.packedQuantity ?? 0} {batch.unitOfMeasure || 'UNIT'}
-                            </span>
+                          <span className="text-secondary">
+                            {batch.packedQuantity ?? 0} {batch.unitOfMeasure ?? 'UNIT'}
+                          </span>
                         </TableCell>
                         <TableCell label="Action" className="text-right">
-                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleSelectBatch(batch); }}>
-                                Select
-                            </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectBatch(batch);
+                            }}
+                          >
+                            Select
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -236,112 +280,150 @@ export default function PackingQueuePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                    <div className="p-4 bg-surface-highlight rounded-lg flex items-center justify-between">
-                        <div>
-                            <p className="text-xs text-secondary uppercase tracking-wider">Produced Qty</p>
-                            <p className="text-xl font-bold text-primary">
-                              {selectedBatch.mixedQuantity ?? 0} {selectedBatch.unitOfMeasure || 'UNIT'}
-                            </p>
-                        </div>
-                        <CubeIcon className="h-8 w-8 text-tertiary" />
+                  <div className="p-4 bg-surface-highlight rounded-lg flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-secondary uppercase tracking-wider">
+                        Produced Qty
+                      </p>
+                      <p className="text-xl font-bold text-primary">
+                        {selectedBatch.mixedQuantity ?? 0}{' '}
+                        {selectedBatch.unitOfMeasure ?? 'UNIT'}
+                      </p>
                     </div>
+                    <Package className="h-8 w-8 text-tertiary" />
+                  </div>
 
-                    <div className="flex gap-2">
-                        <Button className="flex-1" onClick={() => setShowPackModal(true)}>
-                            Record Packing
-                        </Button>
-                        <Button variant="outline" onClick={handleComplete}>
-                            <CheckCircleIcon className="h-5 w-5" />
-                        </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => setShowPackModal(true)}>
+                      Record Packing
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCompleteConfirm(true)}
+                      title="Mark as fully packed"
+                    >
+                      <CheckCircle className="h-5 w-5" />
+                    </Button>
+                  </div>
 
-                    <div className="border-t border-border pt-4">
-                        <h4 className="text-sm font-semibold text-primary mb-3">Packing History</h4>
-                        {historyLoading ? (
-                            <p className="text-sm text-secondary text-center">Loading history...</p>
-                        ) : history.length === 0 ? (
-                            <p className="text-sm text-secondary text-center italic">No packing records yet</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {history.map((rec) => {
-                                    const r = rec as any; // Cast for safety
-                                    return (
-                                        <div key={rec.id} className="p-3 rounded-lg border border-border bg-surface text-sm">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="font-medium text-primary">{formatDate(rec.packedDate)}</span>
-                                                <span className="text-xs text-tertiary">{rec.packedBy}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-secondary">
-                                                {r.totalQuantityLiters && <div>{r.totalQuantityLiters} L</div>}
-                                                {r.totalPieces && <div>{r.totalPieces} Pcs</div>}
-                                                {r.totalBoxes && <div>{r.totalBoxes} Boxes</div>}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                  <div className="border-t border-border pt-4">
+                    <h4 className="text-sm font-semibold text-primary mb-3">Packing History</h4>
+                    {historyLoading ? (
+                      <p className="text-sm text-secondary text-center">Loading history...</p>
+                    ) : history.length === 0 ? (
+                      <p className="text-sm text-secondary text-center italic">
+                        No packing records yet
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {history.map((rec) => (
+                          <div
+                            key={rec.id}
+                            className="p-3 rounded-lg border border-border bg-surface text-sm"
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-medium text-primary">
+                                {formatDate(rec.packedDate)}
+                              </span>
+                              <span className="text-xs text-tertiary">{rec.packedBy}</span>
                             </div>
-                        )}
-                    </div>
+                            <div className="grid grid-cols-2 gap-2 text-secondary">
+                              {rec.totalQuantityLiters != null && (
+                                <div>{rec.totalQuantityLiters} L</div>
+                              )}
+                              {rec.totalPieces != null && <div>{rec.totalPieces} Pcs</div>}
+                              {rec.totalBoxes != null && <div>{rec.totalBoxes} Boxes</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-dashed border-border rounded-xl">
-              <CubeIcon className="w-12 h-12 text-tertiary mb-2" />
+              <Package className="w-12 h-12 text-tertiary mb-2" />
               <p className="text-sm text-secondary">Select a batch to start packing</p>
             </div>
           )}
         </div>
       </div>
 
+      {/* Record Packing Modal */}
       <ResponsiveModal
         isOpen={showPackModal}
         onClose={() => setShowPackModal(false)}
         title="Record Packing"
       >
         <ResponsiveForm onSubmit={handlePackSubmit}>
-            <FormSelect 
-                label="Packaging Size"
-                value={packForm.packagingSize}
-                onChange={e => setPackForm({...packForm, packagingSize: e.target.value})}
-                options={[
-                    { value: '1L', label: '1 Liter' },
-                    { value: '4L', label: '4 Liters' },
-                    { value: '10L', label: '10 Liters' },
-                    { value: '20L', label: '20 Liters' },
-                    { value: '200L', label: '200 Liters (Drum)' }
-                ]}
+          <FormSelect
+            label="Packaging Size"
+            value={packForm.packagingSize}
+            onChange={(e) => setPackForm({ ...packForm, packagingSize: e.target.value })}
+            options={[
+              { value: '1L', label: '1 Liter' },
+              { value: '4L', label: '4 Liters' },
+              { value: '10L', label: '10 Liters' },
+              { value: '20L', label: '20 Liters' },
+              { value: '200L', label: '200 Liters (Drum)' },
+            ]}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormInput
+              label="Pieces Count"
+              type="number"
+              value={packForm.piecesCount}
+              onChange={(e) =>
+                setPackForm({ ...packForm, piecesCount: Number(e.target.value) })
+              }
             />
-            <div className="grid grid-cols-2 gap-4">
-                <FormInput 
-                    label="Pieces Count"
-                    type="number"
-                    value={packForm.piecesCount}
-                    onChange={e => setPackForm({...packForm, piecesCount: Number(e.target.value)})}
-                />
-                <FormInput 
-                    label="Boxes Count"
-                    type="number"
-                    value={packForm.boxesCount}
-                    onChange={e => setPackForm({...packForm, boxesCount: Number(e.target.value)})}
-                />
-            </div>
-            <FormInput 
-                label="Total Volume (Liters)"
-                type="number"
-                value={packForm.quantityLiters}
-                onChange={e => setPackForm({...packForm, quantityLiters: Number(e.target.value)})}
-                required
+            <FormInput
+              label="Boxes Count"
+              type="number"
+              value={packForm.boxesCount}
+              onChange={(e) =>
+                setPackForm({ ...packForm, boxesCount: Number(e.target.value) })
+              }
             />
-            
-            <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="secondary" onClick={() => setShowPackModal(false)}>Cancel</Button>
-                <Button type="submit" disabled={submitting}>
-                    {submitting ? 'Saving...' : 'Save Record'}
-                </Button>
-            </div>
+          </div>
+          <FormInput
+            label="Total Volume (Liters)"
+            type="number"
+            value={packForm.quantityLiters}
+            onChange={(e) =>
+              setPackForm({ ...packForm, quantityLiters: Number(e.target.value) })
+            }
+            required
+          />
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowPackModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save Record'}
+            </Button>
+          </div>
         </ResponsiveForm>
       </ResponsiveModal>
+
+      {/* Complete Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleComplete}
+        title="Complete Packing"
+        description="Mark this batch as fully packed? This will remove it from the queue."
+        confirmLabel="Complete"
+        variant="default"
+        loading={completeLoading}
+      />
     </div>
   );
 }

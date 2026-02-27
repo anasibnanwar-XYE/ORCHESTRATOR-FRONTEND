@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { UserCircleIcon, KeyIcon, ShieldCheckIcon, BellIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import type { AuthenticatedUser } from '../../types/auth';
-import { apiData, type ApiError } from '../../lib/api';
+import { type ApiError } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { formatDateTime } from '../../lib/formatUtils';
 
 interface DealerProfilePageProps {
   user: AuthenticatedUser;
@@ -39,11 +40,8 @@ const interpretError = (error: unknown, fallback: string) => {
 
 const formatTimestamp = (value?: string) => {
   if (!value) return 'Not changed yet';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  return parsed.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  const formatted = formatDateTime(value);
+  return formatted === '—' ? value : formatted;
 };
 
 export default function DealerProfilePage({ user }: DealerProfilePageProps) {
@@ -61,7 +59,7 @@ export default function DealerProfilePage({ user }: DealerProfilePageProps) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  const dealerCode = profileDetails?.dealerCode ?? 'DLR-XXXX';
+  const dealerCode = profileDetails?.dealerCode ?? null;
   const businessName = profileDetails?.businessName ?? user.displayName;
   const mfaEnabled = profileDetails?.mfaEnabled ?? user.mfaEnabled;
   const lastPasswordChange = profileDetails?.lastPasswordChangeAt ? formatTimestamp(profileDetails.lastPasswordChangeAt) : 'Not changed yet';
@@ -197,14 +195,16 @@ export default function DealerProfilePage({ user }: DealerProfilePageProps) {
               </p>
               <p className="mt-1 text-sm text-primary">{businessName}</p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
-                Dealer Code
-              </p>
-              <p className="mt-1 text-sm font-mono font-semibold text-brand-600 dark:text-brand-400">
-                {dealerCode}
-              </p>
-            </div>
+            {dealerCode && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
+                  Dealer Code
+                </p>
+                <p className="mt-1 text-sm font-mono font-semibold text-brand-600 dark:text-brand-400">
+                  {dealerCode}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-secondary">
                 Email Address
@@ -382,28 +382,14 @@ export default function DealerProfilePage({ user }: DealerProfilePageProps) {
           <h2 className="text-lg font-semibold text-primary">Notification Preferences</h2>
         </div>
 
-        <div className="mt-4 space-y-3 text-sm">
-          <p className="text-secondary">
-            Email notifications are sent for:
+        <div className="mt-4 flex flex-col items-center justify-center py-6 text-center">
+          <BellIcon className="h-10 w-10 text-tertiary opacity-40 mb-3" />
+          <p className="text-sm font-medium text-secondary">
+            Notification preferences are not yet configurable
           </p>
-          <ul className="space-y-2 text-primary">
-            <li className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              Order status updates
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              Payment confirmations
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              New promotions and offers
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              Important account updates
-            </li>
-          </ul>
+          <p className="mt-1 text-xs text-tertiary">
+            Contact your administrator to update notification settings.
+          </p>
         </div>
       </div>
     </div>

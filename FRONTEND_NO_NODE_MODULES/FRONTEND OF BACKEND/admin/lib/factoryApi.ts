@@ -216,6 +216,14 @@ export const deleteProductionPlan = async (id: number, session?: AuthSession | n
   return unwrap<void>(await FactoryControllerService.deletePlan(id));
 };
 
+export const updateProductionPlanStatus = async (id: number, status: string, session?: AuthSession | null): Promise<ProductionPlanDto> => {
+  withSession(session);
+  return apiData<ProductionPlanDto>(`/api/v1/factory/production-plans/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  }, session);
+};
+
 // Raw Materials
 export const listRawMaterials = async (session?: AuthSession | null, materialType?: string): Promise<RawMaterialDto[]> => {
   withSession(session);

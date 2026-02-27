@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MagnifyingGlassIcon, PlusIcon, FunnelIcon, CalendarIcon, ChevronRightIcon, TrashIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
+import { Plus, Trash2, Calendar, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
   createProductionLog,
@@ -18,8 +17,8 @@ import {
   type ProductionProductCatalogDto
 } from '../../lib/factoryApi';
 import { ResponsiveModal } from '../../design-system/ResponsiveModal';
-import { ResponsiveForm, FormInput, FormSelect } from '../../design-system/ResponsiveForm';
-import SearchableCombobox, { type ComboboxOption } from '../../components/SearchableCombobox';
+import { ResponsiveForm, FormInput } from '../../design-system/ResponsiveForm';
+import SearchableCombobox from '../../components/SearchableCombobox';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
@@ -27,22 +26,53 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { formatDate } from '../../lib/formatUtils';
 
+// Extended type for log DTO fields not yet in generated client
+interface ProductionLogDtoExtended extends ProductionLogDto {
+  id?: number;
+  productionCode?: string;
+  productName?: string;
+  brandName?: string;
+  mixedQuantity?: number;
+  unitOfMeasure?: string;
+  producedAt?: string;
+}
+
+// Extended type for log detail fields
+interface ProductionLogDetailDtoExtended extends ProductionLogDetailDto {
+  finishedGoodBatchCode?: string;
+  materials?: Array<{
+    materialName?: string;
+    name?: string;
+    quantity?: number;
+    unitOfMeasure?: string;
+    unit?: string;
+  }>;
+}
+
+interface MaterialUsageLine {
+  rawMaterialId: number;
+  quantity: number;
+  unitOfMeasure: string;
+  name?: string;
+}
+
 export default function ProductionBatchesPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [logs, setLogs] = useState<ProductionLogDto[]>([]);
+  const [logs, setLogs] = useState<ProductionLogDtoExtended[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLog, setSelectedLog] = useState<ProductionLogDetailDto | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedLog, setSelectedLog] = useState<ProductionLogDetailDtoExtended | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Create Modal State
   const [showModal, setShowModal] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [brands, setBrands] = useState<ProductionBrandDto[]>([]);
   const [products, setProducts] = useState<ProductionProductCatalogDto[]>([]);
   const [rawMaterials, setRawMaterials] = useState<RawMaterialDto[]>([]);
   const [rawMap, setRawMap] = useState<Map<number, RawMaterialDto>>(new Map());
 
-  // Form State
   const [form, setForm] = useState<ProductionLogRequest>({
     producedAt: new Date().toISOString().split('T')[0],
     brandId: 0,
@@ -55,131 +85,138 @@ export default function ProductionBatchesPage() {
     addToFinishedGoods: true,
   });
 
-  // Helper for materials in form
-  interface MaterialUsageLine {
-    rawMaterialId: number;
-    quantity: number;
-    unitOfMeasure: string;
-    name?: string; // for display UI
-  }
-
   const [materials, setMaterials] = useState<MaterialUsageLine[]>([]);
 
   useEffect(() => {
     if (session) {
       loadLogs();
-      // Load reference data
-      listProductionBrands(session).then(d => setBrands(d || [])).catch(() => console.error('Unable to load brands.'));
+      listProductionBrands(session)
+        .then((d) => setBrands(d ?? []))
+        .catch(() => {
+          // brands failed silently — user will see empty dropdown
+        });
       listRawMaterials(session, 'PRODUCTION')
-        .then((data: any) => {
+        .then((data) => {
           setRawMaterials(data);
           const map = new Map<number, RawMaterialDto>();
-          data.forEach((item: RawMaterialDto) => {
+          data.forEach((item) => {
             if (typeof item.id === 'number') {
               map.set(item.id, item);
             }
           });
           setRawMap(map);
         })
-        .catch(() => console.error('Unable to load raw materials.'));
+        .catch(() => {
+          // raw materials failed silently — user will see empty dropdown
+        });
     }
   }, [session]);
 
   useEffect(() => {
-    // Whenever materials state changes, sync to form
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      materials: materials.map(m => ({
+      materials: materials.map((m) => ({
         rawMaterialId: m.rawMaterialId,
         quantity: m.quantity,
         unitOfMeasure: m.unitOfMeasure,
-      }))
+      })),
     }));
   }, [materials]);
 
   const loadLogs = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await listProductionLogs(session);
-      setLogs(data);
-    } catch (err) {
-      console.error(err);
+      setLogs(data as ProductionLogDtoExtended[]);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load production logs');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectLog = async (log: ProductionLogDto) => {
-    // Cast log.id to number just in case
-    const logId = Number((log as any).id);
+  const handleSelectLog = async (log: ProductionLogDtoExtended) => {
+    const logId = Number(log.id);
     if (!logId) return;
 
     setDetailLoading(true);
     try {
       const detail = await getProductionLog(logId, session);
-      setSelectedLog(detail);
-    } catch (err) {
-      console.error(err);
+      setSelectedLog(detail as ProductionLogDetailDtoExtended);
+    } catch {
+      // detail load error — panel stays empty
     } finally {
       setDetailLoading(false);
     }
   };
 
-  // Handlers for Form
   const handleBrandChange = async (brandIdStr: string) => {
     const brandId = parseInt(brandIdStr);
-    setForm(prev => ({ ...prev, brandId, productId: 0, unitOfMeasure: 'L' }));
+    setForm((prev) => ({ ...prev, brandId, productId: 0, unitOfMeasure: 'L' }));
     setProducts([]);
 
     if (brandId) {
       try {
         const prods = await listBrandProducts(brandId, session);
-        setProducts(prods || []);
-      } catch (e) {
-        console.error(e);
+        setProducts(prods ?? []);
+      } catch {
+        // products load silently fails — empty dropdown shown
       }
     }
   };
 
   const handleProductChange = (prodIdStr: string) => {
     const prodId = parseInt(prodIdStr);
-    const prod = products.find(p => p.id === prodId);
+    const prod = products.find((p) => p.id === prodId);
     if (prod) {
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
         productId: prodId,
-        // Default UOM from product if available or fallback L
-        unitOfMeasure: prod.unitOfMeasure || 'L'
+        unitOfMeasure: prod.unitOfMeasure || 'L',
       }));
     }
-  }
+  };
 
   const addMaterialLine = () => {
     setMaterials([...materials, { rawMaterialId: 0, quantity: 0, unitOfMeasure: 'kg' }]);
-  }
+  };
 
-  const updateMaterialLine = (idx: number, field: keyof MaterialUsageLine, val: any) => {
+  const updateMaterialLine = (
+    idx: number,
+    field: keyof MaterialUsageLine,
+    val: number | string
+  ) => {
     const copy = [...materials];
-    const item = copy[idx];
-    (item as any)[field] = val;
+    const item = { ...copy[idx] };
 
     if (field === 'rawMaterialId') {
-      const rm = rawMap.get(Number(val));
+      const numVal = Number(val);
+      item.rawMaterialId = numVal;
+      const rm = rawMap.get(numVal);
       if (rm) {
         item.name = rm.name;
         item.unitOfMeasure = rm.unitType || 'kg';
       }
+    } else if (field === 'quantity') {
+      item.quantity = typeof val === 'number' ? val : parseFloat(String(val)) || 0;
+    } else if (field === 'unitOfMeasure') {
+      item.unitOfMeasure = String(val);
     }
+
+    copy[idx] = item;
     setMaterials(copy);
-  }
+  };
 
   const removeMaterialLine = (idx: number) => {
     const copy = [...materials];
     copy.splice(idx, 1);
     setMaterials(copy);
-  }
+  };
 
   const handleSubmit = async () => {
+    setSubmitError(null);
+
     const payload: ProductionLogRequest = {
       ...form,
       mixedQuantity: form.mixedQuantity || form.batchSize,
@@ -191,16 +228,18 @@ export default function ProductionBatchesPage() {
     };
 
     if (!payload.brandId || !payload.productId || !payload.batchSize || !payload.mixedQuantity) {
-      alert('Please fill required fields (Brand, Product, Output Quantity)');
+      setSubmitError('Please fill required fields: Brand, Product, and Output Quantity');
       return;
     }
     if (!payload.materials?.length) {
-      alert('Please add at least 1 raw material usage line.');
+      setSubmitError('Please add at least 1 raw material usage line');
       return;
     }
-    const invalidMaterial = payload.materials.find((m) => !m.rawMaterialId || m.rawMaterialId <= 0 || !m.quantity || m.quantity <= 0);
+    const invalidMaterial = payload.materials.find(
+      (m) => !m.rawMaterialId || m.rawMaterialId <= 0 || !m.quantity || m.quantity <= 0
+    );
     if (invalidMaterial) {
-      alert('Please select a raw material and enter a positive quantity for every line.');
+      setSubmitError('Please select a raw material and enter a positive quantity for every line');
       return;
     }
 
@@ -208,7 +247,6 @@ export default function ProductionBatchesPage() {
       await createProductionLog(payload, session);
       setShowModal(false);
       loadLogs();
-      // Reset
       setForm({
         producedAt: new Date().toISOString().split('T')[0],
         brandId: 0,
@@ -218,13 +256,13 @@ export default function ProductionBatchesPage() {
         unitOfMeasure: 'L',
         mixedQuantity: 0,
         materials: [],
-        addToFinishedGoods: true
+        addToFinishedGoods: true,
       });
       setMaterials([]);
-    } catch (e: any) {
-      alert('Failed to log batch: ' + e.message);
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to log batch');
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -233,11 +271,17 @@ export default function ProductionBatchesPage() {
           <h1 className="text-2xl font-bold text-primary">Production Batches</h1>
           <p className="mt-1 text-sm text-secondary">Track production logs and material usage</p>
         </div>
-        <Button onClick={() => setShowModal(true)}>
-          <PlusIcon className="h-5 w-5 mr-2" />
+        <Button onClick={() => { setSubmitError(null); setShowModal(true); }}>
+          <Plus className="h-5 w-5 mr-2" />
           Log Batch
         </Button>
       </div>
+
+      {loadError && (
+        <div className="rounded-lg bg-status-error-bg px-4 py-3 text-sm text-status-error-text">
+          {loadError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -256,36 +300,54 @@ export default function ProductionBatchesPage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-secondary">Loading...</TableCell>
+                      <TableCell colSpan={5} className="text-center h-24 text-secondary">
+                        Loading...
+                      </TableCell>
                     </TableRow>
                   ) : logs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-secondary">No production logs found</TableCell>
+                      <TableCell colSpan={5} className="text-center h-24 text-secondary">
+                        No production logs found
+                      </TableCell>
                     </TableRow>
                   ) : (
-                    logs.map((log) => {
-                      const l = log as any; // Cast for missing props
-                      return (
-                        <TableRow key={l.id} onClick={() => handleSelectLog(l)} className="cursor-pointer hover:bg-surface/50 transition-colors">
-                          <TableCell label="Batch Code" className="font-mono font-medium text-primary">{l.productionCode}</TableCell>
-                          <TableCell label="Product">
-                            <div>
-                              <div className="font-medium text-primary">{l.productName}</div>
-                              <div className="text-xs text-secondary">{l.brandName}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell label="Size">
-                            <span className="text-primary">{l.mixedQuantity || l.batchSize} {l.unitOfMeasure}</span>
-                          </TableCell>
-                          <TableCell label="Date" className="text-secondary">{formatDate(l.producedAt)}</TableCell>
-                          <TableCell label="Action" className="text-right">
-                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleSelectLog(l); }}>
-                              <ChevronRightIcon className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
+                    logs.map((log) => (
+                      <TableRow
+                        key={log.id}
+                        onClick={() => handleSelectLog(log)}
+                        className="cursor-pointer hover:bg-surface/50 transition-colors"
+                      >
+                        <TableCell label="Batch Code" className="font-mono font-medium text-primary">
+                          {log.productionCode}
+                        </TableCell>
+                        <TableCell label="Product">
+                          <div>
+                            <div className="font-medium text-primary">{log.productName}</div>
+                            <div className="text-xs text-secondary">{log.brandName}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell label="Size">
+                          <span className="text-primary">
+                            {log.mixedQuantity ?? log.batchSize ?? 0} {log.unitOfMeasure}
+                          </span>
+                        </TableCell>
+                        <TableCell label="Date" className="text-secondary">
+                          {formatDate(log.producedAt)}
+                        </TableCell>
+                        <TableCell label="Action" className="text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectLog(log);
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
@@ -305,28 +367,37 @@ export default function ProductionBatchesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-surface-highlight rounded-lg border border-border">
                       <p className="text-xs text-secondary uppercase mb-1">Output</p>
-                      <div className="text-xl font-semibold text-primary">{selectedLog.mixedQuantity} <span className="text-sm font-normal text-secondary">{selectedLog.unitOfMeasure}</span></div>
+                      <div className="text-xl font-semibold text-primary">
+                        {selectedLog.mixedQuantity}{' '}
+                        <span className="text-sm font-normal text-secondary">
+                          {selectedLog.unitOfMeasure}
+                        </span>
+                      </div>
                     </div>
                     <div className="p-3 bg-surface-highlight rounded-lg border border-border">
                       <p className="text-xs text-secondary uppercase mb-1">Date</p>
-                      <div className="text-lg font-bold text-primary">{formatDate(selectedLog.producedAt)}</div>
+                      <div className="text-lg font-bold text-primary">
+                        {formatDate(selectedLog.producedAt)}
+                      </div>
                     </div>
                   </div>
 
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => selectedLog.id && navigate(`/factory/packing-queue?logId=${selectedLog.id}`)}
+                    onClick={() =>
+                      selectedLog.id && navigate(`/factory/packing-queue?logId=${selectedLog.id}`)
+                    }
                   >
                     Go to Packing Queue
                   </Button>
 
-                  {(selectedLog as any).finishedGoodBatchCode && (
+                  {selectedLog.finishedGoodBatchCode && (
                     <div className="p-3 border border-border rounded-lg bg-surface/30">
                       <p className="text-xs text-secondary uppercase mb-1">Linked Batch</p>
                       <p className="text-sm font-mono text-primary flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        {(selectedLog as any).finishedGoodBatchCode}
+                        <span className="w-2 h-2 rounded-full bg-status-success-bg inline-block" />
+                        {selectedLog.finishedGoodBatchCode}
                       </p>
                     </div>
                   )}
@@ -334,13 +405,22 @@ export default function ProductionBatchesPage() {
                   <div className="border-t border-border pt-4">
                     <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
                       <span>Material Usage</span>
-                      <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">{selectedLog.materials?.length || 0}</Badge>
+                      <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+                        {selectedLog.materials?.length ?? 0}
+                      </Badge>
                     </h4>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                       {selectedLog.materials?.map((mat, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-sm p-2.5 bg-surface rounded-md border border-border/50">
-                          <span className="text-primary font-medium">{(mat as any).materialName || (mat as any).name}</span>
-                          <span className="font-mono text-secondary">{(mat as any).quantity} {(mat as any).unitOfMeasure || (mat as any).unit}</span>
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center text-sm p-2.5 bg-surface rounded-md border border-border/50"
+                        >
+                          <span className="text-primary font-medium">
+                            {mat.materialName ?? mat.name}
+                          </span>
+                          <span className="font-mono text-secondary">
+                            {mat.quantity} {mat.unitOfMeasure ?? mat.unit}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -350,8 +430,16 @@ export default function ProductionBatchesPage() {
             </Card>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-dashed border-border rounded-xl bg-surface/20 min-h-[400px]">
-              <CalendarIcon className="w-12 h-12 text-tertiary mb-2 opacity-50" />
-              <p className="text-sm text-secondary">Select a log from the list to view details</p>
+              {detailLoading ? (
+                <p className="text-sm text-secondary">Loading detail...</p>
+              ) : (
+                <>
+                  <Calendar className="w-12 h-12 text-tertiary mb-2 opacity-50" />
+                  <p className="text-sm text-secondary">
+                    Select a log from the list to view details
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -364,6 +452,12 @@ export default function ProductionBatchesPage() {
         size="xl"
       >
         <ResponsiveForm onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          {submitError && (
+            <div className="rounded-lg bg-status-error-bg px-3 py-2 text-sm text-status-error-text">
+              {submitError}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Production Date"
@@ -394,8 +488,10 @@ export default function ProductionBatchesPage() {
                 onChange={(e) => handleBrandChange(e.target.value)}
               >
                 <option value={0}>Select Brand...</option>
-                {brands.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -408,8 +504,10 @@ export default function ProductionBatchesPage() {
                 disabled={!form.brandId}
               >
                 <option value={0}>Select Product...</option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.productName} ({p.skuCode})</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.productName} ({p.skuCode})
+                  </option>
                 ))}
               </select>
             </div>
@@ -419,18 +517,35 @@ export default function ProductionBatchesPage() {
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-medium text-primary">Material Usage</h3>
               <Button type="button" size="sm" variant="secondary" onClick={addMaterialLine}>
-                <PlusIcon className="w-4 h-4 mr-1" /> Add Material
+                <Plus className="w-4 h-4 mr-1" /> Add Material
               </Button>
             </div>
 
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
               {materials.map((line, idx) => (
-                <div key={idx} className="flex gap-2 items-start bg-surface p-2 rounded border border-border/50">
+                <div
+                  key={idx}
+                  className="flex gap-2 items-start bg-surface p-2 rounded border border-border/50"
+                >
                   <div className="flex-1">
                     <SearchableCombobox
-                      value={line.rawMaterialId ? { id: line.rawMaterialId, label: rawMap.get(line.rawMaterialId)?.name || '', subLabel: '' } : null}
-                      onChange={(opt) => updateMaterialLine(idx, 'rawMaterialId', opt?.id || 0)}
-                      options={rawMaterials.map(rm => ({ id: rm.id || 0, label: rm.name || 'Unknown', subLabel: rm.sku || '' }))}
+                      value={
+                        line.rawMaterialId
+                          ? {
+                              id: line.rawMaterialId,
+                              label: rawMap.get(line.rawMaterialId)?.name ?? '',
+                              subLabel: '',
+                            }
+                          : null
+                      }
+                      onChange={(opt) =>
+                        updateMaterialLine(idx, 'rawMaterialId', opt?.id ?? 0)
+                      }
+                      options={rawMaterials.map((rm) => ({
+                        id: rm.id ?? 0,
+                        label: rm.name ?? 'Unknown',
+                        subLabel: rm.sku ?? '',
+                      }))}
                       placeholder="Select Material"
                       className="w-full"
                     />
@@ -439,9 +554,11 @@ export default function ProductionBatchesPage() {
                     <Input
                       type="number"
                       value={line.quantity}
-                      onChange={(e) => updateMaterialLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        updateMaterialLine(idx, 'quantity', parseFloat(e.target.value) || 0)
+                      }
                       placeholder="Qty"
-                      className="h-[42px]" // Match combobox height roughly
+                      className="h-[42px]"
                     />
                   </div>
                   <div className="w-16 flex items-center justify-center h-[42px] text-sm text-secondary">
@@ -454,12 +571,14 @@ export default function ProductionBatchesPage() {
                     className="h-[42px] w-[42px] p-0"
                     onClick={() => removeMaterialLine(idx)}
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
               {materials.length === 0 && (
-                <p className="text-center text-secondary text-sm italic py-4">No materials added yet.</p>
+                <p className="text-center text-secondary text-sm italic py-4">
+                  No materials added yet.
+                </p>
               )}
             </div>
           </div>
@@ -472,12 +591,16 @@ export default function ProductionBatchesPage() {
                 onChange={(e) => setForm({ ...form, addToFinishedGoods: e.target.checked })}
                 className="rounded border-border text-primary focus:ring-primary"
               />
-              <span className="text-sm text-primary">Automatically add to Finished Goods inventory</span>
+              <span className="text-sm text-primary">
+                Automatically add to Finished Goods inventory
+              </span>
             </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
             <Button type="submit">Log Production</Button>
           </div>
         </ResponsiveForm>

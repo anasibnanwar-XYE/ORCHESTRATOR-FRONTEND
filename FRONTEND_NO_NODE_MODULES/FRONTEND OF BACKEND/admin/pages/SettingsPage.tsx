@@ -7,14 +7,26 @@ import { logAuthContext, verifyAdminContext, getCurrentUserProfile } from '../li
 import { changePassword } from '../lib/profileApi';
 import { getAdminSettings, updateAdminSettings, sendAdminNotification, type AdminSettings, type AdminNotifyRequest } from '../lib/adminApi';
 import { ResponsiveContainer, ResponsiveGrid, ResponsiveCard, ResponsiveButton, ResponsiveModal, FormInput, FormTextarea } from '../design-system';
+import { Info } from 'lucide-react';
+
+/** Inline badge shown next to toggles that have no backend support yet. */
+function NotConfigurableBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-surface-highlight px-2 py-0.5 text-[11px] font-medium text-tertiary">
+      <Info className="h-3 w-3" />
+      Not configurable in this version
+    </span>
+  );
+}
 
 type PasswordStatus = { state: 'idle' | 'loading' | 'success' | 'error'; message?: string };
 
 export default function SettingsPage() {
   const { session, user } = useAuth();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  // These local states are retained for UI display only; the values have no backend support yet.
+  const [notificationsEnabled] = useState(true);
   const [sessionTimeout, setSessionTimeout] = useState(30);
-  const [justInTimeProvisioning, setJustInTimeProvisioning] = useState(true);
+  const [justInTimeProvisioning] = useState(true);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordStatus, setPasswordStatus] = useState<PasswordStatus>({ state: 'idle' });
   const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
@@ -168,31 +180,35 @@ export default function SettingsPage() {
       <ResponsiveGrid cols={{ mobile: 1, desktop: 2 }}>
         <ResponsiveCard title="Authentication" subtitle="Security posture">
           <div className="space-y-5 text-sm text-secondary">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-primary">Session timeout</p>
                 <p className="text-xs text-tertiary">Current: {sessionTimeout} minutes</p>
+                <NotConfigurableBadge />
               </div>
               <select
                 value={sessionTimeout}
                 onChange={(e) => setSessionTimeout(Number(e.target.value))}
-                className="w-full sm:w-auto rounded-lg border border-border bg-background px-4 py-2 text-sm text-primary transition focus:outline-none focus:ring-2 focus:ring-action-bg touch-manipulation"
+                disabled
+                className="w-full sm:w-auto rounded-lg border border-border bg-background px-4 py-2 text-sm text-primary opacity-50 cursor-not-allowed touch-manipulation"
               >
                 <option value={15}>15 minutes</option>
                 <option value={30}>30 minutes</option>
                 <option value={60}>60 minutes</option>
               </select>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-primary">Just-in-time provisioning</p>
                 <p className="text-xs text-tertiary">Auto-create users after SSO</p>
+                <NotConfigurableBadge />
               </div>
               <Switch
                 checked={justInTimeProvisioning}
-                onChange={setJustInTimeProvisioning}
+                onChange={() => undefined}
+                disabled
                 className={clsx(
-                  'inline-flex h-7 w-14 items-center rounded-full border transition',
+                  'inline-flex h-7 w-14 items-center rounded-full border transition opacity-50 cursor-not-allowed',
                   justInTimeProvisioning ? 'border-action-bg bg-action-bg' : 'border-border bg-surface-highlight'
                 )}
               >
@@ -211,16 +227,18 @@ export default function SettingsPage() {
 
         <ResponsiveCard title="Alerts & escalations" subtitle="Notifications">
           <div className="space-y-5 text-sm text-secondary">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-primary">Realtime alerts</p>
                 <p className="text-xs text-tertiary">Push escalations when service health degrades.</p>
+                <NotConfigurableBadge />
               </div>
               <Switch
                 checked={notificationsEnabled}
-                onChange={setNotificationsEnabled}
+                onChange={() => undefined}
+                disabled
                 className={clsx(
-                  'inline-flex h-7 w-14 items-center rounded-full border transition',
+                  'inline-flex h-7 w-14 items-center rounded-full border transition opacity-50 cursor-not-allowed',
                   notificationsEnabled ? 'border-action-bg bg-action-bg' : 'border-border bg-surface-highlight'
                 )}
               >
@@ -230,16 +248,9 @@ export default function SettingsPage() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-widest text-tertiary">Delivery channels</p>
-              <div className="mt-3 grid gap-3 text-xs text-secondary md:grid-cols-3">
-                <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-4 py-3">
-                  <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-border bg-background" /> Email
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-4 py-3">
-                  <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-border bg-background" /> Slack
-                </label>
-                <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-4 py-3">
-                  <input type="checkbox" className="h-4 w-4 rounded border-border bg-background" /> PagerDuty
-                </label>
+              <div className="mt-2 rounded-lg border border-border bg-surface-highlight p-3 text-xs text-tertiary">
+                <NotConfigurableBadge />
+                <p className="mt-2">Delivery channel preferences (Email, Slack, PagerDuty) are not configurable in this version.</p>
               </div>
             </div>
             <div className="rounded-lg border border-border bg-surface-highlight p-4 text-xs text-secondary">

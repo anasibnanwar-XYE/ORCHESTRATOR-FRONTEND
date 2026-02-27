@@ -13,7 +13,9 @@ export interface ToastMessage {
   variant: ToastVariant;
   title: string;
   description?: string;
-  /** Auto-dismiss duration in ms. 0 = persistent. Default 4000. */
+  /**
+   * Auto-dismiss duration in ms. 0 = persistent. Default 5000.
+   */
   duration?: number;
 }
 
@@ -39,11 +41,10 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Fallback: log to console if ToastProvider is missing (never crash the app)
+    // Fallback: silently warn if ToastProvider is missing (never crash the app)
     return {
-      addToast: (t) => {
-        // eslint-disable-next-line no-console
-        console.warn('[Toast] ToastProvider not mounted.', t.title);
+      addToast: (_t) => {
+        // intentionally silent — ToastProvider not mounted
       },
     };
   }
@@ -51,42 +52,52 @@ export function useToast(): ToastContextValue {
 }
 
 // ---------------------------------------------------------------------------
-// Single toast item
+// Variant configuration — semantic tokens only, no hardcoded colours
 // ---------------------------------------------------------------------------
 
-const variantConfig: Record<ToastVariant, {
-  icon: typeof CheckCircle;
-  containerClass: string;
-  iconClass: string;
-}> = {
+const variantConfig: Record<
+  ToastVariant,
+  { icon: typeof CheckCircle; containerClass: string; iconClass: string }
+> = {
   success: {
     icon: CheckCircle,
-    containerClass: 'border-emerald-200 bg-[var(--status-success-bg)] dark:border-emerald-800/40',
-    iconClass: 'text-[var(--status-success-text)]',
+    containerClass: 'border-transparent bg-status-success-bg',
+    iconClass: 'text-status-success-text',
   },
   error: {
     icon: AlertCircle,
-    containerClass: 'border-red-200 bg-[var(--status-error-bg)] dark:border-red-800/40',
-    iconClass: 'text-[var(--status-error-text)]',
+    containerClass: 'border-transparent bg-status-error-bg',
+    iconClass: 'text-status-error-text',
   },
   warning: {
     icon: AlertTriangle,
-    containerClass: 'border-amber-200 bg-[var(--status-warning-bg)] dark:border-amber-800/40',
-    iconClass: 'text-[var(--status-warning-text)]',
+    containerClass: 'border-transparent bg-status-warning-bg',
+    iconClass: 'text-status-warning-text',
   },
   info: {
     icon: Info,
-    containerClass: 'border-blue-200 bg-[var(--status-info-bg)] dark:border-blue-800/40',
-    iconClass: 'text-[var(--status-info-text)]',
+    containerClass: 'border-transparent bg-status-info-bg',
+    iconClass: 'text-status-info-text',
   },
 };
 
-function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: string) => void }) {
+// ---------------------------------------------------------------------------
+// Single toast item
+// ---------------------------------------------------------------------------
+
+function ToastItem({
+  toast,
+  onDismiss,
+}: {
+  toast: ToastMessage;
+  onDismiss: (id: string) => void;
+}) {
   const config = variantConfig[toast.variant];
   const Icon = config.icon;
 
+  // Auto-dismiss — default 5 seconds
   useEffect(() => {
-    const duration = toast.duration ?? 4000;
+    const duration = toast.duration ?? 5000;
     if (duration <= 0) return;
     const timer = setTimeout(() => onDismiss(toast.id), duration);
     return () => clearTimeout(timer);
@@ -95,24 +106,25 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: 
   return (
     <div
       role="alert"
+      aria-live="assertive"
       className={clsx(
-        'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-4 shadow-lg transition-all',
+        'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-4 shadow-lg',
         'animate-in slide-in-from-top-2 fade-in duration-200',
         config.containerClass,
       )}
     >
       <Icon className={clsx('mt-0.5 h-5 w-5 flex-shrink-0', config.iconClass)} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--text-primary)]">{toast.title}</p>
+        <p className="text-sm font-semibold text-primary">{toast.title}</p>
         {toast.description && (
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">{toast.description}</p>
+          <p className="mt-1 text-xs text-secondary">{toast.description}</p>
         )}
       </div>
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
-        className="flex-shrink-0 rounded p-0.5 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-        aria-label="Dismiss"
+        className="flex-shrink-0 rounded p-0.5 text-tertiary transition-colors hover:text-primary focus:outline-none focus:ring-2 focus:ring-offset-1"
+        aria-label="Dismiss notification"
       >
         <X className="h-4 w-4" />
       </button>
@@ -128,6 +140,7 @@ let toastCounter = 0;
 
 /**
  * Mount once at the app root. Provides `useToast()` to all descendants.
+ * Stack appears top-right on desktop, bottom-center on mobile.
  *
  * ```tsx
  * <ToastProvider>
@@ -151,12 +164,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ addToast }}>
       {children}
 
-      {/* Toast container — fixed top-right */}
+      {/* Toast container — top-right on desktop, bottom on mobile */}
       {toasts.length > 0 && (
         <div
-          className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"
+          className={clsx(
+            'fixed z-[100] flex flex-col gap-2 pointer-events-none',
+            // Mobile: bottom-center
+            'bottom-4 left-4 right-4',
+            // Desktop: top-right
+            'sm:bottom-auto sm:top-4 sm:right-4 sm:left-auto sm:w-80',
+          )}
           aria-live="polite"
           aria-atomic="false"
+          aria-label="Notifications"
         >
           {toasts.map((t) => (
             <ToastItem key={t.id} toast={t} onDismiss={dismissToast} />

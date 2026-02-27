@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getDealerAging } from '../../lib/dealerApi';
+import { getDealerAging, type DealerPortalOverdueInvoice } from '../../lib/dealerApi';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
@@ -15,7 +15,7 @@ export default function DealerAgingPage() {
   const [netOutstanding, setNetOutstanding] = useState(0);
   const [availableCredit, setAvailableCredit] = useState(0);
   const [agingBuckets, setAgingBuckets] = useState<Record<string, number>>({});
-  const [overdueInvoices, setOverdueInvoices] = useState<any[]>([]);
+  const [overdueInvoices, setOverdueInvoices] = useState<DealerPortalOverdueInvoice[]>([]);
 
   const load = useCallback(async () => {
     if (!session) return;

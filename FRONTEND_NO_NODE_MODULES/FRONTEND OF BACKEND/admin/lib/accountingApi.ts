@@ -959,6 +959,16 @@ export async function closeAccountingPeriod(id: number, session?: AuthSession | 
   return apiData<void>(`/api/v1/accounting/periods/${id}/close`, { method: 'POST' }, session);
 }
 
+export async function lockAccountingPeriod(id: number, session?: AuthSession | null): Promise<void> {
+  withSession(session);
+  return apiData<void>(`/api/v1/accounting/periods/${id}/lock`, { method: 'POST' }, session);
+}
+
+export async function reopenAccountingPeriod(id: number, session?: AuthSession | null): Promise<void> {
+  withSession(session);
+  return apiData<void>(`/api/v1/accounting/periods/${id}/reopen`, { method: 'POST' }, session);
+}
+
 export async function getMonthEndChecklist(session?: AuthSession | null, periodId?: number): Promise<MonthEndChecklistItem[]> {
   withSession(session);
   const dto = unwrap<MonthEndChecklistDto>(await AccountingControllerService.checklist(periodId));
@@ -1270,3 +1280,88 @@ export function getInvoicePdfUrl(
   const cleanBase = baseUrl.replace(/\/+$/, '');
   return `${cleanBase}/api/v1/invoices/${id}/pdf`;
 }
+
+// --- Audit Transaction Interfaces ---
+
+export interface AuditTransactionSummary {
+  journalEntryId: number;
+  transactionType?: string;
+  amount?: number;
+  date?: string;
+  description?: string;
+  user?: string;
+  status?: string;
+  referenceNumber?: string;
+  createdAt?: string;
+}
+
+export interface AuditTransactionDetail extends AuditTransactionSummary {
+  lines?: Array<{
+    accountId?: number;
+    accountCode?: string;
+    accountName?: string;
+    description?: string;
+    debit?: number;
+    credit?: number;
+  }>;
+  auditTrail?: Array<{
+    timestamp?: string;
+    action?: string;
+    performedBy?: string;
+    notes?: string;
+  }>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AuditTransactionPage {
+  content: AuditTransactionSummary[];
+  totalElements?: number;
+  totalPages?: number;
+  page?: number;
+  size?: number;
+}
+
+export const listAuditTransactions = async (
+  params?: { page?: number; size?: number; journalEntryId?: number; from?: string; to?: string },
+  session?: AuthSession | null
+): Promise<AuditTransactionPage> => {
+  const usp = new URLSearchParams();
+  if (params?.page !== undefined) usp.set('page', String(params.page));
+  if (params?.size !== undefined) usp.set('size', String(params.size));
+  if (params?.journalEntryId !== undefined) usp.set('journalEntryId', String(params.journalEntryId));
+  if (params?.from) usp.set('from', params.from);
+  if (params?.to) usp.set('to', params.to);
+
+  const raw = await apiData<unknown>(
+    `/api/v1/accounting/audit/transactions${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  );
+
+  // Support both paginated envelope { content: [], totalElements, … } and plain array
+  if (Array.isArray(raw)) {
+    return { content: raw as AuditTransactionSummary[] };
+  }
+  const envelope = raw as Record<string, unknown>;
+  if (envelope && Array.isArray(envelope['content'])) {
+    return {
+      content: envelope['content'] as AuditTransactionSummary[],
+      totalElements: typeof envelope['totalElements'] === 'number' ? envelope['totalElements'] : undefined,
+      totalPages: typeof envelope['totalPages'] === 'number' ? envelope['totalPages'] : undefined,
+      page: typeof envelope['page'] === 'number' ? envelope['page'] : undefined,
+      size: typeof envelope['size'] === 'number' ? envelope['size'] : undefined,
+    };
+  }
+  return { content: [] };
+};
+
+export const getAuditTransactionDetail = async (
+  journalEntryId: number,
+  session?: AuthSession | null
+): Promise<AuditTransactionDetail> => {
+  return apiData<AuditTransactionDetail>(
+    `/api/v1/accounting/audit/transactions/${journalEntryId}`,
+    {},
+    session ?? undefined
+  );
+};

@@ -42,16 +42,16 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bg-surface-highlight)]">
-        <Icon className="h-7 w-7 text-[var(--text-tertiary)]" />
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-highlight">
+        <Icon className="h-7 w-7 text-tertiary" />
       </div>
 
-      <h3 className="mt-4 text-sm font-semibold text-[var(--text-primary)]">
+      <h3 className="mt-4 text-sm font-semibold text-primary font-display">
         {title}
       </h3>
 
       {description && (
-        <p className="mt-1.5 max-w-sm text-xs text-[var(--text-secondary)]">
+        <p className="mt-1.5 max-w-sm text-xs text-secondary">
           {description}
         </p>
       )}
@@ -60,7 +60,7 @@ export function EmptyState({
         <button
           type="button"
           onClick={action.onClick}
-          className="mt-5 rounded-lg bg-[var(--action-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:ring-offset-2"
+          className="mt-5 rounded-lg bg-action-bg px-4 py-2 text-sm font-medium text-action-text shadow-sm transition-all hover:bg-action-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background"
         >
           {action.label}
         </button>

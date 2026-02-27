@@ -1,4 +1,4 @@
-import { setApiSession } from './api';
+import { apiData, setApiSession } from './api';
 import type { AuthSession } from '../types/auth';
 import { OpenAPI } from './client/core/OpenAPI';
 import type { CreateDealerRequest } from './client/models/CreateDealerRequest';
@@ -285,6 +285,29 @@ export async function getDealerAging(session?: AuthSession | null): Promise<Deal
     })),
   };
 }
+
+/**
+ * Credit request type for dealer portal
+ */
+export type DealerCreditRequestPayload = {
+  amountRequested: number;
+  reason?: string;
+};
+
+/**
+ * Submit a credit limit increase request via the dealer portal.
+ * POST /api/v1/dealer-portal/credit-requests
+ */
+export const createDealerCreditRequest = async (
+  payload: DealerCreditRequestPayload,
+  session?: AuthSession | null
+): Promise<unknown> => {
+  withSession(session);
+  return apiData<unknown>('/api/v1/dealer-portal/credit-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, session);
+};
 
 /**
  * Toggle dealer hold state (Accounting/Admin use).

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getDealerInvoicePdf, getDealerInvoices } from '../../lib/dealerApi';
+import { getDealerInvoicePdf, getDealerInvoices, type DealerPortalInvoice } from '../../lib/dealerApi';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -23,7 +23,7 @@ export default function DealerInvoicesPage() {
   const [pdfLoadingId, setPdfLoadingId] = useState<number | null>(null);
   const [invoiceCount, setInvoiceCount] = useState(0);
   const [totalOutstanding, setTotalOutstanding] = useState(0);
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<DealerPortalInvoice[]>([]);
 
   const load = useCallback(async () => {
     if (!session) return;

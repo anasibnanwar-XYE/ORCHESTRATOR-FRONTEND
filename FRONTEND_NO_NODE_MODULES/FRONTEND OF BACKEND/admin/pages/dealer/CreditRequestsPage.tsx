@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { listCreditRequests } from '../../lib/salesApi';
 import {
-  listCreditRequests,
-  createCreditRequest,
-  type CreditRequestPayload,
-} from '../../lib/salesApi';
+  createDealerCreditRequest,
+  type DealerCreditRequestPayload,
+} from '../../lib/dealerApi';
 import type { CreditRequestDto } from '../../lib/client/models/CreditRequestDto';
 
 const fmtCurrency = (amount?: number) => {
@@ -74,11 +74,11 @@ export default function CreditRequestsPage() {
     setError('');
     setSuccess('');
     try {
-      const payload: CreditRequestPayload = {
+      const payload: DealerCreditRequestPayload = {
         amountRequested: parsed,
         reason: reason.trim() || undefined,
       };
-      await createCreditRequest(payload, session);
+      await createDealerCreditRequest(payload, session);
       setSuccess('Credit limit increase request submitted successfully.');
       setAmount('');
       setReason('');

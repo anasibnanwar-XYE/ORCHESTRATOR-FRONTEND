@@ -3,6 +3,64 @@ export { ApiError } from './client/core/ApiError'; // Export generated ApiError
 export { OpenAPI } from './client/core/OpenAPI';
 import { OpenAPI } from './client/core/OpenAPI';
 
+const SESSION_KEY = 'bbp-orchestrator-session';
+const AUTH_EXPIRED_EVENT = 'bbp-auth-expired';
+
+/**
+ * Clear stored session and dispatch auth-expired event so App.tsx can redirect to login.
+ */
+export const clearSession = (): void => {
+  localStorage.removeItem(SESSION_KEY);
+  window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+};
+
+// Token refresh state — prevents duplicate in-flight refresh calls
+let _refreshing: Promise<string | null> | null = null;
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Returns the new access token on success, or null on failure.
+ */
+const attemptTokenRefresh = async (): Promise<string | null> => {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const stored = JSON.parse(raw) as { session?: { refreshToken?: string } };
+    const refreshToken = stored?.session?.refreshToken;
+    if (!refreshToken) return null;
+
+    const res = await fetch(`${OpenAPI.BASE}/api/v1/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
+    });
+
+    if (!res.ok) return null;
+
+    const body = await res.json().catch(() => null);
+    const newAccessToken: string | undefined =
+      body?.data?.accessToken ?? body?.accessToken ?? body?.data?.token ?? body?.token;
+    const newRefreshToken: string | undefined =
+      body?.data?.refreshToken ?? body?.refreshToken;
+
+    if (!newAccessToken) return null;
+
+    // Persist updated tokens back to localStorage
+    const updated = { ...stored, session: { ...stored.session, accessToken: newAccessToken } };
+    if (newRefreshToken) {
+      updated.session = { ...updated.session, refreshToken: newRefreshToken };
+    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+
+    // Update the generated client's global token
+    OpenAPI.TOKEN = newAccessToken;
+    return newAccessToken;
+  } catch {
+    return null;
+  }
+};
+
 // Re-export generated client
 export * from './client';
 
@@ -164,35 +222,59 @@ const PUBLIC_AUTH_PATHS = [
 const isPublicAuthPath = (path: string): boolean =>
   PUBLIC_AUTH_PATHS.some((p) => path === p || path.startsWith(`${p}?`));
 
+type HttpMethod = 'GET' | 'PUT' | 'POST' | 'DELETE' | 'OPTIONS' | 'HEAD' | 'PATCH';
+
+const toHttpMethod = (m: string): HttpMethod => {
+  const upper = m.toUpperCase();
+  if (['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'].includes(upper)) {
+    return upper as HttpMethod;
+  }
+  return 'GET';
+};
+
 export async function apiRequest<T>(path: string, options: RequestInit = {}, session?: AuthSession | null): Promise<T> {
   if (session) setApiSession(session);
 
-  const headers = new Headers(options.headers ?? {});
-  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-
-  const method = (options.method ?? 'GET').toUpperCase();
-  if (method !== 'GET' && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  // Auth Headers — skip for public auth routes (forgot/reset password)
+  const method: HttpMethod = toHttpMethod(options.method ?? 'GET');
+  const isMutating = ['POST', 'PUT', 'PATCH'].includes(method);
   const isPublic = isPublicAuthPath(path);
 
-  if (!isPublic) {
-    const token = session?.accessToken || (OpenAPI.TOKEN as string);
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+  const buildHeaders = (overrideToken?: string): Headers => {
+    const headers = new Headers(options.headers ?? {});
+    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+
+    if (method !== 'GET' && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
 
-    const companyCode = session?.companyCode || (OpenAPI.HEADERS as Record<string, string>)?.['X-Company-Id'];
-    if (companyCode) {
-      if (!headers.has('X-Company-Id')) headers.set('X-Company-Id', companyCode);
-      if (!headers.has('X-Company-Code')) headers.set('X-Company-Code', companyCode);
+    if (!isPublic) {
+      const resolvedToken = overrideToken ?? session?.accessToken ?? (OpenAPI.TOKEN as string | undefined);
+      if (resolvedToken) {
+        headers.set('Authorization', `Bearer ${resolvedToken}`);
+      }
+
+      const companyCode = session?.companyCode || (OpenAPI.HEADERS as Record<string, string>)?.['X-Company-Id'];
+      if (companyCode) {
+        if (!headers.has('X-Company-Id')) headers.set('X-Company-Id', companyCode);
+        if (!headers.has('X-Company-Code')) headers.set('X-Company-Code', companyCode);
+      }
     }
-  }
+
+    return headers;
+  };
+
+  const throwApiError = (status: number, statusText: string, body: unknown, msg?: string) => {
+    throw new ClientApiError(
+      { method, url: path },
+      { url: path, ok: false, status, statusText, body },
+      msg ?? extractApiErrorMessage(body, `Request failed (${status})`)
+    );
+  };
+
+  const headers = buildHeaders();
 
   // Idempotency key for mutating requests — prevents accidental duplicate side-effects
-  if (['POST', 'PUT', 'PATCH'].includes(method) && !headers.has('Idempotency-Key')) {
+  if (isMutating && !headers.has('Idempotency-Key')) {
     headers.set('Idempotency-Key', crypto.randomUUID());
   }
 
@@ -203,19 +285,44 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}, ses
       credentials: 'include',
     });
 
+    // ── 401 Token Refresh Interceptor ────────────────────────────────────
+    if (response.status === 401 && !isPublic) {
+      // Deduplicate: if a refresh is already in-flight, await the same promise
+      if (!_refreshing) {
+        _refreshing = attemptTokenRefresh().finally(() => {
+          _refreshing = null;
+        });
+      }
+      const newToken = await _refreshing;
+
+      if (newToken) {
+        // Replay the original request with the fresh token
+        const retryHeaders = buildHeaders(newToken);
+        if (isMutating) {
+          retryHeaders.set('Idempotency-Key', crypto.randomUUID());
+        }
+        const retryResponse = await fetch(`${OpenAPI.BASE}${path}`, {
+          ...options,
+          headers: retryHeaders,
+          credentials: 'include',
+        });
+        const retryBody = await parseBody(retryResponse);
+        if (!retryResponse.ok) {
+          throwApiError(retryResponse.status, retryResponse.statusText, retryBody);
+        }
+        return retryBody as T;
+      } else {
+        // Refresh failed — session is invalid; clear and notify the app
+        clearSession();
+        throwApiError(401, 'Unauthorized', null, 'Session expired. Please sign in again.');
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     const body = await parseBody(response);
 
     if (!response.ok) {
-      throw new ClientApiError({
-        method: method as any,
-        url: path,
-      }, {
-        url: path,
-        ok: false,
-        status: response.status,
-        statusText: response.statusText,
-        body: body,
-      }, extractApiErrorMessage(body, `Request failed (${response.status})`));
+      throwApiError(response.status, response.statusText, body);
     }
 
     return body as T;

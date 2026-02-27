@@ -11,8 +11,8 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
-import { getDashboardInsights } from '../lib/portalApi';
-import type { DashboardInsights } from '../types/portal';
+import { getDashboardInsights, getWorkforceInsights } from '../lib/portalApi';
+import type { DashboardInsights, WorkforceInsights } from '../types/portal';
 import { ResponsiveContainer, ResponsiveGrid } from '../design-system';
 import { formatCurrency, formatDate } from '../lib/formatUtils';
 
@@ -80,7 +80,7 @@ function DashboardSkeleton() {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="animate-pulse rounded-xl border border-border bg-white dark:bg-[#121214] p-6 space-y-4"
+            className="animate-pulse rounded-xl border border-border bg-surface p-6 space-y-4"
           >
             <div className="flex items-center justify-between">
               <div className="h-3 w-20 rounded bg-surface-highlight" />
@@ -94,7 +94,7 @@ function DashboardSkeleton() {
 
       {/* Two-column skeleton */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 animate-pulse rounded-xl border border-border bg-white dark:bg-[#121214] p-6 space-y-4">
+        <div className="lg:col-span-2 animate-pulse rounded-xl border border-border bg-surface p-6 space-y-4">
           <div className="h-4 w-32 rounded bg-surface-highlight" />
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2">
@@ -103,7 +103,7 @@ function DashboardSkeleton() {
             </div>
           ))}
         </div>
-        <div className="animate-pulse rounded-xl border border-border bg-white dark:bg-[#121214] p-6 space-y-4">
+        <div className="animate-pulse rounded-xl border border-border bg-surface p-6 space-y-4">
           <div className="h-4 w-24 rounded bg-surface-highlight" />
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 rounded-lg bg-surface-highlight" />
@@ -121,6 +121,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<DashboardInsights | null>(null);
+  const [workforce, setWorkforce] = useState<WorkforceInsights | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -128,14 +129,23 @@ export default function DashboardPage() {
       try {
         const insights = await getDashboardInsights(session);
         setData(insights);
-      } catch (err) {
-        console.error('Failed to load dashboard insights', err);
+      } catch {
         setError('Unable to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
     }
+    async function loadWorkforce() {
+      if (!session) return;
+      try {
+        const wf = await getWorkforceInsights(session);
+        setWorkforce(wf);
+      } catch {
+        // Workforce insights is supplementary — silently ignore failures
+      }
+    }
     load();
+    loadWorkforce();
   }, [session]);
 
   if (loading) return <DashboardSkeleton />;
@@ -194,7 +204,7 @@ export default function DashboardPage() {
         <h2 className="sr-only">Key Metrics</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Revenue */}
-          <div className="group relative overflow-hidden rounded-xl border border-border bg-white p-5 transition-shadow hover:shadow-md dark:bg-[#121214] sm:p-6">
+          <div className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-md sm:p-6">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-secondary">Revenue</p>
               <div className="rounded-lg bg-status-success-bg p-2 text-status-success-text">
@@ -208,7 +218,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Fulfilment SLA */}
-          <div className="group relative overflow-hidden rounded-xl border border-border bg-white p-5 transition-shadow hover:shadow-md dark:bg-[#121214] sm:p-6">
+          <div className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-md sm:p-6">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-secondary">Fulfilment SLA</p>
               <div className="rounded-lg bg-status-info-bg p-2 text-status-info-text">
@@ -222,7 +232,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Active Workforce */}
-          <div className="group relative overflow-hidden rounded-xl border border-border bg-white p-5 transition-shadow hover:shadow-md dark:bg-[#121214] sm:p-6">
+          <div className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-md sm:p-6">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-secondary">Workforce</p>
               <div className="rounded-lg bg-surface-highlight p-2 text-secondary">
@@ -236,7 +246,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Dealer Coverage */}
-          <div className="group relative overflow-hidden rounded-xl border border-border bg-white p-5 transition-shadow hover:shadow-md dark:bg-[#121214] sm:p-6">
+          <div className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-md sm:p-6">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-secondary">Dealer Coverage</p>
               <div className="rounded-lg bg-status-warning-bg p-2 text-status-warning-text">
@@ -254,7 +264,7 @@ export default function DashboardPage() {
       {/* ── Production Pipeline & Organization Health ─────────────── */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Production Pipeline */}
-        <div className="lg:col-span-2 rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-surface p-5 sm:p-6">
           <div className="flex items-center justify-between border-b border-border pb-4">
             <div>
               <h3 className="font-display text-base font-semibold text-primary sm:text-lg">
@@ -292,7 +302,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Organization Health */}
-        <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+        <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
           <div className="border-b border-border pb-4">
             <h3 className="font-display text-base font-semibold text-primary sm:text-lg">
               Organization Health
@@ -322,11 +332,78 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* ── Workforce Insights ────────────────────────────────────── */}
+      {workforce && (
+        <section>
+          <h2 className="mb-4 text-xs font-medium uppercase tracking-[0.15em] text-secondary">
+            Workforce
+          </h2>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Squads */}
+            {workforce.squads && workforce.squads.length > 0 && (
+              <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                <h3 className="mb-4 font-display text-sm font-semibold text-primary">Squads</h3>
+                <div className="space-y-3">
+                  {workforce.squads.map((squad, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-primary">{squad.name}</p>
+                        <p className="truncate text-xs text-tertiary">{squad.detail}</p>
+                      </div>
+                      <span className="ml-3 flex-shrink-0 text-sm font-semibold text-secondary tabular-nums">
+                        {squad.capacity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming Moments */}
+            {workforce.moments && workforce.moments.length > 0 && (
+              <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                <h3 className="mb-4 font-display text-sm font-semibold text-primary">Upcoming</h3>
+                <div className="space-y-3">
+                  {workforce.moments.map((moment, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-surface px-4 py-3">
+                      <p className="text-sm font-medium text-primary">{moment.title}</p>
+                      <p className="mt-0.5 text-xs text-secondary">{moment.schedule}</p>
+                      <p className="mt-1 text-xs text-tertiary">{moment.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Performance Leaders */}
+            {workforce.leaders && workforce.leaders.length > 0 && (
+              <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
+                <h3 className="mb-4 font-display text-sm font-semibold text-primary">Top Performers</h3>
+                <div className="space-y-3">
+                  {workforce.leaders.map((leader, i) => (
+                    <div key={i} className="flex items-start gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-surface-highlight">
+                        <UserGroupIcon className="h-4 w-4 text-secondary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-primary">{leader.name}</p>
+                        <p className="truncate text-xs text-secondary">{leader.role}</p>
+                        <p className="mt-0.5 text-xs text-tertiary">{leader.highlight}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* ── Enterprise Dashboard ──────────────────────────────────── */}
       {enterprise && (
         <>
           {/* Period Header */}
-          <section className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+          <section className="rounded-xl border border-border bg-surface p-5 sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-secondary">
@@ -375,28 +452,28 @@ export default function DashboardPage() {
               Financial &amp; Operations
             </h2>
             <ResponsiveGrid cols={{ mobile: 2, tablet: 2, desktop: 4 }} gap="sm">
-              <div className="rounded-xl border border-border bg-white p-4 dark:bg-[#121214] sm:p-5">
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <p className="text-xs text-tertiary">Working Capital</p>
                 <p className="mt-2 font-display text-xl font-semibold text-primary tabular-nums">
                   {formatCurrency(enterprise.financial.workingCapital)}
                 </p>
                 <p className="mt-1 text-[11px] text-tertiary">Available liquidity</p>
               </div>
-              <div className="rounded-xl border border-border bg-white p-4 dark:bg-[#121214] sm:p-5">
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <p className="text-xs text-tertiary">Current Ratio</p>
                 <p className="mt-2 font-display text-xl font-semibold text-primary tabular-nums">
                   {enterprise.financial.currentRatio.toFixed(2)}
                 </p>
                 <p className="mt-1 text-[11px] text-tertiary">Liquidity health</p>
               </div>
-              <div className="rounded-xl border border-border bg-white p-4 dark:bg-[#121214] sm:p-5">
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <p className="text-xs text-tertiary">On-Time Delivery</p>
                 <p className="mt-2 font-display text-xl font-semibold text-primary tabular-nums">
                   {formatPercent(enterprise.operations.onTimeDeliveryPercent)}
                 </p>
                 <p className="mt-1 text-[11px] text-tertiary">SLA compliance</p>
               </div>
-              <div className="rounded-xl border border-border bg-white p-4 dark:bg-[#121214] sm:p-5">
+              <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
                 <p className="text-xs text-tertiary">Production Efficiency</p>
                 <p className="mt-2 font-display text-xl font-semibold text-primary tabular-nums">
                   {formatPercent(enterprise.operations.productionEfficiencyPercent)}
@@ -409,7 +486,7 @@ export default function DashboardPage() {
           {/* Sales & Financial Ratios */}
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Sales Performance */}
-            <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+            <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
               <div className="border-b border-border pb-4">
                 <h3 className="font-display text-base font-semibold text-primary sm:text-lg">
                   Sales Performance
@@ -468,7 +545,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Financial Ratios */}
-            <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+            <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
               <div className="border-b border-border pb-4">
                 <h3 className="font-display text-base font-semibold text-primary sm:text-lg">
                   Financial Ratios
@@ -558,7 +635,7 @@ export default function DashboardPage() {
             <ResponsiveGrid cols={{ mobile: 1, tablet: 2, desktop: 3 }} gap="md">
               {/* Product Categories */}
               {enterprise.breakdowns.productCategory.length > 0 && (
-                <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+                <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
                   <h3 className="mb-4 font-display text-sm font-semibold text-primary">
                     Product Categories
                   </h3>
@@ -598,7 +675,7 @@ export default function DashboardPage() {
 
               {/* Geographic Regions */}
               {enterprise.breakdowns.geographicRegion.length > 0 && (
-                <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+                <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
                   <h3 className="mb-4 font-display text-sm font-semibold text-primary">
                     Geographic Regions
                   </h3>
@@ -638,7 +715,7 @@ export default function DashboardPage() {
 
               {/* Customer Segments */}
               {enterprise.breakdowns.customerSegment.length > 0 && (
-                <div className="rounded-xl border border-border bg-white p-5 dark:bg-[#121214] sm:p-6">
+                <div className="rounded-xl border border-border bg-surface p-5 sm:p-6">
                   <h3 className="mb-4 font-display text-sm font-semibold text-primary">
                     Customer Segments
                   </h3>
