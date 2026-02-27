@@ -1,0 +1,105 @@
+/* Import unified design system global styles - must be first */
+@import './design-system/variables.css';
+@import './design-system/global-styles.css';
+
+/* OpenAI Sans Font Definitions */
+@font-face {
+  font-family: 'OpenAI Sans';
+  src: url('/fonts/OpenAISans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenAI Sans';
+  src: url('/fonts/OpenAISans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenAI Sans';
+  src: url('/fonts/OpenAISans-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenAI Sans';
+  src: url('/fonts/OpenAISans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  @apply font-sans antialiased;
+}
+
+/* ========================================
+   WelcomeLoader — Progress Bar
+   ======================================== */
+
+@keyframes welcomeProgress {
+  0%   { width: 0%; }
+  20%  { width: 25%; }
+  60%  { width: 70%; }
+  90%  { width: 92%; }
+  100% { width: 100%; }
+}
+
+@keyframes welcomeShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.welcome-progress-bar {
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    var(--text-tertiary) 0%,
+    var(--text-secondary) 50%,
+    var(--text-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation:
+    welcomeProgress 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    welcomeShimmer 2s ease-in-out infinite;
+}
+
+/* Accessibility: disable all WelcomeLoader motion */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-progress-bar {
+    animation: none;
+    width: 100%;
+    background: var(--text-tertiary);
+  }
+}
+
+/* Light theme clarity overrides: avoid translucent/tinted surfaces */
+:root[data-theme='light'] [class*='bg-white/'] {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme='light'] [class*='bg-slate-50/'] {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme='light'] [class*='bg-black/'] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}

@@ -69,22 +69,16 @@ function ConfirmDialog({
 
 interface TenantFormData {
   name: string;
-  companyCode: string;
-  address: string;
-  gstin: string;
-  pan: string;
-  phone: string;
-  email: string;
+  code: string;
+  timezone: string;
+  defaultGstRate: number;
 }
 
 const emptyForm: TenantFormData = {
   name: '',
-  companyCode: '',
-  address: '',
-  gstin: '',
-  pan: '',
-  phone: '',
-  email: '',
+  code: '',
+  timezone: 'Asia/Kolkata',
+  defaultGstRate: 18,
 };
 
 function TenantFormModal({
@@ -110,11 +104,11 @@ function TenantFormModal({
     if (open) setForm(initialData);
   }, [open, initialData]);
 
-  const handleChange = (field: keyof TenantFormData, value: string) => {
+  const handleChange = (field: keyof TenantFormData, value: string | number) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const canSubmit = form.name.trim() && form.companyCode.trim();
+  const canSubmit = form.name.trim() && form.code.trim();
 
   return (
     <ResponsiveModal
@@ -172,8 +166,8 @@ function TenantFormModal({
             </label>
             <input
               type="text"
-              value={form.companyCode}
-              onChange={(e) => handleChange('companyCode', e.target.value.toUpperCase())}
+              value={form.code}
+              onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
               placeholder="e.g. ACME"
               disabled={isEdit}
               className={clsx(
@@ -184,65 +178,31 @@ function TenantFormModal({
             {isEdit && <p className="mt-1 text-xs text-tertiary">Company code cannot be changed.</p>}
           </div>
 
-          {/* GSTIN */}
+          {/* Timezone */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">GSTIN</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">
+              Timezone
+            </label>
             <input
               type="text"
-              value={form.gstin}
-              onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())}
-              placeholder="22AAAAA0000A1Z5"
-              maxLength={15}
+              value={form.timezone}
+              onChange={(e) => handleChange('timezone', e.target.value)}
+              placeholder="Asia/Kolkata"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)]"
             />
           </div>
 
-          {/* PAN */}
+          {/* Default GST Rate */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">PAN</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">
+              Default GST Rate (%)
+            </label>
             <input
-              type="text"
-              value={form.pan}
-              onChange={(e) => handleChange('pan', e.target.value.toUpperCase())}
-              placeholder="AAAAA0000A"
-              maxLength={10}
+              type="number"
+              value={form.defaultGstRate}
+              onChange={(e) => handleChange('defaultGstRate', parseFloat(e.target.value) || 0)}
+              placeholder="18"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)]"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="contact@company.com"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)]"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">Phone</label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              placeholder="+91 98765 43210"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)]"
-            />
-          </div>
-
-          {/* Address */}
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium uppercase tracking-wider text-secondary mb-1.5">Address</label>
-            <textarea
-              rows={2}
-              value={form.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="Registered address"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)] resize-none"
             />
           </div>
         </div>
@@ -297,9 +257,9 @@ export default function TenantsPage() {
   const filtered = useMemo(() => {
     if (!search.trim()) return tenants;
     const q = search.toLowerCase();
-    return tenants.filter((t: any) =>
-      (t.name ?? t.companyName ?? '').toLowerCase().includes(q) ||
-      (t.companyCode ?? t.code ?? '').toLowerCase().includes(q) ||
+    return tenants.filter((t: CompanyDto) =>
+      (t.name ?? '').toLowerCase().includes(q) ||
+      (t.code ?? '').toLowerCase().includes(q) ||
       String(t.id ?? '').includes(q)
     );
   }, [tenants, search]);
@@ -315,13 +275,10 @@ export default function TenantsPage() {
 
   const handleOpenEdit = (tenant: any) => {
     setFormInitial({
-      name: tenant.name ?? tenant.companyName ?? '',
-      companyCode: tenant.companyCode ?? tenant.code ?? '',
-      address: tenant.address ?? '',
-      gstin: tenant.gstin ?? '',
-      pan: tenant.pan ?? '',
-      phone: tenant.phone ?? '',
-      email: tenant.email ?? '',
+      name: tenant.name ?? '',
+      code: tenant.code ?? '',
+      timezone: tenant.timezone ?? 'UTC',
+      defaultGstRate: tenant.defaultGstRate ?? 18,
     });
     setFormEdit(true);
     setEditId(tenant.id);
@@ -334,14 +291,11 @@ export default function TenantsPage() {
     setFormError(null);
     try {
       const payload: CompanyRequest = {
-        companyName: data.name,
-        companyCode: data.companyCode,
-        address: data.address || undefined,
-        gstin: data.gstin || undefined,
-        pan: data.pan || undefined,
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-      } as any;
+        name: data.name,
+        code: data.code,
+        timezone: data.timezone || 'UTC',
+        defaultGstRate: data.defaultGstRate,
+      };
       if (formEdit && editId != null) {
         await updateTenant(editId, payload, session);
         setSuccess(`Tenant "${data.name}" updated.`);
@@ -364,10 +318,10 @@ export default function TenantsPage() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!confirmTarget) return;
+    if (!confirmTarget || !confirmTarget.id) return;
     setConfirmLoading(true);
     try {
-      await deleteTenant((confirmTarget as any).id, session);
+      await deleteTenant(confirmTarget.id, session);
       setSuccess(`Tenant deleted.`);
       setConfirmOpen(false);
       setConfirmTarget(null);
@@ -489,34 +443,33 @@ export default function TenantsPage() {
                 <tr className="bg-surface-highlight">
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">Tenant</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">Code</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">GSTIN</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">Timezone</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-secondary">GST Rate</th>
                   <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-secondary">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((t: any) => (
-                  <tr key={t.id ?? t.companyCode} className="hover:bg-surface-highlight/50 transition-colors">
+                {filtered.map((t: CompanyDto) => (
+                  <tr key={t.id ?? t.code} className="hover:bg-surface-highlight/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-highlight text-xs font-semibold text-secondary">
-                          {(t.name ?? t.companyName ?? '?').slice(0, 2).toUpperCase()}
+                          {(t.name ?? '?').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-primary truncate">{t.name ?? t.companyName ?? '—'}</p>
+                          <p className="text-sm font-medium text-primary truncate">{t.name ?? '—'}</p>
                           <p className="text-xs text-tertiary">ID: {t.id ?? '—'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center rounded-full bg-surface-highlight px-2.5 py-1 text-xs font-medium text-primary">
-                        {t.companyCode ?? t.code ?? '—'}
+                        {t.code ?? '—'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-secondary">{t.gstin ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-secondary">{t.timezone ?? '—'}</td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-secondary truncate">{t.email ?? '—'}</p>
-                      <p className="text-xs text-tertiary">{t.phone ?? ''}</p>
+                      <p className="text-sm text-secondary truncate">{t.defaultGstRate ? `${t.defaultGstRate}%` : '—'}</p>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -546,18 +499,18 @@ export default function TenantsPage() {
 
           {/* Mobile cards */}
           <div className="lg:hidden space-y-3">
-            {filtered.map((t: any) => (
-              <div key={t.id ?? t.companyCode} className="rounded-lg border border-border bg-surface p-4">
+            {filtered.map((t: CompanyDto) => (
+              <div key={t.id ?? t.code} className="rounded-lg border border-border bg-surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-highlight text-xs font-semibold text-secondary">
-                      {(t.name ?? t.companyName ?? '?').slice(0, 2).toUpperCase()}
+                      {(t.name ?? '?').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-primary truncate">{t.name ?? t.companyName ?? '—'}</p>
+                      <p className="text-sm font-medium text-primary truncate">{t.name ?? '—'}</p>
                       <div className="mt-1 flex items-center gap-2">
                         <span className="inline-flex items-center rounded-full bg-surface-highlight px-2 py-0.5 text-xs font-medium text-primary">
-                          {t.companyCode ?? t.code ?? '—'}
+                          {t.code ?? '—'}
                         </span>
                         <span className="text-xs text-tertiary">ID: {t.id ?? '—'}</span>
                       </div>
@@ -580,22 +533,16 @@ export default function TenantsPage() {
                     </button>
                   </div>
                 </div>
-                {(t.gstin || t.email) && (
-                  <div className="mt-3 border-t border-border pt-3 grid grid-cols-2 gap-2">
-                    {t.gstin && (
-                      <div>
-                        <p className="text-xs text-tertiary">GSTIN</p>
-                        <p className="text-xs text-secondary">{t.gstin}</p>
-                      </div>
-                    )}
-                    {t.email && (
-                      <div>
-                        <p className="text-xs text-tertiary">Email</p>
-                        <p className="text-xs text-secondary truncate">{t.email}</p>
-                      </div>
-                    )}
+                <div className="mt-3 border-t border-border pt-3 grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-tertiary">Timezone</p>
+                    <p className="text-xs text-secondary">{t.timezone ?? '—'}</p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-xs text-tertiary">GST Rate</p>
+                    <p className="text-xs text-secondary">{t.defaultGstRate ? `${t.defaultGstRate}%` : '—'}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -617,7 +564,7 @@ export default function TenantsPage() {
       <ConfirmDialog
         open={confirmOpen}
         title="Delete Tenant"
-        message={`Are you sure you want to delete "${(confirmTarget as any)?.name ?? (confirmTarget as any)?.companyName ?? 'this tenant'}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${confirmTarget?.name ?? 'this tenant'}"? This action cannot be undone.`}
         confirmLabel="Delete"
         variant="danger"
         loading={confirmLoading}

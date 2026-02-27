@@ -1,0 +1,254 @@
+:root {
+  /* 
+    Quiet Luxury / Enterprise Minimal Theme 
+    
+    Light Mode (Anthropic Style):
+    - Background: #fafafa (Zinc 50) - Soft, eye-comfort base
+    - Surface: #ffffff (White) - Cards pop against the soft grey
+    - Text: #18181b (Zinc 900) - High contrast
+    - Border: #e4e4e7 (Zinc 200)
+  */
+  --bg-primary: #fafafa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f4f4f5;
+  --bg-surface: #ffffff;
+  --bg-surface-highlight: #f4f4f5;
+
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --text-tertiary: #a1a1aa;
+  --text-inverse: #ffffff;
+
+  --border-primary: #e4e4e7;
+  --border-secondary: #f4f4f5;
+  --border-focus: #18181b;
+
+  --action-primary-bg: #18181b;
+  --action-primary-text: #ffffff;
+  --action-primary-hover: #27272a;
+
+  /* Status Colors (Muted/Pastel for elegance) */
+  --status-success-bg: #ecfdf5;
+  --status-success-text: #047857;
+  --status-warning-bg: #fffbeb;
+  --status-warning-text: #b45309;
+  --status-error-bg: #fef2f2;
+  --status-error-text: #be123c;
+  --status-info-bg: #f0f9ff;
+  --status-info-text: #0369a1;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* 
+    Dark Mode (OpenAI Style):
+    - Background: #09090b (Zinc 950) - Deep, rich dark
+    - Surface: #18181b (Zinc 900)
+    - Text: #fafafa (Zinc 50)
+    - Border: #27272a (Zinc 800)
+  */
+  --bg-primary: #09090b;
+  --bg-secondary: #000000;
+  --bg-tertiary: #18181b;
+  --bg-surface: #18181b;
+  --bg-surface-highlight: #27272a;
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #52525b;
+  --text-inverse: #09090b;
+
+  --border-primary: #27272a;
+  --border-secondary: #18181b;
+  --border-focus: #fafafa;
+
+  --action-primary-bg: #fafafa;
+  --action-primary-text: #09090b;
+  --action-primary-hover: #e4e4e7;
+
+  /* Status Colors (Dark Mode Muted) */
+  --status-success-bg: #064e3b;
+  --status-success-text: #d1fae5;
+  --status-warning-bg: #78350f;
+  --status-warning-text: #fef3c7;
+  --status-error-bg: #881337;
+  --status-error-text: #ffe4e6;
+  --status-info-bg: #0c4a6e;
+  --status-info-text: #e0f2fe;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'OpenAI Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Utility Classes mapping to variables */
+.bg-background {
+  background-color: var(--bg-primary);
+}
+
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+
+.bg-surface-highlight {
+  background-color: var(--bg-surface-highlight);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.border-border {
+  border-color: var(--border-primary);
+}
+
+/* Premium Inputs */
+input,
+select,
+textarea {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+/* Glass Panel Utilities */
+.glass-panel {
+  position: relative;
+  border-radius: 28px;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+}
+
+.dark .glass-panel {
+  background: rgba(24, 24, 27, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+/* Animations */
+@keyframes loaderAurora {
+  0% {
+    transform: translateX(-25%);
+  }
+
+  100% {
+    transform: translateX(25%);
+  }
+}
+
+@keyframes loaderSheen {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.45;
+  }
+
+  80% {
+    opacity: 0.45;
+  }
+
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@keyframes loaderProgress {
+  0% {
+    transform: translateX(-60%);
+  }
+
+  50% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+.loader-aurora {
+  position: absolute;
+  inset: -40% -10%;
+  filter: blur(90px);
+  opacity: 0.55;
+  animation: loaderAurora 7s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.loader-sheen {
+  position: absolute;
+  inset: 0;
+  width: 160%;
+  transform: translateX(-60%);
+  animation: loaderSheen 1.9s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+.loader-progress {
+  animation: loaderProgress 1.6s ease-in-out infinite;
+  transform-origin: left;
+}
+
+/* Mobile Fixes */
+@media (max-width: 640px) {
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+}

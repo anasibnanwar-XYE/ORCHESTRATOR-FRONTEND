@@ -1,0 +1,178 @@
+import { useEffect, useState } from 'react';
+import {
+  ArrowTrendingUpIcon,
+  UserGroupIcon,
+  TruckIcon,
+  MapIcon,
+  ChartBarIcon,
+  HeartIcon
+} from '@heroicons/react/24/outline';
+import { useAuth } from '../context/AuthContext';
+import { getDashboardInsights } from '../lib/portalApi';
+import type { DashboardInsights } from '../types/portal';
+import { ResponsiveContainer, ResponsiveGrid, ResponsiveCard, PageHeader } from '../design-system';
+
+export default function DashboardPage() {
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<DashboardInsights | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      if (!session) return;
+      try {
+        const insights = await getDashboardInsights(session);
+        setData(insights);
+      } catch (err) {
+        console.error('Failed to load dashboard insights', err);
+        setError('Failed to load executive overview.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [session]);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex flex-col items-center gap-2">
+          <svg className="animate-spin h-8 w-8 text-zinc-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p>Loading executive overview...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback data if API returns null/empty (for development safety)
+  const highlights = data?.highlights || [];
+  const pipeline = data?.pipeline || [];
+  const hrPulse = data?.hrPulse || [];
+
+  // Helper to find specific metrics by label (case-insensitive partial match)
+  const findMetric = (labelPart: string) => highlights.find(h => h.label.toLowerCase().includes(labelPart.toLowerCase()));
+
+  const revenueMetric = findMetric('Revenue') || { value: '₹0', detail: 'No data' };
+  const slaMetric = findMetric('SLA') || { value: '0%', detail: 'No data' };
+  const workforceMetric = findMetric('workforce') || { value: '0', detail: 'No data' };
+  const dealerMetric = findMetric('Dealer') || { value: '0', detail: 'No data' };
+
+  return (
+    <ResponsiveContainer maxWidth="full" className="space-y-8">
+      <PageHeader
+        title="Dashboard"
+        eyebrow="Executive Overview"
+        subtitle="High-level insights across the organization."
+      />
+
+      {error && (
+      )
+
+      {/* Primary Metrics Grid */}
+      <ResponsiveGrid cols={{ mobile: 1, tablet: 2, desktop: 4 }}>
+        {/* Revenue Run Rate */}
+        <EnterpriseKPICard
+          title="Revenue Run Rate"
+          value={revenueMetric.value}
+          trend={12.5}
+          historyData={[3500, 3800, 3600, 4000, 3900, 4200]}
+          timePeriod="Last 30d"
+          variant="revenue"
+          icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
+        />
+
+        {/* Fulfilment SLA */}
+        <EnterpriseKPICard
+          title="Fulfilment SLA"
+          value={slaMetric.value}
+          trend={2.3}
+          historyData={[95, 96, 96, 98, 98, 100]}
+          timePeriod="Dispatch ratio last 90d"
+          variant="performance"
+          icon={<TruckIcon className="h-5 w-5" />}
+        />
+
+        {/* Active Workforce */}
+        <EnterpriseKPICard
+          title="Active Workforce"
+          value={workforceMetric.value}
+          trend={undefined}
+          historyData={[]}
+          timePeriod={workforceMetric.detail}
+          variant="workforce"
+          icon={<UserGroupIcon className="h-5 w-5" />}
+        />
+
+        {/* Dealer Coverage */}
+        <EnterpriseKPICard
+          title="Dealer Coverage"
+          value={dealerMetric.value}
+          trend={8.7}
+          historyData={new Array(6).fill(0).map((_, i) => i + 6)}
+          timePeriod="Connected dealer entities"
+          variant="coverage"
+          icon={<MapIcon className="h-5 w-5" />}
+        />
+      </ResponsiveGrid>
+
+      {/* Secondary Section: Pipeline & HR Pulse */}
+      <ResponsiveGrid cols={{ mobile: 1, tablet: 1, desktop: 3 }}>
+        {/* Production Pipeline */}
+        <ResponsiveCard
+          className="lg:col-span-2"
+          title="Production Pipeline"
+          subtitle="Current batch stages"
+          actions={<ChartBarIcon className="h-5 w-5 text-zinc-400" />}
+        >
+          <div className="space-y-4">
+            {pipeline.length === 0 ? (
+              <p className="text-sm text-zinc-500">No active production data.</p>
+            ) : (
+              pipeline.map((stage, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">{stage.label}</span>
+                    <span className="text-zinc-500">{stage.count} batches</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-brand-500 transition-all duration-500"
+                      style={{ width: `${Math.min((stage.count / 20) * 100, 100)}%` }} // Mock scale for visual
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ResponsiveCard>
+
+        {/* HR Pulse */}
+        <ResponsiveCard
+          title="HR Pulse"
+          subtitle="Organization health"
+          actions={<HeartIcon className="h-5 w-5 text-rose-400" />}
+        >
+          <div className="space-y-4">
+            {hrPulse.length === 0 ? (
+              <p className="text-sm text-zinc-500">No HR metrics available.</p>
+            ) : (
+              hrPulse.map((metric, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-lg border border-zinc-100 p-3 dark:border-zinc-800/50 dark:bg-zinc-800/20">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white">{metric.label}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{metric.context}</p>
+                  </div>
+                  <span className="text-lg font-semibold text-brand-600 dark:text-brand-400">{metric.score}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </ResponsiveCard>
+      </ResponsiveGrid>
+    </ResponsiveContainer>
+  );
+}

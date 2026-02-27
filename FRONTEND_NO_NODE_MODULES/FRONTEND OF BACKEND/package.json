@@ -1,0 +1,110 @@
+{
+  "name": "bbp-orchestrator-login",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:desktop": "vite build --base=./",
+    "build:mobile": "vite build --base=./",
+    "electron": "wait-on http-get://localhost:3002/@vite/client && cross-env ELECTRON_START_URL=http://localhost:3002 electron --no-sandbox .",
+    "electron:dev": "concurrently -k \"bun:dev\" \"bun:electron\"",
+    "electron:build": "bun run build:desktop && electron-builder -w",
+    "icon:win": "node -e \"(async()=>{const pngToIco=require('png-to-ico');const fs=require('fs');const buf=await pngToIco('build/icon.png');fs.writeFileSync('build/icon.ico',buf);console.log('Wrote build/icon.ico');})();\"",
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "android:setup": "bunx cap add android",
+    "android:copy": "bunx cap copy android",
+    "android:sync": "bunx cap sync android",
+    "android:open": "bunx cap open android",
+    "android:build": "powershell -ExecutionPolicy Bypass -File build-android.ps1",
+    "android:build:simple": "bun run build:mobile && bunx cap sync android",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.4.4",
+    "@chromatic-com/storybook": "^5.0.0",
+    "@playwright/test": "^1.47.2",
+    "@rollup/rollup-darwin-arm64": "^4.57.1",
+    "@storybook/addon-a11y": "^10.1.11",
+    "@storybook/addon-docs": "^10.1.11",
+    "@storybook/addon-onboarding": "^10.1.11",
+    "@storybook/react": "^10.1.11",
+    "@storybook/addon-vitest": "^10.1.11",
+    "@storybook/react-vite": "^10.1.11",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/browser-playwright": "^4.0.17",
+    "@vitest/coverage-v8": "^4.0.17",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.9.3",
+    "openapi-typescript-codegen": "^0.29.0",
+    "playwright": "^1.57.0",
+    "png-to-ico": "^2.1.8",
+    "postcss": "^8.4.32",
+    "storybook": "^10.1.11",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.2",
+    "vitest": "^4.0.17",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.1.1",
+    "clsx": "^2.1.1",
+    "intro.js": "^8.3.2",
+    "intro.js-react": "^1.0.0",
+    "lucide-react": "^0.555.0",
+    "date-fns": "^4.1.0",
+    "prop-types": "^15.8.1",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "build": {
+    "appId": "com.bbp.orchestrator",
+    "productName": "BBP Orchestrator",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "BBP Orchestrator"
+    },
+    "mac": {
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "icon": "build/icon.png"
+    }
+  }
+}

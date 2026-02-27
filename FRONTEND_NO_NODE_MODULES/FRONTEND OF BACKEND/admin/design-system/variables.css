@@ -1,0 +1,136 @@
+:root {
+  /* --- Light Mode --- */
+  
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-surface: #fafafa; /* secondary[50] */
+  --bg-surface-highlight: #f4f4f5; /* secondary[100] */
+  
+  /* Text */
+  --text-primary: #18181b; /* secondary[900] */
+  --text-secondary: #71717a; /* secondary[500] */
+  --text-tertiary: #a1a1aa; /* secondary[400] */
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border-primary: #e4e4e7; /* secondary[200] */
+  --border-focus: #3b82f6; /* primary[500] */
+
+  /* Actions (Buttons, etc) */
+  --action-primary-bg: #18181b; /* secondary[900] */
+  --action-primary-text: #ffffff;
+  --action-primary-hover: #27272a; /* secondary[800] */
+
+  /* Status Backgrounds */
+  --status-success-bg: #f0fdf4;
+  --status-warning-bg: #fffbeb;
+  --status-error-bg: #fef2f2;
+  --status-info-bg: #eff6ff;
+
+  /* Status Text */
+  --status-success-text: #166534;
+  --status-warning-text: #92400e;
+  --status-error-text: #991b1b;
+  --status-info-text: #1e40af;
+}
+
+.dark {
+  /* --- Dark Mode --- */
+
+  /* Backgrounds */
+  --bg-primary: #09090b; /* background.dark */
+  --bg-surface: #18181b; /* background.darkSubtle */
+  --bg-surface-highlight: #27272a; /* secondary[800] */
+
+  /* Text */
+  --text-primary: #fafafa; /* secondary[50] */
+  --text-secondary: #a1a1aa; /* secondary[400] */
+  --text-tertiary: #52525b; /* secondary[600] */
+  --text-inverse: #09090b;
+
+  /* Borders */
+  --border-primary: #27272a; /* secondary[800] */
+  --border-focus: #60a5fa; /* primary[400] */
+
+  /* Actions */
+  --action-primary-bg: #fafafa; /* secondary[50] */
+  --action-primary-text: #18181b; /* secondary[900] */
+  --action-primary-hover: #e4e4e7; /* secondary[200] */
+
+  /* Status Backgrounds (Darker/Transparent) */
+  --status-success-bg: rgba(34, 197, 94, 0.1);
+  --status-warning-bg: rgba(245, 158, 11, 0.1);
+  --status-error-bg: rgba(239, 68, 68, 0.1);
+  --status-info-bg: rgba(59, 130, 246, 0.1);
+
+  /* Status Text (Lighter) */
+  --status-success-text: #4ade80;
+  --status-warning-text: #fbbf24;
+  --status-error-text: #f87171;
+  --status-info-text: #60a5fa;
+}
+
+/* Button and action color classes - map to CSS variables */
+.bg-action-primary-bg {
+  background-color: var(--action-primary-bg);
+}
+
+.text-action-primary-text {
+  color: var(--action-primary-text);
+}
+
+.bg-action-primary-hover {
+  background-color: var(--action-primary-hover);
+}
+
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+
+.bg-surface-highlight {
+  background-color: var(--bg-surface-highlight);
+}
+
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.text-inverse {
+  color: var(--text-inverse);
+}
+
+.border-border {
+  border-color: var(--border-primary);
+}
+
+.border-focus {
+  border-color: var(--border-focus);
+}
+
+.bg-status-success-bg {
+  background-color: var(--status-success-bg);
+}
+
+.text-status-success-text {
+  color: var(--status-success-text);
+}
+
+.bg-status-error-bg {
+  background-color: var(--status-error-bg);
+}
+
+.text-status-error-text {
+  color: var(--status-error-text);
+}

@@ -90,6 +90,21 @@ interface StoredSessionPayload {
   email?: string;
 }
 
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+  let timer: number | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
+};
+
 const isAuthResponse = (value: unknown): value is AuthSuccess =>
   !!value &&
   typeof value === 'object' &&
@@ -186,7 +201,7 @@ export default function App() {
   const [session, setSession] = useState<AuthSuccess | null>(null);
   const [showLoader, setShowLoader] = useState(false);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(true);
-  const [step, setStep] = useState<'login' | 'mfa' | 'change-password-first' | 'forgot-password' | 'reset-password'>('login');
+  const [step, setStep] = useState<'login' | 'mfa' | 'change-password-first' | 'forgot-password' | 'forgot-password-superadmin' | 'reset-password'>('login');
   const [pendingBase, setPendingBase] = useState<Pick<LoginCredentials, 'email' | 'password' | 'companyCode'> | null>(null);
   const [tempToken, setTempToken] = useState<string | null>(null);
 
@@ -371,9 +386,13 @@ export default function App() {
     }
     (async () => {
       try {
-        const profile = await resolveProfile(
-          cached.session,
-          cached.email ?? cached.session.displayName ?? cached.session.companyCode
+        const profile = await withTimeout(
+          resolveProfile(
+            cached.session,
+            cached.email ?? cached.session.displayName ?? cached.session.companyCode
+          ),
+          10000,
+          'Session restore'
         );
         if (cancelled) {
           return;
@@ -553,7 +572,7 @@ export default function App() {
     };
 
     // Refresh profile to ensure mustChangePassword is cleared
-    const profile = await resolveProfile(newSession, pendingBase.email);
+    const profile = await withTimeout(resolveProfile(newSession, pendingBase.email), 10000, 'Profile refresh');
 
     // If mustChangePassword is still true, something went wrong
     if (profile.mustChangePassword) {
@@ -571,7 +590,7 @@ export default function App() {
   };
 
   const handleAuthenticated = async (result: AuthSuccess, credentials: LoginCredentials) => {
-    const profile = await resolveProfile(result, credentials.email);
+    const profile = await withTimeout(resolveProfile(result, credentials.email), 10000, 'Profile load');
     persistStoredSession({ session: result, email: credentials.email });
     setSession(result);
     setActiveUser(profile);
@@ -600,6 +619,18 @@ export default function App() {
     () => ({ session, user: activeUser, signOut: handleSignOut }),
     [session, activeUser, handleSignOut]
   );
+  const dismissWelcomeLoader = useCallback(() => {
+    setShowLoader(false);
+  }, []);
+
+  // Safety net for desktop/Electron startup: loader must never block beyond a few seconds.
+  useEffect(() => {
+    if (!showLoader) return;
+    const timer = window.setTimeout(() => {
+      setShowLoader(false);
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [showLoader]);
 
   const accessibilityControls = accessibilityEnabled ? (
     <AccessibilityDock
@@ -710,11 +741,19 @@ export default function App() {
               onThemeChange={setTheme}
               onBack={() => setStep('login')}
             />
+          ) : step === 'forgot-password-superadmin' ? (
+            <ForgotPasswordPage
+              theme={theme}
+              onThemeChange={setTheme}
+              onBack={() => setStep('login')}
+              isSuperadmin
+            />
           ) : step === 'reset-password' ? (
             <ResetPasswordPage
               theme={theme}
               onThemeChange={setTheme}
               onBack={() => setStep('login')}
+              onForgotPassword={() => setStep('forgot-password')}
             />
           ) : step === 'mfa' && pendingBase ? (
             <MfaPage theme={theme} onThemeChange={setTheme} baseCredentials={pendingBase} onVerify={verifyMfa} onBack={() => { setStep('login'); }} />
@@ -809,7 +848,7 @@ export default function App() {
       <div className={clsx('relative min-h-screen transition-colors duration-300 bg-background text-primary')}>
         {showLoader && activeUser && (
           <div className="fixed inset-0 z-[10000]">
-            <WelcomeLoader displayName={activeUser.displayName} onFinished={() => setShowLoader(false)} />
+            <WelcomeLoader displayName={activeUser.displayName} onFinished={dismissWelcomeLoader} />
           </div>
         )}
         <BrowserRouter>
@@ -1007,7 +1046,4 @@ export default function App() {
     </AuthProvider>
   );
 }
-
-
-
 

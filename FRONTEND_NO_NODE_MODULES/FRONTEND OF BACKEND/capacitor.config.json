@@ -1,0 +1,10 @@
+{
+  "appId": "com.bbp.orchestrator",
+  "appName": "BBP Orchestrator",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
+

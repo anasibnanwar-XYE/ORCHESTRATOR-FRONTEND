@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <title>Orchestrator ERP</title>
+
+    <!-- Runtime Configuration: Replace %%API_URL%% at deploy time for production -->
+    <script>
+      const API_URL_PLACEHOLDER = '%%API_URL%%';
+      const buildDefaultApiUrl = () => {
+        const protocol = window.location?.protocol || 'http:';
+        const host = window.location?.hostname || 'localhost';
+        return `${protocol}//${host}:8081`;
+      };
+
+      window.ENV = {
+        // In production, replace %%API_URL%% with actual API URL at deploy time.
+        API_URL: API_URL_PLACEHOLDER
+      };
+
+      if (window.ENV.API_URL === API_URL_PLACEHOLDER) {
+        window.ENV.API_URL = buildDefaultApiUrl();
+      }
+    </script>
+
+    <!-- Instant pre-React splash — no white flash, matches app background -->
+    <style>
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fafafa;
+        z-index: 99999;
+        transition: opacity 0.3s ease-out;
+      }
+      .dark #app-splash, [data-theme="dark"] #app-splash {
+        background: #09090b;
+      }
+      #app-splash span {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        color: #a1a1aa;
+        animation: splash-pulse 2s ease-in-out infinite;
+      }
+      @keyframes splash-pulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+      }
+      #app-splash.hide { opacity: 0; pointer-events: none; }
+    </style>
+    <script>
+      // Apply saved theme immediately to prevent flash
+      (function() {
+        var t = localStorage.getItem('bbp-orchestrator-theme');
+        if (t === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+  </head>
+  <body class="h-full bg-background">
+    <div id="app-splash"><span>BBP Orchestrator</span></div>
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

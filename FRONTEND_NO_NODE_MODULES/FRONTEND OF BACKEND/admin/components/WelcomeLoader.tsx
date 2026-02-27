@@ -18,9 +18,14 @@ const TOTAL_DURATION_MS = 2400;
 export default function WelcomeLoader({ displayName, onFinished }: WelcomeLoaderProps) {
   const [stage, setStage] = useState<'enter' | 'hold' | 'exit'>('enter');
   const finishedRef = useRef(false);
+  const onFinishedRef = useRef(onFinished);
 
   const greeting = useMemo(() => getGreeting(), []);
   const name = displayName?.trim() || 'there';
+
+  useEffect(() => {
+    onFinishedRef.current = onFinished;
+  }, [onFinished]);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +44,7 @@ export default function WelcomeLoader({ displayName, onFinished }: WelcomeLoader
     const finishTimer = setTimeout(() => {
       if (!cancelled && !finishedRef.current) {
         finishedRef.current = true;
-        onFinished?.();
+        onFinishedRef.current?.();
       }
     }, TOTAL_DURATION_MS);
 
@@ -47,7 +52,7 @@ export default function WelcomeLoader({ displayName, onFinished }: WelcomeLoader
     const hardFallback = setTimeout(() => {
       if (!cancelled && !finishedRef.current) {
         finishedRef.current = true;
-        onFinished?.();
+        onFinishedRef.current?.();
       }
     }, 5000);
 
@@ -58,7 +63,7 @@ export default function WelcomeLoader({ displayName, onFinished }: WelcomeLoader
       clearTimeout(finishTimer);
       clearTimeout(hardFallback);
     };
-  }, [onFinished]);
+  }, []);
 
   const isVisible = stage === 'hold';
   const isExiting = stage === 'exit';

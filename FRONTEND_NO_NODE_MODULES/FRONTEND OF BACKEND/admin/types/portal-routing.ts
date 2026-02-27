@@ -1,7 +1,7 @@
 import type { AuthenticatedUser, PortalAccessState } from './auth';
 
 export const PORTAL_ROLES = {
-  SUPERADMIN: 'ROLE_SUPERADMIN',
+  SUPERADMIN: 'ROLE_SUPER_ADMIN',
   ADMIN: 'ROLE_ADMIN',
   ACCOUNTING: 'ROLE_ACCOUNTING',
   FACTORY: 'ROLE_FACTORY',

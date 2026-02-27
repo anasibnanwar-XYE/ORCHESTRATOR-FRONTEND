@@ -1,0 +1,420 @@
+import React, { Fragment, useMemo, useState } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Dialog, Menu, Transition } from '@headlessui/react';
+import {
+  Menu as MenuIcon,
+  X,
+  Search,
+  Moon,
+  Sun,
+  ChevronLeft,
+  HelpCircle
+} from 'lucide-react';
+import TutorialGuide from '../components/TutorialGuide';
+import { getStepsForPath } from '../lib/tutorialSteps';
+import clsx from 'clsx';
+import { useAuth } from '../context/AuthContext';
+
+interface FactoryLayoutProps {
+  theme: 'dark' | 'light';
+  onThemeChange: (t: 'dark' | 'light') => void;
+}
+
+function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
+  const items = useMemo(
+    () => [
+      { label: 'Dashboard', to: '/factory' },
+      { label: 'Order Queue', to: '/factory/orders' },
+      { label: 'Production', to: '/factory/batches' },
+      { label: 'Bulk Packing', to: '/factory/packing' },
+      { label: 'Raw Materials', to: '/factory/raw-materials' },
+      { label: 'Finished Goods', to: '/factory/finished-goods' },
+      { label: 'Size Mappings', to: '/factory/packaging-mappings' },
+      { label: 'Stock Adjustments', to: '/factory/adjustments' },
+      { label: 'Dispatch', to: '/factory/dispatch' },
+      { label: 'Inventory', to: '/factory/inventory' },
+      { label: 'Tasks', to: '/factory/tasks' },
+    ],
+    []
+  );
+  const [q, setQ] = useState('');
+  const filtered = items.filter((i) => i.label.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <Transition show={open} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-50">
+        <Transition.Child as={Fragment} enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+        </Transition.Child>
+        <div className="fixed inset-0 flex items-start justify-center p-6 pt-20">
+          <Transition.Child as={Fragment} enter="ease-out duration-150" enterFrom="opacity-0 translate-y-4" enterTo="opacity-100 translate-y-0" leave="ease-in duration-100" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-4">
+            <Dialog.Panel className="w-full max-w-xl rounded-xl border border-[var(--border-primary)] bg-white p-2 text-[var(--text-primary)] shadow-2xl dark:border-zinc-700 dark:bg-[var(--bg-surface)] dark:text-white">
+              <div className="flex items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2 dark:border-[var(--border-primary)]">
+                <Search className="h-4 w-4 text-[var(--text-secondary)]" />
+                <input
+                  autoFocus
+                  className="h-8 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] dark:text-white"
+                  placeholder="Type to jump..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = filtered[0];
+                      if (target) {
+                        navigate(target.to);
+                        onClose();
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <ul className="mt-2 max-h-64 overflow-y-auto py-1">
+                {filtered.map((item) => (
+                  <li key={item.to}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigate(item.to);
+                        onClose();
+                      }}
+                      className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--bg-surface-highlight)] dark:hover:bg-zinc-800"
+                    >
+                      {item.label}
+                    </button>
+                  </li>
+                ))}
+                {filtered.length === 0 && <li className="px-3 py-2 text-sm text-[var(--text-secondary)]">No results</li>}
+              </ul>
+            </Dialog.Panel>
+          </Transition.Child>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+}
+
+import { resolvePortalAccess, shouldShowPortalSelection } from '../types/portal-routing';
+
+export default function FactoryLayout({ theme, onThemeChange }: FactoryLayoutProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const portalAccess = useMemo(() => resolvePortalAccess(user), [user]);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const tutorialSteps = useMemo(() => getStepsForPath(location.pathname), [location.pathname]);
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Enterprise-Grade Navigation with Categories
+  // PRODUCTION
+  const productionNav = [
+    { name: 'Dashboard', to: '/factory', icon: 'LayoutDashboard' },
+    { name: 'Production Plans', to: '/factory/orders', icon: 'Calendar' },
+    { name: 'Production Batches', to: '/factory/batches', icon: 'Factory' },
+  ];
+
+  // PACKAGING & FULFILLMENT
+  const fulfillmentNav = [
+    { name: 'Packing Queue', to: '/factory/packing-queue', icon: 'Package' },
+    { name: 'Bulk Packing', to: '/factory/packing', icon: 'Boxes' },
+    { name: 'Dispatch', to: '/factory/dispatch', icon: 'Truck' },
+  ];
+
+  // INVENTORY
+  const inventoryNav = [
+    { name: 'Raw Materials', to: '/factory/raw-materials', icon: 'Warehouse' },
+    { name: 'Finished Goods', to: '/factory/finished-goods', icon: 'PackageCheck' },
+    { name: 'Inventory', to: '/factory/inventory', icon: 'Layers' },
+    { name: 'Adjustments', to: '/factory/adjustments', icon: 'SlidersHorizontal' },
+  ];
+
+  // CONFIGURATION
+  const configNav = [
+    { name: 'Tasks', to: '/factory/tasks', icon: 'CheckCircle' },
+    { name: 'Size Mappings', to: '/factory/packaging-mappings', icon: 'Ruler' },
+  ];
+
+  return (
+    <div className="flex min-h-screen bg-zinc-50 text-[var(--text-primary)] dark:bg-[#09090b] dark:text-zinc-100">
+      {/* Sidebar */}
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-[var(--border-primary)] bg-white px-4 py-6 dark:border-[var(--border-primary)] dark:bg-[#09090b] md:flex">
+        <div className="mb-8 px-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">ORCHESTRATOR ERP</p>
+          <p className="text-base font-bold text-[var(--text-primary)] dark:text-white">Factory</p>
+        </div>
+        <nav className="space-y-0.5 text-sm">
+          {shouldShowPortalSelection(portalAccess) && (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/portals')}
+                className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[var(--text-secondary)] hover:bg-zinc-50 hover:text-[var(--text-primary)] dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back to Portals
+              </button>
+              <div className="my-4 h-px bg-[var(--bg-surface-highlight)] dark:bg-[var(--bg-surface-highlight)]" />
+            </>
+          )}
+          {productionNav.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                clsx(
+                  'group flex items-center rounded-lg px-3 py-2.5 font-medium transition-all',
+                  isActive
+                    ? 'bg-[var(--bg-surface-highlight)] text-[var(--text-primary)] dark:bg-[var(--bg-surface-highlight)] dark:text-white shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:bg-zinc-50 hover:text-[var(--text-primary)] dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800/50 dark:hover:text-zinc-200'
+                )
+              }
+            >
+              {item.name}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 border-b border-[var(--border-primary)] bg-white/80 px-4 py-4 backdrop-blur-md dark:border-[var(--border-primary)] dark:bg-[#09090b]/80">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border-primary)] bg-white text-zinc-700 hover:bg-zinc-50 md:hidden dark:border-zinc-700 dark:bg-[var(--bg-surface-highlight)] dark:text-zinc-300"
+              aria-label="Open menu"
+            >
+              <MenuIcon className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPaletteOpen(true)}
+                className="hidden items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-zinc-50 px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-white hover:text-[var(--text-primary)] dark:border-zinc-700 dark:bg-[var(--bg-surface-highlight)]/50 dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800 dark:hover:text-zinc-200 md:flex transition-all"
+                title="Open command palette (Ctrl+K)"
+              >
+                <Search className="h-4 w-4" />
+                <span className="text-xs">Search...</span>
+                <kbd className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-[var(--text-tertiary)]">⌘K</kbd>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+                className={clsx(
+                  "rounded-full p-2 transition-colors hover:bg-[var(--bg-surface-highlight)] dark:hover:bg-zinc-800",
+                  theme === 'dark' ? "text-yellow-400" : "text-[var(--text-secondary)]"
+                )}
+                title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTutorialOpen(true)}
+                className={clsx(
+                  "rounded-full p-2 transition-colors hover:bg-[var(--bg-surface-highlight)] dark:hover:bg-zinc-800",
+                  theme === 'dark' ? "text-[var(--text-tertiary)]" : "text-[var(--text-secondary)]"
+                )}
+                title="Start Tutorial"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </button>
+
+              <div className="h-6 w-px bg-zinc-200 dark:bg-[var(--bg-surface-highlight)] hidden md:block" />
+
+              <Menu as="div" className="relative">
+                <Menu.Button className="flex items-center gap-2 rounded-full p-1 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800 transition-colors">
+                  <span className="sr-only">Open user menu</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--action-primary-bg)] text-white text-xs font-medium shadow-sm dark:bg-white dark:text-[var(--text-primary)]">
+                    {user?.displayName?.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-xs font-medium text-[var(--text-primary)] dark:text-white">{user?.displayName}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">Operator</p>
+                  </div>
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-zinc-100 rounded-xl bg-white p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:divide-zinc-800 dark:bg-[var(--bg-surface)] dark:ring-white/10 z-50">
+                    <div className="px-3 py-2">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)] dark:text-white">{user?.displayName}</p>
+                      <p className="truncate text-xs text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">{user?.email}</p>
+                    </div>
+                    <div className="p-1">
+                      <Menu.Item>
+                        {({ active }) => (
+                          <NavLink
+                            to="/profile"
+                            className={clsx('flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors', active ? 'bg-[var(--bg-surface-highlight)] text-[var(--text-primary)] dark:bg-[var(--bg-surface-highlight)] dark:text-white' : 'text-zinc-700 dark:text-zinc-300')}
+                          >
+                            Profile
+                          </NavLink>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <NavLink
+                            to="/settings"
+                            className={clsx('flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors', active ? 'bg-[var(--bg-surface-highlight)] text-[var(--text-primary)] dark:bg-[var(--bg-surface-highlight)] dark:text-white' : 'text-zinc-700 dark:text-zinc-300')}
+                          >
+                            Settings
+                          </NavLink>
+                        )}
+                      </Menu.Item>
+                    </div>
+                    <div className="p-1">
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            type="button"
+                            onClick={() => signOut()}
+                            className={clsx('flex w-full items-center rounded-lg px-3 py-2 text-sm text-left transition-colors', active ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' : 'text-red-600 dark:text-red-400')}
+                          >
+                            Sign out
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile sheet */}
+      <Transition show={mobileOpen} as={Fragment}>
+        <Dialog onClose={() => setMobileOpen(false)} className="relative z-50">
+          <Transition.Child as={Fragment} enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          </Transition.Child>
+          <div className="fixed inset-0 flex items-start justify-start">
+            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="-translate-x-full" enterTo="translate-x-0" leave="ease-in duration-200" leaveFrom="translate-x-0" leaveTo="-translate-x-full">
+              <Dialog.Panel className="h-full w-72 border-r border-[var(--border-primary)] bg-white p-6 shadow-xl dark:border-[var(--border-primary)] dark:bg-[#09090b]">
+                <div className="mb-8 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">ORCHESTRATOR ERP</p>
+                    <p className="text-lg font-bold text-[var(--text-primary)] dark:text-white">Factory</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-surface-highlight)] dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <nav className="space-y-1 text-sm">
+                  {shouldShowPortalSelection(portalAccess) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          navigate('/portals');
+                        }}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[var(--text-secondary)] hover:bg-zinc-50 dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                        Back to Portals
+                      </button>
+                      <div className="my-4 h-px bg-[var(--bg-surface-highlight)] dark:bg-[var(--bg-surface-highlight)]" />
+                    </>
+                  )}
+                        )
+                      }
+                    >
+                      {item.name}
+                    </NavLink>
+                  ))}
+
+                  <div className="my-4 h-px bg-[var(--bg-surface-highlight)] dark:bg-[var(--bg-surface-highlight)]" />
+
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      clsx(
+                        'flex items-center rounded-lg px-3 py-2.5 font-medium transition-colors',
+                        isActive
+                          ? 'bg-[var(--bg-surface-highlight)] text-[var(--text-primary)] dark:bg-[var(--bg-surface-highlight)] dark:text-white'
+                          : 'text-[var(--text-secondary)] hover:bg-zinc-50 dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800'
+                      )
+                    }
+                  >
+                    Profile
+                  </NavLink>
+
+                  <NavLink
+                    to="/settings"
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      clsx(
+                        'flex items-center rounded-lg px-3 py-2.5 font-medium transition-colors',
+                        isActive
+                          ? 'bg-[var(--bg-surface-highlight)] text-[var(--text-primary)] dark:bg-[var(--bg-surface-highlight)] dark:text-white'
+                          : 'text-[var(--text-secondary)] hover:bg-zinc-50 dark:text-[var(--text-tertiary)] dark:hover:bg-zinc-800'
+                      )
+                    }
+                  >
+                    Settings
+                  </NavLink>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      signOut();
+                    }}
+                    className="flex w-full items-center rounded-lg px-3 py-2.5 font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                  >
+                    Sign out
+                  </button>
+                </nav>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      <TutorialGuide
+        steps={tutorialSteps}
+        enabled={tutorialOpen}
+        onExit={() => setTutorialOpen(false)}
+      />
+    </div>
+  );
+}
