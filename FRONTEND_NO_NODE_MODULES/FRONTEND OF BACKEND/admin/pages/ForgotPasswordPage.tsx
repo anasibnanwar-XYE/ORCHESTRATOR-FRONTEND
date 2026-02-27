@@ -42,7 +42,7 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
       // For forgot-password, ALWAYS show the generic success state to avoid
       // leaking account existence. Only surface errors for network/5xx failures.
       const errorMsg = extractAuthError(err, '');
-      const is5xx = err && typeof err === 'object' && 'status' in err && (err as any).status >= 500;
+      const is5xx = err && typeof err === 'object' && 'status' in err && (err as { status: number }).status >= 500;
       if (is5xx) {
         setError(errorMsg || 'Server error. Please try again later.');
       } else {
@@ -55,62 +55,47 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
   };
 
   return (
-    <div 
-      className={clsx('min-h-screen w-full transition-colors duration-300', isDark ? 'dark' : 'light')}
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+    <div
+      className={clsx('min-h-screen w-full transition-colors duration-300 bg-background', isDark ? 'dark' : 'light')}
     >
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           {/* Header */}
           <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
-              <Mail className="h-8 w-8 text-brand-600 dark:text-brand-400" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-highlight border border-border">
+              <Mail className="h-8 w-8 text-secondary" />
             </div>
-            <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-3xl font-semibold tracking-tight text-primary">
               Forgot Password
             </h2>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-secondary">
               Enter your email and we'll send you a reset link
             </p>
           </div>
 
           {/* Forgot Password Card */}
-          <div 
-            className={clsx(
-              'rounded-2xl border p-8 shadow-sm transition-all',
-              isDark ? 'shadow-black/20' : 'shadow-zinc-200/50'
-            )}
-            style={isDark 
-              ? { backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-primary)' }
-              : { backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }
-            }
-          >
+          <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm transition-all">
             {success ? (
               <div className="space-y-6 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                  <Mail className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-status-success-bg">
+                  <Mail className="h-6 w-6 text-status-success-text" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-primary">
                     Check Your Email
                   </h3>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="mt-2 text-sm text-secondary">
                     If the email exists, a reset link has been sent.
                   </p>
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+                  <p className="mt-2 text-xs text-tertiary">
                     Check your inbox and click the link to reset your password. The link will expire in 1 hour.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={onBack}
-                   className={clsx(
-                     'w-full rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2',
-                     isDark 
-                       ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                       : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                   )}
+                  className="w-full rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30"
                 >
                   Back to Login
                 </button>
@@ -118,7 +103,7 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label htmlFor="email" className="block text-xs font-medium text-secondary">
                     Work Email
                   </label>
                   <input
@@ -128,13 +113,7 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={clsx(
-                      'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2',
-                      isDark 
-                        ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                        : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                    )}
-                     style={{ backgroundColor: 'var(--bg-primary)' }}
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                     placeholder="name@company.com"
                   />
                 </div>
@@ -145,9 +124,9 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
                     type="checkbox"
                     checked={isSuperadminMode}
                     onChange={(e) => setIsSuperadminMode(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300 text-[var(--action-primary-bg)] focus:ring-[var(--action-primary-bg)] dark:border-zinc-600 dark:bg-zinc-800"
+                    className="h-4 w-4 rounded border-border bg-background text-[var(--action-primary-bg)] focus:ring-[var(--action-primary-bg)]"
                   />
-                  <label htmlFor="superadmin-checkbox" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                  <label htmlFor="superadmin-checkbox" className="text-sm font-medium text-secondary cursor-pointer">
                     I am a Superadmin
                   </label>
                 </div>
@@ -155,12 +134,7 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
                 <button
                   type="submit"
                   disabled={loading}
-                   className={clsx(
-                     'w-full rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2',
-                     isDark 
-                       ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                       : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                   )}
+                  className="flex w-full items-center justify-center rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading && (
                     <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
@@ -174,7 +148,7 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
                 <button
                   type="button"
                   onClick={onBack}
-                  className="flex w-full items-center justify-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  className="flex w-full items-center justify-center gap-2 text-sm text-secondary hover:text-primary transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back to Login
@@ -183,21 +157,18 @@ export default function ForgotPasswordPage({ theme, onThemeChange, onBack, isSup
             )}
 
             {error && (
-              <div className={clsx(
-                'mt-6 rounded-lg p-3 text-xs font-medium',
-                'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
-              )}>
+              <div className="mt-6 rounded-lg bg-status-error-bg p-3 text-xs font-medium text-status-error-text">
                 {error}
               </div>
             )}
           </div>
 
           {/* Footer Controls */}
-          <div className="flex items-center justify-center gap-4 text-zinc-500">
+          <div className="flex items-center justify-center gap-4 text-secondary">
             <button
               type="button"
               onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-              className="flex items-center gap-2 text-xs hover:text-zinc-900 dark:hover:text-zinc-300"
+              className="flex items-center gap-2 text-xs hover:text-primary transition-colors"
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? 'Light Mode' : 'Dark Mode'}

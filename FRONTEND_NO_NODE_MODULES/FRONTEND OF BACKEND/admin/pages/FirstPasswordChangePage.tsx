@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { MoonIcon, SunIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { Moon, Sun, Eye, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 import { changePassword as apiChangePassword, login as apiLogin, extractAuthError } from '../lib/authApi';
 import { OpenAPI } from '../lib/client/core/OpenAPI';
@@ -35,7 +35,6 @@ export default function FirstPasswordChangePage({
     setError(null);
 
     // Validation - current password is optional when mustChangePassword is true (backend skips check)
-    // But we still send it if provided
     if (!newPassword || !confirmPassword) {
       setError('New password and confirmation are required');
       setLoading(false);
@@ -95,38 +94,28 @@ export default function FirstPasswordChangePage({
   };
 
   return (
-    <div 
-      className={clsx('min-h-screen w-full transition-colors duration-300', isDark ? 'dark' : 'light')}
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+    <div
+      className={clsx('min-h-screen w-full transition-colors duration-300 bg-background', isDark ? 'dark' : 'light')}
     >
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-3xl font-semibold tracking-tight text-primary">
               Change Your Password
             </h2>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-secondary">
               You must change your password before continuing. Please choose a new password.
             </p>
           </div>
 
           {/* Password Change Card */}
-          <div 
-            className={clsx(
-              'rounded-2xl border p-8 shadow-sm transition-all',
-              isDark ? 'shadow-black/20' : 'shadow-zinc-200/50'
-            )}
-            style={isDark 
-              ? { backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-primary)' }
-              : { backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }
-            }
-          >
+          <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm transition-all">
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-1.5">
-                <label htmlFor="currentPassword" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Current Password <span className="text-zinc-500 dark:text-zinc-500">(Optional - pre-filled)</span>
+                <label htmlFor="currentPassword" className="block text-xs font-medium text-secondary">
+                  Current Password <span className="text-tertiary">(Optional - pre-filled)</span>
                 </label>
                 <div className="relative">
                   <input
@@ -135,27 +124,21 @@ export default function FirstPasswordChangePage({
                     autoComplete="current-password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className={clsx(
-                      'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                      isDark 
-                        ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                        : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                    )}
-                    style={{ backgroundColor: 'var(--bg-primary)' }}
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                     placeholder="Current password (optional for first login)"
                   />
                   <button
                     type="button"
                     onClick={() => setPasswordVisible({ ...passwordVisible, current: !passwordVisible.current })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
                   >
-                    {passwordVisible.current ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                    {passwordVisible.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="newPassword" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="newPassword" className="block text-xs font-medium text-secondary">
                   New Password *
                 </label>
                 <div className="relative">
@@ -168,30 +151,24 @@ export default function FirstPasswordChangePage({
                     autoFocus
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={clsx(
-                      'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                      isDark 
-                        ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                        : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                    )}
-                    style={{ backgroundColor: 'var(--bg-primary)' }}
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                     placeholder="Enter new password (min 10 characters)"
                   />
                   <button
                     type="button"
                     onClick={() => setPasswordVisible({ ...passwordVisible, new: !passwordVisible.new })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
                   >
-                    {passwordVisible.new ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                    {passwordVisible.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-xs text-tertiary">
                   Password must be at least 10 characters long
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="confirmPassword" className="block text-xs font-medium text-secondary">
                   Confirm New Password *
                 </label>
                 <div className="relative">
@@ -203,21 +180,15 @@ export default function FirstPasswordChangePage({
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={clsx(
-                      'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                      isDark 
-                        ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                        : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                    )}
-                    style={{ backgroundColor: 'var(--bg-primary)' }}
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                     placeholder="Confirm your new password"
                   />
                   <button
                     type="button"
                     onClick={() => setPasswordVisible({ ...passwordVisible, confirm: !passwordVisible.confirm })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
                   >
-                    {passwordVisible.confirm ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                    {passwordVisible.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -225,12 +196,7 @@ export default function FirstPasswordChangePage({
               <button
                 type="submit"
                 disabled={loading}
-                className={clsx(
-                  'relative flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70',
-                  isDark 
-                    ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                    : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                )}
+                className="relative flex w-full items-center justify-center rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading && (
                   <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
@@ -243,23 +209,20 @@ export default function FirstPasswordChangePage({
             </form>
 
             {error && (
-              <div className={clsx(
-                'mt-6 rounded-lg p-3 text-xs font-medium',
-                'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
-              )}>
+              <div className="mt-6 rounded-lg bg-status-error-bg p-3 text-xs font-medium text-status-error-text">
                 {error}
               </div>
             )}
           </div>
 
           {/* Footer Controls */}
-          <div className="flex items-center justify-center gap-4 text-zinc-500">
+          <div className="flex items-center justify-center gap-4 text-secondary">
             <button
               type="button"
               onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-              className="flex items-center gap-2 text-xs hover:text-zinc-900 dark:hover:text-zinc-300"
+              className="flex items-center gap-2 text-xs hover:text-primary transition-colors"
             >
-              {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? 'Light Mode' : 'Dark Mode'}
             </button>
           </div>

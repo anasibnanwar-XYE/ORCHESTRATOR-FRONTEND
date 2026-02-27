@@ -8,17 +8,25 @@ import {
   getGstSummary,
   getAgedReceivablesReport,
   listAccountingPeriods,
+  getInventoryReconciliation,
+  getMonthlyProductionCosts,
+  getWastageReport,
+  getBalanceWarnings,
   type AccountingPeriod,
+  type InventoryReconciliationReport,
+  type MonthlyProductionCostsReport,
+  type WastageReport,
+  type BalanceWarning,
 } from '../../lib/accountingApi';
 import { formatMoney, formatNumber, formatDateShort } from '../../lib/formatUtils';
 import clsx from 'clsx';
-import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, RefreshCw, X } from 'lucide-react';
 import ApiErrorBanner, { type ApiErrorInfo } from '../../components/ApiErrorBanner';
 import AuditDigestPage from './AuditDigestPage';
 
 /* ── Report registry ────────────────────────────────────────── */
 
-type ReportKey = 'pl' | 'bs' | 'cf' | 'tb' | 'ar' | 'gst' | 'audit';
+type ReportKey = 'pl' | 'bs' | 'cf' | 'tb' | 'ar' | 'gst' | 'audit' | 'inv-recon' | 'prod-costs' | 'wastage';
 
 const TABS: { key: ReportKey; label: string }[] = [
   { key: 'pl', label: 'Profit & Loss' },
@@ -28,6 +36,9 @@ const TABS: { key: ReportKey; label: string }[] = [
   { key: 'ar', label: 'Aged Receivables' },
   { key: 'gst', label: 'GST Summary' },
   { key: 'audit', label: 'Audit Digest' },
+  { key: 'inv-recon', label: 'Inventory Reconciliation' },
+  { key: 'prod-costs', label: 'Production Costs' },
+  { key: 'wastage', label: 'Wastage' },
 ];
 
 /* ── Hierarchy tree (P&L, BS, CF) ───────────────────────────── */
@@ -125,6 +136,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiErrorInfo | null>(null);
   const [openPeriod, setOpenPeriod] = useState<AccountingPeriod | null>(null);
+  const [balanceWarnings, setBalanceWarnings] = useState<BalanceWarning[]>([]);
+  const [warningsDismissed, setWarningsDismissed] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<Record<string, any>>({});
@@ -134,6 +147,16 @@ export default function ReportsPage() {
       .then((periods) => {
         const open = periods.find((p) => p.status === 'OPEN') ?? null;
         setOpenPeriod(open);
+      })
+      .catch(() => undefined);
+  }, [session]);
+
+  useEffect(() => {
+    getBalanceWarnings(session)
+      .then((res) => {
+        if (res?.warnings && res.warnings.length > 0) {
+          setBalanceWarnings(res.warnings);
+        }
       })
       .catch(() => undefined);
   }, [session]);
@@ -151,6 +174,9 @@ export default function ReportsPage() {
         case 'tb': result = await getTrialBalance(asOfDate || undefined, session, session?.companyCode); break;
         case 'ar': result = await getAgedReceivablesReport(asOfDate || undefined, session, session?.companyCode); break;
         case 'gst': result = await getGstSummary(from || undefined, to || undefined, session, session?.companyCode); break;
+        case 'inv-recon': result = await getInventoryReconciliation({ asOfDate: asOfDate || undefined }, session); break;
+        case 'prod-costs': result = await getMonthlyProductionCosts({ from: from || undefined, to: to || undefined }, session); break;
+        case 'wastage': result = await getWastageReport({ from: from || undefined, to: to || undefined }, session); break;
       }
       setData((prev) => ({ ...prev, [key]: result }));
     } catch (err: unknown) {
@@ -169,8 +195,8 @@ export default function ReportsPage() {
     setError(null);
   };
 
-  const needsAsOf = active === 'tb' || active === 'ar';
-  const needsRange = active === 'gst';
+  const needsAsOf = active === 'tb' || active === 'ar' || active === 'inv-recon';
+  const needsRange = active === 'gst' || active === 'prod-costs' || active === 'wastage';
   const showControls = active !== 'audit';
 
   /* ── Hierarchy renderer (P&L, BS, CF) ─────────────────────── */
@@ -455,6 +481,139 @@ export default function ReportsPage() {
     );
   };
 
+  const renderInvRecon = () => {
+    const d = data['inv-recon'] as InventoryReconciliationReport | undefined;
+    if (!d?.items?.length) return <p className="text-sm text-secondary py-8 text-center">Select an as-of date and click Generate.</p>;
+    return (
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <table className="min-w-full text-sm divide-y divide-border">
+          <thead className="bg-surface-highlight">
+            <tr>
+              <th className="px-4 sm:px-6 py-3 text-left font-medium text-secondary">Product</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">System Qty</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Physical Qty</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Variance</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Variance Value</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {d.items.map((item, idx) => {
+              const variance = (item.variance ?? 0);
+              return (
+                <tr key={item.productId ?? idx} className="hover:bg-surface-highlight transition-colors">
+                  <td className="px-4 sm:px-6 py-3">
+                    <p className="font-medium text-primary">{item.productName}</p>
+                    <p className="text-xs text-tertiary font-sans">{item.productCode}</p>
+                  </td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums text-primary">{formatNumber(item.systemQty ?? 0)}</td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums text-primary">{formatNumber(item.physicalQty ?? 0)}</td>
+                  <td className={clsx('px-4 py-3 text-right font-sans tabular-nums font-medium', variance !== 0 ? 'text-status-error-text' : 'text-primary')}>
+                    {variance > 0 ? '+' : ''}{formatNumber(variance)}
+                  </td>
+                  <td className={clsx('px-4 py-3 text-right font-sans tabular-nums', (item.varianceValue ?? 0) !== 0 ? 'text-status-error-text' : 'text-primary')}>
+                    {formatMoney(Math.abs(item.varianceValue ?? 0))}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          {d.totalVarianceValue !== undefined && (
+            <tfoot className="bg-surface-highlight border-t-2 border-border">
+              <tr>
+                <td colSpan={4} className="px-4 sm:px-6 py-3 font-bold text-primary">Total Variance Value</td>
+                <td className="px-4 py-3 text-right font-sans font-bold tabular-nums text-status-error-text">{formatMoney(Math.abs(d.totalVarianceValue))}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    );
+  };
+
+  const renderProdCosts = () => {
+    const d = data['prod-costs'] as MonthlyProductionCostsReport | undefined;
+    if (!d?.months?.length) return <p className="text-sm text-secondary py-8 text-center">Select a date range and click Generate.</p>;
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+          <table className="min-w-full text-sm divide-y divide-border">
+            <thead className="bg-surface-highlight">
+              <tr>
+                <th className="px-4 sm:px-6 py-3 text-left font-medium text-secondary">Month</th>
+                <th className="px-4 py-3 text-right font-medium text-secondary">Raw Materials</th>
+                <th className="px-4 py-3 text-right font-medium text-secondary">Labour</th>
+                <th className="px-4 py-3 text-right font-medium text-secondary">Overhead</th>
+                <th className="px-4 py-3 text-right font-bold text-primary">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {d.months.map((m, idx) => (
+                <tr key={m.month ?? idx} className="hover:bg-surface-highlight transition-colors">
+                  <td className="px-4 sm:px-6 py-3 font-medium text-primary">{m.month}</td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums text-secondary">{formatMoney(m.rawMaterialCost ?? 0)}</td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums text-secondary">{formatMoney(m.labourCost ?? 0)}</td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums text-secondary">{formatMoney(m.overheadCost ?? 0)}</td>
+                  <td className="px-4 py-3 text-right font-sans tabular-nums font-bold text-primary">{formatMoney(m.totalCost ?? 0)}</td>
+                </tr>
+              ))}
+            </tbody>
+            {d.grandTotal !== undefined && (
+              <tfoot className="bg-surface-highlight border-t-2 border-border">
+                <tr>
+                  <td colSpan={4} className="px-4 sm:px-6 py-3 font-bold text-primary">Grand Total</td>
+                  <td className="px-4 py-3 text-right font-sans font-bold tabular-nums text-primary text-base">{formatMoney(d.grandTotal)}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderWastage = () => {
+    const d = data['wastage'] as WastageReport | undefined;
+    if (!d?.items?.length) return <p className="text-sm text-secondary py-8 text-center">Select a date range and click Generate.</p>;
+    return (
+      <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+        <table className="min-w-full text-sm divide-y divide-border">
+          <thead className="bg-surface-highlight">
+            <tr>
+              <th className="px-4 sm:px-6 py-3 text-left font-medium text-secondary">Product</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Quantity</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Unit Cost</th>
+              <th className="px-4 py-3 text-right font-medium text-secondary">Wastage Value</th>
+              <th className="px-4 py-3 text-left font-medium text-secondary">Period</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {d.items.map((item, idx) => (
+              <tr key={item.productId ?? idx} className="hover:bg-surface-highlight transition-colors">
+                <td className="px-4 sm:px-6 py-3">
+                  <p className="font-medium text-primary">{item.productName}</p>
+                  <p className="text-xs text-tertiary font-sans">{item.productCode}</p>
+                </td>
+                <td className="px-4 py-3 text-right font-sans tabular-nums text-primary">{formatNumber(item.quantity ?? 0)}</td>
+                <td className="px-4 py-3 text-right font-sans tabular-nums text-secondary">{formatMoney(item.unitCost ?? 0)}</td>
+                <td className="px-4 py-3 text-right font-sans tabular-nums font-medium text-status-error-text">{formatMoney(item.totalWastageValue ?? 0)}</td>
+                <td className="px-4 py-3 text-secondary">{item.period ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+          {d.totalWastageValue !== undefined && (
+            <tfoot className="bg-surface-highlight border-t-2 border-border">
+              <tr>
+                <td colSpan={3} className="px-4 sm:px-6 py-3 font-bold text-primary">Total Wastage Value</td>
+                <td className="px-4 py-3 text-right font-sans font-bold tabular-nums text-status-error-text">{formatMoney(d.totalWastageValue)}</td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    );
+  };
+
   const renderPanel = () => {
     if (active === 'audit') return <AuditDigestPage />;
     if (loading) {
@@ -472,6 +631,9 @@ export default function ReportsPage() {
       case 'tb': return renderTB();
       case 'ar': return renderAR();
       case 'gst': return renderGST();
+      case 'inv-recon': return renderInvRecon();
+      case 'prod-costs': return renderProdCosts();
+      case 'wastage': return renderWastage();
       default: return null;
     }
   };
@@ -480,6 +642,41 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 px-4 sm:px-0">
+      {/* Balance Warnings Banner */}
+      {balanceWarnings.length > 0 && !warningsDismissed && (
+        <div className="rounded-xl border border-status-warning-text/20 bg-status-warning-bg px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <AlertTriangle className="h-5 w-5 text-status-warning-text flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-status-warning-text">Balance Warnings Detected</p>
+                <ul className="mt-1 space-y-0.5">
+                  {balanceWarnings.slice(0, 3).map((w, i) => (
+                    <li key={i} className="text-xs text-status-warning-text opacity-80 truncate">
+                      {w.accountCode && <span className="font-mono mr-1">{w.accountCode}</span>}
+                      {w.message}
+                    </li>
+                  ))}
+                  {balanceWarnings.length > 3 && (
+                    <li className="text-xs text-status-warning-text opacity-60">
+                      +{balanceWarnings.length - 3} more warning{balanceWarnings.length - 3 !== 1 ? 's' : ''}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setWarningsDismissed(true)}
+              className="flex-shrink-0 rounded-md p-1 text-status-warning-text hover:opacity-70 transition-opacity"
+              aria-label="Dismiss warnings"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { MoonIcon, SunIcon, ShieldCheckIcon, KeyIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { Moon, Sun, ShieldCheck, Key, Lock, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import type { LoginCredentials } from '../types/auth';
 
@@ -60,78 +60,48 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
   };
 
   return (
-    <div className={clsx('min-h-screen w-full transition-colors duration-500', isDark ? 'dark' : 'light')}>
-      {/* Background */}
-      <div className={clsx('fixed inset-0 z-0', isDark ? 'bg-zinc-950' : 'bg-zinc-50')}>
-        {isDark ? (
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-50 via-white to-zinc-100" />
-        )}
-      </div>
-
+    <div className={clsx('min-h-screen w-full transition-colors duration-500 bg-background', isDark ? 'dark' : 'light')}>
       {/* Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Header */}
           <div className="text-center space-y-3 sm:space-y-4">
             <div className="mx-auto relative">
-              <div className={clsx(
-                'relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl shadow-lg mx-auto',
-                isDark
-                  ? 'bg-gradient-to-br from-brand-600/20 to-purple-600/20 border border-brand-500/30'
-                  : 'bg-gradient-to-br from-brand-100 to-purple-100 border border-brand-200/50'
-              )}>
-                <ShieldCheckIcon className={clsx(
-                  'h-8 w-8 sm:h-10 sm:w-10',
-                  isDark ? 'text-brand-400' : 'text-brand-600'
-                )} />
+              <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-surface border border-border shadow-sm mx-auto">
+                <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10 text-secondary" />
               </div>
             </div>
             <div className="space-y-1 sm:space-y-2">
-              <p className="font-brand text-xs font-bold tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
-                ORCHESTRATOR <span className="normal-case">ERP</span>
+              <p className="text-xs font-bold tracking-[0.2em] text-tertiary uppercase">
+                ORCHESTRATOR ERP
               </p>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
                 Verify Your Identity
               </h1>
-              <p className="mt-2 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              <p className="mt-2 text-sm sm:text-base text-secondary leading-relaxed">
                 Enter the 6-digit code from your authenticator app
               </p>
             </div>
           </div>
 
           {/* Card */}
-          <div className={clsx(
-            'rounded-2xl sm:rounded-3xl border shadow-xl transition-all duration-300 overflow-hidden',
-            isDark
-              ? 'border-zinc-800/50 bg-zinc-900/90 shadow-zinc-950/50'
-              : 'border-zinc-200/80 bg-white/95 shadow-zinc-200/30'
-          )}>
+          <div className="rounded-2xl sm:rounded-3xl border border-border bg-surface shadow-sm transition-all duration-300 overflow-hidden">
             <div className="p-5 sm:p-6 md:p-8">
               {/* Account Context */}
-              <div className={clsx(
-                'mb-6 rounded-xl border px-4 py-3 sm:px-5 sm:py-4',
-                isDark
-                  ? 'border-brand-500/20 bg-brand-500/5'
-                  : 'border-brand-200/50 bg-brand-50/60'
-              )}>
+              <div className="mb-6 rounded-xl border border-border bg-background px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex items-start gap-3">
-                  <div className={clsx(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                    isDark ? 'bg-brand-500/20' : 'bg-brand-100'
-                  )}>
-                    <LockClosedIcon className={clsx('h-5 w-5', isDark ? 'text-brand-400' : 'text-brand-600')} />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-highlight">
+                    <Lock className="h-5 w-5 text-secondary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={clsx('text-sm font-semibold mb-1', isDark ? 'text-brand-300' : 'text-brand-700')}>
+                    <p className="text-sm font-semibold mb-1 text-primary">
                       Verification Required
                     </p>
                     <div className="space-y-0.5 text-xs">
-                      <p className={clsx('truncate', isDark ? 'text-zinc-400' : 'text-zinc-600')}>
+                      <p className="truncate text-secondary">
                         <span className="font-medium">Account:</span> {baseCredentials.email}
                       </p>
-                      <p className={clsx('truncate', isDark ? 'text-zinc-400' : 'text-zinc-600')}>
+                      <p className="truncate text-secondary">
                         <span className="font-medium">Company:</span> {baseCredentials.companyCode}
                       </p>
                     </div>
@@ -142,11 +112,8 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
               <form ref={formRef} className="space-y-5" onSubmit={handleSubmit}>
                 {/* Authenticator Code */}
                 <div className="space-y-2">
-                  <label htmlFor="mfaCode" className={clsx(
-                    'flex items-center gap-2 text-sm font-semibold',
-                    isDark ? 'text-zinc-200' : 'text-zinc-700'
-                  )}>
-                    <KeyIcon className="h-4 w-4" />
+                  <label htmlFor="mfaCode" className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    <Key className="h-4 w-4" />
                     Authenticator Code
                   </label>
                   <input
@@ -164,18 +131,14 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
                       setError(null);
                     }}
                     className={clsx(
-                      'block w-full rounded-xl border-2 px-3 sm:px-4 py-3 sm:py-4 text-center text-xl sm:text-2xl font-mono tracking-[0.3em] sm:tracking-[0.5em] outline-none transition-all duration-200 focus:ring-4 focus:ring-offset-0',
+                      'block w-full rounded-xl border-2 px-3 sm:px-4 py-3 sm:py-4 text-center text-xl sm:text-2xl font-mono tracking-[0.3em] sm:tracking-[0.5em] outline-none transition-all duration-200 focus:ring-4 focus:ring-offset-0 bg-background text-primary placeholder:text-tertiary',
                       error
-                        ? isDark
-                          ? 'border-rose-500/50 bg-rose-950/20 text-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-                          : 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-rose-500/20'
-                        : isDark
-                          ? 'border-zinc-700/50 bg-zinc-950/50 text-white focus:border-brand-500 focus:ring-brand-500/20'
-                          : 'border-zinc-300 bg-white text-zinc-900 shadow-sm focus:border-brand-500 focus:ring-brand-500/20'
+                        ? 'border-status-error-text/50 bg-status-error-bg focus:border-status-error-text focus:ring-status-error-bg'
+                        : 'border-border focus:border-[var(--border-focus)] focus:ring-[var(--border-focus)]/20'
                     )}
                     placeholder="000000"
                   />
-                  <p className={clsx('text-xs', isDark ? 'text-zinc-400' : 'text-zinc-500')}>
+                  <p className="text-xs text-tertiary">
                     Open your authenticator app and enter the 6-digit code
                   </p>
                 </div>
@@ -183,13 +146,10 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
                 {/* Divider */}
                 <div className="relative py-1">
                   <div className="absolute inset-0 flex items-center">
-                    <div className={clsx('w-full border-t', isDark ? 'border-zinc-800' : 'border-zinc-200')} />
+                    <div className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className={clsx(
-                      'px-4 text-xs font-medium uppercase tracking-wider',
-                      isDark ? 'bg-zinc-900/90 text-zinc-500' : 'bg-white/95 text-zinc-400'
-                    )}>
+                    <span className="bg-surface px-4 text-xs font-medium uppercase tracking-wider text-tertiary">
                       Or
                     </span>
                   </div>
@@ -197,11 +157,8 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
 
                 {/* Recovery Code */}
                 <div className="space-y-2">
-                  <label htmlFor="recoveryCode" className={clsx(
-                    'flex items-center gap-2 text-sm font-semibold',
-                    isDark ? 'text-zinc-200' : 'text-zinc-700'
-                  )}>
-                    <KeyIcon className="h-4 w-4 rotate-90" />
+                  <label htmlFor="recoveryCode" className="flex items-center gap-2 text-sm font-semibold text-primary">
+                    <Key className="h-4 w-4 rotate-90" />
                     Recovery Code
                   </label>
                   <input
@@ -216,18 +173,14 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
                       setError(null);
                     }}
                     className={clsx(
-                      'block w-full rounded-xl border-2 px-3 sm:px-4 py-3 text-sm font-mono tracking-wider outline-none transition-all duration-200 focus:ring-4 focus:ring-offset-0',
+                      'block w-full rounded-xl border-2 px-3 sm:px-4 py-3 text-sm font-mono tracking-wider outline-none transition-all duration-200 focus:ring-4 focus:ring-offset-0 bg-background text-primary placeholder:text-tertiary',
                       error
-                        ? isDark
-                          ? 'border-rose-500/50 bg-rose-950/20 text-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
-                          : 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-rose-500/20'
-                        : isDark
-                          ? 'border-zinc-700/50 bg-zinc-950/50 text-white focus:border-brand-500 focus:ring-brand-500/20'
-                          : 'border-zinc-300 bg-white text-zinc-900 shadow-sm focus:border-brand-500 focus:ring-brand-500/20'
+                        ? 'border-status-error-text/50 bg-status-error-bg focus:border-status-error-text focus:ring-status-error-bg'
+                        : 'border-border focus:border-[var(--border-focus)] focus:ring-[var(--border-focus)]/20'
                     )}
                     placeholder="ABCD-EFGH-IJKL"
                   />
-                  <p className={clsx('text-xs', isDark ? 'text-zinc-400' : 'text-zinc-500')}>
+                  <p className="text-xs text-tertiary">
                     Use a recovery code if you can't access your authenticator
                   </p>
                 </div>
@@ -236,12 +189,7 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
                 <button
                   type="submit"
                   disabled={loading || (!mfaCode && !recoveryCode)}
-                  className={clsx(
-                    'flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-white shadow-lg transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]',
-                    isDark
-                      ? 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 focus:ring-brand-500/30 shadow-brand-500/20'
-                      : 'bg-gradient-to-r from-zinc-900 to-zinc-800 hover:from-zinc-800 hover:to-zinc-700 focus:ring-zinc-900/20 shadow-zinc-900/20'
-                  )}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--action-primary-bg)] px-4 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-[var(--action-primary-text)] shadow-sm transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[var(--action-primary-bg)]/30 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] hover:bg-[var(--action-primary-hover)]"
                 >
                   {loading ? (
                     <>
@@ -253,8 +201,8 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
                     </>
                   ) : (
                     <>
-                      <ShieldCheckIcon className="h-5 w-5" />
-                      <span>Verify & Continue</span>
+                      <ShieldCheck className="h-5 w-5" />
+                      <span>Verify &amp; Continue</span>
                     </>
                   )}
                 </button>
@@ -262,16 +210,9 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
 
               {/* Error */}
               {error && (
-                <div className={clsx(
-                  'mt-4 rounded-xl border-2 px-4 py-3 text-sm font-medium',
-                  isDark
-                    ? 'border-rose-500/30 bg-rose-950/40 text-rose-300'
-                    : 'border-rose-300 bg-rose-50 text-rose-800'
-                )}>
+                <div className="mt-4 rounded-xl border-2 border-status-error-text/30 bg-status-error-bg px-4 py-3 text-sm font-medium text-status-error-text">
                   <div className="flex items-start gap-2">
-                    <svg className="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
                 </div>
@@ -281,12 +222,7 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
               <button
                 type="button"
                 onClick={onBack}
-                className={clsx(
-                  'mt-4 w-full rounded-xl border-2 px-4 py-2.5 sm:py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
-                  isDark
-                    ? 'border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-800/50'
-                    : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50'
-                )}
+                className="mt-4 w-full rounded-xl border-2 border-border px-4 py-2.5 sm:py-3 text-sm font-semibold text-secondary transition-all duration-200 active:scale-[0.98] hover:border-border hover:text-primary hover:bg-surface-highlight"
               >
                 &larr; Back to Login
               </button>
@@ -298,21 +234,16 @@ export default function MfaPage({ theme, onThemeChange, baseCredentials, onVerif
             <button
               type="button"
               onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-              className={clsx(
-                'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200',
-                isDark
-                  ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
-                  : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
-              )}
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-secondary transition-all duration-200 hover:text-primary hover:bg-surface-highlight"
             >
               {isDark ? (
                 <>
-                  <SunIcon className="h-4 w-4" />
+                  <Sun className="h-4 w-4" />
                   <span>Light Mode</span>
                 </>
               ) : (
                 <>
-                  <MoonIcon className="h-4 w-4" />
+                  <Moon className="h-4 w-4" />
                   <span>Dark Mode</span>
                 </>
               )}

@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductEditDialog from '../../components/catalog/ProductEditDialog';
-import { Dialog, Tab, Transition } from '@headlessui/react';
-import { PlusCircleIcon, PencilSquareIcon, ArrowUpTrayIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Tab } from '@headlessui/react';
+import { PlusCircle, Pencil, Upload, Settings } from 'lucide-react';
 import clsx from 'clsx';
+import { ResponsiveModal } from '../../design-system/ResponsiveModal';
 import { useAuth } from '../../context/AuthContext';
 import {
   createCatalogProduct,
@@ -333,23 +334,23 @@ export default function CatalogPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => navigate('/accounting/config-health')} className={btnSecondary + ' inline-flex items-center gap-2'}>
-            <Cog6ToothIcon className="h-5 w-5" />
+            <Settings className="h-5 w-5" />
             <span>Config Health</span>
           </button>
           <button type="button" onClick={openCreateProduct} className={btnPrimary + ' inline-flex items-center gap-2'}>
-            <PlusCircleIcon className="h-5 w-5" />
+            <PlusCircle className="h-5 w-5" />
             <span>New Product</span>
           </button>
           <button type="button" onClick={() => { setBulkVariantModalOpen(true); setBulkVariantResults(null); setBulkVariantMessage(null); }} className={btnPrimary + ' inline-flex items-center gap-2'}>
-            <PlusCircleIcon className="h-5 w-5" />
+            <PlusCircle className="h-5 w-5" />
             <span>Bulk Variants</span>
           </button>
           <button type="button" onClick={openImportModal} className={btnSecondary + ' inline-flex items-center gap-2'}>
-            <ArrowUpTrayIcon className="h-5 w-5" />
+            <Upload className="h-5 w-5" />
             <span>Import CSV</span>
           </button>
           <button type="button" onClick={openCreateRawMaterial} className={btnSecondary + ' inline-flex items-center gap-2'}>
-            <PlusCircleIcon className="h-5 w-5" />
+            <PlusCircle className="h-5 w-5" />
             <span>New Material</span>
           </button>
         </div>
@@ -471,11 +472,11 @@ export default function CatalogPage() {
                           onClick={() => openEditProduct(product)}
                           className="opacity-0 group-hover:opacity-100 rounded-lg p-1.5 text-tertiary hover:bg-surface-highlight hover:text-primary transition-all"
                         >
-                          <PencilSquareIcon className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
-                  );
+                   );
                 })
               )}
             </div>
@@ -501,7 +502,7 @@ export default function CatalogPage() {
                           onClick={() => openEditProduct(product)}
                           className="rounded-lg p-2 text-tertiary hover:bg-surface-highlight hover:text-primary transition-all touch-manipulation min-h-[36px] min-w-[36px] flex items-center justify-center"
                         >
-                          <PencilSquareIcon className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -611,7 +612,7 @@ export default function CatalogPage() {
                         onClick={() => openEditRawMaterial(material)}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-highlight hover:text-primary transition-colors"
                       >
-                        <PencilSquareIcon className="h-3.5 w-3.5" />
+                        <Pencil className="h-3.5 w-3.5" />
                         <span>Edit</span>
                       </button>
                     </div>
@@ -637,7 +638,7 @@ export default function CatalogPage() {
                         onClick={() => openEditRawMaterial(material)}
                         className="rounded-lg p-2 text-tertiary hover:bg-surface-highlight hover:text-primary transition-all touch-manipulation min-h-[36px] min-w-[36px] flex items-center justify-center"
                       >
-                        <PencilSquareIcon className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                     </div>
                     <div className="mt-2">
@@ -687,17 +688,18 @@ export default function CatalogPage() {
       />
 
       {/* ───── IMPORT CSV MODAL ───── */}
-      <Transition show={importModalOpen} as={Fragment}>
-        <Dialog onClose={() => setImportModalOpen(false)} className="relative z-50">
-          <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
-            <div className="mx-auto flex min-h-full max-w-3xl items-center justify-center">
-              <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0 translate-y-3" enterTo="opacity-100 translate-y-0" leave="ease-in duration-100" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-3">
-                <Dialog.Panel className="w-full max-w-3xl rounded-xl border border-border bg-surface p-6 shadow-lg ring-1 ring-border">
-                  <Dialog.Title className="text-xl font-semibold text-primary">Import CSV</Dialog.Title>
-                  <p className="mt-1 text-sm text-secondary">Upload your product catalog and opening stock without manual entry.</p>
+      <ResponsiveModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        title="Import CSV"
+        size="lg"
+        footer={
+          <button type="button" onClick={() => setImportModalOpen(false)} className={btnSecondary}>
+            Close
+          </button>
+        }
+      >
+                  <p className="mb-6 text-sm text-secondary">Upload your product catalog and opening stock without manual entry.</p>
 
                   <div className="mt-6 space-y-6">
                     {/* Catalog CSV Section */}
@@ -816,29 +818,25 @@ RAW_MATERIAL,RM-001,Titanium Dioxide,KG,KG,PRODUCTION,500,130,OPEN-RM-1,`}</pre>
                     </div>
                   </div>
 
-                  <div className="mt-6 flex justify-end">
-                    <button type="button" onClick={() => setImportModalOpen(false)} className={btnSecondary}>
-                      Close
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+      </ResponsiveModal>
 
       {/* ───── RAW MATERIAL MODAL ───── */}
-      <Transition show={rawModalOpen} as={Fragment}>
-        <Dialog onClose={() => setRawModalOpen(false)} className="relative z-50">
-          <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
-            <div className="mx-auto flex min-h-full max-w-lg items-center justify-center">
-              <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0 translate-y-3" enterTo="opacity-100 translate-y-0" leave="ease-in duration-100" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-3">
-                <Dialog.Panel className="w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-lg ring-1 ring-border">
-                  <Dialog.Title className="text-xl font-semibold text-primary">{rawEditing ? 'Edit Raw Material' : 'Add Raw Material'}</Dialog.Title>
+      <ResponsiveModal
+        isOpen={rawModalOpen}
+        onClose={() => setRawModalOpen(false)}
+        title={rawEditing ? 'Edit Raw Material' : 'Add Raw Material'}
+        size="lg"
+        footer={
+          <>
+            <button type="button" onClick={() => setRawModalOpen(false)} className={btnSecondary}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleSaveRawMaterial} disabled={savingRaw} className={btnPrimary}>
+              {savingRaw ? 'Saving...' : rawEditing ? 'Update Material' : 'Add Material'}
+            </button>
+          </>
+        }
+      >
 
                   {rawMessage && (
                     <div className="mt-4 rounded-xl border border-status-error-text/20 bg-status-error-bg px-4 py-3 text-sm text-status-error-text">
@@ -952,33 +950,16 @@ RAW_MATERIAL,RM-001,Titanium Dioxide,KG,KG,PRODUCTION,500,130,OPEN-RM-1,`}</pre>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2">
-                    <button type="button" onClick={() => setRawModalOpen(false)} className={btnSecondary}>
-                      Cancel
-                    </button>
-                    <button type="button" onClick={handleSaveRawMaterial} disabled={savingRaw} className={btnPrimary}>
-                      {savingRaw ? 'Saving...' : rawEditing ? 'Update Material' : 'Add Material'}
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+      </ResponsiveModal>
 
       {/* ───── BULK VARIANT MODAL ───── */}
-      <Transition show={bulkVariantModalOpen} as={Fragment}>
-        <Dialog onClose={() => { setBulkVariantModalOpen(false); setBulkVariantResults(null); }} className="relative z-50">
-          <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
-            <div className="mx-auto flex min-h-full max-w-4xl items-center justify-center">
-              <Transition.Child as="div" enter="ease-out duration-150" enterFrom="opacity-0 translate-y-3" enterTo="opacity-100 translate-y-0" leave="ease-in duration-100" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-3">
-                <Dialog.Panel className="w-full rounded-xl border border-border bg-surface p-6 shadow-xl ring-1 ring-border max-h-[90vh] overflow-y-auto">
-                  <Dialog.Title className="text-lg font-semibold text-primary tracking-tight">Create Bulk Variants</Dialog.Title>
-                  <p className="mt-1 text-sm text-secondary">Generate multiple product variants by combining colors and sizes. SKUs are auto-generated.</p>
+      <ResponsiveModal
+        isOpen={bulkVariantModalOpen}
+        onClose={() => { setBulkVariantModalOpen(false); setBulkVariantResults(null); }}
+        title="Create Bulk Variants"
+        size="xl"
+      >
+                  <p className="mb-4 text-sm text-secondary">Generate multiple product variants by combining colors and sizes. SKUs are auto-generated.</p>
 
                   {bulkVariantMessage && (
                     <div className={`mt-4 rounded-lg border px-4 py-3 text-sm ${bulkVariantMessage.includes('success') || bulkVariantMessage.includes('created')
@@ -1309,12 +1290,7 @@ RAW_MATERIAL,RM-001,Titanium Dioxide,KG,KG,PRODUCTION,500,130,OPEN-RM-1,`}</pre>
                       </div>
                     </>
                   )}
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+      </ResponsiveModal>
     </div>
   );
 }

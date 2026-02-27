@@ -61,14 +61,14 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       {dealerId && invoices.length > 0 && (
-        <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 dark:border-violet-500/30 dark:bg-violet-500/10">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight px-4 py-3">
           <div className="flex items-center gap-3">
-            <Building2 className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <Building2 className="h-5 w-5 text-secondary" />
             <div>
-              <p className="text-sm font-medium text-violet-900 dark:text-violet-100">
+              <p className="text-sm font-medium text-primary">
                 Viewing invoices for: {invoices[0].dealerName || `Dealer #${dealerIdNum}`}
               </p>
-              <p className="text-xs text-violet-600 dark:text-violet-400">
+              <p className="text-xs text-secondary">
                 Showing {invoices.length} AR invoice{invoices.length !== 1 ? 's' : ''}
               </p>
             </div>
@@ -76,7 +76,7 @@ export default function InvoicesPage() {
           <button
             type="button"
             onClick={clearDealerFilter}
-            className="rounded-full p-1.5 text-violet-600 hover:bg-violet-200 dark:text-violet-400 dark:hover:bg-violet-400/20"
+            className="rounded-full p-1.5 text-secondary hover:bg-surface hover:text-primary transition-colors"
             title="Clear filter"
           >
             <X className="h-4 w-4" />
@@ -85,17 +85,17 @@ export default function InvoicesPage() {
       )}
 
       {dealerId && invoices.length === 0 && !loading && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+        <div className="flex items-center justify-between rounded-xl border border-status-warning-text/20 bg-status-warning-bg px-4 py-3">
           <div className="flex items-center gap-3">
-            <Building2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <Building2 className="h-5 w-5 text-status-warning-text" />
             <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              <p className="text-sm font-medium text-status-warning-text">
                 No invoices found for dealer
               </p>
               <button
                 type="button"
                 onClick={clearDealerFilter}
-                className="text-xs text-amber-700 underline dark:text-amber-300"
+                className="text-xs text-status-warning-text underline hover:opacity-80"
               >
                 Show all invoices
               </button>
@@ -106,15 +106,15 @@ export default function InvoicesPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-semibold text-primary">
             {dealerId ? 'Dealer Invoices' : 'Invoices'}
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-secondary">
             {dealerId ? 'Accounts Receivable for selected dealer' : 'Accounts Receivable and credit notes'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {loading && <span className="text-xs text-slate-500">Refreshing.</span>}
+          {loading && <span className="text-xs text-tertiary">Refreshing...</span>}
           <button
             type="button"
             onClick={load}
@@ -126,7 +126,7 @@ export default function InvoicesPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 px-4 py-3 text-sm text-rose-800 dark:text-rose-200">
+        <div className="rounded-xl border border-status-error-text/20 bg-status-error-bg px-4 py-3 text-sm text-status-error-text">
           {error}
         </div>
       )}
@@ -142,9 +142,9 @@ export default function InvoicesPage() {
           <div>Journal</div>
         </div>
         {loading ? (
-          <div className="p-4 text-sm text-zinc-500">Loading invoices...</div>
+          <div className="p-4 text-sm text-secondary">Loading invoices...</div>
         ) : invoices.length === 0 ? (
-          <div className="p-4 text-sm text-zinc-500">{dealerId ? 'No invoices found for this dealer.' : 'No invoices have been issued yet.'}</div>
+          <div className="p-4 text-sm text-secondary">{dealerId ? 'No invoices found for this dealer.' : 'No invoices have been issued yet.'}</div>
         ) : (
           <div>
             {invoices.map((inv) => {
@@ -158,10 +158,10 @@ export default function InvoicesPage() {
                     : 'Pending';
               const journalClass =
                 journalStatus === 'Posted'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200'
+                  ? 'bg-status-success-bg text-status-success-text'
                   : journalStatus === 'Pending'
-                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-200';
+                    ? 'bg-status-warning-bg text-status-warning-text'
+                    : 'bg-surface-highlight text-secondary';
               return (
                 <div key={inv.id} className="border-b border-border px-3 py-2 text-sm last:border-b-0">
                   <div

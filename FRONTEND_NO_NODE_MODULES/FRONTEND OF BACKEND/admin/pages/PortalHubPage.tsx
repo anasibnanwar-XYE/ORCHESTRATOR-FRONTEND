@@ -2,11 +2,18 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import {
-  ChevronRightIcon,
-  SunIcon,
-  MoonIcon,
-  ArrowRightOnRectangleIcon,
-} from '@heroicons/react/24/outline';
+  ChevronRight,
+  Sun,
+  Moon,
+  LogOut,
+  Settings,
+  Calculator,
+  Factory,
+  ShoppingCart,
+  Store,
+  Shield,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { PortalAccessState } from '../types/auth';
 
@@ -23,6 +30,7 @@ type PortalCard = {
   description: string;
   to: string;
   enabled: boolean;
+  icon: React.ReactNode;
 };
 
 export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSignOut }: PortalHubPageProps) {
@@ -38,6 +46,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
         description: 'User management, system configuration, and reports.',
         to: '/dashboard',
         enabled: portalAccess.admin,
+        icon: <Settings className="h-6 w-6" />,
       },
       {
         key: 'accounting',
@@ -45,6 +54,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
         description: 'General ledger, accounts payable/receivable, and financial reports.',
         to: '/accounting',
         enabled: portalAccess.accounting,
+        icon: <Calculator className="h-6 w-6" />,
       },
       {
         key: 'sales',
@@ -52,6 +62,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
         description: 'Sales orders, customer management, and pricing.',
         to: '/sales',
         enabled: portalAccess.sales,
+        icon: <ShoppingCart className="h-6 w-6" />,
       },
       {
         key: 'dealer',
@@ -59,6 +70,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
         description: 'Order placement, account ledger, and dealer statements.',
         to: '/dealer',
         enabled: portalAccess.dealer,
+        icon: <Store className="h-6 w-6" />,
       },
       {
         key: 'factory',
@@ -66,6 +78,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
         description: 'Production planning, batch tracking, and inventory management.',
         to: '/factory',
         enabled: portalAccess.factory,
+        icon: <Factory className="h-6 w-6" />,
       },
     ],
     [portalAccess]
@@ -88,7 +101,12 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
               <p className="text-xs uppercase tracking-[0.3em] text-tertiary sm:text-sm">Module Selection</p>
               <h1 className="mt-2 text-2xl font-semibold text-primary sm:text-3xl lg:text-4xl">Select Module</h1>
               <p className="mt-2 text-sm text-secondary sm:text-base">
-                {user?.displayName ?? 'User'} · Available modules: {totalModules}
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  {user?.displayName ?? 'User'}
+                </span>
+                <span className="mx-2 text-tertiary">·</span>
+                {totalModules} module{totalModules !== 1 ? 's' : ''} available
               </p>
             </div>
             <button
@@ -96,7 +114,7 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
               onClick={onSignOut}
               className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-status-error-text bg-status-error-bg text-status-error-text hover:opacity-80"
             >
-              <ArrowRightOnRectangleIcon className="h-4 w-4" />
+              <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sign out</span>
               <span className="sm:hidden">Out</span>
             </button>
@@ -109,33 +127,38 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
           </p>
         </div>
 
-        <div id="portal-hub-grid" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div id="portal-hub-grid" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {availableCards.map((card) => (
             <button
               key={card.key}
               type="button"
               onClick={() => navigate(card.to)}
               className={clsx(
-                'group flex flex-col border border-border',
+                'group flex flex-col rounded-xl border border-border',
                 'bg-surface',
                 'px-5 py-6 text-left transition-colors',
                 'sm:px-6 sm:py-7',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-action-bg',
-                'hover:bg-surface-highlight'
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-primary-bg)]',
+                'hover:bg-surface-highlight hover:border-border'
               )}
             >
-              <h2 className="text-lg font-semibold text-primary sm:text-xl">{card.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-secondary sm:text-base sm:mt-3">{card.description}</p>
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-secondary sm:text-base sm:mt-8 group-hover:text-primary">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-highlight text-secondary group-hover:text-primary transition-colors">
+                  {card.icon}
+                </div>
+                <h2 className="text-base font-semibold text-primary sm:text-lg">{card.title}</h2>
+              </div>
+              <p className="text-sm leading-relaxed text-secondary sm:text-base flex-1">{card.description}</p>
+              <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-secondary sm:mt-6 group-hover:text-primary transition-colors">
                 Open Module
-                <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </button>
           ))}
         </div>
 
         {availableCards.length === 0 && !portalAccess.superadmin && (
-          <div className="rounded-lg border border-transparent bg-status-warning-bg px-4 py-3 sm:px-6 sm:py-4">
+          <div className="rounded-lg border border-status-warning-text/20 bg-status-warning-bg px-4 py-3 sm:px-6 sm:py-4">
             <p className="text-sm text-status-warning-text sm:text-base">
               No modules assigned to this user account.
             </p>
@@ -154,71 +177,68 @@ export default function PortalHubPage({ theme, onThemeChange, portalAccess, onSi
               type="button"
               onClick={() => navigate('/superadmin')}
               className={clsx(
-                'group flex w-full flex-col border border-border',
+                'group flex w-full flex-col rounded-xl border border-status-error-text/20',
                 'bg-surface',
                 'px-5 py-6 text-left transition-colors',
                 'sm:px-6 sm:py-7',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-action-bg',
-                'hover:bg-surface-highlight'
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-status-error-text',
+                'hover:bg-status-error-bg/30'
               )}
             >
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-primary sm:text-xl">Platform Control Plane</h2>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-error-bg">
+                  <Shield className="h-6 w-6 text-status-error-text" />
+                </div>
+                <h2 className="text-base font-semibold text-primary sm:text-lg">Platform Control Plane</h2>
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-secondary sm:text-base sm:mt-3">
+              <p className="text-sm leading-relaxed text-secondary sm:text-base">
                 Tenant lifecycle, platform RBAC governance, and control-plane audit trail.
               </p>
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-secondary sm:text-base sm:mt-8 group-hover:text-primary">
+              <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-secondary sm:mt-6 group-hover:text-primary transition-colors">
                 Open Control Plane
-                <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </button>
           </div>
         )}
 
-        {/* Footer with engineered theme toggle */}
+        {/* Footer with theme toggle */}
         <div className="mt-12 pt-8 border-t border-border sm:mt-16 flex flex-col items-center justify-center gap-6">
           <div className="flex flex-col items-center gap-3">
-            <span className={clsx(
-              "text-[10px] font-bold uppercase tracking-[0.2em]",
-              isDark ? "text-zinc-500" : "text-zinc-400"
-            )}>
-              Environment
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-tertiary">
+              Theme
             </span>
-            <div className={clsx(
-              "flex rounded-lg border p-1 transition-colors duration-300",
-              isDark ? "border-zinc-800 bg-zinc-900/50 shadow-inner" : "border-zinc-200 bg-zinc-100/80 shadow-inner"
-            )}>
+            <div className="flex rounded-lg border border-border bg-surface-highlight p-1">
               <button
                 type="button"
                 onClick={() => onThemeChange('light')}
                 className={clsx(
-                  "flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ease-out",
+                  'flex items-center gap-2 rounded-md px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200',
                   !isDark
-                    ? "bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/50 scale-100"
-                    : "text-zinc-500 hover:text-zinc-700 scale-95 opacity-70 hover:opacity-100"
+                    ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                    : 'text-tertiary hover:text-secondary'
                 )}
               >
-                <SunIcon className="h-4 w-4" />
+                <Sun className="h-4 w-4" />
                 Light
               </button>
               <button
                 type="button"
                 onClick={() => onThemeChange('dark')}
                 className={clsx(
-                  "flex items-center gap-2 rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ease-out",
+                  'flex items-center gap-2 rounded-md px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200',
                   isDark
-                    ? "bg-zinc-800 text-brand-400 shadow-sm ring-1 ring-white/10 scale-100"
-                    : "text-zinc-400 hover:text-zinc-300 scale-95 opacity-70 hover:opacity-100"
+                    ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                    : 'text-tertiary hover:text-secondary'
                 )}
               >
-                <MoonIcon className="h-4 w-4" />
+                <Moon className="h-4 w-4" />
                 Dark
               </button>
             </div>
           </div>
           <p className="text-[10px] font-medium tracking-widest text-tertiary uppercase">
-            Orchestrator
+            Orchestrator ERP
           </p>
         </div>
       </div>

@@ -273,7 +273,7 @@ export default function TenantsPage() {
     setFormOpen(true);
   };
 
-  const handleOpenEdit = (tenant: any) => {
+  const handleOpenEdit = (tenant: CompanyDto) => {
     setFormInitial({
       name: tenant.name ?? '',
       code: tenant.code ?? '',
@@ -281,7 +281,7 @@ export default function TenantsPage() {
       defaultGstRate: tenant.defaultGstRate ?? 18,
     });
     setFormEdit(true);
-    setEditId(tenant.id);
+    setEditId(tenant.id ?? null);
     setFormError(null);
     setFormOpen(true);
   };

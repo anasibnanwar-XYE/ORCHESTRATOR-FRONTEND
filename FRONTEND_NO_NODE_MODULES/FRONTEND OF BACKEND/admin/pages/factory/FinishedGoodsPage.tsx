@@ -96,7 +96,6 @@ export default function FinishedGoodsPage() {
         productCode: formData.productCode ?? formData.code ?? '',
         name: formData.name ?? '',
         unit: formData.unit ?? 'PCS',
-        standardCost: formData.standardCost,
       };
 
       if (isEdit && selectedProduct?.id) {

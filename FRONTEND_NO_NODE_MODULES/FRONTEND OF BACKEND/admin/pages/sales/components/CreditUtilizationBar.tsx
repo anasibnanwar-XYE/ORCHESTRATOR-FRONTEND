@@ -30,7 +30,7 @@ export function CreditUtilizationBar({
         />
       </div>
       {!compact && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-tertiary">
           {isOverLimit && '⚠️ Over credit limit'}
           {isNearLimit && !isOverLimit && '⚠️ Approaching limit'}
           {!isOverLimit && !isNearLimit && `${percent}% utilized`}

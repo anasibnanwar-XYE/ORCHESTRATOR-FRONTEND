@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { MoonIcon, SunIcon, EyeIcon, EyeSlashIcon, ExclamationTriangleIcon, CheckCircleIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { Moon, Sun, Eye, EyeOff, AlertTriangle, CheckCircle, Check } from 'lucide-react';
 import clsx from 'clsx';
 import type { AuthSuccess, LoginCredentials } from '../types/auth';
 import { extractAuthError } from '../lib/authApi';
@@ -94,8 +94,6 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
         return;
       }
       // Backend errors — extractAuthError provides status-specific messages
-      // (401 → invalid credentials, 403 → access denied, 404 → account not found,
-      //  429 → rate limited, 500+ → server error)
       setFeedback({
         state: 'error',
         message: extractAuthError(error, 'Unable to sign in. Please check your credentials and try again.'),
@@ -108,37 +106,27 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
   };
 
   return (
-    <div 
-      className={clsx('min-h-screen w-full transition-colors duration-300', isDark ? 'dark' : 'light')}
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+    <div
+      className={clsx('min-h-screen w-full transition-colors duration-300 bg-background', isDark ? 'dark' : 'light')}
     >
-
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-sm space-y-8">
           {/* Header Logo */}
           <div className="text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-3xl font-semibold tracking-tight text-primary">
               ORCHESTRATOR ERP
             </h2>
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-xs font-medium uppercase tracking-[0.25em] text-secondary">
               by SKEINA
             </p>
           </div>
 
           {/* Login Card */}
-          <div 
-            className={clsx(
-              'rounded-2xl border p-8 shadow-sm transition-all',
-              isDark 
-                ? 'border-[var(--border-primary)] shadow-black/20' 
-                : 'border-zinc-200 bg-white shadow-zinc-200/50'
-            )}
-            style={{ backgroundColor: 'var(--bg-surface)' }}
-          >
+          <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm transition-all">
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="email" className="block text-xs font-medium text-secondary">
                   Work Email
                 </label>
                 <input
@@ -148,19 +136,13 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                   autoComplete="email"
                   value={form.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                   className={clsx(
-                     'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2',
-                     isDark 
-                       ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                       : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                   )}
-                   style={{ backgroundColor: 'var(--bg-primary)' }}
+                  className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                   placeholder="name@company.com"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="password" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="password" className="block text-xs font-medium text-secondary">
                   Password
                 </label>
                 <div className="relative">
@@ -171,27 +153,21 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                     autoComplete="current-password"
                     value={form.password}
                     onChange={(e) => handleChange('password', e.target.value)}
-                     className={clsx(
-                        'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                        isDark 
-                          ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                          : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                      )}
-                      style={{ backgroundColor: 'var(--bg-primary)' }}
-                      placeholder="Enter your password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPasswordVisible(!passwordVisible)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                    >
-                      {passwordVisible ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
+                  >
+                    {passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
+              </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="companyCode" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label htmlFor="companyCode" className="block text-xs font-medium text-secondary">
                   Company Code
                 </label>
                 <input
@@ -200,13 +176,7 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                   required
                   value={form.companyCode}
                   onChange={(e) => handleChange('companyCode', e.target.value)}
-                  className={clsx(
-                    'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 uppercase tracking-wider font-mono',
-                    isDark
-                      ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700'
-                      : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                  )}
-                  style={{ backgroundColor: 'var(--bg-primary)' }}
+                  className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20 uppercase tracking-wider font-mono"
                   placeholder="Company code"
                 />
               </div>
@@ -223,12 +193,10 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                         'h-[18px] w-[18px] rounded-[5px] border flex items-center justify-center transition-all duration-200 ease-out',
                         rememberMe
                           ? 'border-[var(--action-primary-bg)] bg-[var(--action-primary-bg)]'
-                          : isDark
-                            ? 'border-zinc-600 bg-transparent group-hover:border-zinc-400'
-                            : 'border-zinc-300 bg-white group-hover:border-zinc-400'
+                          : 'border-border bg-transparent group-hover:border-secondary'
                       )}
                     >
-                      <CheckIcon
+                      <Check
                         className={clsx(
                           'h-3 w-3 transition-all duration-200 ease-out text-[var(--action-primary-text)]',
                           rememberMe ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
@@ -238,16 +206,10 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                     </div>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className={clsx(
-                      'text-xs font-medium leading-tight transition-colors',
-                      isDark ? 'text-zinc-300 group-hover:text-zinc-100' : 'text-zinc-700 group-hover:text-zinc-900'
-                    )}>
+                    <span className="text-xs font-medium leading-tight text-secondary group-hover:text-primary transition-colors">
                       Remember me
                     </span>
-                    <span className={clsx(
-                      'text-[10px] leading-tight mt-0.5',
-                      isDark ? 'text-zinc-500' : 'text-zinc-400'
-                    )}>
+                    <span className="text-[10px] leading-tight mt-0.5 text-tertiary">
                       Stay signed in for 30 days
                     </span>
                   </div>
@@ -257,12 +219,7 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
               <button
                 type="submit"
                 disabled={feedback.state === 'loading'}
-                className={clsx(
-                  'relative flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70',
-                  isDark 
-                     ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                     : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                )}
+                className="relative flex w-full items-center justify-center rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {feedback.state === 'loading' && (
                   <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
@@ -281,12 +238,7 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                       onForgotPassword();
                     }
                   }}
-                  className={clsx(
-                    'text-xs underline transition-colors',
-                    isDark 
-                      ? 'text-zinc-300 hover:text-zinc-100' 
-                      : 'text-zinc-600 hover:text-zinc-900'
-                  )}
+                  className="text-xs text-secondary underline transition-colors hover:text-primary"
                 >
                   Forgot Password?
                 </button>
@@ -301,8 +253,8 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
                   : 'bg-status-error-bg text-status-error-text'
               )}>
                 {feedback.state === 'success'
-                  ? <CheckCircleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  : <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  ? <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  : <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 }
                 <span>{feedback.message}</span>
               </div>
@@ -310,22 +262,22 @@ export default function LoginPage({ theme, onThemeChange, authenticate, onAuthen
           </div>
 
           {/* Footer Controls */}
-          <div className="flex items-center justify-center gap-4 text-zinc-500">
+          <div className="flex items-center justify-center gap-4 text-secondary">
             <button
               type="button"
               onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-              className="flex items-center gap-2 text-xs hover:text-zinc-900 dark:hover:text-zinc-300"
+              className="flex items-center gap-2 text-xs hover:text-primary transition-colors"
             >
-              {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? 'Light Mode' : 'Dark Mode'}
             </button>
             {onOpenAccessibility && (
               <>
-                <span className="h-3 w-px bg-zinc-300 dark:bg-zinc-700" />
+                <span className="h-3 w-px bg-border" />
                 <button
                   type="button"
                   onClick={onOpenAccessibility}
-                  className="text-xs hover:text-zinc-900 dark:hover:text-zinc-300"
+                  className="text-xs hover:text-primary transition-colors"
                 >
                   Accessibility
                 </button>

@@ -30,7 +30,8 @@ import AttendancePage from './pages/admin/AttendancePage';
 import PayrollPage from './pages/admin/PayrollPage';
 import AccountingPayrollPage from './pages/accounting/PayrollPage';
 import AccountingDashboardPage from './pages/accounting/AccountingDashboardPage';
-import JournalTabsPage from './pages/accounting/JournalTabsPage';
+import TransactionsPage from './pages/accounting/TransactionsPage';
+import AuditTransactionsPage from './pages/accounting/AuditTransactionsPage';
 import AccountsPage from './pages/accounting/AccountsPage';
 import AccountingReportsPage from './pages/accounting/ReportsPage';
 import CatalogPage from './pages/accounting/CatalogPage';
@@ -901,7 +902,8 @@ export default function App() {
             >
               {/* Primary routes — 11-item nav */}
               <Route index element={<AccountingDashboardPage />} />
-              <Route path="journal" element={<JournalTabsPage />} />
+              <Route path="journal" element={<TransactionsPage />} />
+              <Route path="audit-transactions" element={<AuditTransactionsPage />} />
               <Route path="accounts" element={<AccountsPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="dealers" element={<DealersPage />} />
@@ -1001,6 +1003,7 @@ export default function App() {
               <Route path="config" element={<ConfigurationPage />} />
 
               {/* Legacy redirects for old bookmarks */}
+              <Route path="plans" element={<Navigate to="/factory/production" replace />} />
               <Route path="orders" element={<Navigate to="/factory/production" replace />} />
               <Route path="batches" element={<Navigate to="/factory/production" replace />} />
               <Route path="tasks" element={<Navigate to="/factory/production" replace />} />

@@ -224,7 +224,20 @@ export default function DealersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <StatusBadge status="active" size="sm" />
+                          <StatusBadge
+                            status={
+                              (dealer as DealerSummary & { status?: string; onHold?: boolean }).status?.toLowerCase() === 'suspended'
+                                ? 'suspended'
+                                : (dealer as DealerSummary & { status?: string; onHold?: boolean }).status?.toLowerCase() === 'on_hold' ||
+                                  (dealer as DealerSummary & { status?: string; onHold?: boolean }).status?.toLowerCase() === 'on-hold' ||
+                                  (dealer as DealerSummary & { status?: string; onHold?: boolean }).onHold
+                                ? 'on-hold'
+                                : (dealer as DealerSummary & { status?: string; onHold?: boolean }).status?.toLowerCase() === 'pending'
+                                ? 'pending'
+                                : 'active'
+                            }
+                            size="sm"
+                          />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <p className="text-primary font-medium">{(dealer.outstandingBalance || 0).toLocaleString()}</p>

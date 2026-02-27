@@ -1,6 +1,5 @@
-import React, { Fragment, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Dialog, Transition } from '@headlessui/react';
 import {
   Menu as MenuIcon,
   X,
@@ -34,62 +33,68 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   );
   const [q, setQ] = useState('');
   const filtered = items.filter((i) => i.label.toLowerCase().includes(q.toLowerCase()));
+
+  if (!open) return null;
+
   return (
-    <Transition show={open} as={Fragment}>
-      <Dialog onClose={onClose} className="relative z-50">
-        <Transition.Child as={Fragment} enter="ease-out duration-150" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
-        </Transition.Child>
-        <div className="fixed inset-0 flex items-start justify-center p-6 pt-20">
-          <Transition.Child as={Fragment} enter="ease-out duration-150" enterFrom="opacity-0 translate-y-4" enterTo="opacity-100 translate-y-0" leave="ease-in duration-100" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-4">
-            <Dialog.Panel className="w-full max-w-xl rounded-xl border border-border bg-surface p-2 text-primary shadow-2xl">
-              <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-                <Search className="h-4 w-4 text-secondary" />
-                <input
-                  autoFocus
-                  className="h-8 flex-1 bg-transparent text-sm text-primary outline-none placeholder:text-tertiary"
-                  placeholder="Type to jump..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const target = filtered[0];
-                      if (target) {
-                        navigate(target.to);
-                        onClose();
-                      }
-                    }
+    <div
+      className="fixed inset-0 z-50"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
+      <div className="fixed inset-0 flex items-start justify-center p-6 pt-20">
+        <div
+          className="w-full max-w-xl rounded-xl border border-border bg-surface p-2 text-primary shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <Search className="h-4 w-4 text-secondary" />
+            <input
+              autoFocus
+              className="h-8 flex-1 bg-transparent text-sm text-primary outline-none placeholder:text-tertiary"
+              placeholder="Type to jump..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const target = filtered[0];
+                  if (target) {
+                    navigate(target.to);
+                    onClose();
+                  }
+                }
+                if (e.key === 'Escape') {
+                  onClose();
+                }
+              }}
+            />
+          </div>
+          <ul className="mt-2 max-h-64 overflow-y-auto py-1">
+            {filtered.map((item) => (
+              <li key={item.to}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate(item.to);
+                    onClose();
                   }}
-                />
-              </div>
-              <ul className="mt-2 max-h-64 overflow-y-auto py-1">
-                {filtered.map((item) => (
-                  <li key={item.to}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigate(item.to);
-                        onClose();
-                      }}
-                      className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-highlight"
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
-                {filtered.length === 0 && <li className="px-3 py-2 text-sm text-secondary">No results</li>}
-              </ul>
-            </Dialog.Panel>
-          </Transition.Child>
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-primary hover:bg-surface-highlight"
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+            {filtered.length === 0 && <li className="px-3 py-2 text-sm text-secondary">No results</li>}
+          </ul>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </div>
   );
 }
 
 export default function SuperadminLayout({ theme, onThemeChange }: SuperadminLayoutProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -225,7 +230,7 @@ export default function SuperadminLayout({ theme, onThemeChange }: SuperadminLay
               <button
                 type="button"
                 onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-                className={clsx('rounded-lg p-2 transition-colors', theme === 'dark' ? 'text-yellow-400 hover:bg-surface-highlight' : 'text-secondary hover:bg-surface-highlight')}
+                className={clsx('rounded-lg p-2 transition-colors', 'text-secondary hover:bg-surface-highlight')}
                 title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}

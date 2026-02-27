@@ -31,7 +31,7 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
         }
       }
       return null;
-    } catch (err) {
+    } catch {
       // If URL parsing fails, try a simpler approach
       try {
         const search = window.location.search;
@@ -50,9 +50,9 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
       return null;
     }
   };
-  
-  const [token, setToken] = useState<string | null>(getTokenFromUrl());
-  
+
+  const [token] = useState<string | null>(getTokenFromUrl());
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,13 +103,11 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
         confirmPassword,
       });
 
-      // Success - show message and redirect to login
+      // Success - show message and navigate back after delay
       setSuccess(true);
       setTimeout(() => {
         if (onBack) {
           onBack();
-        } else {
-          window.location.href = '/login';
         }
       }, 2000);
     } catch (err) {
@@ -121,41 +119,22 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
 
   if (!token) {
     return (
-      <div 
-        className={clsx('min-h-screen w-full transition-colors duration-300', isDark ? 'dark' : 'light')}
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+      <div
+        className={clsx('min-h-screen w-full transition-colors duration-300 bg-background', isDark ? 'dark' : 'light')}
       >
         <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-md space-y-8">
-            <div 
-              className={clsx(
-                'rounded-2xl border p-8 shadow-sm transition-all text-center',
-                isDark ? 'shadow-black/20' : 'shadow-zinc-200/50'
-              )}
-               style={isDark 
-                 ? { backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-primary)' }
-                 : { backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }
-               }
-            >
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Invalid Reset Link</h2>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm transition-all text-center">
+              <h2 className="text-xl font-semibold text-primary">Invalid Reset Link</h2>
+              <p className="mt-2 text-sm text-secondary">
                 The password reset link is invalid or missing. Please request a new one.
               </p>
               <button
                 type="button"
                 onClick={() => {
-                  if (onBack) {
-                    onBack();
-                  } else {
-                    window.location.href = '/login';
-                  }
+                  if (onBack) onBack();
                 }}
-                   className={clsx(
-                     'mt-6 w-full rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2',
-                     isDark 
-                       ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                       : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                   )}
+                className="mt-6 w-full rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30"
               >
                 Back to Login
               </button>
@@ -167,44 +146,34 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
   }
 
   return (
-    <div 
-      className={clsx('min-h-screen w-full transition-colors duration-300', isDark ? 'dark' : 'light')}
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+    <div
+      className={clsx('min-h-screen w-full transition-colors duration-300 bg-background', isDark ? 'dark' : 'light')}
     >
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-3xl font-semibold tracking-tight text-primary">
               Reset Password
             </h2>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-secondary">
               Enter your new password below
             </p>
           </div>
 
           {/* Reset Password Card */}
-          <div 
-            className={clsx(
-              'rounded-2xl border p-8 shadow-sm transition-all',
-              isDark ? 'shadow-black/20' : 'shadow-zinc-200/50'
-            )}
-               style={isDark 
-                 ? { backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-primary)' }
-                 : { backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }
-               }
-          >
+          <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm transition-all">
             {success ? (
               <div className="space-y-6 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                  <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-status-success-bg">
+                  <CheckCircle className="h-6 w-6 text-status-success-text" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  <h3 className="text-lg font-semibold text-primary">
                     Password Reset Successful
                   </h3>
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="mt-2 text-sm text-secondary">
                     Your password has been reset. Redirecting to login...
                   </p>
                 </div>
@@ -212,66 +181,54 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-1.5">
-                  <label htmlFor="newPassword" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label htmlFor="newPassword" className="block text-xs font-medium text-secondary">
                     New Password *
                   </label>
                   <div className="relative">
                     <input
-                     id="newPassword"
-                       type={passwordVisible.new ? 'text' : 'password'}
-                       required
-                       minLength={10}
-                       autoComplete="new-password"
-                       value={newPassword}
-                       onChange={(e) => setNewPassword(e.target.value)}
-                       className={clsx(
-                         'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                         isDark 
-                           ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                           : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                       )}
-                       style={{ backgroundColor: 'var(--bg-primary)' }}
+                      id="newPassword"
+                      type={passwordVisible.new ? 'text' : 'password'}
+                      required
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                       placeholder="Enter new password (min 10 characters)"
                     />
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Password must be at least 10 characters long
-                    </p>
                     <button
                       type="button"
                       onClick={() => setPasswordVisible({ ...passwordVisible, new: !passwordVisible.new })}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
                     >
                       {passwordVisible.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  <p className="mt-1 text-xs text-tertiary">
+                    Password must be at least 10 characters long
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label htmlFor="confirmPassword" className="block text-xs font-medium text-secondary">
                     Confirm New Password *
                   </label>
                   <div className="relative">
                     <input
-                     id="confirmPassword"
-                       type={passwordVisible.confirm ? 'text' : 'password'}
-                       required
-                       minLength={10}
-                       autoComplete="new-password"
-                       value={confirmPassword}
-                       onChange={(e) => setConfirmPassword(e.target.value)}
-                       className={clsx(
-                         'block w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all focus:ring-2 pr-10',
-                         isDark 
-                           ? 'border-[var(--border-primary)] text-white placeholder:text-zinc-500 focus:border-zinc-600 focus:ring-zinc-700' 
-                           : 'border-zinc-300 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-zinc-200'
-                       )}
-                       style={{ backgroundColor: 'var(--bg-primary)' }}
+                      id="confirmPassword"
+                      type={passwordVisible.confirm ? 'text' : 'password'}
+                      required
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="block w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-primary outline-none transition-all placeholder:text-tertiary focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-focus)]/20"
                       placeholder="Confirm new password"
                     />
                     <button
                       type="button"
                       onClick={() => setPasswordVisible({ ...passwordVisible, confirm: !passwordVisible.confirm })}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
                     >
                       {passwordVisible.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -281,12 +238,7 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
                 <button
                   type="submit"
                   disabled={loading}
-                  className={clsx(
-                    'relative flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70',
-                    isDark 
-                     ? 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-700 focus:ring-offset-[var(--bg-primary)]' 
-                     : 'bg-[var(--action-primary-bg)] text-[var(--action-primary-text)] hover:bg-[var(--action-primary-hover)] focus:ring-zinc-900'
-                  )}
+                  className="relative flex w-full items-center justify-center rounded-lg bg-[var(--action-primary-bg)] px-4 py-2.5 text-sm font-medium text-[var(--action-primary-text)] shadow-sm transition-all hover:bg-[var(--action-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading && (
                     <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
@@ -300,10 +252,7 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
             )}
 
             {error && (
-              <div className={clsx(
-                'mt-6 rounded-lg p-3 text-xs font-medium',
-                'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400'
-              )}>
+              <div className="mt-6 rounded-lg bg-status-error-bg p-3 text-xs font-medium text-status-error-text">
                 <p>{error}</p>
                 {onForgotPassword && (
                   <button
@@ -319,11 +268,11 @@ export default function ResetPasswordPage({ theme, onThemeChange, onBack, onForg
           </div>
 
           {/* Footer Controls */}
-          <div className="flex items-center justify-center gap-4 text-zinc-500">
+          <div className="flex items-center justify-center gap-4 text-secondary">
             <button
               type="button"
               onClick={() => onThemeChange(isDark ? 'light' : 'dark')}
-              className="flex items-center gap-2 text-xs hover:text-zinc-900 dark:hover:text-zinc-300"
+              className="flex items-center gap-2 text-xs hover:text-primary transition-colors"
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? 'Light Mode' : 'Dark Mode'}

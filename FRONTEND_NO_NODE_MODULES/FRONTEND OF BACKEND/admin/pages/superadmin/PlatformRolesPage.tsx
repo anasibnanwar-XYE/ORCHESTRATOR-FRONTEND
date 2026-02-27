@@ -250,10 +250,10 @@ export default function PlatformRolesPage() {
     setCreateError(null);
     try {
       const payload: CreateRoleRequest = {
-        roleKey: data.roleKey,
         name: data.name,
-        description: data.description || undefined,
-      } as any;
+        description: data.description || '',
+        permissions: [],
+      };
       await createPlatformRole(payload, session);
       setSuccess(`Role "${data.name}" created.`);
       setCreateOpen(false);

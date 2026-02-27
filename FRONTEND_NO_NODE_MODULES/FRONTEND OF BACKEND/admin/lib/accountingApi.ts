@@ -1365,3 +1365,278 @@ export const getAuditTransactionDetail = async (
     session ?? undefined
   );
 };
+
+// --- Report Interfaces ---
+
+export interface InventoryReconciliationReport {
+  items?: Array<{
+    productId?: number;
+    productName?: string;
+    productCode?: string;
+    systemQty?: number;
+    physicalQty?: number;
+    variance?: number;
+    unitCost?: number;
+    varianceValue?: number;
+  }>;
+  totalVarianceValue?: number;
+  asOfDate?: string;
+}
+
+export interface InventoryValuationReport {
+  items?: Array<{
+    productId?: number;
+    productName?: string;
+    productCode?: string;
+    quantity?: number;
+    unitCost?: number;
+    totalValue?: number;
+  }>;
+  grandTotal?: number;
+  asOfDate?: string;
+}
+
+export interface MonthlyProductionCostsReport {
+  months?: Array<{
+    month?: string;
+    rawMaterialCost?: number;
+    labourCost?: number;
+    overheadCost?: number;
+    totalCost?: number;
+  }>;
+  grandTotal?: number;
+}
+
+export interface WastageReport {
+  items?: Array<{
+    productId?: number;
+    productName?: string;
+    productCode?: string;
+    quantity?: number;
+    unitCost?: number;
+    totalWastageValue?: number;
+    period?: string;
+  }>;
+  totalWastageValue?: number;
+}
+
+export interface BalanceWarning {
+  accountId?: number;
+  accountCode?: string;
+  accountName?: string;
+  warningType?: string;
+  message?: string;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface BalanceWarningsResponse {
+  warnings?: BalanceWarning[];
+  hasWarnings?: boolean;
+}
+
+// --- Report API Functions ---
+
+export const getInventoryReconciliation = async (
+  params?: { asOfDate?: string },
+  session?: AuthSession | null
+): Promise<InventoryReconciliationReport> => {
+  const usp = new URLSearchParams();
+  if (params?.asOfDate) usp.set('asOfDate', params.asOfDate);
+  return apiData<InventoryReconciliationReport>(
+    `/api/v1/reports/inventory-reconciliation${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  );
+};
+
+export const getInventoryValuation = async (
+  params?: { asOfDate?: string },
+  session?: AuthSession | null
+): Promise<InventoryValuationReport> => {
+  const usp = new URLSearchParams();
+  if (params?.asOfDate) usp.set('asOfDate', params.asOfDate);
+  return apiData<InventoryValuationReport>(
+    `/api/v1/reports/inventory-valuation${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  );
+};
+
+export const getMonthlyProductionCosts = async (
+  params?: { from?: string; to?: string },
+  session?: AuthSession | null
+): Promise<MonthlyProductionCostsReport> => {
+  const usp = new URLSearchParams();
+  if (params?.from) usp.set('from', params.from);
+  if (params?.to) usp.set('to', params.to);
+  return apiData<MonthlyProductionCostsReport>(
+    `/api/v1/reports/monthly-production-costs${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  );
+};
+
+export const getWastageReport = async (
+  params?: { from?: string; to?: string },
+  session?: AuthSession | null
+): Promise<WastageReport> => {
+  const usp = new URLSearchParams();
+  if (params?.from) usp.set('from', params.from);
+  if (params?.to) usp.set('to', params.to);
+  return apiData<WastageReport>(
+    `/api/v1/reports/wastage${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  );
+};
+
+export const getBalanceWarnings = async (
+  session?: AuthSession | null
+): Promise<BalanceWarningsResponse> => {
+  return apiData<BalanceWarningsResponse>(
+    '/api/v1/reports/balance-warnings',
+    {},
+    session ?? undefined
+  );
+};
+
+// --- PDF Download Functions ---
+
+export const getDealerStatementPdf = async (
+  dealerId: number,
+  session?: AuthSession | null
+): Promise<Blob> => {
+  const { API_BASE_URL } = await import('./api');
+  const url = `${API_BASE_URL}/api/v1/accounting/statements/dealers/${dealerId}/pdf`;
+  const headers: Record<string, string> = {
+    Accept: 'application/pdf',
+  };
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (session?.companyCode) {
+    headers['X-Company-Id'] = session.companyCode;
+    headers['X-Company-Code'] = session.companyCode;
+  }
+  const res = await fetch(url, { headers, credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to download dealer statement PDF (${res.status})`);
+  return res.blob();
+};
+
+export const getDealerAgingPdf = async (
+  dealerId: number,
+  session?: AuthSession | null
+): Promise<Blob> => {
+  const { API_BASE_URL } = await import('./api');
+  const url = `${API_BASE_URL}/api/v1/accounting/aging/dealers/${dealerId}/pdf`;
+  const headers: Record<string, string> = {
+    Accept: 'application/pdf',
+  };
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (session?.companyCode) {
+    headers['X-Company-Id'] = session.companyCode;
+    headers['X-Company-Code'] = session.companyCode;
+  }
+  const res = await fetch(url, { headers, credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to download dealer aging PDF (${res.status})`);
+  return res.blob();
+};
+
+export const getSupplierStatementPdf = async (
+  supplierId: number,
+  session?: AuthSession | null
+): Promise<Blob> => {
+  const { API_BASE_URL } = await import('./api');
+  const url = `${API_BASE_URL}/api/v1/accounting/statements/suppliers/${supplierId}/pdf`;
+  const headers: Record<string, string> = {
+    Accept: 'application/pdf',
+  };
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (session?.companyCode) {
+    headers['X-Company-Id'] = session.companyCode;
+    headers['X-Company-Code'] = session.companyCode;
+  }
+  const res = await fetch(url, { headers, credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to download supplier statement PDF (${res.status})`);
+  return res.blob();
+};
+
+export const getSupplierAgingPdf = async (
+  supplierId: number,
+  session?: AuthSession | null
+): Promise<Blob> => {
+  const { API_BASE_URL } = await import('./api');
+  const url = `${API_BASE_URL}/api/v1/accounting/aging/suppliers/${supplierId}/pdf`;
+  const headers: Record<string, string> = {
+    Accept: 'application/pdf',
+  };
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (session?.companyCode) {
+    headers['X-Company-Id'] = session.companyCode;
+    headers['X-Company-Code'] = session.companyCode;
+  }
+  const res = await fetch(url, { headers, credentials: 'include' });
+  if (!res.ok) throw new Error(`Failed to download supplier aging PDF (${res.status})`);
+  return res.blob();
+};
+
+// --- Sales Returns API Functions ---
+
+export interface SalesReturnDto {
+  id: number;
+  dealerId: number;
+  dealerName?: string;
+  returnDate: string;
+  referenceNumber?: string;
+  reason?: string;
+  totalAmount?: number;
+  status?: string;
+  createdAt?: string;
+}
+
+export interface SalesReturnLineRequest {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  reason?: string;
+}
+
+export interface SalesReturnRequest {
+  dealerId: number;
+  returnDate: string;
+  referenceNumber?: string;
+  reason?: string;
+  lines: SalesReturnLineRequest[];
+}
+
+export const listSalesReturns = async (
+  params?: { dealerId?: number; from?: string; to?: string; status?: string },
+  session?: AuthSession | null
+): Promise<SalesReturnDto[]> => {
+  const usp = new URLSearchParams();
+  if (params?.dealerId !== undefined) usp.set('dealerId', String(params.dealerId));
+  if (params?.from) usp.set('from', params.from);
+  if (params?.to) usp.set('to', params.to);
+  if (params?.status) usp.set('status', params.status);
+  const raw = await apiData<SalesReturnDto[] | { content?: SalesReturnDto[] }>(
+    `/api/v1/accounting/sales/returns${usp.toString() ? `?${usp.toString()}` : ''}`,
+    {},
+    session ?? undefined
+  ).catch(() => [] as SalesReturnDto[]);
+  if (Array.isArray(raw)) return raw;
+  const envelope = raw as { content?: SalesReturnDto[] };
+  return envelope?.content ?? [];
+};
+
+export const createSalesReturn = async (
+  payload: SalesReturnRequest,
+  session?: AuthSession | null
+): Promise<SalesReturnDto> => {
+  return apiData<SalesReturnDto>(
+    '/api/v1/accounting/sales/returns',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    session ?? undefined
+  );
+};

@@ -375,7 +375,7 @@ export default function CreditRequestsPage() {
                     return (
                       <tr key={r.id} className="hover:bg-surface-highlight transition-colors">
                         <td className="px-5 py-4 font-medium text-primary">
-                          {r.dealerName ?? `Dealer #${r.dealerId ?? '—'}`}
+                          {r.dealerName ?? `Dealer #${(r as Record<string, unknown>).dealerId ?? '—'}`}
                         </td>
                         <td className="px-5 py-4 text-right font-semibold text-primary tabular-nums">
                           {formatAmount(amount)}
@@ -431,9 +431,9 @@ export default function CreditRequestsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-semibold text-primary">
-                        {r.dealerName ?? `Dealer #${r.dealerId ?? '—'}`}
-                      </p>
-                      <p className="mt-0.5 text-xs text-secondary">{formatDate(r.createdAt)}</p>
+                        {r.dealerName ?? `Dealer #${(r as Record<string, unknown>).dealerId ?? '—'}`}
+                       </p>
+                       <p className="mt-0.5 text-xs text-secondary">{formatDate(r.createdAt)}</p>
                     </div>
                     <StatusBadge status={r.status ?? 'unknown'} />
                   </div>

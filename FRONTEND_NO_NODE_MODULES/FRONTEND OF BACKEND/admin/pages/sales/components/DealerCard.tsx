@@ -1,14 +1,28 @@
-import { Mail, Phone, MapPin, Eye } from 'lucide-react';
+import { Mail, Phone, Eye } from 'lucide-react';
 import clsx from 'clsx';
 import { StatusBadge } from './StatusBadge';
 import { CreditUtilizationBar } from './CreditUtilizationBar';
 import type { DealerResponse } from '../../../lib/client/models/DealerResponse';
 
+type DealerStatus = 'active' | 'suspended' | 'on-hold' | 'pending';
+
 interface DealerCardProps {
-  dealer: DealerResponse;
+  dealer: DealerResponse & { status?: string; onHold?: boolean };
   onView?: (dealer: DealerResponse) => void;
   onCopyEmail?: (email: string) => void;
   onCopyPhone?: (phone: string) => void;
+}
+
+function resolveStatus(dealer: DealerResponse & { status?: string; onHold?: boolean }): DealerStatus {
+  if (dealer.status) {
+    const s = dealer.status.toLowerCase();
+    if (s === 'active') return 'active';
+    if (s === 'suspended') return 'suspended';
+    if (s === 'on_hold' || s === 'on-hold') return 'on-hold';
+    if (s === 'pending') return 'pending';
+  }
+  if (dealer.onHold) return 'on-hold';
+  return 'active';
 }
 
 export function DealerCard({
@@ -23,6 +37,7 @@ export function DealerCard({
 
   const isOverLimit = limit > 0 && balance > limit;
   const isNearLimit = limit > 0 && utilizationPercent > 80 && !isOverLimit;
+  const dealerStatus = resolveStatus(dealer);
 
   return (
     <article
@@ -37,7 +52,7 @@ export function DealerCard({
           <h3 className="font-semibold text-primary truncate">{dealer.name || '—'}</h3>
           <p className="text-sm text-secondary truncate">{dealer.email || 'No email'}</p>
         </div>
-        <StatusBadge status="active" size="sm" />
+        <StatusBadge status={dealerStatus} size="sm" />
       </div>
 
       {/* Contact Info */}

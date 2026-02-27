@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Search, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -14,6 +14,28 @@ import {
 } from '../../lib/factoryApi';
 import { ResponsiveModal } from '../../design-system/ResponsiveModal';
 import { FormInput, FormSelect, ResponsiveForm } from '../../design-system/ResponsiveForm';
+
+// Inline ConfirmDialog
+function ConfirmDialog({ open, title, message, confirmLabel, loading, onConfirm, onCancel }: {
+  open: boolean; title: string; message: string; confirmLabel: string; loading?: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <ResponsiveModal isOpen={open} onClose={onCancel} title={title} size="sm" footer={
+      <>
+        <button type="button" onClick={onCancel} disabled={loading} className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-surface-highlight sm:w-auto">
+          Cancel
+        </button>
+        <button type="button" onClick={onConfirm} disabled={loading} className="w-full rounded-lg bg-status-error-bg px-4 py-2.5 text-sm font-medium text-status-error-text transition-colors hover:opacity-80 sm:w-auto">
+          {loading ? 'Processing...' : confirmLabel}
+        </button>
+      </>
+    }>
+      <p className="text-sm text-secondary">{message}</p>
+    </ResponsiveModal>
+  );
+}
 
 const EMPTY_FORM: PackagingSizeMappingRequest = {
   packagingSize: '',
@@ -37,6 +59,8 @@ export default function PackagingMappingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<PackagingSizeMappingRequest>(EMPTY_FORM);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<PackagingSizeMappingDto | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
 
   const load = async () => {
     if (!session) return;
@@ -49,7 +73,7 @@ export default function PackagingMappingsPage() {
       ]);
       setMappings(mappingsData ?? []);
       setRawMaterials(rawMaterialsData ?? []);
-    } catch (err: any) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load packaging mappings');
     } finally {
       setLoading(false);
@@ -164,23 +188,31 @@ export default function PackagingMappingsPage() {
     }
   };
 
-  const handleDeactivate = async (mapping: PackagingSizeMappingDto) => {
+  const handleDeactivate = (mapping: PackagingSizeMappingDto) => {
     if (!session) return;
     if (!isAdmin) {
       setError('Only admins can deactivate packaging mappings');
       return;
     }
     if (!mapping.id) return;
-    if (!confirm('Deactivate this mapping?')) return;
+    setConfirmDeactivate(mapping);
+  };
 
+  const handleConfirmDeactivate = async () => {
+    if (!confirmDeactivate?.id || !session) return;
+    setDeactivating(true);
     setError(null);
     try {
-      await deactivatePackagingMapping(Number(mapping.id), session);
+      await deactivatePackagingMapping(Number(confirmDeactivate.id), session);
       setSuccess('Packaging mapping deactivated');
+      setConfirmDeactivate(null);
       await load();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to deactivate packaging mapping');
+      setConfirmDeactivate(null);
+    } finally {
+      setDeactivating(false);
     }
   };
 
@@ -199,9 +231,9 @@ export default function PackagingMappingsPage() {
         <button
           onClick={openCreate}
           disabled={!isAdmin}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
+        className="flex items-center gap-2 rounded-lg bg-action-primary-bg px-4 py-2 text-sm font-medium text-action-primary-text hover:bg-action-primary-hover focus:outline-none focus:ring-2 focus:ring-[var(--action-primary-bg)]/30 focus:ring-offset-2 disabled:opacity-50 transition-colors"
         >
-          <PlusIcon className="h-5 w-5" />
+          <Plus className="h-5 w-5" />
           New Mapping
         </button>
       </div>
@@ -218,12 +250,12 @@ export default function PackagingMappingsPage() {
          </div>
       )}
 
-      <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-secondary" />
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tertiary" />
         <input
           type="text"
           placeholder="Search by size, material name, or SKU..."
-          className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm text-primary placeholder-secondary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-4 text-sm text-primary placeholder:text-tertiary focus:border-[var(--border-focus)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)]/20"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -275,16 +307,18 @@ export default function PackagingMappingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEdit(mapping)}
-                          disabled={!isAdmin}
-                          className="rounded-lg border border-brand-600 px-2 py-1 text-xs text-brand-700 hover:bg-brand-50 disabled:opacity-50"
-                        >
+                         <button
+                           type="button"
+                           onClick={() => openEdit(mapping)}
+                           disabled={!isAdmin}
+                           className="rounded-lg border border-border px-2 py-1 text-xs font-medium text-secondary hover:bg-surface-highlight hover:text-primary transition-colors disabled:opacity-50"
+                         >
                           Edit
                         </button>
-                        <button
-                          onClick={() => handleDeactivate(mapping)}
-                          disabled={!isAdmin || mapping.active === false}
+                         <button
+                           type="button"
+                           onClick={() => handleDeactivate(mapping)}
+                           disabled={!isAdmin || mapping.active === false}
                           className="rounded-lg border border-status-error-text/30 px-2 py-1 text-xs text-status-error-text hover:bg-status-error-bg disabled:opacity-50"
                         >
                           Deactivate
@@ -355,7 +389,7 @@ export default function PackagingMappingsPage() {
             <button
               type="button"
               onClick={closeModal}
-              className="rounded-lg border border-border bg-surface-highlight px-4 py-2 text-sm font-medium text-primary hover:bg-surface-highlight/80 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-primary hover:bg-surface-highlight transition-colors focus:outline-none"
             >
               Cancel
             </button>
@@ -367,13 +401,23 @@ export default function PackagingMappingsPage() {
                 !formData.packagingSize?.trim() ||
                 !Number(formData.rawMaterialId)
               }
-              className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-brand-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+              className="rounded-lg bg-action-primary-bg px-4 py-2 text-sm font-medium text-action-primary-text hover:bg-action-primary-hover disabled:opacity-50 focus:outline-none transition-colors"
             >
               {submitting ? (editing ? 'Updating...' : 'Creating...') : editing ? 'Update' : 'Create'}
             </button>
           </div>
         </ResponsiveForm>
       </ResponsiveModal>
+
+      <ConfirmDialog
+        open={!!confirmDeactivate}
+        title="Deactivate Mapping"
+        message={`Are you sure you want to deactivate the "${confirmDeactivate?.packagingSize ?? ''}" mapping? This action cannot be easily reversed.`}
+        confirmLabel="Deactivate"
+        loading={deactivating}
+        onConfirm={handleConfirmDeactivate}
+        onCancel={() => setConfirmDeactivate(null)}
+      />
     </div>
   );
 }

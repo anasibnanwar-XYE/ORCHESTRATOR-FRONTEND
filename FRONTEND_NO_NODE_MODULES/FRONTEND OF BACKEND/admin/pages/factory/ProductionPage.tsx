@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import OrderFulfillmentPage from './OrderFulfillmentPage';
+import ProductionPlansPage from './ProductionPlansPage';
 import ProductionBatchesPage from './ProductionBatchesPage';
 import TasksPage from './TasksPage';
 
@@ -57,7 +57,7 @@ export default function ProductionPage() {
 
       {/* Tab content */}
       <div>
-        {activeTab === 'plans' && <OrderFulfillmentPage />}
+        {activeTab === 'plans' && <ProductionPlansPage />}
         {activeTab === 'batches' && <ProductionBatchesPage />}
         {activeTab === 'tasks' && <TasksPage />}
       </div>

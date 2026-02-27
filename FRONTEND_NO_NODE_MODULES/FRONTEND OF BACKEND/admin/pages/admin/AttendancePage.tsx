@@ -29,6 +29,35 @@ import { ResponsiveModal } from '../../design-system';
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'LEAVE';
 
+/** Local form state uses strings for time fields (HTML time input compatibility). */
+interface AttendanceFormState {
+    date: string;
+    status: AttendanceStatus;
+    checkInTime?: string;
+    checkOutTime?: string;
+    regularHours?: number;
+    overtimeHours?: number;
+    doubleOvertimeHours?: number;
+    remarks?: string;
+}
+
+interface BulkAttendanceFormState {
+    employeeIds: number[];
+    date: string;
+    status: AttendanceStatus;
+    checkInTime?: string;
+    checkOutTime?: string;
+    regularHours?: number;
+    overtimeHours?: number;
+}
+
+/** Convert "HH:MM" string to LocalTime object expected by the API. */
+function parseTimeString(t: string | undefined): import('../../lib/client/models/LocalTime').LocalTime | undefined {
+    if (!t) return undefined;
+    const [h, m] = t.split(':').map(Number);
+    return { hour: h, minute: m || 0, second: 0, nano: 0 };
+}
+
 const STATUS_CLASSES: Record<string, string> = {
     PRESENT: 'bg-status-success-bg text-status-success-text',
     ABSENT: 'bg-status-error-bg text-status-error-text',
@@ -63,7 +92,7 @@ export default function AttendancePage() {
     // Mark attendance modal
     const [showMarkModal, setShowMarkModal] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeDto | null>(null);
-    const [markFormData, setMarkFormData] = useState<MarkAttendanceRequest>({
+    const [markFormData, setMarkFormData] = useState<AttendanceFormState>({
         date: selectedDate,
         status: 'PRESENT',
     });
@@ -71,7 +100,7 @@ export default function AttendancePage() {
     // Bulk mark state
     const [showBulkModal, setShowBulkModal] = useState(false);
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
-    const [bulkFormData, setBulkFormData] = useState<BulkMarkAttendanceRequest>({
+    const [bulkFormData, setBulkFormData] = useState<BulkAttendanceFormState>({
         employeeIds: [],
         date: selectedDate,
         status: 'PRESENT',
@@ -184,7 +213,17 @@ export default function AttendancePage() {
             setLoading(true);
             setError(null);
             setSuccess(null);
-            await markEmployeeAttendance(selectedEmployee.id || 0, markFormData, session);
+            const payload: MarkAttendanceRequest = {
+                date: markFormData.date,
+                status: markFormData.status,
+                checkInTime: parseTimeString(markFormData.checkInTime),
+                checkOutTime: parseTimeString(markFormData.checkOutTime),
+                regularHours: markFormData.regularHours,
+                overtimeHours: markFormData.overtimeHours,
+                doubleOvertimeHours: markFormData.doubleOvertimeHours,
+                remarks: markFormData.remarks,
+            };
+            await markEmployeeAttendance(selectedEmployee.id || 0, payload, session);
             setSuccess(`Attendance marked for ${selectedEmployee.firstName} ${selectedEmployee.lastName}`);
             setShowMarkModal(false);
             setSelectedEmployee(null);
@@ -206,7 +245,16 @@ export default function AttendancePage() {
             setLoading(true);
             setError(null);
             setSuccess(null);
-            await bulkMarkAttendance({ ...bulkFormData, employeeIds: selectedEmployeeIds }, session);
+            const bulkPayload: BulkMarkAttendanceRequest = {
+                employeeIds: selectedEmployeeIds,
+                date: bulkFormData.date,
+                status: bulkFormData.status,
+                checkInTime: parseTimeString(bulkFormData.checkInTime),
+                checkOutTime: parseTimeString(bulkFormData.checkOutTime),
+                regularHours: bulkFormData.regularHours,
+                overtimeHours: bulkFormData.overtimeHours,
+            };
+            await bulkMarkAttendance(bulkPayload, session);
             setSuccess(`Attendance marked for ${selectedEmployeeIds.length} employee(s)`);
             setShowBulkModal(false);
             setSelectedEmployeeIds([]);

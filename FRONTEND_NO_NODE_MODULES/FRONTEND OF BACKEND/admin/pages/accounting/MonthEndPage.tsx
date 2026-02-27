@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { listAccountingPeriods, getMonthEndChecklist, updateMonthEndChecklist, closeAccountingPeriod, type AccountingPeriod, type MonthEndChecklistItem } from '../../lib/accountingApi';
 import { ResponsiveButton } from '../../design-system/ResponsiveButton';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { format } from 'date-fns';
+import { ResponsiveModal } from '../../design-system/ResponsiveModal';
 
 function normalizeDate(d: unknown): Date {
   if (Array.isArray(d)) return new Date(d[0], d[1] - 1, d[2]);
@@ -22,6 +23,8 @@ export default function MonthEndPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [confirmClose, setConfirmClose] = useState(false);
+    const [closing, setClosing] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -45,10 +48,9 @@ export default function MonthEndPage() {
             ]);
             setPeriods(periodsData || []);
             setChecklist(Array.isArray(checklistData) ? checklistData : []);
-        } catch (err) {
+        } catch {
             setError('Failed to load month-end data');
-            console.error(err);
-            setChecklist([]); 
+            setChecklist([]);
         } finally {
             setLoading(false);
         }
@@ -71,23 +73,30 @@ export default function MonthEndPage() {
         }
     };
 
-    const handleCompleteMonthEnd = async () => {
+    const handleCompleteMonthEnd = () => {
         if (!selectedPeriodId) return;
         const incompleteRequired = checklist.some(i => i.required && !i.completed);
         if (incompleteRequired) {
             setError('Please complete all required checklist items before closing the period.');
             return;
         }
+        setConfirmClose(true);
+    };
 
-        if (!confirm('Are you sure you want to close this period? This action is irreversible.')) return;
-
+    const handleConfirmClose = async () => {
+        if (!selectedPeriodId) return;
+        setClosing(true);
         try {
             await updateMonthEndChecklist(Number(selectedPeriodId), checklist, session);
             await closeAccountingPeriod(Number(selectedPeriodId), session);
             setSuccess('Month-end closing completed successfully. Period is now CLOSED.');
-            loadData(); // Refresh to show status update
+            setConfirmClose(false);
+            loadData();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to close period');
+            setConfirmClose(false);
+        } finally {
+            setClosing(false);
         }
     };
 
@@ -210,7 +219,7 @@ export default function MonthEndPage() {
                                             <p className="text-xs text-status-error-text mt-0.5">Required</p>
                                         )}
                                     </div>
-                                    {item.completed && <CheckCircleIcon className="h-5 w-5 text-status-success-text" />}
+                                     {item.completed && <CheckCircle className="h-5 w-5 text-status-success-text" />}
                                 </div>
                             ))}
                             {safeChecklist.length === 0 && (
@@ -227,16 +236,48 @@ export default function MonthEndPage() {
                             >
                                 Save Progress
                             </Button>
-                            <Button
+                             <Button
                                 onClick={handleCompleteMonthEnd}
-                                disabled={!selectedPeriod || selectedPeriod.status !== 'OPEN' || loading}
+                                disabled={!selectedPeriod || selectedPeriod.status !== 'OPEN' || loading || closing}
                             >
-                                Complete & Close Period
+                                {closing ? 'Closing...' : 'Complete & Close Period'}
                             </Button>
                         </div>
                     </Card>
                 </div>
             </div>
+
+            {/* Close Period Confirmation */}
+            <ResponsiveModal
+                isOpen={confirmClose}
+                onClose={() => setConfirmClose(false)}
+                title="Close Accounting Period"
+                size="sm"
+                footer={
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => setConfirmClose(false)}
+                            disabled={closing}
+                            className="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-surface-highlight sm:w-auto"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleConfirmClose}
+                            disabled={closing}
+                            className="w-full rounded-lg bg-status-error-bg px-4 py-2.5 text-sm font-medium text-status-error-text transition-colors hover:opacity-80 sm:w-auto"
+                        >
+                            {closing ? 'Closing...' : 'Yes, Close Period'}
+                        </button>
+                    </>
+                }
+            >
+                <p className="text-sm text-secondary">
+                    Are you sure you want to close this accounting period? This action is <strong className="text-primary">irreversible</strong> and cannot be undone.
+                </p>
+            </ResponsiveModal>
         </div>
     );
 }

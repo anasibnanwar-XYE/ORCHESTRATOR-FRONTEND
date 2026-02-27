@@ -1,39 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
-import { PlusIcon, MagnifyingGlassIcon, ArrowPathIcon, ReceiptRefundIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, ReceiptRefundIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
-import { apiData } from '../../lib/api';
-import { searchDealers, type DealerLookup } from '../../lib/accountingApi';
+import {
+  searchDealers,
+  listSalesReturns,
+  createSalesReturn,
+  type DealerLookup,
+  type SalesReturnDto,
+  type SalesReturnRequest,
+} from '../../lib/accountingApi';
 import { ResponsiveModal } from '../../design-system/ResponsiveModal';
-import { ResponsiveForm, FormInput, FormSelect, FormTextarea } from '../../design-system/ResponsiveForm';
+import { ResponsiveForm, FormInput, FormTextarea } from '../../design-system/ResponsiveForm';
 import SearchableCombobox, { type ComboboxOption } from '../../components/SearchableCombobox';
 import clsx from 'clsx';
-
-interface SalesReturnDto {
-  id: number;
-  dealerId: number;
-  dealerName?: string;
-  returnDate: string;
-  referenceNumber?: string;
-  reason?: string;
-  totalAmount?: number;
-  status?: string;
-  createdAt?: string;
-}
-
-interface SalesReturnRequest {
-  dealerId: number;
-  returnDate: string;
-  referenceNumber?: string;
-  reason?: string;
-  lines: SalesReturnLineRequest[];
-}
-
-interface SalesReturnLineRequest {
-  productId: number;
-  quantity: number;
-  unitPrice: number;
-  reason?: string;
-}
 
 interface ReturnLine {
   productId: number;
@@ -75,17 +54,10 @@ export default function ReturnsPage() {
     const loadReturns = async () => {
         try {
             setLoading(true);
-            // Note: Backend might not have a GET endpoint for returns list
-            // This is a placeholder - adjust based on actual API
-            const data = await apiData<SalesReturnDto[]>(
-                '/api/v1/accounting/sales/returns',
-                { headers: session?.companyCode ? { 'X-Company-Id': session.companyCode } : undefined },
-                session ?? undefined
-            ).catch(() => []); // Return empty array if endpoint doesn't exist
+            const data = await listSalesReturns(undefined, session);
             setReturns(data);
-        } catch (err) {
-            console.error('Failed to load returns', err);
-            // Don't show error if endpoint doesn't exist
+        } catch {
+            // Don't show error if endpoint doesn't exist yet
         } finally {
             setLoading(false);
         }
@@ -113,15 +85,7 @@ export default function ReturnsPage() {
                     reason: line.reason || undefined,
                 })),
             };
-            await apiData<SalesReturnDto>(
-                '/api/v1/accounting/sales/returns',
-                {
-                    method: 'POST',
-                    headers: session?.companyCode ? { 'X-Company-Id': session.companyCode } : undefined,
-                    body: JSON.stringify(payload),
-                },
-                session ?? undefined
-            );
+            await createSalesReturn(payload, session);
             setShowModal(false);
             setFormData({
                 dealerId: 0,
@@ -163,7 +127,7 @@ export default function ReturnsPage() {
         setLines(lines.filter((_, i) => i !== index));
     };
 
-    const updateLine = (index: number, field: keyof ReturnLine, value: any) => {
+    const updateLine = (index: number, field: keyof ReturnLine, value: string | number) => {
         const newLines = [...lines];
         newLines[index] = { ...newLines[index], [field]: value };
         setLines(newLines);

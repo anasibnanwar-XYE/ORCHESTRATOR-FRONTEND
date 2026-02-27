@@ -1,7 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
+import { FileDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { createDealer, listDealers, toggleDealerHold, type DealerSummary, type CreateDealerPayload } from '../../lib/accountingApi';
+import {
+  createDealer,
+  listDealers,
+  toggleDealerHold,
+  getDealerStatementPdf,
+  getDealerAgingPdf,
+  type DealerSummary,
+  type CreateDealerPayload,
+} from '../../lib/accountingApi';
 import SettlementModal from '../../components/SettlementModal';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,6 +67,19 @@ const initialForm = {
   creditLimit: '',
 };
 
+// ── PDF Download Helper ───────────────────────────────────────────────────────
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function DealersPage() {
@@ -73,6 +95,8 @@ export default function DealersPage() {
   const [holdError, setHoldError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{ name: string; email: string; password: string } | null>(null);
   const [settlementDealer, setSettlementDealer] = useState<DealerSummary | null>(null);
+  const [pdfDownloading, setPdfDownloading] = useState<{ id: number; type: 'statement' | 'aging' } | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>({
     open: false,
     title: '',
@@ -148,6 +172,25 @@ export default function DealersPage() {
     }
   };
 
+  const handleDownloadPdf = async (dealer: DealerWithHold, type: 'statement' | 'aging') => {
+    if (!session || !dealer.id) return;
+    setPdfDownloading({ id: dealer.id, type });
+    setPdfError(null);
+    try {
+      const blob = type === 'statement'
+        ? await getDealerStatementPdf(dealer.id, session)
+        : await getDealerAgingPdf(dealer.id, session);
+      const filename = type === 'statement'
+        ? `dealer-statement-${dealer.code || dealer.id}.pdf`
+        : `dealer-aging-${dealer.code || dealer.id}.pdf`;
+      downloadBlob(blob, filename);
+    } catch (e) {
+      setPdfError(e instanceof Error ? e.message : 'Failed to download PDF');
+    } finally {
+      setPdfDownloading(null);
+    }
+  };
+
   const handleToggleHold = (dealer: DealerWithHold) => {
     const action = dealer.onHold ? 'release' : 'hold';
     setConfirmState({
@@ -197,6 +240,11 @@ export default function DealersPage() {
       {holdError && (
         <div className="rounded-xl border border-transparent bg-status-error-bg px-4 py-3 text-sm text-status-error-text">
           {holdError}
+        </div>
+      )}
+      {pdfError && (
+        <div className="rounded-xl border border-transparent bg-status-error-bg px-4 py-3 text-sm text-status-error-text">
+          {pdfError}
         </div>
       )}
 
@@ -333,10 +381,11 @@ export default function DealersPage() {
                 <thead className="bg-surface-highlight text-left text-xs font-medium uppercase tracking-wider text-secondary">
                   <tr>
                     <th className="px-4 py-2.5">Dealer</th>
-                    <th className="px-4 py-2.5">Code</th>
-                    <th className="px-4 py-2.5 text-right">Outstanding</th>
-                    <th className="px-4 py-2.5 text-right">Credit limit</th>
-                    <th className="px-4 py-2.5 text-right">Actions</th>
+                     <th className="px-4 py-2.5">Code</th>
+                     <th className="px-4 py-2.5 text-right">Outstanding</th>
+                     <th className="px-4 py-2.5 text-right">Credit limit</th>
+                     <th className="px-4 py-2.5 text-right">PDFs</th>
+                     <th className="px-4 py-2.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-surface">
@@ -353,25 +402,47 @@ export default function DealersPage() {
                       <td className="px-4 py-2.5 text-right text-secondary">
                         ₹{(dealer.creditLimit ?? 0).toLocaleString('en-IN')}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
-                        <button
-                          onClick={() => setSettlementDealer(dealer)}
-                          className="text-xs font-medium text-brand-600 hover:text-brand-700"
-                        >
-                          Settle
-                        </button>
-                        <button
-                          onClick={() => handleToggleHold(dealer)}
-                          className={clsx(
-                            'ml-3 text-xs font-medium',
-                            dealer.onHold
-                              ? 'text-status-success-text hover:opacity-80'
-                              : 'text-status-error-text hover:opacity-80'
-                          )}
-                        >
-                          {dealer.onHold ? 'Release' : 'Hold'}
-                        </button>
-                      </td>
+                       <td className="px-4 py-2.5 text-right">
+                         <div className="flex items-center justify-end gap-1.5">
+                           <button
+                             onClick={() => handleDownloadPdf(dealer, 'statement')}
+                             disabled={!!pdfDownloading}
+                             title="Download Statement PDF"
+                             className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs font-medium text-secondary hover:bg-surface-highlight hover:text-primary disabled:opacity-50 transition-colors"
+                           >
+                             <FileDown className="h-3 w-3" />
+                             {pdfDownloading?.id === dealer.id && pdfDownloading?.type === 'statement' ? '…' : 'Stmt'}
+                           </button>
+                           <button
+                             onClick={() => handleDownloadPdf(dealer, 'aging')}
+                             disabled={!!pdfDownloading}
+                             title="Download Aging PDF"
+                             className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs font-medium text-secondary hover:bg-surface-highlight hover:text-primary disabled:opacity-50 transition-colors"
+                           >
+                             <FileDown className="h-3 w-3" />
+                             {pdfDownloading?.id === dealer.id && pdfDownloading?.type === 'aging' ? '…' : 'Aging'}
+                           </button>
+                         </div>
+                       </td>
+                       <td className="px-4 py-2.5 text-right">
+                         <button
+                           onClick={() => setSettlementDealer(dealer)}
+                           className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                         >
+                           Settle
+                         </button>
+                         <button
+                           onClick={() => handleToggleHold(dealer)}
+                           className={clsx(
+                             'ml-3 text-xs font-medium',
+                             dealer.onHold
+                               ? 'text-status-success-text hover:opacity-80'
+                               : 'text-status-error-text hover:opacity-80'
+                           )}
+                         >
+                           {dealer.onHold ? 'Release' : 'Hold'}
+                         </button>
+                       </td>
                     </tr>
                   ))}
                 </tbody>
