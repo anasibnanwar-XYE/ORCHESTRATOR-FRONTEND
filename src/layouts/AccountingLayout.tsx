@@ -96,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Transactions',
     items: [
       { label: 'Journals', to: '/accounting/journals', icon: BookOpen },
+      { label: 'Chart of Accounts', to: '/accounting/chart-of-accounts', icon: Scale },
       { label: 'Periods', to: '/accounting/periods', icon: Clock },
       { label: 'Default Accounts', to: '/accounting/default-accounts', icon: SlidersHorizontal },
     ],
@@ -163,6 +164,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting': 'Dashboard',
   '/accounting/journals': 'Journals',
   '/accounting/journals/new': 'New Journal',
+  '/accounting/chart-of-accounts': 'Chart of Accounts',
   '/accounting/periods': 'Periods',
   '/accounting/default-accounts': 'Default Accounts',
   '/accounting/dealers': 'Dealers',

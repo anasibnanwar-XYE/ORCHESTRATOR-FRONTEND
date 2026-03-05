@@ -100,6 +100,24 @@ const AccountingDashboard = lazy(() =>
     default: m.AccountingDashboardPage,
   }))
 );
+/** Accounting portal — Chart of Accounts */
+const ChartOfAccountsPage = lazy(() =>
+  import('@/pages/accounting/ChartOfAccountsPage').then((m) => ({
+    default: m.ChartOfAccountsPage,
+  }))
+);
+/** Accounting portal — Journal Entries */
+const JournalsPage = lazy(() =>
+  import('@/pages/accounting/JournalsPage').then((m) => ({
+    default: m.JournalsPage,
+  }))
+);
+/** Accounting portal — Journal Detail */
+const JournalDetailPage = lazy(() =>
+  import('@/pages/accounting/JournalDetailPage').then((m) => ({
+    default: m.JournalDetailPage,
+  }))
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -347,6 +365,10 @@ function AppRouter() {
             }
           >
             <Route index element={<AccountingDashboard />} />
+            <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
+            <Route path="journals" element={<JournalsPage />} />
+            <Route path="journals/new" element={<JournalsPage />} />
+            <Route path="journals/:id" element={<JournalDetailPage />} />
             <Route path="*" element={<AccountingDashboard />} />
           </Route>
 
