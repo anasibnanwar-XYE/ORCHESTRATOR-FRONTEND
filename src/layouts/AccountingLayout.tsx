@@ -58,6 +58,10 @@ import {
   Undo2,        // Purchase Returns
   type LucideIcon,
 } from 'lucide-react';
+import {
+   ListChecks,   // Transaction Audit
+   FileBarChart2, // Audit Digest
+ } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -156,6 +160,13 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Audit', to: '/accounting/reports/audit', icon: ClipboardList },
     ],
   },
+   {
+     title: 'Audit & Operations',
+     items: [
+       { label: 'Audit Digest', to: '/accounting/audit-digest', icon: FileBarChart2 },
+       { label: 'Transaction Audit', to: '/accounting/transaction-audit', icon: ListChecks },
+     ],
+   },
   {
     title: 'Settings',
     items: [
@@ -164,6 +175,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+ // These routes were previously placeholders, now pointing to real pages
+ // (config-health and month-end are now real pages - NAV already correct)
 
 /**
  * Map of route path prefixes to their module keys.
@@ -213,6 +227,12 @@ const ROUTE_LABELS: Record<string, string> = {
   new: 'New',
   edit: 'Edit',
 };
+
+ // Add new route labels
+ Object.assign(ROUTE_LABELS, {
+   '/accounting/audit-digest': 'Audit Digest',
+   '/accounting/transaction-audit': 'Transaction Audit',
+ });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar content

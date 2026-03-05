@@ -66,11 +66,23 @@
  export interface AccountingPeriodDto {
    id: number;
    name: string;
+   label?: string;
    startDate: string;
    endDate: string;
    status: 'OPEN' | 'CLOSED' | 'LOCKED';
+   year?: number;
+   month?: number;
+   bankReconciled?: boolean;
+   inventoryCounted?: boolean;
+   closedAt?: string;
+   closedBy?: string;
+   lockedAt?: string;
+   lockedBy?: string;
+   reopenedAt?: string;
+   reopenedBy?: string;
  }
 
+ /** Account type per backend AccountType enum */
  /** Account type per backend AccountType enum */
  export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
 
@@ -746,3 +758,280 @@
      return response.data.data;
    },
  };
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Extended API methods (operations pages)
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** Month-End Checklist API methods */
+ export const monthEndApi = {
+   /** GET /api/v1/accounting/month-end/checklist?periodId={id} */
+   async getChecklist(periodId?: number): Promise<MonthEndChecklistDto> {
+     const query = periodId ? `?periodId=${periodId}` : '';
+     const response = await apiRequest.get<ApiResponse<MonthEndChecklistDto>>(
+       `/accounting/month-end/checklist${query}`
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/month-end/checklist/{periodId} */
+   async updateChecklist(
+     periodId: number,
+     data: MonthEndChecklistUpdateRequest
+   ): Promise<MonthEndChecklistDto> {
+     const response = await apiRequest.post<ApiResponse<MonthEndChecklistDto>>(
+       `/accounting/month-end/checklist/${periodId}`,
+       data
+     );
+     return response.data.data;
+   },
+ };
+
+ /** Audit API methods */
+ export const auditApi = {
+   /** GET /api/v1/accounting/audit/digest */
+   async getAuditDigest(): Promise<AuditDigestResponse> {
+     const response = await apiRequest.get<ApiResponse<AuditDigestResponse>>(
+       '/accounting/audit/digest'
+     );
+     return response.data.data;
+   },
+
+   /** GET /api/v1/accounting/audit/digest.csv — returns raw CSV text */
+   async getAuditDigestCsv(): Promise<string> {
+     const response = await apiRequest.get<string>(
+       '/accounting/audit/digest.csv',
+       { responseType: 'text' }
+     );
+     return response.data;
+   },
+
+   /** GET /api/v1/accounting/audit-trail — paginated */
+   async getAuditTrail(params?: {
+     page?: number;
+     size?: number;
+   }): Promise<AuditTrailPageResponse> {
+     const search = new URLSearchParams();
+     if (params?.page !== undefined) search.set('page', String(params.page));
+     if (params?.size !== undefined) search.set('size', String(params.size));
+     const query = search.toString() ? `?${search.toString()}` : '';
+     const response = await apiRequest.get<ApiResponse<AuditTrailPageResponse>>(
+       `/accounting/audit-trail${query}`
+     );
+     return response.data.data;
+   },
+
+   /** GET /api/v1/accounting/audit/transactions — paginated */
+   async getTransactionAudit(params?: {
+     page?: number;
+     size?: number;
+     fromDate?: string;
+     toDate?: string;
+   }): Promise<TransactionAuditPageResponse> {
+     const search = new URLSearchParams();
+     if (params?.page !== undefined) search.set('page', String(params.page));
+     if (params?.size !== undefined) search.set('size', String(params.size));
+     if (params?.fromDate) search.set('fromDate', params.fromDate);
+     if (params?.toDate) search.set('toDate', params.toDate);
+     const query = search.toString() ? `?${search.toString()}` : '';
+     const response = await apiRequest.get<ApiResponse<TransactionAuditPageResponse>>(
+       `/accounting/audit/transactions${query}`
+     );
+     return response.data.data;
+   },
+
+   /** GET /api/v1/accounting/audit/transactions/{journalEntryId} */
+   async getTransactionAuditDetail(
+     journalEntryId: number
+   ): Promise<AccountingTransactionAuditDetailDto> {
+     const response = await apiRequest.get<ApiResponse<AccountingTransactionAuditDetailDto>>(
+       `/accounting/audit/transactions/${journalEntryId}`
+     );
+     return response.data.data;
+   },
+ };
+
+ /** Config Health API */
+ export const configHealthApi = {
+   /** GET /api/v1/accounting/configuration/health */
+   async getHealthReport(): Promise<ConfigurationHealthReport> {
+     const response = await apiRequest.get<ApiResponse<ConfigurationHealthReport>>(
+       '/accounting/configuration/health'
+     );
+     return response.data.data;
+   },
+ };
+
+ /** Date Context API */
+ export const dateContextApi = {
+   /** GET /api/v1/accounting/date-context */
+   async getDateContext(): Promise<DateContextResponse> {
+     const response = await apiRequest.get<ApiResponse<DateContextResponse>>(
+       '/accounting/date-context'
+     );
+     return response.data.data;
+   },
+ };
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Month-End Checklist types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export interface MonthEndChecklistItemDto {
+   key: string;
+   label: string;
+   status: 'PASS' | 'FAIL' | 'PENDING' | 'MANUAL';
+   checked: boolean;
+   count?: number;
+   note?: string;
+ }
+
+ export interface MonthEndChecklistDto {
+   period: AccountingPeriodDto;
+   items: MonthEndChecklistItemDto[];
+   readyToClose: boolean;
+ }
+
+ export interface MonthEndChecklistUpdateRequest {
+   bankReconciled?: boolean;
+   inventoryCounted?: boolean;
+   note?: string;
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Audit types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export interface AuditDigestResponse {
+   periodLabel: string;
+   entries: string[];
+ }
+
+ export interface AccountingAuditTrailEntryDto {
+   id: number;
+   timestamp: string;
+   companyId: number;
+   companyCode: string;
+   actorUserId: number;
+   actorIdentifier: string;
+   actionType: string;
+   entityType: string;
+   entityId: string;
+   referenceNumber: string;
+   traceId: string;
+   ipAddress: string;
+   beforeState: string;
+   afterState: string;
+   sensitiveOperation: boolean;
+   metadata: Record<string, string>;
+ }
+
+ export interface AuditTrailPageResponse {
+   content: AccountingAuditTrailEntryDto[];
+   totalElements: number;
+   totalPages: number;
+   page: number;
+   size: number;
+ }
+
+ export interface AccountingTransactionAuditListItemDto {
+   journalEntryId: number;
+   referenceNumber: string;
+   entryDate: string;
+   status: string;
+   module: string;
+   transactionType: string;
+   memo: string;
+   dealerId: number | null;
+   dealerName: string | null;
+   supplierId: number | null;
+   supplierName: string | null;
+   totalDebit: number;
+   totalCredit: number;
+   reversalOfId: number | null;
+   reversalEntryId: number | null;
+   correctionType: string | null;
+   consistencyStatus: string;
+   postedAt: string | null;
+ }
+
+ export interface TransactionAuditPageResponse {
+   content: AccountingTransactionAuditListItemDto[];
+   totalElements: number;
+   totalPages: number;
+   page: number;
+   size: number;
+ }
+
+ export interface AccountingTransactionAuditDetailDto {
+   journalEntryId: number;
+   journalPublicId: string;
+   referenceNumber: string;
+   entryDate: string;
+   status: string;
+   module: string;
+   transactionType: string;
+   memo: string;
+   dealerId: number | null;
+   dealerName: string | null;
+   supplierId: number | null;
+   supplierName: string | null;
+   accountingPeriodId: number | null;
+   accountingPeriodLabel: string | null;
+   accountingPeriodStatus: string | null;
+   reversalOfId: number | null;
+   reversalEntryId: number | null;
+   correctionType: string | null;
+   correctionReason: string | null;
+   voidReason: string | null;
+   totalDebit: number;
+   totalCredit: number;
+   consistencyStatus: string;
+   consistencyNotes: string[];
+   lines: Array<{
+     accountId: number;
+     accountName: string;
+     accountCode: string;
+     debit: number;
+     credit: number;
+     description: string;
+   }>;
+   linkedDocuments: Array<{
+     documentType: string;
+     documentId: number;
+     referenceNumber: string;
+   }>;
+   eventTrail: Array<{
+     event: string;
+     timestamp: string;
+     actor: string;
+     note: string;
+   }>;
+   createdAt: string;
+   updatedAt: string;
+   postedAt: string | null;
+   createdBy: string;
+   postedBy: string | null;
+   lastModifiedBy: string | null;
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Config Health types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export interface ConfigurationIssue {
+   companyCode: string;
+   domain: string;
+   reference: string;
+   message: string;
+ }
+
+ export interface ConfigurationHealthReport {
+   healthy: boolean;
+   issues: ConfigurationIssue[];
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Date Context type
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export type DateContextResponse = Record<string, unknown>;

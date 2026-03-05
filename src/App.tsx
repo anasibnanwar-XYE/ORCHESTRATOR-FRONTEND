@@ -290,6 +290,31 @@ const PayrollPage = lazy(() =>
   }))
 );
 
+ /** Accounting portal — Month-End Checklist */
+ const MonthEndChecklistPage = lazy(() =>
+   import('@/pages/accounting/MonthEndChecklistPage').then((m) => ({
+     default: m.MonthEndChecklistPage,
+   }))
+ );
+ /** Accounting portal — Audit Digest */
+ const AuditDigestPage = lazy(() =>
+   import('@/pages/accounting/AuditDigestPage').then((m) => ({
+     default: m.AuditDigestPage,
+   }))
+ );
+ /** Accounting portal — Config Health */
+ const ConfigHealthPage = lazy(() =>
+   import('@/pages/accounting/ConfigHealthPage').then((m) => ({
+     default: m.ConfigHealthPage,
+   }))
+ );
+ /** Accounting portal — Transaction Audit */
+ const TransactionAuditPage = lazy(() =>
+   import('@/pages/accounting/TransactionAuditPage').then((m) => ({
+     default: m.TransactionAuditPage,
+   }))
+ );
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -569,6 +594,10 @@ function AppRouter() {
             <Route path="leave" element={<LeaveRequestsPage />} />
             <Route path="payroll" element={<PayrollPage />} />
             <Route path="*" element={<AccountingDashboard />} />
+             <Route path="month-end" element={<MonthEndChecklistPage />} />
+             <Route path="audit-digest" element={<AuditDigestPage />} />
+             <Route path="config-health" element={<ConfigHealthPage />} />
+             <Route path="transaction-audit" element={<TransactionAuditPage />} />
           </Route>
 
           {/* ── Sales portal ────────────────────────────────────────── */}
