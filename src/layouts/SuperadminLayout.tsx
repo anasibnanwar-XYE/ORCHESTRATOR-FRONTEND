@@ -35,6 +35,7 @@ import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useBreadcrumbs } from './useBreadcrumbs';
+import { CommandPaletteButton } from '@/components/CommandPalette';
 
 interface NavItem {
   label: string;
@@ -163,7 +164,10 @@ export function SuperadminLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Command palette button */}
+            <CommandPaletteButton />
+
             <button
               type="button"
               onClick={toggle}

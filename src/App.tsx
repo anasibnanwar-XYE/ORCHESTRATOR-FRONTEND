@@ -45,6 +45,7 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { ProfilePage } from '@/pages/auth/ProfilePage';
 import { PortalHubPage } from '@/pages/hub/PortalHubPage';
 import { useTheme } from '@/hooks/useTheme';
+import { CommandPaletteProvider } from '@/components/CommandPalette';
 import {
   resolvePortalAccess,
   shouldShowHub,
@@ -392,8 +393,10 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <ThemeInit />
-          <AppRouter />
+          <CommandPaletteProvider>
+            <ThemeInit />
+            <AppRouter />
+          </CommandPaletteProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

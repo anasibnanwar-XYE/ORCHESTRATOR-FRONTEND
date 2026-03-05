@@ -36,6 +36,8 @@ import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { resolvePortalAccess, shouldShowHub } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
+import { AdminCompanySwitcher } from '@/components/CompanySwitcher';
+import { CommandPaletteButton } from '@/components/CommandPalette';
 
 interface NavItem {
   label: string;
@@ -189,7 +191,13 @@ export function SalesLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Command palette button */}
+            <CommandPaletteButton />
+
+            {/* Company switcher */}
+            <AdminCompanySwitcher />
+
             <button
               type="button"
               onClick={toggle}

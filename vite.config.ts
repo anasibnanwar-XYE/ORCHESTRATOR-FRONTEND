@@ -24,5 +24,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
     passWithNoTests: true,
+    poolOptions: {
+      forks: {
+        execArgv: ['--max-old-space-size=4096'],
+      },
+    },
   },
 })
