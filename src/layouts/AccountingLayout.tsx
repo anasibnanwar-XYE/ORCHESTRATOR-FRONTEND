@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -41,10 +41,11 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { resolvePortalAccess, shouldShowHub } from '@/lib/portal-routing';
+import { resolvePortalAccess, shouldShowHub, MODULE_KEYS, isModuleEnabled, getModuleForPath } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
 import { AdminCompanySwitcher } from '@/components/CompanySwitcher';
 import { CommandPaletteButton } from '@/components/CommandPalette';
+import { ModuleNotAvailablePage } from '@/pages/ModuleNotAvailablePage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Navigation config
@@ -55,6 +56,8 @@ interface NavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Optional module key — item is hidden if this module is disabled */
+  module?: string;
 }
 
 interface NavGroup {
@@ -81,8 +84,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'HR & Payroll',
     items: [
-      { label: 'Employees', to: '/accounting/employees', icon: UserCheck },
-      { label: 'Payroll', to: '/accounting/payroll', icon: Banknote },
+      { label: 'Employees', to: '/accounting/employees', icon: UserCheck, module: MODULE_KEYS.HR },
+      { label: 'Payroll', to: '/accounting/payroll', icon: Banknote, module: MODULE_KEYS.PAYROLL },
     ],
   },
   {
@@ -93,6 +96,15 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * Map of route path prefixes to their module keys.
+ * Routes that start with these prefixes belong to gated modules.
+ */
+const MODULE_ROUTES: Record<string, string> = {
+  '/accounting/employees': MODULE_KEYS.HR,
+  '/accounting/payroll': MODULE_KEYS.PAYROLL,
+};
 
 const ROUTE_LABELS: Record<string, string> = {
   '/accounting': 'Dashboard',
@@ -114,9 +126,11 @@ const ROUTE_LABELS: Record<string, string> = {
 
 function SidebarContent({
   showBackToHub,
+  enabledModules,
   onNavClick,
 }: {
   showBackToHub: boolean;
+  enabledModules: string[];
   onNavClick?: () => void;
 }) {
   const navigate = useNavigate();
@@ -147,41 +161,50 @@ function SidebarContent({
           </button>
         )}
 
-        {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="mb-4">
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-              {group.title}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={onNavClick}
-                  className={({ isActive }) =>
-                    clsx(
-                      'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
-                      isActive
-                        ? 'bg-[var(--color-neutral-900)] text-white'
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon
-                        size={15}
-                        className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
-                      />
-                      {item.label}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+        {NAV_GROUPS.map((group) => {
+          // Filter out nav items whose module is disabled
+          const visibleItems = group.items.filter(
+            (item) => !item.module || isModuleEnabled(enabledModules, item.module)
+          );
+          // Omit group entirely if it has no visible items
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.title} className="mb-4">
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                {group.title}
+              </p>
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    onClick={onNavClick}
+                    className={({ isActive }) =>
+                      clsx(
+                        'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                        isActive
+                          ? 'bg-[var(--color-neutral-900)] text-white'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon
+                          size={15}
+                          className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
+                        />
+                        {item.label}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
     </div>
   );
@@ -192,21 +215,27 @@ function SidebarContent({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function AccountingLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, enabledModules } = useAuth();
   const { toggle, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const access = useMemo(() => resolvePortalAccess(user), [user]);
   const showBackToHub = useMemo(() => shouldShowHub(access), [access]);
 
   const breadcrumbs = useBreadcrumbs('/accounting', 'Accounting', ROUTE_LABELS);
 
+  // Check if current route belongs to a disabled module
+  const currentModuleKey = getModuleForPath(location.pathname, MODULE_ROUTES);
+  const isCurrentModuleDisabled =
+    currentModuleKey !== null && !isModuleEnabled(enabledModules, currentModuleKey);
+
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-surface-secondary)]">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-[220px] shrink-0 border-r border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
-        <SidebarContent showBackToHub={showBackToHub} />
+        <SidebarContent showBackToHub={showBackToHub} enabledModules={enabledModules} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -226,6 +255,7 @@ export function AccountingLayout() {
           <div className="flex-1 overflow-y-auto">
             <SidebarContent
               showBackToHub={showBackToHub}
+              enabledModules={enabledModules}
               onNavClick={() => setMobileOpen(false)}
             />
           </div>
@@ -283,7 +313,11 @@ export function AccountingLayout() {
         <main className="flex-1 overflow-auto">
           <div className="mx-auto max-w-7xl p-4 sm:p-6">
             <ErrorBoundary>
-              <Outlet />
+              {isCurrentModuleDisabled ? (
+                <ModuleNotAvailablePage returnPath="/accounting" />
+              ) : (
+                <Outlet />
+              )}
             </ErrorBoundary>
           </div>
         </main>

@@ -12,9 +12,68 @@
  *  ROLE_FACTORY      → factory only
  *  ROLE_SALES        → sales only
  *  ROLE_DEALER       → dealer only
+ *
+ * Module gating:
+ *  Each portal may have sub-modules that can be disabled per company.
+ *  MODULE_KEYS defines the canonical module identifiers.
+ *  isModuleEnabled() checks whether a module is active for the current session.
+ *  An empty enabledModules list (or undefined) means ALL modules are enabled.
  */
 
 import type { User } from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Module key constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Canonical module identifiers used in nav item definitions and route guards.
+ * When a module key appears here, nav items tagged with that key can be
+ * hidden from the sidebar and their routes can show ModuleNotAvailablePage.
+ */
+export const MODULE_KEYS = {
+  /** HR — employee management within the Accounting portal */
+  HR: 'hr',
+  /** Payroll — payroll runs within the Accounting portal */
+  PAYROLL: 'payroll',
+  /** Production — plans, logs, and batches within the Factory portal */
+  PRODUCTION: 'production',
+  /** Packing — packing queue and history within the Factory portal */
+  PACKING: 'packing',
+} as const;
+
+export type ModuleKey = (typeof MODULE_KEYS)[keyof typeof MODULE_KEYS];
+
+/**
+ * Returns true when the given module is enabled for the session.
+ *
+ * Rules:
+ *  - If enabledModules is empty (or undefined), ALL modules are enabled.
+ *  - If enabledModules is non-empty, only listed modules are enabled.
+ */
+export function isModuleEnabled(
+  enabledModules: string[] | undefined,
+  moduleKey: string
+): boolean {
+  if (!enabledModules || enabledModules.length === 0) return true;
+  return enabledModules.includes(moduleKey);
+}
+
+/**
+ * Given the current pathname and a map of path prefixes → module keys,
+ * returns the module key for the current path, or null if not gated.
+ */
+export function getModuleForPath(
+  pathname: string,
+  moduleRoutes: Record<string, string>
+): string | null {
+  for (const [prefix, moduleKey] of Object.entries(moduleRoutes)) {
+    if (pathname === prefix || pathname.startsWith(prefix + '/')) {
+      return moduleKey;
+    }
+  }
+  return null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Role constants

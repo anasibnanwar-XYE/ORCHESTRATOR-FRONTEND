@@ -158,6 +158,25 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Blocks superadmin users from accessing the portal hub and tenant portals.
+ * Superadmin users are isolated to /superadmin only.
+ */
+function RequireNonSuperadmin({ children }: { children: ReactNode }) {
+  const { isAuthenticated, mustChangePassword, isLoading, user } = useAuth();
+
+  if (isLoading) return null;
+  if (mustChangePassword) return <Navigate to="/change-password" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  const access = resolvePortalAccess(user);
+  if (access.superadmin) {
+    return <Navigate to="/superadmin" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 /** Redirects authenticated users away from guest-only pages (login, etc.). */
 function RequireGuest({ children }: { children: ReactNode }) {
   const { isAuthenticated, mustChangePassword, isLoading, user } = useAuth();
@@ -278,13 +297,13 @@ function AppRouter() {
             }
           />
 
-          {/* ── Portal hub (multi-portal users) ───────────────────── */}
+          {/* ── Portal hub (multi-portal users, non-superadmin only) ─ */}
           <Route
             path="/hub"
             element={
-              <RequireAuth>
+              <RequireNonSuperadmin>
                 <PortalHubPage />
-              </RequireAuth>
+              </RequireNonSuperadmin>
             }
           />
 

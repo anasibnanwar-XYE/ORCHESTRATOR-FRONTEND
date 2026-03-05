@@ -37,7 +37,7 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { resolvePortalAccess, shouldShowHub } from '@/lib/portal-routing';
+import { resolvePortalAccess, shouldShowHub, isModuleEnabled } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
 import { AdminCompanySwitcher } from '@/components/CompanySwitcher';
 import { CommandPaletteButton } from '@/components/CommandPalette';
@@ -51,6 +51,8 @@ interface NavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Optional module key — item is hidden if this module is disabled */
+  module?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -81,12 +83,19 @@ const ROUTE_LABELS: Record<string, string> = {
 
 function SidebarContent({
   showBackToHub,
+  enabledModules,
   onNavClick,
 }: {
   showBackToHub: boolean;
+  enabledModules: string[];
   onNavClick?: () => void;
 }) {
   const navigate = useNavigate();
+
+  // Filter out nav items whose module is disabled
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.module || isModuleEnabled(enabledModules, item.module)
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -115,7 +124,7 @@ function SidebarContent({
           </button>
         )}
 
-        {NAV_ITEMS.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -151,7 +160,7 @@ function SidebarContent({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function AdminLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, enabledModules } = useAuth();
   const { toggle, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
@@ -165,7 +174,7 @@ export function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-[var(--color-surface-secondary)]">
       {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
       <aside className="hidden lg:flex lg:flex-col w-[220px] shrink-0 border-r border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
-        <SidebarContent showBackToHub={showBackToHub} />
+        <SidebarContent showBackToHub={showBackToHub} enabledModules={enabledModules} />
       </aside>
 
       {/* ── Mobile Drawer ────────────────────────────────────────────── */}
@@ -185,6 +194,7 @@ export function AdminLayout() {
           <div className="flex-1 overflow-y-auto">
             <SidebarContent
               showBackToHub={showBackToHub}
+              enabledModules={enabledModules}
               onNavClick={() => setMobileOpen(false)}
             />
           </div>

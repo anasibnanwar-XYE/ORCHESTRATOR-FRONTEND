@@ -73,6 +73,12 @@ export interface User {
   isActive: boolean;
   mfaEnabled: boolean;
   mustChangePassword?: boolean;
+  /**
+   * List of enabled module keys for the user's company.
+   * An empty array (or missing) means all modules are enabled.
+   * When non-empty, only the listed modules are enabled.
+   */
+  enabledModules?: string[];
   createdAt: string;
   updatedAt: string;
 }

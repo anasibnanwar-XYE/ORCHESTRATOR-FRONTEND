@@ -12,6 +12,9 @@ import {
   getDefaultPortalPath,
   getAccessiblePortals,
   canAccessPortal,
+  isModuleEnabled,
+  getModuleForPath,
+  MODULE_KEYS,
   PORTAL_ROLES,
 } from '../portal-routing';
 import type { User } from '@/types';
@@ -324,5 +327,104 @@ describe('Superadmin isolation (VAL-SHELL-003)', () => {
       const access = resolvePortalAccess(makeUser(role));
       expect(canAccessPortal(access, '/superadmin')).toBe(false);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// isModuleEnabled (VAL-SHELL-007, VAL-SHELL-008)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('isModuleEnabled', () => {
+  it('returns true when enabledModules is undefined (all modules enabled)', () => {
+    expect(isModuleEnabled(undefined, MODULE_KEYS.HR)).toBe(true);
+    expect(isModuleEnabled(undefined, MODULE_KEYS.PAYROLL)).toBe(true);
+    expect(isModuleEnabled(undefined, MODULE_KEYS.PRODUCTION)).toBe(true);
+    expect(isModuleEnabled(undefined, MODULE_KEYS.PACKING)).toBe(true);
+  });
+
+  it('returns true when enabledModules is empty (all modules enabled by default)', () => {
+    expect(isModuleEnabled([], MODULE_KEYS.HR)).toBe(true);
+    expect(isModuleEnabled([], MODULE_KEYS.PAYROLL)).toBe(true);
+    expect(isModuleEnabled([], MODULE_KEYS.PRODUCTION)).toBe(true);
+    expect(isModuleEnabled([], MODULE_KEYS.PACKING)).toBe(true);
+  });
+
+  it('returns true when the module is in the enabled list', () => {
+    const enabledModules = [MODULE_KEYS.HR, MODULE_KEYS.PAYROLL];
+    expect(isModuleEnabled(enabledModules, MODULE_KEYS.HR)).toBe(true);
+    expect(isModuleEnabled(enabledModules, MODULE_KEYS.PAYROLL)).toBe(true);
+  });
+
+  it('returns false when the module is NOT in a non-empty enabled list', () => {
+    const enabledModules = [MODULE_KEYS.HR];
+    expect(isModuleEnabled(enabledModules, MODULE_KEYS.PAYROLL)).toBe(false);
+    expect(isModuleEnabled(enabledModules, MODULE_KEYS.PRODUCTION)).toBe(false);
+    expect(isModuleEnabled(enabledModules, MODULE_KEYS.PACKING)).toBe(false);
+  });
+
+  it('returns false for unknown module key when list is non-empty', () => {
+    const enabledModules = [MODULE_KEYS.HR];
+    expect(isModuleEnabled(enabledModules, 'unknown_module')).toBe(false);
+  });
+
+  it('is case-sensitive in module key matching', () => {
+    const enabledModules = [MODULE_KEYS.HR]; // 'hr'
+    expect(isModuleEnabled(enabledModules, 'HR')).toBe(false);
+    expect(isModuleEnabled(enabledModules, 'hr')).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getModuleForPath (VAL-SHELL-008)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getModuleForPath', () => {
+  const MODULE_ROUTES: Record<string, string> = {
+    '/accounting/employees': MODULE_KEYS.HR,
+    '/accounting/payroll': MODULE_KEYS.PAYROLL,
+    '/factory/production': MODULE_KEYS.PRODUCTION,
+    '/factory/packing': MODULE_KEYS.PACKING,
+  };
+
+  it('returns null for paths not in the module routes map', () => {
+    expect(getModuleForPath('/accounting', MODULE_ROUTES)).toBeNull();
+    expect(getModuleForPath('/accounting/journal', MODULE_ROUTES)).toBeNull();
+    expect(getModuleForPath('/factory', MODULE_ROUTES)).toBeNull();
+    expect(getModuleForPath('/factory/dispatch', MODULE_ROUTES)).toBeNull();
+    expect(getModuleForPath('/unrelated', MODULE_ROUTES)).toBeNull();
+  });
+
+  it('returns the module key for an exact path match', () => {
+    expect(getModuleForPath('/accounting/employees', MODULE_ROUTES)).toBe(MODULE_KEYS.HR);
+    expect(getModuleForPath('/accounting/payroll', MODULE_ROUTES)).toBe(MODULE_KEYS.PAYROLL);
+    expect(getModuleForPath('/factory/production', MODULE_ROUTES)).toBe(MODULE_KEYS.PRODUCTION);
+    expect(getModuleForPath('/factory/packing', MODULE_ROUTES)).toBe(MODULE_KEYS.PACKING);
+  });
+
+  it('returns the module key for a sub-path starting with the prefix', () => {
+    expect(getModuleForPath('/accounting/employees/123', MODULE_ROUTES)).toBe(MODULE_KEYS.HR);
+    expect(getModuleForPath('/accounting/payroll/runs', MODULE_ROUTES)).toBe(MODULE_KEYS.PAYROLL);
+    expect(getModuleForPath('/factory/production/plans', MODULE_ROUTES)).toBe(MODULE_KEYS.PRODUCTION);
+    expect(getModuleForPath('/factory/production/plans/new', MODULE_ROUTES)).toBe(MODULE_KEYS.PRODUCTION);
+    expect(getModuleForPath('/factory/packing/history', MODULE_ROUTES)).toBe(MODULE_KEYS.PACKING);
+  });
+
+  it('does NOT match a partial segment (prefix must be followed by / or be exact)', () => {
+    // '/factory/packingextra' should NOT match '/factory/packing'
+    expect(getModuleForPath('/factory/packingextra', MODULE_ROUTES)).toBeNull();
+    expect(getModuleForPath('/accounting/employeesmore', MODULE_ROUTES)).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODULE_KEYS constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('MODULE_KEYS', () => {
+  it('exports the expected module key values', () => {
+    expect(MODULE_KEYS.HR).toBe('hr');
+    expect(MODULE_KEYS.PAYROLL).toBe('payroll');
+    expect(MODULE_KEYS.PRODUCTION).toBe('production');
+    expect(MODULE_KEYS.PACKING).toBe('packing');
   });
 });

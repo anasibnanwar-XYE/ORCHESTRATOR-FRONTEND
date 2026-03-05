@@ -41,6 +41,11 @@ export interface AuthSession {
   companyCode: string;
   companyId: string;
   mustChangePassword: boolean;
+  /**
+   * Enabled module keys for the user's company.
+   * Empty array means all modules are enabled (default).
+   */
+  enabledModules: string[];
 }
 
 export interface MfaPendingState {
@@ -60,6 +65,11 @@ interface AuthContextValue {
   mustChangePassword: boolean;
   /** True while the initial session validation is running */
   isLoading: boolean;
+  /**
+   * Enabled module keys for the current company.
+   * Empty array means all modules are enabled (default when no data available).
+   */
+  enabledModules: string[];
   signIn: (credentials: LoginRequest) => Promise<LoginResponse>;
   signOut: () => Promise<void>;
   verifyMfa: (code: string, tempToken: string) => Promise<LoginResponse>;
@@ -95,6 +105,7 @@ function loadSessionFromStorage(): AuthSession | null {
       companyCode,
       companyId,
       mustChangePassword: user.mustChangePassword ?? false,
+      enabledModules: user.enabledModules ?? [],
     };
   } catch {
     return null;
@@ -110,6 +121,7 @@ function buildSession(result: LoginResponse): AuthSession {
     companyCode: user.companyCode ?? '',
     companyId: user.companyId !== undefined ? String(user.companyId) : '',
     mustChangePassword: result.mustChangePassword ?? false,
+    enabledModules: user.enabledModules ?? [],
   };
 }
 
@@ -252,7 +264,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession((prev) => {
       if (!prev) return null;
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      return { ...prev, user };
+      return {
+        ...prev,
+        user,
+        enabledModules: user.enabledModules ?? prev.enabledModules,
+      };
     });
   }, []);
 
@@ -264,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!session && !session.mustChangePassword,
     mustChangePassword: session?.mustChangePassword ?? false,
     isLoading,
+    enabledModules: session?.enabledModules ?? [],
     signIn,
     signOut,
     verifyMfa,
