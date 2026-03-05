@@ -66,7 +66,7 @@ const mockUser = {
   firstName: 'Admin',
   lastName: 'User',
   role: 'ROLE_ADMIN',
-  companyCode: 'BBP',
+  companyCode: 'ORCH',
   companyId: 1,
   isActive: true,
   mfaEnabled: true,
@@ -109,7 +109,7 @@ describe('MfaPage — redirect when no state', () => {
   });
 
   it('uses tempToken from location.state', () => {
-    mockLocationState = { tempToken: 'placeholder-loc-tok', email: 'test@bbp.com', companyCode: 'BBP' };
+    mockLocationState = { tempToken: 'placeholder-loc-tok', email: 'test@bbp.com', companyCode: 'ORCH' };
     renderMfaPage();
     expect(mockNavigate).not.toHaveBeenCalledWith('/login', expect.anything());
   });
@@ -117,7 +117,7 @@ describe('MfaPage — redirect when no state', () => {
   it('uses tempToken from sessionStorage when state is empty', () => {
     sessionStorageMock.setItem(
       'bbp-orchestrator-mfa-pending',
-      JSON.stringify({ tempToken: 'placeholder-ss-tok', email: 'ss@bbp.com', companyCode: 'BBP' })
+      JSON.stringify({ tempToken: 'placeholder-ss-tok', email: 'ss@bbp.com', companyCode: 'ORCH' })
     );
     renderMfaPage();
     expect(mockNavigate).not.toHaveBeenCalledWith('/login', expect.anything());
@@ -126,7 +126,7 @@ describe('MfaPage — redirect when no state', () => {
 
 describe('MfaPage — rendering', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'BBP' };
+    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
   });
 
   it('renders the verification code input', () => {
@@ -147,7 +147,7 @@ describe('MfaPage — rendering', () => {
 
 describe('MfaPage — input validation', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'BBP' };
+    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
   });
 
   it('only accepts digits (strips non-numeric chars)', () => {
@@ -175,7 +175,7 @@ describe('MfaPage — input validation', () => {
 
 describe('MfaPage — verification', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'BBP' };
+    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
   });
 
   it('calls verifyMfa with code and tempToken', async () => {
@@ -269,7 +269,7 @@ describe('MfaPage — verification', () => {
 describe('MfaPage — sessionStorage state preservation', () => {
   it('stores tempToken in sessionStorage (via location.state is used, not sessionStorage directly)', () => {
     // When location.state has tempToken, the page should render without redirect
-    mockLocationState = { tempToken: 'placeholder-abc-tok', email: 'user@bbp.com', companyCode: 'BBP' };
+    mockLocationState = { tempToken: 'placeholder-abc-tok', email: 'user@bbp.com', companyCode: 'ORCH' };
     renderMfaPage();
     // Page renders (no redirect to /login)
     expect(screen.getByLabelText(/6-digit verification code/i)).toBeInTheDocument();
@@ -278,7 +278,7 @@ describe('MfaPage — sessionStorage state preservation', () => {
   it('recovers from sessionStorage when location.state is empty', () => {
     sessionStorageMock.setItem(
       'bbp-orchestrator-mfa-pending',
-      JSON.stringify({ tempToken: 'ss-token', email: 'user@bbp.com', companyCode: 'BBP' })
+      JSON.stringify({ tempToken: 'ss-token', email: 'user@bbp.com', companyCode: 'ORCH' })
     );
     renderMfaPage();
     expect(screen.getByLabelText(/6-digit verification code/i)).toBeInTheDocument();

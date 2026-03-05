@@ -67,7 +67,7 @@ const mockUser = {
   firstName: 'Admin',
   lastName: 'User',
   role: 'ROLE_ADMIN',
-  companyCode: 'BBP',
+  companyCode: 'ORCH',
   companyId: 1,
   isActive: true,
   mfaEnabled: false,
@@ -115,10 +115,10 @@ describe('LoginPage — rendering', () => {
     expect(screen.getByLabelText(/company code/i)).toBeInTheDocument();
   });
 
-  it('company code defaults to BBP', () => {
+  it('company code defaults to empty string', () => {
     renderLoginPage();
     const input = screen.getByLabelText(/company code/i) as HTMLInputElement;
-    expect(input.value).toBe('BBP');
+    expect(input.value).toBe('');
   });
 
   it('renders sign in button', () => {
@@ -150,7 +150,7 @@ describe('LoginPage — successful login', () => {
       target: { value: 'Password1!' },
     });
     fireEvent.change(screen.getByLabelText(/company code/i), {
-      target: { value: 'BBP' },
+      target: { value: 'ORCH' },
     });
 
     await act(async () => {
@@ -160,7 +160,7 @@ describe('LoginPage — successful login', () => {
     expect(mockSignIn).toHaveBeenCalledWith({
       email: 'admin@bbp.com',
       password: 'Password1!',
-      companyCode: 'BBP',
+      companyCode: 'ORCH',
     });
   });
 

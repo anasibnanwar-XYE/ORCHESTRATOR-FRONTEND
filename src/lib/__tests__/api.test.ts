@@ -37,7 +37,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, wri
 function seedSession(overrides: Partial<Record<keyof typeof STORAGE_KEYS, string>> = {}) {
   localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, overrides.ACCESS_TOKEN ?? 'test-access-token');
   localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, overrides.REFRESH_TOKEN ?? 'test-refresh-token');
-  localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, overrides.COMPANY_CODE ?? 'BBP');
+  localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, overrides.COMPANY_CODE ?? 'ORCH');
   localStorage.setItem(STORAGE_KEYS.COMPANY_ID, overrides.COMPANY_ID ?? '42');
 }
 
@@ -225,7 +225,7 @@ describe('apiRequest interceptors', () => {
     if (adapter.mock.calls.length > 0) {
       const calledConfig = adapter.mock.calls[0][0] as { headers: Record<string, string> };
       expect(calledConfig.headers['Authorization']).toBe('Bearer test-access-token');
-      expect(calledConfig.headers['X-Company-Code']).toBe('BBP');
+      expect(calledConfig.headers['X-Company-Code']).toBe('ORCH');
       expect(calledConfig.headers['X-Company-Id']).toBe('42');
     }
   });

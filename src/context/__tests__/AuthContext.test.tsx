@@ -86,7 +86,7 @@ const mockUser = {
   firstName: 'Test',
   lastName: 'User',
   role: 'ROLE_ADMIN',
-  companyCode: 'BBP',
+  companyCode: 'ORCH',
   companyId: 1,
   isActive: true,
   mfaEnabled: false,
@@ -162,7 +162,7 @@ describe('AuthProvider — initial state', () => {
   it('resolves session after me() validates it', async () => {
     localStorageMock.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'existing-token');
     localStorageMock.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'existing-refresh');
-    localStorageMock.setItem(STORAGE_KEYS.COMPANY_CODE, 'BBP');
+    localStorageMock.setItem(STORAGE_KEYS.COMPANY_CODE, 'ORCH');
     localStorageMock.setItem(STORAGE_KEYS.COMPANY_ID, '1');
     localStorageMock.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
 
@@ -209,7 +209,7 @@ describe('signIn', () => {
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
     await act(async () => {
-      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'BBP' });
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
     });
 
     await waitFor(() => {
@@ -229,7 +229,7 @@ describe('signIn', () => {
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
     await act(async () => {
-      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'BBP' });
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
     });
 
     expect(capturedCtx!.session).toBeNull();
@@ -264,7 +264,7 @@ describe('signOut', () => {
 
     // Sign in first
     await act(async () => {
-      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'BBP' });
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
     });
 
     await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));
@@ -293,7 +293,7 @@ describe('isAuthenticated', () => {
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
     await act(async () => {
-      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'BBP' });
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
     });
 
     await waitFor(() => expect(capturedCtx!.isLoading).toBe(false));
@@ -332,7 +332,7 @@ describe('updateUser', () => {
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
     await act(async () => {
-      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'BBP' });
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
     });
 
     await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));

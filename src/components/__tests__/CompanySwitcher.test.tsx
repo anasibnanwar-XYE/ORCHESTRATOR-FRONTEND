@@ -33,7 +33,7 @@ vi.mock('@/context/AuthContext', () => ({
       firstName: 'Admin',
       lastName: 'User',
       role: 'ROLE_ADMIN',
-      companyCode: 'BBP',
+      companyCode: 'ORCH',
       companyId: 1,
       isActive: true,
       mfaEnabled: false,
@@ -41,7 +41,7 @@ vi.mock('@/context/AuthContext', () => ({
       updatedAt: '2024-01-01T00:00:00Z',
     },
     session: {
-      companyCode: 'BBP',
+      companyCode: 'ORCH',
       companyId: '1',
     },
     switchCompany: mockSwitchCompany,
@@ -57,8 +57,8 @@ vi.mock('@/lib/adminApi', () => ({
 const mockCompanies: Company[] = [
   {
     id: 1,
-    code: 'BBP',
-    name: 'BigBright Paints',
+    code: 'ORCH',
+    name: 'Orchestrator Demo',
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -116,7 +116,7 @@ describe('CompanySwitcher', () => {
 
   it('renders current company code', () => {
     renderSwitcher();
-    expect(screen.getByText('BBP')).toBeInTheDocument();
+    expect(screen.getByText('ORCH')).toBeInTheDocument();
   });
 
   it('opens dropdown when clicked', async () => {
@@ -133,7 +133,7 @@ describe('CompanySwitcher', () => {
     renderSwitcher();
     fireEvent.click(screen.getByRole('button'));
     await waitFor(() => {
-      expect(screen.getByText('BigBright Paints')).toBeInTheDocument();
+      expect(screen.getByText('Orchestrator Demo')).toBeInTheDocument();
       expect(screen.getByText('Acme Corp')).toBeInTheDocument();
     });
   });
@@ -147,7 +147,7 @@ describe('CompanySwitcher', () => {
     const searchInput = screen.getByPlaceholderText(/search companies/i);
     fireEvent.change(searchInput, { target: { value: 'Acme' } });
     expect(screen.getByText('Acme Corp')).toBeInTheDocument();
-    expect(screen.queryByText('BigBright Paints')).not.toBeInTheDocument();
+    expect(screen.queryByText('Orchestrator Demo')).not.toBeInTheDocument();
   });
 
   it('calls switchCompany when a different company is selected', async () => {
@@ -180,9 +180,9 @@ describe('CompanySwitcher', () => {
     renderSwitcher();
     fireEvent.click(screen.getByRole('button'));
     await waitFor(() => {
-      expect(screen.getByText('BigBright Paints')).toBeInTheDocument();
+      expect(screen.getByText('Orchestrator Demo')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('BigBright Paints'));
+    fireEvent.click(screen.getByText('Orchestrator Demo'));
     expect(mockSwitchCompany).not.toHaveBeenCalled();
   });
 });

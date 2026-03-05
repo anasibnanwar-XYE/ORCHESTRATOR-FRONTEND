@@ -182,19 +182,16 @@ class ApiClient {
           throw new Error('No refresh token available');
         }
 
-        const response = await axios.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
+        // /auth/refresh-token returns a raw DTO (no envelope wrapper)
+        const response = await axios.post<{ accessToken: string; refreshToken: string }>(
           `${API_BASE_URL}/auth/refresh-token`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         );
 
-        if (response.data.success) {
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
-        } else {
-          throw new Error(response.data.message || 'Token refresh failed');
-        }
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
       } finally {
         this.refreshPromise = null;
       }

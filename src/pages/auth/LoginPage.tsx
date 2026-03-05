@@ -28,7 +28,7 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [companyCode, setCompanyCode] = useState('BBP');
+  const [companyCode, setCompanyCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shaking, setShaking] = useState(false);
@@ -104,7 +104,7 @@ export function LoginPage() {
         <div className="flex flex-col items-center mb-8">
           <OrchestratorLogo size={36} variant="full" className="text-[var(--color-text-primary)]" />
           <p className="mt-3 text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] font-medium">
-            BigBright Paints ERP
+            Orchestrator ERP
           </p>
         </div>
 
@@ -164,7 +164,7 @@ export function LoginPage() {
               type="text"
               value={companyCode}
               onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
-              placeholder="e.g. BBP"
+              placeholder="e.g. ACME"
               leftIcon={<Building2 />}
               autoComplete="organization"
               required

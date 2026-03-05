@@ -61,7 +61,7 @@ vi.mock('@/context/AuthContext', () => {
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
   };
-  const stableSession = { companyCode: 'BBP' };
+  const stableSession = { companyCode: 'ORCH' };
   const stableSignOut = vi.fn();
   return {
     useAuth: () => ({

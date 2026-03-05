@@ -16,18 +16,22 @@ import type {
   SwitchCompanyRequest,
 } from '@/types';
 
+// Auth endpoints (/auth/login, /auth/mfa/verify, /auth/refresh-token) return
+// raw AuthResponse DTOs — NOT wrapped in the standard { success, data } envelope.
+
 export const authApi = {
   // ─────────────────────────────────────────────────────────────────────────
   // Login / Logout
   // ─────────────────────────────────────────────────────────────────────────
 
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiRequest.post<ApiResponse<LoginResponse>>(
+    // /auth/login returns a raw LoginResponse DTO (no envelope wrapper)
+    const response = await apiRequest.post<LoginResponse>(
       '/auth/login',
       credentials
     );
 
-    const result = response.data.data;
+    const result = response.data;
 
     // Persist full session to localStorage
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);
@@ -58,12 +62,13 @@ export const authApi = {
   // ─────────────────────────────────────────────────────────────────────────
 
   async verifyMfa(code: string, tempToken: string): Promise<LoginResponse> {
-    const response = await apiRequest.post<ApiResponse<LoginResponse>>(
+    // /auth/mfa/verify returns a raw LoginResponse DTO (no envelope wrapper)
+    const response = await apiRequest.post<LoginResponse>(
       '/auth/mfa/verify',
       { code, tempToken }
     );
 
-    const result = response.data.data;
+    const result = response.data;
 
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
@@ -169,12 +174,13 @@ export const authApi = {
   // ─────────────────────────────────────────────────────────────────────────
 
   async switchCompany(data: SwitchCompanyRequest): Promise<LoginResponse> {
-    const response = await apiRequest.post<ApiResponse<LoginResponse>>(
+    // /auth/switch-company returns a raw LoginResponse DTO (no envelope wrapper)
+    const response = await apiRequest.post<LoginResponse>(
       '/auth/switch-company',
       data
     );
 
-    const result = response.data.data;
+    const result = response.data;
 
     // Update stored tokens and company context
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);

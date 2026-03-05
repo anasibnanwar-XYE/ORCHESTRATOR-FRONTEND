@@ -1,7 +1,7 @@
 {
   "name": "orchestrator-erp-frontend",
   "version": "1.0.0",
-  "description": "Orchestrator ERP - Multi-Portal Frontend (BigBright Paints)",
+  "description": "Orchestrator ERP - Multi-Portal Frontend",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3002",

@@ -83,7 +83,7 @@ const mockUser = {
   firstName: 'Admin',
   lastName: 'User',
   role: 'ROLE_ADMIN',
-  companyCode: 'BBP',
+  companyCode: 'ORCH',
   companyId: 1,
   isActive: true,
   mfaEnabled: false,
