@@ -2,7 +2,7 @@
  * ProfilePage
  *
  * Features:
- *  - View and update profile fields (firstName, lastName, email)
+ *  - View and update profile fields (displayName, preferredName, jobTitle, email)
  *  - MFA setup: generate QR code, display secret, activate with code
  *  - MFA disable: confirmation dialog before disabling
  */
@@ -18,18 +18,18 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
-import type { User } from '@/types';
+import type { Profile } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MFA setup sub-section
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface MfaSetupSectionProps {
-  user: User;
+  mfaEnabled: boolean;
   onMfaToggled: () => void;
 }
 
-function MfaSetupSection({ user, onMfaToggled }: MfaSetupSectionProps) {
+function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
   const toast = useToast();
 
   const [setupData, setSetupData] = useState<{ qrCode: string; secret: string } | null>(null);
@@ -98,7 +98,7 @@ function MfaSetupSection({ user, onMfaToggled }: MfaSetupSectionProps) {
     }
   };
 
-  if (user.mfaEnabled) {
+  if (mfaEnabled) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)]">
@@ -353,9 +353,7 @@ export function ProfilePage() {
   const { user, updateUser } = useAuth();
   const toast = useToast();
 
-  const [profile, setProfile] = useState<Pick<User, 'firstName' | 'lastName' | 'email'> | null>(
-    null
-  );
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -363,7 +361,7 @@ export function ProfilePage() {
     authApi
       .getProfile()
       .then((u) => {
-        setProfile({ firstName: u.firstName, lastName: u.lastName, email: u.email });
+        setProfile(u);
       })
       .catch(() => {
         toast.error('Failed to load profile');
@@ -379,11 +377,14 @@ export function ProfilePage() {
     setIsSaving(true);
     try {
       const updated = await authApi.updateProfile({
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        email: profile.email,
+        displayName: profile.displayName,
+        preferredName: profile.preferredName,
+        jobTitle: profile.jobTitle,
       });
-      updateUser(updated);
+      // Sync displayName back into the auth session user
+      if (user) {
+        updateUser({ ...user, displayName: updated.displayName });
+      }
       toast.success('Profile updated');
     } catch (error) {
       const resolved = resolveError(error);
@@ -397,7 +398,12 @@ export function ProfilePage() {
     // Refresh profile to reflect new mfaEnabled state
     authApi
       .getProfile()
-      .then((u) => updateUser(u))
+      .then((p) => {
+        setProfile(p);
+        if (user) {
+          updateUser({ ...user, mfaEnabled: p.mfaEnabled });
+        }
+      })
       .catch(() => {
         /* silent */
       });
@@ -434,59 +440,54 @@ export function ProfilePage() {
           </div>
         ) : profile ? (
           <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="First name"
-                value={profile.firstName}
-                onChange={(e) =>
-                  setProfile((prev) => prev ? { ...prev, firstName: e.target.value } : prev)
-                }
-                disabled={isSaving}
-                required
-              />
-              <Input
-                label="Last name"
-                value={profile.lastName}
-                onChange={(e) =>
-                  setProfile((prev) => prev ? { ...prev, lastName: e.target.value } : prev)
-                }
-                disabled={isSaving}
-                required
-              />
-            </div>
-
             <Input
-              label="Email"
-              type="email"
-              value={profile.email}
+              label="Display name"
+              value={profile.displayName}
               onChange={(e) =>
-                setProfile((prev) => prev ? { ...prev, email: e.target.value } : prev)
+                setProfile((prev) => prev ? { ...prev, displayName: e.target.value } : prev)
               }
               disabled={isSaving}
               required
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Preferred name"
+                value={profile.preferredName ?? ''}
+                onChange={(e) =>
+                  setProfile((prev) => prev ? { ...prev, preferredName: e.target.value } : prev)
+                }
+                disabled={isSaving}
+              />
+              <Input
+                label="Job title"
+                value={profile.jobTitle ?? ''}
+                onChange={(e) =>
+                  setProfile((prev) => prev ? { ...prev, jobTitle: e.target.value } : prev)
+                }
+                disabled={isSaving}
+              />
+            </div>
 
             {/* Read-only fields */}
             {user && (
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
-                    Role
+                    Email
                   </p>
                   <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
-                    {user.role}
+                    {profile.email}
                   </p>
                 </div>
-                {user.companyCode && (
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
-                      Company
-                    </p>
-                    <p className="text-[13px] text-[var(--color-text-secondary)] font-mono font-medium">
-                      {user.companyCode}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
+                    Roles
+                  </p>
+                  <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
+                    {user.roles.join(', ')}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -520,7 +521,10 @@ export function ProfilePage() {
         </div>
 
         {user ? (
-          <MfaSetupSection user={user} onMfaToggled={handleMfaToggled} />
+          <MfaSetupSection
+            mfaEnabled={profile?.mfaEnabled ?? user.mfaEnabled}
+            onMfaToggled={handleMfaToggled}
+          />
         ) : (
           <Skeleton className="h-16 w-full rounded-lg" />
         )}
@@ -551,5 +555,3 @@ export function ProfilePage() {
     </div>
   );
 }
-
-

@@ -517,7 +517,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
   // Use user ID as a primitive dependency to avoid re-running on every render
   // when the user object reference changes (e.g., in test mocks).
-  const userId = user?.id ?? null;
+  const userId = user?.email ?? null;
 
   useEffect(() => {
     if (!isOpen || !userId) {

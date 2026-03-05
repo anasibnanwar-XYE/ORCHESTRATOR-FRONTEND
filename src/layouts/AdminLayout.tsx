@@ -239,10 +239,9 @@ export function AdminLayout() {
             {user && (
               <ProfileMenu
                 user={{
-                  firstName: user.firstName,
-                  lastName: user.lastName,
+                  displayName: user.displayName,
                   email: user.email,
-                  role: user.role,
+                  role: user.roles[0] ?? '',
                 }}
                 onLogout={signOut}
                 onProfile={() => navigate('/profile')}

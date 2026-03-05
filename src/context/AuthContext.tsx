@@ -124,9 +124,9 @@ function buildSession(result: AuthResult): AuthSession {
     user,
     accessToken,
     refreshToken,
-    // Prefer the companyCode from the flat DTO; fall back to user.companyCode
-    companyCode: companyCode ?? user.companyCode ?? '',
-    companyId: user.companyId !== undefined ? String(user.companyId) : '',
+    // companyCode comes from the flat DTO (LoginResponse); User no longer carries it
+    companyCode: companyCode ?? '',
+    companyId: user.companyId ?? '',
     mustChangePassword: mustChangePassword ?? false,
     enabledModules: user.enabledModules ?? [],
   };

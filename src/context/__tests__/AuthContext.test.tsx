@@ -81,18 +81,13 @@ Object.defineProperty(globalThis, 'sessionStorage', {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockUser = {
-  id: 1,
   email: 'test@bbp.com',
-  firstName: 'Test',
-  lastName: 'User',
-  role: 'ROLE_ADMIN',
-  companyCode: 'ORCH',
-  companyId: 1,
-  isActive: true,
+  displayName: 'Test User',
+  companyId: '1',
+  roles: ['ROLE_ADMIN'],
+  permissions: [],
   mfaEnabled: false,
   mustChangePassword: false,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
 };
 
 // AuthResult shape: flat DTO fields + hydrated user from /auth/me
@@ -114,7 +109,7 @@ function AuthProbe({
 }) {
   const ctx = useAuth();
   onRender(ctx);
-  return <div data-testid="probe">{ctx.user?.firstName ?? 'none'}</div>;
+  return <div data-testid="probe">{ctx.user?.displayName ?? 'none'}</div>;
 }
 
 function renderWithAuth(component: React.ReactNode) {
@@ -351,18 +346,18 @@ describe('updateUser', () => {
 
     await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));
 
-    const updatedUser = { ...mockUser, firstName: 'Updated' };
+    const updatedUser = { ...mockUser, displayName: 'Updated Name' };
     act(() => {
       capturedCtx!.updateUser(updatedUser);
     });
 
     await waitFor(() => {
-      expect(capturedCtx!.user?.firstName).toBe('Updated');
+      expect(capturedCtx!.user?.displayName).toBe('Updated Name');
     });
 
     // Also persisted to localStorage
     const stored = JSON.parse(localStorageMock.getItem(STORAGE_KEYS.USER) ?? '{}');
-    expect(stored.firstName).toBe('Updated');
+    expect(stored.displayName).toBe('Updated Name');
   });
 });
 

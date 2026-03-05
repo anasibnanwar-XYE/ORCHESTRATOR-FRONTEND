@@ -78,18 +78,13 @@ import { authApi } from '@/lib/authApi';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockUser = {
-  id: 1,
   email: 'admin@bbp.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  role: 'ROLE_ADMIN',
-  companyCode: 'ORCH',
-  companyId: 1,
-  isActive: true,
+  displayName: 'Admin User',
+  companyId: '1',
+  roles: ['ROLE_ADMIN'],
+  permissions: [],
   mfaEnabled: false,
   mustChangePassword: true,
-  createdAt: '2024-01-01',
-  updatedAt: '2024-01-01',
 };
 
 function renderPage() {

@@ -31,15 +31,11 @@ vi.mock('react-router-dom', async () => {
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     user: {
-      id: 1,
       email: 'admin@test.com',
-      firstName: 'Alice',
-      lastName: 'Admin',
-      role: 'ROLE_ADMIN',
-      isActive: true,
+      displayName: 'Alice Admin',
+      roles: ['ROLE_ADMIN'],
+      permissions: [],
       mfaEnabled: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
     },
     signOut: vi.fn(),
   }),
@@ -73,7 +69,7 @@ describe('PortalHubPage', () => {
 
   it('renders greeting with user first name', () => {
     renderHubPage();
-    expect(screen.getByText(/welcome back, alice/i)).toBeInTheDocument();
+    expect(screen.getByText(/welcome back, alice admin/i)).toBeInTheDocument();
   });
 
   it('renders portal cards for ROLE_ADMIN (Admin, Accounting, Sales, Factory)', () => {
@@ -142,15 +138,11 @@ describe('PortalHubPage — ROLE_DEALER user', () => {
     vi.doMock('@/context/AuthContext', () => ({
       useAuth: () => ({
         user: {
-          id: 2,
           email: 'noaccess@test.com',
-          firstName: 'No',
-          lastName: 'Access',
-          role: 'ROLE_UNKNOWN',
-          isActive: true,
+          displayName: 'No Access',
+          roles: ['ROLE_UNKNOWN'],
+          permissions: [],
           mfaEnabled: false,
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-01-01T00:00:00Z',
         },
         signOut: vi.fn(),
       }),

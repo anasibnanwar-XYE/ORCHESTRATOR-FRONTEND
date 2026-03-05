@@ -77,41 +77,68 @@ export interface SwitchCompanyRequest {
 // User Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * User shape matching backend MeResponse (GET /auth/me).
+ * Note: no id, firstName, lastName, role (singular), isActive, companyCode, createdAt, updatedAt.
+ */
 export interface User {
-  id: number;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  companyId?: number;
-  companyCode?: string;
-  isActive: boolean;
+  displayName: string;
+  companyId?: string;
   mfaEnabled: boolean;
   mustChangePassword?: boolean;
+  /** Array of role strings, e.g. ["ROLE_ADMIN"] */
+  roles: string[];
+  permissions: string[];
   /**
    * List of enabled module keys for the user's company.
    * An empty array (or missing) means all modules are enabled.
    * When non-empty, only the listed modules are enabled.
    */
   enabledModules?: string[];
+}
+
+/**
+ * Profile shape matching backend ProfileResponse (GET /auth/profile).
+ */
+export interface Profile {
+  email: string;
+  displayName: string;
+  preferredName?: string;
+  jobTitle?: string;
+  profilePictureUrl?: string;
+  phoneSecondary?: string;
+  secondaryEmail?: string;
+  mfaEnabled: boolean;
+  companies: string[];
   createdAt: string;
-  updatedAt: string;
+  publicId: string;
+}
+
+/**
+ * Request body for PUT /auth/profile.
+ */
+export interface UpdateProfileRequest {
+  displayName?: string;
+  preferredName?: string;
+  jobTitle?: string;
+  profilePictureUrl?: string;
+  phoneSecondary?: string;
+  secondaryEmail?: string;
 }
 
 export interface CreateUserRequest {
   email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
+  displayName: string;
+  roles: string[];
   password?: string;
   companyCode?: string;
 }
 
 export interface UpdateUserRequest {
   email?: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
+  displayName?: string;
+  roles?: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

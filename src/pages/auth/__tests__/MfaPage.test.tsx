@@ -61,18 +61,13 @@ vi.mock('@/components/ui/OrchestratorLogo', () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockUser = {
-  id: 1,
   email: 'admin@bbp.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  role: 'ROLE_ADMIN',
-  companyCode: 'ORCH',
-  companyId: 1,
-  isActive: true,
+  displayName: 'Admin User',
+  companyId: '1',
+  roles: ['ROLE_ADMIN'],
+  permissions: [],
   mfaEnabled: true,
   mustChangePassword: false,
-  createdAt: '2024-01-01',
-  updatedAt: '2024-01-01',
 };
 
 const ssStore: Record<string, string> = {};

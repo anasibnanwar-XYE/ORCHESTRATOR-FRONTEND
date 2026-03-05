@@ -51,15 +51,11 @@ vi.mock('@/context/AuthContext', () => {
   // Stable references inside the factory prevent infinite loops
   // caused by new objects being created on every render.
   const stableUser = {
-    id: 1,
     email: 'admin@test.com',
-    firstName: 'Alice',
-    lastName: 'Admin',
-    role: 'ROLE_ADMIN',
-    isActive: true,
+    displayName: 'Alice Admin',
+    roles: ['ROLE_ADMIN'],
+    permissions: [],
     mfaEnabled: false,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   };
   const stableSession = { companyCode: 'ORCH' };
   const stableSignOut = vi.fn();

@@ -32,7 +32,7 @@ import type { Company } from '@/types';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function CompanySwitcher() {
-  const { session, switchCompany, user } = useAuth();
+  const { session, switchCompany } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -45,7 +45,9 @@ export function CompanySwitcher() {
   const containerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const currentCode = session?.companyCode ?? user?.companyCode ?? '';
+  // companyCode lives on the session (from LoginResponse), not on the User
+  const currentCode = session?.companyCode ?? '';
+
 
   // Close on outside click
   useEffect(() => {
@@ -267,6 +269,6 @@ export function CompanySwitcher() {
  */
 export function AdminCompanySwitcher(): ReactNode {
   const { user } = useAuth();
-  if (!user || user.role !== 'ROLE_ADMIN') return null;
+  if (!user || !user.roles.includes('ROLE_ADMIN')) return null;
   return <CompanySwitcher />;
 }

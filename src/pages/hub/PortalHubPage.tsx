@@ -110,10 +110,9 @@ export function PortalHubPage() {
           {user && (
             <ProfileMenu
               user={{
-                firstName: user.firstName,
-                lastName: user.lastName,
+                displayName: user.displayName,
                 email: user.email,
-                role: user.role,
+                role: user.roles[0] ?? '',
               }}
               onLogout={signOut}
               onProfile={() => navigate('/profile')}
@@ -127,7 +126,7 @@ export function PortalHubPage() {
         {/* Greeting */}
         <div className="mb-10">
           <h1 className="text-[22px] font-semibold text-[var(--color-text-primary)] tracking-tight mb-1">
-            {user?.firstName ? `Welcome back, ${user.firstName}` : 'Welcome back'}
+            {user?.displayName ? `Welcome back, ${user.displayName}` : 'Welcome back'}
           </h1>
           <p className="text-[13px] text-[var(--color-text-secondary)]">
             Select a portal to continue.

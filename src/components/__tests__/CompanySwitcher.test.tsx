@@ -37,17 +37,12 @@ vi.mock('react-router-dom', async () => {
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     user: {
-      id: 1,
       email: 'admin@test.com',
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'ROLE_ADMIN',
-      companyCode: 'ORCH',
-      companyId: 1,
-      isActive: true,
+      displayName: 'Admin User',
+      companyId: '1',
+      roles: ['ROLE_ADMIN'],
+      permissions: [],
       mfaEnabled: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
     },
     session: {
       companyCode: 'ORCH',

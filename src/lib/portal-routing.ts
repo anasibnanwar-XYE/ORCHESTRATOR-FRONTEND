@@ -178,19 +178,19 @@ export const PORTAL_DESCRIPTORS: PortalDescriptor[] = [
  * ROLE_ADMIN inherits admin + accounting + sales + factory access.
  */
 export function resolvePortalAccess(user: User | null): PortalAccessState {
-  const role = user?.role ?? '';
+  const roles = user?.roles ?? [];
 
-  const isSuperadmin = role === PORTAL_ROLES.SUPERADMIN;
-  const isAdmin = role === PORTAL_ROLES.ADMIN;
+  const isSuperadmin = roles.includes(PORTAL_ROLES.SUPERADMIN);
+  const isAdmin = roles.includes(PORTAL_ROLES.ADMIN);
 
   return {
     superadmin: isSuperadmin,
     admin: isAdmin,
     // Admin inherits these three portals as well
-    accounting: isAdmin || role === PORTAL_ROLES.ACCOUNTING,
-    factory: isAdmin || role === PORTAL_ROLES.FACTORY,
-    sales: isAdmin || role === PORTAL_ROLES.SALES,
-    dealer: role === PORTAL_ROLES.DEALER,
+    accounting: isAdmin || roles.includes(PORTAL_ROLES.ACCOUNTING),
+    factory: isAdmin || roles.includes(PORTAL_ROLES.FACTORY),
+    sales: isAdmin || roles.includes(PORTAL_ROLES.SALES),
+    dealer: roles.includes(PORTAL_ROLES.DEALER),
   };
 }
 

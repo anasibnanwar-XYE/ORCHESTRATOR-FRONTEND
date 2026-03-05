@@ -2,8 +2,7 @@ import { clsx } from 'clsx';
 
 interface AvatarProps {
   src?: string | null;
-  firstName: string;
-  lastName?: string;
+  displayName: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -22,8 +21,12 @@ const imgSizes = {
   lg: 'h-12 w-12',
 };
 
-function getInitials(first: string, last?: string) {
-  return (first?.charAt(0) || '') + (last?.charAt(0) || '');
+function getInitials(name: string) {
+  const words = (name ?? '').trim().split(/\s+/);
+  if (words.length >= 2) {
+    return (words[0].charAt(0) || '') + (words[words.length - 1].charAt(0) || '');
+  }
+  return words[0]?.charAt(0) || '';
 }
 
 function getColor(name: string) {
@@ -39,14 +42,14 @@ function getColor(name: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export function Avatar({ src, firstName, lastName, size = 'md', className }: AvatarProps) {
-  const initials = getInitials(firstName, lastName).toUpperCase();
+export function Avatar({ src, displayName, size = 'md', className }: AvatarProps) {
+  const initials = getInitials(displayName).toUpperCase();
 
   if (src) {
     return (
       <img
         src={src}
-        alt={`${firstName} ${lastName || ''}`}
+        alt={displayName}
         className={clsx('rounded-full object-cover', imgSizes[size], className)}
       />
     );
@@ -57,7 +60,7 @@ export function Avatar({ src, firstName, lastName, size = 'md', className }: Ava
       className={clsx(
         'rounded-full flex items-center justify-center font-semibold shrink-0 select-none',
         sizeStyles[size],
-        getColor(firstName + (lastName || '')),
+        getColor(displayName),
         className,
       )}
     >

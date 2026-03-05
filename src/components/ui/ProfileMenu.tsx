@@ -3,8 +3,7 @@ import { clsx } from 'clsx';
 import { Avatar } from './Avatar';
 
 interface ProfileUser {
-  firstName: string;
-  lastName?: string;
+  displayName: string;
   email: string;
   role: string;
   avatar?: string | null;
@@ -45,9 +44,9 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
           isOpen && 'bg-[var(--color-surface-tertiary)]',
         )}
       >
-        <Avatar src={user.avatar} firstName={user.firstName} lastName={user.lastName} size="sm" />
+        <Avatar src={user.avatar} displayName={user.displayName} size="sm" />
         <span className="text-[13px] font-medium text-[var(--color-text-primary)] hidden sm:block max-w-[120px] truncate">
-          {user.firstName}
+          {user.displayName}
         </span>
       </button>
 
@@ -62,7 +61,7 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
         >
           <div className="px-3.5 py-3 border-b border-[var(--color-border-subtle)]">
             <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
-              {user.firstName} {user.lastName}
+              {user.displayName}
             </p>
             <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">{user.email}</p>
             <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mt-1">

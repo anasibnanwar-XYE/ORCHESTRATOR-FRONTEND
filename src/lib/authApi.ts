@@ -16,6 +16,7 @@ import type {
   User,
   SwitchCompanyRequest,
 } from '@/types';
+import type { Profile, UpdateProfileRequest } from '@/types';
 
 // Auth endpoints (/auth/login, /auth/mfa/verify, /auth/refresh-token) return
 // raw AuthResponse DTOs — NOT wrapped in the standard { success, data } envelope.
@@ -53,12 +54,13 @@ export const authApi = {
 
     // Persist user and company ID
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    if (user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    if (user.companyId) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, user.companyId);
     }
 
     return { ...dto, user };
   },
+
 
   async logout(): Promise<void> {
     try {
@@ -94,8 +96,8 @@ export const authApi = {
     const user = userResponse.data.data;
 
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    if (user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    if (user.companyId) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, user.companyId);
     }
 
     return { ...dto, user };
@@ -176,15 +178,16 @@ export const authApi = {
     return response.data.data;
   },
 
-  async getProfile(): Promise<User> {
-    const response = await apiRequest.get<ApiResponse<User>>('/auth/profile');
+  async getProfile(): Promise<Profile> {
+    const response = await apiRequest.get<ApiResponse<Profile>>('/auth/profile');
     return response.data.data;
   },
 
-  async updateProfile(data: Partial<Pick<User, 'firstName' | 'lastName' | 'email'>>): Promise<User> {
-    const response = await apiRequest.put<ApiResponse<User>>('/auth/profile', data);
+  async updateProfile(data: UpdateProfileRequest): Promise<Profile> {
+    const response = await apiRequest.put<ApiResponse<Profile>>('/auth/profile', data);
     return response.data.data;
   },
+
 
   // ─────────────────────────────────────────────────────────────────────────
   // Company switching
@@ -211,8 +214,8 @@ export const authApi = {
     const user = userResponse.data.data;
 
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    if (user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    if (user.companyId) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, user.companyId);
     }
 
     return { ...dto, user };

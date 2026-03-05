@@ -25,15 +25,11 @@ import type { User } from '@/types';
 
 function makeUser(role: string): User {
   return {
-    id: 1,
     email: 'test@example.com',
-    firstName: 'Test',
-    lastName: 'User',
-    role,
-    isActive: true,
+    displayName: 'Test User',
+    roles: [role],
+    permissions: [],
     mfaEnabled: false,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   };
 }
 
