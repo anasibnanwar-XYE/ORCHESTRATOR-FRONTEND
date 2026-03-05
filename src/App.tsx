@@ -137,6 +137,67 @@ const SettlementsPage = lazy(() =>
   }))
 );
 
+ /** Accounting portal — Invoices */
+ const InvoicesPage = lazy(() =>
+   import('@/pages/accounting/InvoicesPage').then((m) => ({
+     default: m.InvoicesPage,
+   }))
+ );
+ /** Accounting portal — Invoice Detail */
+ const InvoiceDetailPage = lazy(() =>
+   import('@/pages/accounting/InvoiceDetailPage').then((m) => ({
+     default: m.InvoiceDetailPage,
+   }))
+ );
+ /** Accounting portal — Trial Balance */
+ const TrialBalancePage = lazy(() =>
+   import('@/pages/accounting/reports/TrialBalancePage').then((m) => ({
+     default: m.TrialBalancePage,
+   }))
+ );
+ /** Accounting portal — P&L */
+ const ProfitLossPage = lazy(() =>
+   import('@/pages/accounting/reports/ProfitLossPage').then((m) => ({
+     default: m.ProfitLossPage,
+   }))
+ );
+ /** Accounting portal — Balance Sheet */
+ const BalanceSheetPage = lazy(() =>
+   import('@/pages/accounting/reports/BalanceSheetPage').then((m) => ({
+     default: m.BalanceSheetPage,
+   }))
+ );
+ /** Accounting portal — Cash Flow */
+ const CashFlowPage = lazy(() =>
+   import('@/pages/accounting/reports/CashFlowPage').then((m) => ({
+     default: m.CashFlowPage,
+   }))
+ );
+ /** Accounting portal — Aged Debtors */
+ const AgedDebtorsPage = lazy(() =>
+   import('@/pages/accounting/reports/AgedDebtorsPage').then((m) => ({
+     default: m.AgedDebtorsPage,
+   }))
+ );
+ /** Accounting portal — GST Return */
+ const GSTReturnPage = lazy(() =>
+   import('@/pages/accounting/reports/GSTReturnPage').then((m) => ({
+     default: m.GSTReturnPage,
+   }))
+ );
+ /** Accounting portal — Inventory Valuation */
+ const InventoryValuationPage = lazy(() =>
+   import('@/pages/accounting/reports/InventoryValuationPage').then((m) => ({
+     default: m.InventoryValuationPage,
+   }))
+ );
+ /** Accounting portal — Reconciliation Dashboard */
+ const ReconciliationDashboardPage = lazy(() =>
+   import('@/pages/accounting/reports/ReconciliationDashboardPage').then((m) => ({
+     default: m.ReconciliationDashboardPage,
+   }))
+ );
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -390,6 +451,16 @@ function AppRouter() {
             <Route path="periods" element={<AccountingPeriodsPage />} />
             <Route path="default-accounts" element={<DefaultAccountsPage />} />
             <Route path="settlements" element={<SettlementsPage />} />
+            <Route path="invoices" element={<InvoicesPage />} />
+            <Route path="invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="reports/trial-balance" element={<TrialBalancePage />} />
+            <Route path="reports/pl" element={<ProfitLossPage />} />
+            <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
+            <Route path="reports/cash-flow" element={<CashFlowPage />} />
+            <Route path="reports/aged-debtors" element={<AgedDebtorsPage />} />
+            <Route path="reports/gst" element={<GSTReturnPage />} />
+            <Route path="reports/inventory" element={<InventoryValuationPage />} />
+            <Route path="reports/audit" element={<ReconciliationDashboardPage />} />
             <Route path="*" element={<AccountingDashboard />} />
           </Route>
 

@@ -51,6 +51,7 @@ import {
   ClipboardList, // Audit
   ShieldCheck, // Config Health
   CheckSquare, // Month-End
+  FileText,    // Invoices
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -107,6 +108,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Dealers', to: '/accounting/dealers', icon: Users },
       { label: 'Suppliers', to: '/accounting/suppliers', icon: Building2 },
       { label: 'Settlements', to: '/accounting/settlements', icon: ArrowLeftRight },
+      { label: 'Invoices', to: '/accounting/invoices', icon: FileText },
     ],
   },
   {
@@ -170,6 +172,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/dealers': 'Dealers',
   '/accounting/suppliers': 'Suppliers',
   '/accounting/settlements': 'Settlements',
+  '/accounting/invoices': 'Invoices',
   '/accounting/catalog': 'Catalog',
   '/accounting/raw-materials': 'Raw Materials',
   '/accounting/finished-goods': 'Finished Goods',
