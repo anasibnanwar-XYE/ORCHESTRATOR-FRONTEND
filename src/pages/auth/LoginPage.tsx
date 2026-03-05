@@ -16,6 +16,7 @@ import { Eye, EyeOff, Lock, Mail, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth, MFA_SESSION_KEY } from '@/context/AuthContext';
 import { resolveError } from '@/lib/error-resolver';
+import { isApiError } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -84,9 +85,27 @@ export function LoginPage() {
       const resolved = resolveError(error);
 
       if (resolved.type === 'mfa_redirect') {
-        // 428 response with AUTH_007 — should not normally reach here
-        // since requiresMfa is in the response body, but handle defensively
-        navigate('/mfa', { state: { email, companyCode } });
+        // 428 response with AUTH_007 — extract tempToken from the error response
+        // body so MfaPage can authenticate the MFA verification step.
+        let tempToken: string | undefined;
+        if (isApiError(error)) {
+          const body = error.response?.data as Record<string, unknown> | undefined;
+          if (body && typeof body.tempToken === 'string') {
+            tempToken = body.tempToken;
+          }
+        }
+        // Persist to sessionStorage for mobile-resilient state (app switch)
+        if (tempToken) {
+          try {
+            sessionStorage.setItem(
+              MFA_SESSION_KEY,
+              JSON.stringify({ tempToken, email, companyCode })
+            );
+          } catch {
+            // sessionStorage unavailable — rely on navigate state
+          }
+        }
+        navigate('/mfa', { state: { tempToken, email, companyCode } });
         return;
       }
 

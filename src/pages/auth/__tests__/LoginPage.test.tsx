@@ -56,6 +56,8 @@ vi.mock('@/components/ui/OrchestratorLogo', () => ({
   OrchestratorLogo: () => <div data-testid="logo">Logo</div>,
 }));
 
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────name──────────────────────────────────────────────────
@@ -296,6 +298,85 @@ describe('LoginPage — error handling', () => {
       // After shake is triggered, the class should be present momentarily
       // (In testing we just verify the shake mechanism was triggered — actual animation not rendered in jsdom)
       expect(card).toBeTruthy();
+    });
+  });
+});
+
+describe('LoginPage — MFA redirect via 428 error', () => {
+  it('navigates to /mfa with tempToken extracted from 428 error response body', async () => {
+    // Create an Axios-like error with isAxiosError flag so it passes isApiError()
+    const error = Object.assign(new Error('MFA required'), {
+      isAxiosError: true,
+      response: {
+        status: 428,
+        data: {
+          code: 'AUTH_007',
+          tempToken: 'extracted-temp-token',
+          message: 'MFA verification required',
+        },
+      },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'mfa@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+    fireEvent.change(screen.getByLabelText(/company code/i), {
+      target: { value: 'ORCH' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/mfa',
+        expect.objectContaining({
+          state: expect.objectContaining({
+            tempToken: 'extracted-temp-token',
+            email: 'mfa@bbp.com',
+            companyCode: 'ORCH',
+          }),
+        })
+      );
+    });
+  });
+
+  it('navigates to /mfa even when tempToken is missing in 428 error body', async () => {
+    // AUTH_007 without tempToken — still redirects to /mfa (tempToken will be undefined)
+    const error = Object.assign(new Error('MFA required'), {
+      isAxiosError: true,
+      response: {
+        status: 428,
+        data: {
+          code: 'AUTH_007',
+          message: 'MFA verification required',
+        },
+      },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'mfa@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/mfa', expect.anything());
     });
   });
 });

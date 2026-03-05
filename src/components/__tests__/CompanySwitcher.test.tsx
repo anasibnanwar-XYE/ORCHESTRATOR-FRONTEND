@@ -24,6 +24,15 @@ import type { Company } from '@/types';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockSwitchCompany = vi.fn();
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
@@ -184,5 +193,32 @@ describe('CompanySwitcher', () => {
     });
     fireEvent.click(screen.getByText('Orchestrator Demo'));
     expect(mockSwitchCompany).not.toHaveBeenCalled();
+  });
+
+  it('navigates to /hub after successful company switch', async () => {
+    mockSwitchCompany.mockResolvedValue(undefined);
+    renderSwitcher();
+    fireEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Acme Corp'));
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/hub');
+    });
+  });
+
+  it('does not navigate when company switch fails', async () => {
+    mockSwitchCompany.mockRejectedValue(new Error('Switch failed'));
+    renderSwitcher();
+    fireEvent.click(screen.getByRole('button'));
+    await waitFor(() => {
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Acme Corp'));
+    await waitFor(() => {
+      expect(mockSwitchCompany).toHaveBeenCalled();
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

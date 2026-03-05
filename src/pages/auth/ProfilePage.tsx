@@ -9,13 +9,13 @@
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Camera, ShieldCheck, ShieldOff, User as UserIcon, KeyRound } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/lib/authApi';
 import { resolveError } from '@/lib/error-resolver';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import type { User } from '@/types';
@@ -40,6 +40,14 @@ function MfaSetupSection({ user, onMfaToggled }: MfaSetupSectionProps) {
   const [isDisableLoading, setIsDisableLoading] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const activationInputRef = useRef<HTMLInputElement>(null);
+  const disableCodeInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the disable code input when dialog opens
+  useEffect(() => {
+    if (showDisableConfirm) {
+      setTimeout(() => disableCodeInputRef.current?.focus(), 50);
+    }
+  }, [showDisableConfirm]);
 
   const handleGenerateQr = async () => {
     setIsSetupLoading(true);
@@ -117,20 +125,103 @@ function MfaSetupSection({ user, onMfaToggled }: MfaSetupSectionProps) {
           Disable MFA
         </Button>
 
-        <ConfirmDialog
-          isOpen={showDisableConfirm}
-          title="Disable two-factor authentication"
-          message="Turning off MFA reduces your account security. You'll need to enter your current authenticator code to confirm."
-          confirmLabel="Disable MFA"
-          cancelLabel="Keep MFA enabled"
-          variant="danger"
-          isLoading={isDisableLoading}
-          onCancel={() => {
-            setShowDisableConfirm(false);
-            setDisableCode('');
-          }}
-          onConfirm={handleDisable}
-        />
+        {/* MFA disable dialog — requires verification code input */}
+        {showDisableConfirm && (
+          <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
+              onClick={() => {
+                if (!isDisableLoading) {
+                  setShowDisableConfirm(false);
+                  setDisableCode('');
+                }
+              }}
+              style={{ animation: 'fadeIn 200ms ease-out forwards' }}
+            />
+            <div
+              className="relative w-full max-w-sm bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] p-6"
+              style={{
+                boxShadow: '0 24px 80px -16px rgba(0,0,0,0.12), 0 4px 12px -4px rgba(0,0,0,0.05)',
+                animation: 'slideUp 350ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              }}
+            >
+              <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+                Disable two-factor authentication
+              </h3>
+              <p className="mt-2 text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+                Turning off MFA reduces your account security. Enter your current authenticator code to confirm.
+              </p>
+
+              {/* Verification code input */}
+              <div className="mt-4">
+                <label
+                  htmlFor="mfa-disable-code"
+                  className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5"
+                >
+                  Verification code
+                </label>
+                <input
+                  ref={disableCodeInputRef}
+                  id="mfa-disable-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={disableCode}
+                  onChange={(e) =>
+                    setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                  }
+                  disabled={isDisableLoading}
+                  placeholder="000000"
+                  className={clsx(
+                    'w-full h-11 text-center text-[18px] font-mono tracking-[0.3em]',
+                    'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
+                    'rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)]',
+                    'transition-all text-[var(--color-text-primary)]',
+                    'placeholder:text-[var(--color-text-tertiary)]',
+                    'disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                  data-testid="mfa-disable-code-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && disableCode.length === 6 && !isDisableLoading) {
+                      void handleDisable();
+                    }
+                  }}
+                />
+                <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
+                  Open your authenticator app and enter the current 6-digit code
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDisableConfirm(false);
+                    setDisableCode('');
+                  }}
+                  disabled={isDisableLoading}
+                  className="btn-secondary h-9 px-4 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Keep MFA enabled
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void handleDisable(); }}
+                  disabled={disableCode.length < 6 || isDisableLoading}
+                  className={clsx(
+                    'h-9 px-4 rounded-lg text-[13px] font-medium transition-all duration-150',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+                    'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-300 active:scale-[0.98]',
+                    (disableCode.length < 6 || isDisableLoading) && 'opacity-60 pointer-events-none'
+                  )}
+                >
+                  {isDisableLoading ? 'Disabling…' : 'Disable MFA'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

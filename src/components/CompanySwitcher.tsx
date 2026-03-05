@@ -20,6 +20,7 @@ import {
 } from 'react';
 import { clsx } from 'clsx';
 import { Building2, Check, ChevronDown, Loader2, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { adminApi } from '@/lib/adminApi';
@@ -33,6 +34,7 @@ import type { Company } from '@/types';
 export function CompanySwitcher() {
   const { session, switchCompany, user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -111,13 +113,17 @@ export function CompanySwitcher() {
         await switchCompany({ companyCode: company.code });
         toast.success('Company switched', `Now viewing ${company.name}`);
         setIsOpen(false);
+        // Navigate to /hub to force remount of all portal pages so stale
+        // company-specific data (fetched under the previous company token)
+        // is discarded and fresh data is loaded under the new company.
+        navigate('/hub');
       } catch (err) {
         toast.error('Switch failed', getErrorMessage(err) ?? 'Something went wrong, please try again');
       } finally {
         setIsSwitching(false);
       }
     },
-    [currentCode, switchCompany, toast]
+    [currentCode, switchCompany, toast, navigate]
   );
 
   return (

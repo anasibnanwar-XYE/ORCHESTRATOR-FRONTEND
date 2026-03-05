@@ -127,11 +127,12 @@ function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    if (mustChangePassword) {
-      const publicPaths = ['/login', '/mfa', '/forgot-password', '/reset-password'];
-      if (!publicPaths.includes(location.pathname) && location.pathname !== '/change-password') {
-        navigate('/change-password', { replace: true });
-      }
+    // When mustChangePassword is set, block ALL routes except /change-password.
+    // /mfa, /forgot-password, and /reset-password are not exempted — they are
+    // unreachable when authenticated anyway, and a user with a pending forced
+    // password change must not bypass the gate via those paths.
+    if (mustChangePassword && location.pathname !== '/change-password') {
+      navigate('/change-password', { replace: true });
     }
   }, [isAuthenticated, mustChangePassword, isLoading, navigate, location.pathname]);
 
