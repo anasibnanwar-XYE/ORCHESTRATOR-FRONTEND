@@ -781,11 +781,6 @@
        />
  
        {/* Create / Edit Modal */}
-      <DataTable
-        data={[]}
-        columns={[]}
-        keyExtractor={() => ''}
-      />
        <Modal
         isOpen={modalOpen}
         onClose={() => {
