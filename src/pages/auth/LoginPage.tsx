@@ -82,16 +82,22 @@ export function LoginPage() {
       // Successful login — navigate to portal or hub
       navigate('/hub', { replace: true });
     } catch (error) {
-      const resolved = resolveError(error);
+      // Primary MFA detection: HTTP 428 status code (not relying on AUTH_007 code alone)
+      const is428 = isApiError(error) && error.response?.status === 428;
+      const resolved = is428 ? { type: 'mfa_redirect' as const } : resolveError(error);
 
       if (resolved.type === 'mfa_redirect') {
-        // 428 response with AUTH_007 — extract tempToken from the error response
-        // body so MfaPage can authenticate the MFA verification step.
+        // Extract tempToken from the 428 error response body.
+        // The backend may place it at either body.tempToken or body.data.tempToken.
         let tempToken: string | undefined;
         if (isApiError(error)) {
           const body = error.response?.data as Record<string, unknown> | undefined;
-          if (body && typeof body.tempToken === 'string') {
-            tempToken = body.tempToken;
+          if (body) {
+            if (typeof body.tempToken === 'string') {
+              tempToken = body.tempToken;
+            } else if (body.data && typeof (body.data as Record<string, unknown>).tempToken === 'string') {
+              tempToken = (body.data as Record<string, unknown>).tempToken as string;
+            }
           }
         }
         // Persist to sessionStorage for mobile-resilient state (app switch)

@@ -19,15 +19,30 @@ export interface LoginRequest {
   companyCode?: string;
 }
 
+/**
+ * Flat DTO returned by POST /auth/login, POST /auth/mfa/verify,
+ * POST /auth/switch-company. There is NO nested `user` object in this response.
+ * After receiving this DTO, the app calls GET /auth/me to hydrate the full User.
+ */
 export interface LoginResponse {
+  tokenType: string;
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
-  user: User;
+  /** Company code scoped to this token */
+  companyCode: string;
+  /** Formatted display name (e.g. "Jane Smith") */
+  displayName: string;
   mustChangePassword?: boolean;
   requiresMfa?: boolean;
   tempToken?: string;
 }
+
+/**
+ * Normalized auth result returned by authApi.login(), verifyMfa(), switchCompany().
+ * Combines the flat backend DTO with the hydrated User object from GET /auth/me.
+ */
+export type AuthResult = LoginResponse & { user: User };
 
 export interface MfaVerifyRequest {
   code: string;

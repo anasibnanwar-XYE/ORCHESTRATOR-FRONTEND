@@ -95,10 +95,14 @@ const mockUser = {
   updatedAt: '2024-01-01T00:00:00Z',
 };
 
+// AuthResult shape: flat DTO fields + hydrated user from /auth/me
 const mockLoginResponse = {
+  tokenType: 'Bearer',
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
   expiresIn: 3600,
+  companyCode: 'ORCH',
+  displayName: 'Test User',
   user: mockUser,
 };
 
@@ -222,7 +226,12 @@ describe('signIn', () => {
 
   it('does NOT set session when requiresMfa is true', async () => {
     (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-    const mfaResponse = { ...mockLoginResponse, requiresMfa: true, tempToken: 'placeholder-mfa-tok' };
+    const mfaResponse = {
+      ...mockLoginResponse,
+      requiresMfa: true,
+      tempToken: 'placeholder-mfa-tok',
+      user: {} as typeof mockUser, // partial user since /auth/me not called for MFA flow
+    };
     (authApi.login as ReturnType<typeof vi.fn>).mockResolvedValue(mfaResponse);
 
     let capturedCtx: ReturnType<typeof useAuth> | null = null;
@@ -285,7 +294,7 @@ describe('isAuthenticated', () => {
     const mustChangeResponse = {
       ...mockLoginResponse,
       mustChangePassword: true,
-      user: { ...mockUser, mustChangePassword: true },
+      user: { ...mockUser, mustChangePassword: true }, // hydrated user with flag
     };
     (authApi.login as ReturnType<typeof vi.fn>).mockResolvedValue(mustChangeResponse);
 

@@ -137,9 +137,12 @@ describe('LoginPage — rendering', () => {
 describe('LoginPage — successful login', () => {
   it('calls signIn with entered credentials', async () => {
     mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
       expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       user: mockUser,
     });
 
@@ -168,9 +171,12 @@ describe('LoginPage — successful login', () => {
 
   it('navigates to /hub on successful login', async () => {
     mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
       expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       user: mockUser,
     });
 
@@ -192,6 +198,12 @@ describe('LoginPage — successful login', () => {
 
   it('navigates to /mfa when requiresMfa is true', async () => {
     mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       requiresMfa: true,
       tempToken: 'placeholder-mfa-tok',
       user: mockUser,
@@ -222,6 +234,12 @@ describe('LoginPage — successful login', () => {
 
   it('navigates to /change-password when mustChangePassword is true', async () => {
     mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       mustChangePassword: true,
       user: { ...mockUser, mustChangePassword: true },
     });
@@ -406,9 +424,12 @@ describe('LoginPage — loading state', () => {
 
     // Resolve to clean up
     resolve({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
       expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       user: mockUser,
     });
   });

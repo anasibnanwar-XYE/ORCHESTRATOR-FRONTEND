@@ -145,6 +145,28 @@ export function resolveError(error: unknown): ResolvedError {
     }
   }
 
+  // HTTP status code fallback — when backend error code is absent or unknown,
+  // map common HTTP statuses to user-friendly messages. Never let raw HTTP
+  // status text or JS runtime errors leak to the user.
+  if (isApiError(error)) {
+    const status = error.response?.status;
+    if (status === 428) {
+      return { type: 'mfa_redirect' };
+    }
+    if (status === 401) {
+      return { type: 'message', message: 'Invalid email, password, or company code.' };
+    }
+    if (status === 403) {
+      return { type: 'message', message: 'Access denied.' };
+    }
+    if (status === 429) {
+      return { type: 'message', message: 'Too many attempts. Please wait a moment.' };
+    }
+    if (status !== undefined && status >= 500) {
+      return { type: 'message', message: 'Something went wrong. Please try again.' };
+    }
+  }
+
   // Fall back to raw API message (still user-facing, better than nothing)
   if (isApiError(error)) {
     const raw = getRawErrorMessage(error);

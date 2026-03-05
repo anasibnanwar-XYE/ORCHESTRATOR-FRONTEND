@@ -21,7 +21,7 @@ import {
 } from 'react';
 import { authApi } from '@/lib/authApi';
 import { STORAGE_KEYS } from '@/lib/api';
-import type { LoginRequest, LoginResponse, SwitchCompanyRequest, User } from '@/types';
+import type { AuthResult, LoginRequest, SwitchCompanyRequest, User } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -70,9 +70,9 @@ interface AuthContextValue {
    * Empty array means all modules are enabled (default when no data available).
    */
   enabledModules: string[];
-  signIn: (credentials: LoginRequest) => Promise<LoginResponse>;
+  signIn: (credentials: LoginRequest) => Promise<AuthResult>;
   signOut: () => Promise<void>;
-  verifyMfa: (code: string, tempToken: string) => Promise<LoginResponse>;
+  verifyMfa: (code: string, tempToken: string) => Promise<AuthResult>;
   switchCompany: (data: SwitchCompanyRequest) => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -112,15 +112,16 @@ function loadSessionFromStorage(): AuthSession | null {
   }
 }
 
-function buildSession(result: LoginResponse): AuthSession {
-  const { accessToken, refreshToken, user } = result;
+function buildSession(result: AuthResult): AuthSession {
+  const { accessToken, refreshToken, user, companyCode, mustChangePassword } = result;
   return {
     user,
     accessToken,
     refreshToken,
-    companyCode: user.companyCode ?? '',
+    // Prefer the companyCode from the flat DTO; fall back to user.companyCode
+    companyCode: companyCode ?? user.companyCode ?? '',
     companyId: user.companyId !== undefined ? String(user.companyId) : '',
-    mustChangePassword: result.mustChangePassword ?? false,
+    mustChangePassword: mustChangePassword ?? false,
     enabledModules: user.enabledModules ?? [],
   };
 }
@@ -222,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   const signIn = useCallback(
-    async (credentials: LoginRequest): Promise<LoginResponse> => {
+    async (credentials: LoginRequest): Promise<AuthResult> => {
       const result = await authApi.login(credentials);
 
       // requiresMfa means we need to wait for MFA verification before setting session
@@ -244,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifyMfa = useCallback(
-    async (code: string, tempToken: string): Promise<LoginResponse> => {
+    async (code: string, tempToken: string): Promise<AuthResult> => {
       const result = await authApi.verifyMfa(code, tempToken);
       setSession(buildSession(result));
       sessionStorage.removeItem(MFA_SESSION_KEY);

@@ -294,6 +294,85 @@ describe('resolveError', () => {
       expect(result.type).toBe('message');
     });
   });
+
+  describe('HTTP status fallback (no error code)', () => {
+    function makeStatusError(status: number) {
+      return new axios.AxiosError(
+        'Request failed',
+        String(status),
+        undefined,
+        undefined,
+        {
+          status,
+          statusText: 'Error',
+          data: { success: false, message: 'raw server message' },
+          headers: {},
+          config: {} as never,
+        } as unknown as AxiosResponse
+      );
+    }
+
+    it('returns mfa_redirect for 428 status with no code', () => {
+      const result = resolveError(makeStatusError(428));
+      expect(result).toEqual({ type: 'mfa_redirect' });
+    });
+
+    it('returns user-friendly message for 401 status with no code', () => {
+      const result = resolveError(makeStatusError(401));
+      expect(result).toEqual({
+        type: 'message',
+        message: 'Invalid email, password, or company code.',
+      });
+    });
+
+    it('returns user-friendly message for 403 status with no code', () => {
+      const result = resolveError(makeStatusError(403));
+      expect(result).toEqual({ type: 'message', message: 'Access denied.' });
+    });
+
+    it('returns user-friendly message for 429 status with no code', () => {
+      const result = resolveError(makeStatusError(429));
+      expect(result).toEqual({
+        type: 'message',
+        message: 'Too many attempts. Please wait a moment.',
+      });
+    });
+
+    it('returns user-friendly message for 500 status with no code', () => {
+      const result = resolveError(makeStatusError(500));
+      expect(result).toEqual({
+        type: 'message',
+        message: 'Something went wrong. Please try again.',
+      });
+    });
+
+    it('returns user-friendly message for 503 status with no code', () => {
+      const result = resolveError(makeStatusError(503));
+      expect(result).toEqual({
+        type: 'message',
+        message: 'Something went wrong. Please try again.',
+      });
+    });
+
+    it('known error code takes priority over HTTP status fallback', () => {
+      // AUTH_001 on a 401 response — code wins
+      const error = new axios.AxiosError(
+        'Request failed',
+        '401',
+        undefined,
+        undefined,
+        {
+          status: 401,
+          statusText: 'Unauthorized',
+          data: { success: false, code: 'AUTH_001', message: 'raw' },
+          headers: {},
+          config: {} as never,
+        } as unknown as AxiosResponse
+      );
+      const result = resolveError(error);
+      expect(result).toEqual({ type: 'message', message: 'Invalid email or password' });
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

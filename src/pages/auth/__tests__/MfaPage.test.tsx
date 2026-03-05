@@ -180,9 +180,12 @@ describe('MfaPage — verification', () => {
 
   it('calls verifyMfa with code and tempToken', async () => {
     mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
       expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       user: mockUser,
     });
 
@@ -199,9 +202,12 @@ describe('MfaPage — verification', () => {
 
   it('navigates to /hub on successful verification', async () => {
     mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
       expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       user: mockUser,
     });
 
@@ -218,8 +224,12 @@ describe('MfaPage — verification', () => {
 
   it('navigates to /change-password when mustChangePassword is true', async () => {
     mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
       accessToken: 'at',
       refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
       mustChangePassword: true,
       user: { ...mockUser, mustChangePassword: true },
     });

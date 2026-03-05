@@ -7,6 +7,7 @@
 import { apiRequest, STORAGE_KEYS } from './api';
 import type {
   ApiResponse,
+  AuthResult,
   LoginRequest,
   LoginResponse,
   ForgotPasswordRequest,
@@ -24,28 +25,39 @@ export const authApi = {
   // Login / Logout
   // ─────────────────────────────────────────────────────────────────────────
 
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    // /auth/login returns a raw LoginResponse DTO (no envelope wrapper)
+  async login(credentials: LoginRequest): Promise<AuthResult> {
+    // /auth/login returns a flat AuthResponse DTO (no envelope wrapper, no nested user)
     const response = await apiRequest.post<LoginResponse>(
       '/auth/login',
       credentials
     );
 
-    const result = response.data;
+    const dto = response.data;
 
-    // Persist full session to localStorage
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
-
-    if (result.user.companyCode) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, result.user.companyCode);
-    }
-    if (result.user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(result.user.companyId));
+    // Store tokens and company context so /auth/me request will be authorised
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
+    if (dto.companyCode) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, dto.companyCode);
     }
 
-    return result;
+    // If MFA is required we cannot hydrate the user yet — return early with
+    // the partial DTO. The caller (AuthContext / LoginPage) handles the redirect.
+    if (dto.requiresMfa) {
+      return { ...dto, user: {} as User };
+    }
+
+    // Hydrate the full User object via GET /auth/me (returns ApiResponse<User>)
+    const userResponse = await apiRequest.get<ApiResponse<User>>('/auth/me');
+    const user = userResponse.data.data;
+
+    // Persist user and company ID
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    if (user.companyId !== undefined) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    }
+
+    return { ...dto, user };
   },
 
   async logout(): Promise<void> {
@@ -61,27 +73,32 @@ export const authApi = {
   // MFA
   // ─────────────────────────────────────────────────────────────────────────
 
-  async verifyMfa(code: string, tempToken: string): Promise<LoginResponse> {
-    // /auth/mfa/verify returns a raw LoginResponse DTO (no envelope wrapper)
+  async verifyMfa(code: string, tempToken: string): Promise<AuthResult> {
+    // /auth/mfa/verify returns a flat AuthResponse DTO (no envelope wrapper, no nested user)
     const response = await apiRequest.post<LoginResponse>(
       '/auth/mfa/verify',
       { code, tempToken }
     );
 
-    const result = response.data;
+    const dto = response.data;
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
-
-    if (result.user.companyCode) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, result.user.companyCode);
-    }
-    if (result.user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(result.user.companyId));
+    // Store tokens and company context
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
+    if (dto.companyCode) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, dto.companyCode);
     }
 
-    return result;
+    // Hydrate the full User object via GET /auth/me
+    const userResponse = await apiRequest.get<ApiResponse<User>>('/auth/me');
+    const user = userResponse.data.data;
+
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    if (user.companyId !== undefined) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    }
+
+    return { ...dto, user };
   },
 
   async getMfaStatus(): Promise<{ mfaEnabled: boolean }> {
@@ -173,28 +190,32 @@ export const authApi = {
   // Company switching
   // ─────────────────────────────────────────────────────────────────────────
 
-  async switchCompany(data: SwitchCompanyRequest): Promise<LoginResponse> {
-    // /auth/switch-company returns a raw LoginResponse DTO (no envelope wrapper)
+  async switchCompany(data: SwitchCompanyRequest): Promise<AuthResult> {
+    // /auth/switch-company returns a flat AuthResponse DTO (no envelope wrapper, no nested user)
     const response = await apiRequest.post<LoginResponse>(
       '/auth/switch-company',
       data
     );
 
-    const result = response.data;
+    const dto = response.data;
 
     // Update stored tokens and company context
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, result.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, result.refreshToken);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
-
-    if (result.user.companyCode) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, result.user.companyCode);
-    }
-    if (result.user.companyId !== undefined) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(result.user.companyId));
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
+    if (dto.companyCode) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, dto.companyCode);
     }
 
-    return result;
+    // Hydrate the full User object via GET /auth/me
+    const userResponse = await apiRequest.get<ApiResponse<User>>('/auth/me');
+    const user = userResponse.data.data;
+
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    if (user.companyId !== undefined) {
+      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, String(user.companyId));
+    }
+
+    return { ...dto, user };
   },
 
   // ─────────────────────────────────────────────────────────────────────────
