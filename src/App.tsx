@@ -77,7 +77,7 @@ const SuperadminLayout = lazy(() =>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Lazy-loaded placeholder portal pages (until milestone pages are built)
+// Lazy-loaded portal pages
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -93,6 +93,13 @@ function PortalPlaceholder({ portal }: { portal: string }) {
     </div>
   );
 }
+
+/** Accounting portal — Dashboard */
+const AccountingDashboard = lazy(() =>
+  import('@/pages/accounting/AccountingDashboardPage').then((m) => ({
+    default: m.AccountingDashboardPage,
+  }))
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -339,8 +346,8 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Accounting" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Accounting" />} />
+            <Route index element={<AccountingDashboard />} />
+            <Route path="*" element={<AccountingDashboard />} />
           </Route>
 
           {/* ── Sales portal ────────────────────────────────────────── */}

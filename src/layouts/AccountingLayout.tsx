@@ -1,18 +1,22 @@
-/**
- * AccountingLayout — shell for the Accounting portal.
- *
- * Nav groups (per AGENTS.md workflow-first grouping):
- *  Overview:   Dashboard
- *  Core:       Journal, Dealers, Procurement, Products & Materials
- *  Controls:   Reports, Periods
- *  HR & Payroll: Employees, Payroll
- *
- * Features:
- *  - Collapsible sidebar (220px desktop, drawer on mobile < lg)
- *  - Top header: hamburger | breadcrumb | theme toggle | profile menu
- *  - ErrorBoundary wraps <Outlet />
- *  - "Back to hub" button for ROLE_ADMIN users
- */
+ /**
+  * AccountingLayout — shell for the Accounting portal.
+  *
+  * Nav groups (workflow-first, per AGENTS.md):
+  *  Overview:      Dashboard
+  *  Transactions:  Journals, Periods, Default Accounts
+  *  Partners:      Dealers, Suppliers, Settlements
+  *  Inventory:     Catalog, Raw Materials, Finished Goods, Adjustments
+  *  HR & Payroll:  Employees, Attendance, Leave, Payroll
+  *  Reports:       Trial Balance, P&L, Balance Sheet, Cash Flow,
+  *                 Aged Debtors, GST, Inventory Valuation, Audit
+  *  Settings:      Config Health, Month-End
+  *
+  * Features:
+  *  - Collapsible sidebar (220px desktop, drawer on mobile < lg)
+  *  - Top header: hamburger | breadcrumb | theme toggle | profile menu
+  *  - ErrorBoundary wraps <Outlet />
+  *  - "Back to hub" button for ROLE_ADMIN users
+  */
 
 import { useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -23,14 +27,30 @@ import {
   Moon,
   ChevronLeft,
   LayoutDashboard,
-  BookOpen,
-  Users,
-  Truck,
-  Package,
-  BarChart3,
-  Calendar,
-  UserCheck,
-  Banknote,
+  BookOpen,    // Journals
+  Clock,       // Periods
+  SlidersHorizontal, // Default Accounts
+  Users,       // Dealers
+  Building2,   // Suppliers
+  ArrowLeftRight, // Settlements
+  Package,     // Catalog
+  FlaskConical, // Raw Materials
+  Boxes,       // Finished Goods
+  ClipboardEdit, // Adjustments
+  UserCheck,   // Employees
+  CalendarDays, // Attendance
+  Palmtree,    // Leave
+  Banknote,    // Payroll
+  Scale,       // Trial Balance
+  TrendingUp,  // P&L
+  PieChart,    // Balance Sheet
+  Activity,    // Cash Flow
+  UserX,       // Aged Debtors
+  Receipt,     // GST
+  Warehouse,   // Inventory Valuation
+  ClipboardList, // Audit
+  ShieldCheck, // Config Health
+  CheckSquare, // Month-End
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -73,26 +93,57 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'Core',
+    title: 'Transactions',
     items: [
-      { label: 'Journal', to: '/accounting/journal', icon: BookOpen },
+      { label: 'Journals', to: '/accounting/journals', icon: BookOpen },
+      { label: 'Periods', to: '/accounting/periods', icon: Clock },
+      { label: 'Default Accounts', to: '/accounting/default-accounts', icon: SlidersHorizontal },
+    ],
+  },
+  {
+    title: 'Partners',
+    items: [
       { label: 'Dealers', to: '/accounting/dealers', icon: Users },
-      { label: 'Procurement', to: '/accounting/procurement', icon: Truck },
-      { label: 'Products & Materials', to: '/accounting/inventory', icon: Package },
+      { label: 'Suppliers', to: '/accounting/suppliers', icon: Building2 },
+      { label: 'Settlements', to: '/accounting/settlements', icon: ArrowLeftRight },
+    ],
+  },
+  {
+    title: 'Inventory',
+    items: [
+      { label: 'Catalog', to: '/accounting/catalog', icon: Package },
+      { label: 'Raw Materials', to: '/accounting/raw-materials', icon: FlaskConical },
+      { label: 'Finished Goods', to: '/accounting/finished-goods', icon: Boxes },
+      { label: 'Adjustments', to: '/accounting/adjustments', icon: ClipboardEdit },
     ],
   },
   {
     title: 'HR & Payroll',
     items: [
       { label: 'Employees', to: '/accounting/employees', icon: UserCheck, module: MODULE_KEYS.HR },
+      { label: 'Attendance', to: '/accounting/attendance', icon: CalendarDays, module: MODULE_KEYS.HR },
+      { label: 'Leave', to: '/accounting/leave', icon: Palmtree, module: MODULE_KEYS.HR },
       { label: 'Payroll', to: '/accounting/payroll', icon: Banknote, module: MODULE_KEYS.PAYROLL },
     ],
   },
   {
-    title: 'Controls',
+    title: 'Reports',
     items: [
-      { label: 'Reports', to: '/accounting/reports', icon: BarChart3 },
-      { label: 'Periods', to: '/accounting/periods', icon: Calendar },
+      { label: 'Trial Balance', to: '/accounting/reports/trial-balance', icon: Scale },
+      { label: 'P&L', to: '/accounting/reports/pl', icon: TrendingUp },
+      { label: 'Balance Sheet', to: '/accounting/reports/balance-sheet', icon: PieChart },
+      { label: 'Cash Flow', to: '/accounting/reports/cash-flow', icon: Activity },
+      { label: 'Aged Debtors', to: '/accounting/reports/aged-debtors', icon: UserX },
+      { label: 'GST', to: '/accounting/reports/gst', icon: Receipt },
+      { label: 'Inventory Valuation', to: '/accounting/reports/inventory', icon: Warehouse },
+      { label: 'Audit', to: '/accounting/reports/audit', icon: ClipboardList },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
+      { label: 'Config Health', to: '/accounting/config-health', icon: ShieldCheck },
+      { label: 'Month-End', to: '/accounting/month-end', icon: CheckSquare },
     ],
   },
 ];
@@ -103,19 +154,38 @@ const NAV_GROUPS: NavGroup[] = [
  */
 const MODULE_ROUTES: Record<string, string> = {
   '/accounting/employees': MODULE_KEYS.HR,
+  '/accounting/attendance': MODULE_KEYS.HR,
+  '/accounting/leave': MODULE_KEYS.HR,
   '/accounting/payroll': MODULE_KEYS.PAYROLL,
 };
 
 const ROUTE_LABELS: Record<string, string> = {
   '/accounting': 'Dashboard',
-  '/accounting/journal': 'Journal',
-  '/accounting/dealers': 'Dealers',
-  '/accounting/procurement': 'Procurement',
-  '/accounting/inventory': 'Products & Materials',
-  '/accounting/employees': 'Employees',
-  '/accounting/payroll': 'Payroll',
-  '/accounting/reports': 'Reports',
+  '/accounting/journals': 'Journals',
+  '/accounting/journals/new': 'New Journal',
   '/accounting/periods': 'Periods',
+  '/accounting/default-accounts': 'Default Accounts',
+  '/accounting/dealers': 'Dealers',
+  '/accounting/suppliers': 'Suppliers',
+  '/accounting/settlements': 'Settlements',
+  '/accounting/catalog': 'Catalog',
+  '/accounting/raw-materials': 'Raw Materials',
+  '/accounting/finished-goods': 'Finished Goods',
+  '/accounting/adjustments': 'Adjustments',
+  '/accounting/employees': 'Employees',
+  '/accounting/attendance': 'Attendance',
+  '/accounting/leave': 'Leave',
+  '/accounting/payroll': 'Payroll',
+  '/accounting/reports/trial-balance': 'Trial Balance',
+  '/accounting/reports/pl': 'P&L',
+  '/accounting/reports/balance-sheet': 'Balance Sheet',
+  '/accounting/reports/cash-flow': 'Cash Flow',
+  '/accounting/reports/aged-debtors': 'Aged Debtors',
+  '/accounting/reports/gst': 'GST',
+  '/accounting/reports/inventory': 'Inventory Valuation',
+  '/accounting/reports/audit': 'Audit',
+  '/accounting/config-health': 'Config Health',
+  '/accounting/month-end': 'Month-End',
   new: 'New',
   edit: 'Edit',
 };
