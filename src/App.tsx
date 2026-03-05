@@ -197,6 +197,42 @@ const SettlementsPage = lazy(() =>
      default: m.ReconciliationDashboardPage,
    }))
  );
+ /** Accounting portal — Suppliers */
+ const SuppliersPage = lazy(() =>
+   import('@/pages/accounting/SuppliersPage').then((m) => ({
+     default: m.SuppliersPage,
+   }))
+ );
+ /** Accounting portal — Dealers (accounting view) */
+ const DealersAccountingPage = lazy(() =>
+   import('@/pages/accounting/DealersAccountingPage').then((m) => ({
+     default: m.DealersAccountingPage,
+   }))
+ );
+ /** Accounting portal — Purchase Orders */
+ const PurchaseOrdersPage = lazy(() =>
+   import('@/pages/accounting/PurchaseOrdersPage').then((m) => ({
+     default: m.PurchaseOrdersPage,
+   }))
+ );
+ /** Accounting portal — Goods Receipt Notes */
+ const GoodsReceiptNotesPage = lazy(() =>
+   import('@/pages/accounting/GoodsReceiptNotesPage').then((m) => ({
+     default: m.GoodsReceiptNotesPage,
+   }))
+ );
+ /** Accounting portal — Raw Material Purchases */
+ const RawMaterialPurchasesPage = lazy(() =>
+   import('@/pages/accounting/RawMaterialPurchasesPage').then((m) => ({
+     default: m.RawMaterialPurchasesPage,
+   }))
+ );
+ /** Accounting portal — Purchase Returns */
+ const PurchaseReturnsPage = lazy(() =>
+   import('@/pages/accounting/PurchaseReturnsPage').then((m) => ({
+     default: m.PurchaseReturnsPage,
+   }))
+ );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -454,6 +490,12 @@ function AppRouter() {
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="invoices/:id" element={<InvoiceDetailPage />} />
             <Route path="reports/trial-balance" element={<TrialBalancePage />} />
+            <Route path="suppliers" element={<SuppliersPage />} />
+            <Route path="dealers" element={<DealersAccountingPage />} />
+            <Route path="purchasing/purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="purchasing/goods-receipts" element={<GoodsReceiptNotesPage />} />
+            <Route path="purchasing/raw-material-purchases" element={<RawMaterialPurchasesPage />} />
+            <Route path="purchasing/returns" element={<PurchaseReturnsPage />} />
             <Route path="reports/pl" element={<ProfitLossPage />} />
             <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
             <Route path="reports/cash-flow" element={<CashFlowPage />} />

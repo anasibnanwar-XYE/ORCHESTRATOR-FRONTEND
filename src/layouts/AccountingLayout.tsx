@@ -52,6 +52,10 @@ import {
   ShieldCheck, // Config Health
   CheckSquare, // Month-End
   FileText,    // Invoices
+  ShoppingCart, // Purchase Orders
+  PackageCheck, // Goods Receipts
+  ReceiptText,  // Purchase Invoices
+  Undo2,        // Purchase Returns
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -111,6 +115,15 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Invoices', to: '/accounting/invoices', icon: FileText },
     ],
   },
+   {
+     title: 'Purchasing',
+     items: [
+       { label: 'Purchase Orders', to: '/accounting/purchasing/purchase-orders', icon: ShoppingCart },
+       { label: 'Goods Receipts', to: '/accounting/purchasing/goods-receipts', icon: PackageCheck },
+       { label: 'Purchase Invoices', to: '/accounting/purchasing/raw-material-purchases', icon: ReceiptText },
+       { label: 'Purchase Returns', to: '/accounting/purchasing/returns', icon: Undo2 },
+     ],
+   },
   {
     title: 'Inventory',
     items: [
@@ -174,6 +187,10 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/settlements': 'Settlements',
   '/accounting/invoices': 'Invoices',
   '/accounting/catalog': 'Catalog',
+   '/accounting/purchasing/purchase-orders': 'Purchase Orders',
+  '/accounting/purchasing/goods-receipts': 'Goods Receipts',
+  '/accounting/purchasing/raw-material-purchases': 'Purchase Invoices',
+  '/accounting/purchasing/returns': 'Purchase Returns',
   '/accounting/raw-materials': 'Raw Materials',
   '/accounting/finished-goods': 'Finished Goods',
   '/accounting/adjustments': 'Adjustments',
