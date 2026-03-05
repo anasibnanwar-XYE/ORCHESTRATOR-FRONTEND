@@ -30,6 +30,12 @@ import type { AuthResult, LoginRequest, SwitchCompanyRequest, User } from '@/typ
 const KEEPALIVE_INTERVAL_MS = 4 * 60 * 1000; // 4 minutes
 export const MFA_SESSION_KEY = 'bbp-orchestrator-mfa-pending';
 
+/**
+ * Minimum duration (ms) to show the branded splash screen on cold load.
+ * Set to 0 in test/dev environments to keep tests fast and avoid flicker.
+ */
+const SPLASH_MIN_MS = import.meta.env.MODE === 'test' ? 0 : 700;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -151,14 +157,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(() =>
     loadSessionFromStorage()
   );
-  const [isLoading, setIsLoading] = useState<boolean>(
-    () => !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
-  );
+  // Always start loading so the branded splash is shown on every cold load
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // ─── Validate session on mount ─────────────────────────────────────────────
   useEffect(() => {
+    const splashStart = Date.now();
+
+    // Ensure the splash is shown for at least SPLASH_MIN_MS before hiding it
+    const finishLoading = () => {
+      const elapsed = Date.now() - splashStart;
+      const remaining = SPLASH_MIN_MS - elapsed;
+      if (remaining > 0) {
+        setTimeout(() => setIsLoading(false), remaining);
+      } else {
+        setIsLoading(false);
+      }
+    };
+
     if (!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
-      setIsLoading(false);
+      finishLoading();
       return;
     }
 
@@ -182,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
         setSession(null);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => finishLoading());
   }, []);
 
   // ─── Keepalive interval ────────────────────────────────────────────────────

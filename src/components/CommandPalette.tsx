@@ -316,14 +316,12 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
   return (
     <div
       className="fixed inset-0 z-[var(--z-modal,800)] flex items-start justify-center pt-[12vh] px-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
     >
-      {/* Backdrop */}
+      {/* Backdrop — clicking it dismisses the palette */}
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
         style={{ animation: 'fadeIn 150ms ease-out forwards' }}
+        onMouseDown={onClose}
       />
 
       {/* Panel */}

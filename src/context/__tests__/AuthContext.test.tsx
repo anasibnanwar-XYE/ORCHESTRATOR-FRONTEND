@@ -143,10 +143,15 @@ describe('AuthProvider — initial state', () => {
     let capturedCtx: ReturnType<typeof useAuth> | null = null;
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
-    // isLoading starts false (no token) → session is null
+    // In test mode SPLASH_MIN_MS=0 so the effect resolves synchronously and
+    // isLoading settles to false by the time render() returns.
+    // Wait for loading to complete (no-op in test mode since it's instant).
+    await waitFor(() => {
+      expect(capturedCtx!.isLoading).toBe(false);
+    });
+
     expect(capturedCtx!.session).toBeNull();
     expect(capturedCtx!.isAuthenticated).toBe(false);
-    expect(capturedCtx!.isLoading).toBe(false);
   });
 
   it('starts loading when access token exists in localStorage', async () => {

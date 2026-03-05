@@ -43,12 +43,16 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
   const rafRef = useRef<number | undefined>(undefined);
   const pausedRef = useRef(false);
   const duration = data.duration ?? 4500;
+  const isPersistent = !isFinite(duration);
 
   useEffect(() => {
     requestAnimationFrame(() => setPhase('idle'));
   }, []);
 
   useEffect(() => {
+    // Persistent toasts (Infinity duration) never auto-dismiss
+    if (isPersistent) return;
+
     timerRef.current = { start: Date.now(), remaining: duration };
 
     const tick = () => {
@@ -70,7 +74,7 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [data.id, duration, onDismiss]);
+  }, [data.id, duration, isPersistent, onDismiss]);
 
   const handleDismiss = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -106,7 +110,7 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
       )}
       style={{
         transform: phase === 'enter'
-          ? 'translateY(16px) scale(0.95)'
+          ? 'translateY(-8px) scale(0.95)'
           : phase === 'exit'
             ? 'translateX(20px) scale(0.95)'
             : 'translateY(0) scale(1)',
@@ -135,8 +139,11 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
           'absolute top-3 right-3 p-1.5 rounded-lg',
           'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]',
           'hover:bg-[var(--color-surface-tertiary)] transition-colors',
-          'opacity-0 group-hover:opacity-100 focus:opacity-100',
+          isPersistent
+            ? 'opacity-100'
+            : 'opacity-0 group-hover:opacity-100 focus:opacity-100',
         )}
+        aria-label="Dismiss"
       >
         <X size={14} />
       </button>
@@ -160,15 +167,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     toast: addToast,
     dismiss,
     success: (title, description) => addToast({ type: 'success', title, description }),
-    error: (title, description) => addToast({ type: 'error', title, description }),
-    warning: (title, description) => addToast({ type: 'warning', title, description }),
+    error: (title, description) => addToast({ type: 'error', title, description, duration: Infinity }),
+    warning: (title, description) => addToast({ type: 'warning', title, description, duration: Infinity }),
     info: (title, description) => addToast({ type: 'info', title, description }),
   };
 
   return (
     <ToastContext.Provider value={ctx}>
       {children}
-      <div className="fixed bottom-6 right-6 z-[var(--z-toast,9990)] flex flex-col gap-3 pointer-events-none items-end">
+      <div className="fixed top-6 right-6 z-[var(--z-toast,9990)] flex flex-col gap-3 pointer-events-none items-end">
         {toasts.map((t) => (
           <div key={t.id} className="pointer-events-auto">
             <ToastItem data={t} onDismiss={dismiss} />
