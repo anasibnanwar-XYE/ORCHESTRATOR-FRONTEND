@@ -265,6 +265,31 @@ const FinishedGoodsPage = lazy(() =>
   }))
 );
 
+/** Accounting portal — Employees */
+const EmployeesPage = lazy(() =>
+  import('@/pages/accounting/EmployeesPage').then((m) => ({
+    default: m.EmployeesPage,
+  }))
+);
+/** Accounting portal — Attendance */
+const AttendancePage = lazy(() =>
+  import('@/pages/accounting/AttendancePage').then((m) => ({
+    default: m.AttendancePage,
+  }))
+);
+/** Accounting portal — Leave Requests */
+const LeaveRequestsPage = lazy(() =>
+  import('@/pages/accounting/LeaveRequestsPage').then((m) => ({
+    default: m.LeaveRequestsPage,
+  }))
+);
+/** Accounting portal — Payroll */
+const PayrollPage = lazy(() =>
+  import('@/pages/accounting/PayrollPage').then((m) => ({
+    default: m.PayrollPage,
+  }))
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -539,6 +564,10 @@ function AppRouter() {
             <Route path="reports/gst" element={<GSTReturnPage />} />
             <Route path="reports/inventory" element={<InventoryValuationPage />} />
             <Route path="reports/audit" element={<ReconciliationDashboardPage />} />
+            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="attendance" element={<AttendancePage />} />
+            <Route path="leave" element={<LeaveRequestsPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
             <Route path="*" element={<AccountingDashboard />} />
           </Route>
 

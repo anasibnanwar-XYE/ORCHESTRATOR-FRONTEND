@@ -14,7 +14,7 @@ export default defineConfig({
     port: 3002,
     proxy: {
       '/api': {
-        target: 'http://asus-tuf-tail-ip:8081',
+        target: 'http://100.109.241.47:8081',
         changeOrigin: true,
       },
     },
