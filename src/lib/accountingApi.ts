@@ -187,6 +187,174 @@
    taxAccountId: number | null;
  }
 
+ export interface CompanyDefaultAccountsRequest {
+   inventoryAccountId?: number | null;
+   cogsAccountId?: number | null;
+   revenueAccountId?: number | null;
+   discountAccountId?: number | null;
+   taxAccountId?: number | null;
+ }
+
+ export interface AccountingPeriodUpsertRequest {
+   year: number;
+   month: number;
+   costingMethod?: string;
+ }
+
+ export interface AccountingPeriodCloseRequest {
+   force?: boolean;
+   note?: string;
+ }
+
+ export interface AccountingPeriodLockRequest {
+   reason?: string;
+ }
+
+ export interface AccountingPeriodReopenRequest {
+   reason?: string;
+ }
+
+ export interface SettlementAllocationRequest {
+   invoiceId?: number;
+   purchaseId?: number;
+   amount: number;
+ }
+
+ export interface SettlementPaymentRequest {
+   cashAccountId: number;
+   amount: number;
+ }
+
+ export interface DealerReceiptRequest {
+   dealerId: number;
+   cashAccountId: number;
+   amount: number;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   allocations: SettlementAllocationRequest[];
+ }
+
+ export interface IncomingLine {
+   cashAccountId: number;
+   amount: number;
+   allocations: SettlementAllocationRequest[];
+ }
+
+ export interface DealerReceiptSplitRequest {
+   dealerId: number;
+   incomingLines: IncomingLine[];
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+ }
+
+ export interface DealerSettlementRequest {
+   dealerId: number;
+   cashAccountId?: number;
+   discountAccountId?: number;
+   writeOffAccountId?: number;
+   settlementDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   allocations: SettlementAllocationRequest[];
+   payments?: SettlementPaymentRequest[];
+ }
+
+ export interface SupplierSettlementRequest {
+   supplierId: number;
+   cashAccountId: number;
+   discountAccountId?: number;
+   writeOffAccountId?: number;
+   settlementDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   allocations: SettlementAllocationRequest[];
+ }
+
+ export interface SupplierPaymentRequest {
+   supplierId: number;
+   cashAccountId: number;
+   amount: number;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   allocations: SettlementAllocationRequest[];
+ }
+
+ export interface PartnerSettlementResponse {
+   journalEntry: JournalEntryDto;
+   totalApplied: number;
+   cashAmount: number;
+   totalDiscount: number;
+   totalWriteOff: number;
+   totalFxGain: number;
+   totalFxLoss: number;
+ }
+
+ export interface CreditNoteRequest {
+   invoiceId: number;
+   amount?: number;
+   entryDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   adminOverride?: boolean;
+ }
+
+ export interface DebitNoteRequest {
+   purchaseId: number;
+   amount?: number;
+   entryDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   adminOverride?: boolean;
+ }
+
+ export interface BadDebtWriteOffRequest {
+   invoiceId: number;
+   expenseAccountId: number;
+   amount: number;
+   entryDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   adminOverride?: boolean;
+ }
+
+ export interface AccrualRequest {
+   debitAccountId: number;
+   creditAccountId: number;
+   amount: number;
+   entryDate?: string;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+   autoReverseDate?: string;
+   adminOverride?: boolean;
+ }
+
+ export interface DealerResponse {
+   id: number;
+   name: string;
+   code: string;
+   gstin?: string;
+   city?: string;
+   region?: string;
+   status: string;
+   outstandingBalance?: number;
+ }
+
+ export interface SupplierResponse {
+   id: number;
+   name: string;
+   code?: string;
+   status: string;
+ }
+
  export interface ManualJournalRequest {
    narration?: string;
    entryDate: string;
@@ -413,6 +581,44 @@
    },
 
    // ── Default Accounts ─────────────────────────────────────────────────────
+ 
+   /** POST /api/v1/accounting/periods — create period */
+   async createPeriod(data: AccountingPeriodUpsertRequest): Promise<AccountingPeriodDto> {
+     const response = await apiRequest.post<ApiResponse<AccountingPeriodDto>>(
+       '/accounting/periods',
+       data
+     );
+     return response.data.data;
+   },
+ 
+   /** POST /api/v1/accounting/periods/{periodId}/close */
+   async closePeriod(periodId: number, data: AccountingPeriodCloseRequest): Promise<AccountingPeriodDto> {
+     const response = await apiRequest.post<ApiResponse<AccountingPeriodDto>>(
+       `/accounting/periods/${periodId}/close`,
+       data
+     );
+     return response.data.data;
+   },
+ 
+   /** POST /api/v1/accounting/periods/{periodId}/lock */
+   async lockPeriod(periodId: number, data: AccountingPeriodLockRequest): Promise<AccountingPeriodDto> {
+     const response = await apiRequest.post<ApiResponse<AccountingPeriodDto>>(
+       `/accounting/periods/${periodId}/lock`,
+       data
+     );
+     return response.data.data;
+   },
+ 
+   /** POST /api/v1/accounting/periods/{periodId}/reopen */
+   async reopenPeriod(periodId: number, data: AccountingPeriodReopenRequest): Promise<AccountingPeriodDto> {
+     const response = await apiRequest.post<ApiResponse<AccountingPeriodDto>>(
+       `/accounting/periods/${periodId}/reopen`,
+       data
+     );
+     return response.data.data;
+   },
+ 
+   // ── Default Accounts ─────────────────────────────────────────────────────
 
    /**
     * GET /api/v1/accounting/default-accounts
@@ -436,6 +642,107 @@
        '/accounting/default-accounts',
        data
      );
+     return response.data.data;
+   },
+ 
+   // ── Settlements & Receipts ────────────────────────────────────────────────
+
+   /** POST /api/v1/accounting/receipts/dealer */
+   async recordDealerReceipt(data: DealerReceiptRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/receipts/dealer',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/receipts/dealer/hybrid */
+   async recordHybridReceipt(data: DealerReceiptSplitRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/receipts/dealer/hybrid',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/settlements/dealers */
+   async createDealerSettlement(data: DealerSettlementRequest): Promise<PartnerSettlementResponse> {
+     const response = await apiRequest.post<ApiResponse<PartnerSettlementResponse>>(
+       '/accounting/settlements/dealers',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/settlements/suppliers */
+   async createSupplierSettlement(data: SupplierSettlementRequest): Promise<PartnerSettlementResponse> {
+     const response = await apiRequest.post<ApiResponse<PartnerSettlementResponse>>(
+       '/accounting/settlements/suppliers',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/suppliers/payments */
+   async recordSupplierPayment(data: SupplierPaymentRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/suppliers/payments',
+       data
+     );
+     return response.data.data;
+   },
+
+   // ── Credit / Debit Notes ─────────────────────────────────────────────────
+
+   /** POST /api/v1/accounting/credit-notes */
+   async createCreditNote(data: CreditNoteRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/credit-notes',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/debit-notes */
+   async createDebitNote(data: DebitNoteRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/debit-notes',
+       data
+     );
+     return response.data.data;
+   },
+
+   // ── Bad Debt & Accruals ──────────────────────────────────────────────────
+
+   /** POST /api/v1/accounting/bad-debts/write-off */
+   async writeBadDebt(data: BadDebtWriteOffRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/bad-debts/write-off',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/accruals */
+   async recordAccrual(data: AccrualRequest): Promise<JournalEntryDto> {
+     const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
+       '/accounting/accruals',
+       data
+     );
+     return response.data.data;
+   },
+
+   // ── Dealers / Suppliers (for dropdowns) ──────────────────────────────────
+
+   /** GET /api/v1/dealers */
+   async getDealers(): Promise<DealerResponse[]> {
+     const response = await apiRequest.get<ApiResponse<DealerResponse[]>>('/dealers');
+     return response.data.data;
+   },
+
+   /** GET /api/v1/suppliers */
+   async getSuppliers(): Promise<SupplierResponse[]> {
+     const response = await apiRequest.get<ApiResponse<SupplierResponse[]>>('/suppliers');
      return response.data.data;
    },
  };

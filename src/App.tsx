@@ -118,6 +118,24 @@ const JournalDetailPage = lazy(() =>
     default: m.JournalDetailPage,
   }))
 );
+/** Accounting portal — Accounting Periods */
+const AccountingPeriodsPage = lazy(() =>
+  import('@/pages/accounting/AccountingPeriodsPage').then((m) => ({
+    default: m.AccountingPeriodsPage,
+  }))
+);
+/** Accounting portal — Default Accounts */
+const DefaultAccountsPage = lazy(() =>
+  import('@/pages/accounting/DefaultAccountsPage').then((m) => ({
+    default: m.DefaultAccountsPage,
+  }))
+);
+/** Accounting portal — Settlements */
+const SettlementsPage = lazy(() =>
+  import('@/pages/accounting/SettlementsPage').then((m) => ({
+    default: m.SettlementsPage,
+  }))
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -369,6 +387,9 @@ function AppRouter() {
             <Route path="journals" element={<JournalsPage />} />
             <Route path="journals/new" element={<JournalsPage />} />
             <Route path="journals/:id" element={<JournalDetailPage />} />
+            <Route path="periods" element={<AccountingPeriodsPage />} />
+            <Route path="default-accounts" element={<DefaultAccountsPage />} />
+            <Route path="settlements" element={<SettlementsPage />} />
             <Route path="*" element={<AccountingDashboard />} />
           </Route>
 
