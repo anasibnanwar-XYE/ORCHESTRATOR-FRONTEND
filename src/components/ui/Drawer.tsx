@@ -37,7 +37,7 @@ export function Drawer({ isOpen, onClose, title, description, children, footer, 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)]">
       <div
-        className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]"
         onClick={onClose}
         style={{ animation: 'fadeIn 200ms ease-out forwards' }}
       />
@@ -51,8 +51,8 @@ export function Drawer({ isOpen, onClose, title, description, children, footer, 
         )}
         style={{
           boxShadow: side === 'right'
-            ? '-12px 0 48px -16px rgba(0,0,0,0.08)'
-            : '12px 0 48px -16px rgba(0,0,0,0.08)',
+            ? 'var(--shadow-drawer-right)'
+            : 'var(--shadow-drawer-left)',
           animation: `${side === 'right' ? 'slideInRight' : 'slideInLeft'} 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards`,
         }}
       >

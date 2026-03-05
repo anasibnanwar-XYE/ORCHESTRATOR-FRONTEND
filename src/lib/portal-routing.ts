@@ -40,6 +40,14 @@ export const MODULE_KEYS = {
   PRODUCTION: 'production',
   /** Packing — packing queue and history within the Factory portal */
   PACKING: 'packing',
+  /** Superadmin: tenant management */
+  SUPERADMIN_TENANTS: 'superadmin_tenants',
+  /** Superadmin: platform roles management */
+  SUPERADMIN_ROLES: 'superadmin_roles',
+  /** Superadmin: audit trail */
+  SUPERADMIN_AUDIT: 'superadmin_audit',
+  /** Superadmin: support tickets */
+  SUPERADMIN_TICKETS: 'superadmin_tickets',
 } as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[keyof typeof MODULE_KEYS];

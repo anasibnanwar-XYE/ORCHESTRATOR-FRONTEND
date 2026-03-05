@@ -32,7 +32,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <Check
               size={11}
               strokeWidth={3}
-              className="text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-100"
+              className="text-[var(--color-text-inverse)] opacity-0 peer-checked:opacity-100 transition-opacity duration-100"
             />
           </div>
         </div>

@@ -130,6 +130,21 @@
   --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Overlay Colors */
+  --color-overlay: rgba(0, 0, 0, 0.25);
+  --color-overlay-strong: rgba(0, 0, 0, 0.30);
+
+  /* UI Component Tokens */
+  --color-switch-thumb: #ffffff;
+  --color-badge-active-bg: rgba(255, 255, 255, 0.20);
+
+  /* Shadow Tokens */
+  --shadow-modal: 0 24px 80px -16px rgba(0, 0, 0, 0.12), 0 4px 12px -4px rgba(0, 0, 0, 0.05);
+  --shadow-dropdown: 0 8px 30px -8px rgba(0, 0, 0, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  --shadow-popover: 0 8px 40px -12px rgba(0, 0, 0, 0.10), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-drawer-left: 12px 0 48px -16px rgba(0, 0, 0, 0.08);
+  --shadow-drawer-right: -12px 0 48px -16px rgba(0, 0, 0, 0.08);
+
   /* Z-Index Scale */
   --z-dropdown: 100;
   --z-sticky: 200;
@@ -230,4 +245,15 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+  --color-overlay: rgba(0, 0, 0, 0.50);
+  --color-overlay-strong: rgba(0, 0, 0, 0.65);
+  --color-switch-thumb: #ffffff;
+  --color-badge-active-bg: rgba(255, 255, 255, 0.15);
+
+  --shadow-modal: 0 24px 80px -16px rgba(0, 0, 0, 0.45), 0 4px 12px -4px rgba(0, 0, 0, 0.30);
+  --shadow-dropdown: 0 8px 30px -8px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.30);
+  --shadow-popover: 0 8px 40px -12px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.30);
+  --shadow-drawer-left: 12px 0 48px -16px rgba(0, 0, 0, 0.40);
+  --shadow-drawer-right: -12px 0 48px -16px rgba(0, 0, 0, 0.40);
 }

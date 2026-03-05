@@ -151,7 +151,7 @@ export function DatePicker({
                   className={clsx(
                     'h-8 w-full flex items-center justify-center text-[12px] rounded-lg transition-colors',
                     isSelected
-                      ? 'bg-[var(--color-neutral-900)] text-white font-medium'
+                      ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] font-medium'
                       : isToday
                         ? 'font-semibold text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)]'
                         : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]',

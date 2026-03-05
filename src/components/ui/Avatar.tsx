@@ -28,8 +28,8 @@ function getInitials(first: string, last?: string) {
 
 function getColor(name: string) {
   const colors = [
-    'bg-[var(--color-neutral-900)] text-white',
-    'bg-[var(--color-neutral-700)] text-white',
+    'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]',
+    'bg-[var(--color-neutral-700)] text-[var(--color-text-inverse)]',
     'bg-[var(--color-neutral-200)] text-[var(--color-neutral-700)]',
   ];
   let hash = 0;

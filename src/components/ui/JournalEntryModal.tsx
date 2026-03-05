@@ -68,7 +68,7 @@ export function JournalEntryModal({ isOpen, onClose, onSubmit, accounts = [] }: 
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-start justify-center pt-[5vh] sm:pt-[8vh]">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-[var(--color-overlay-strong)]" onClick={onClose} />
 
       <div className="relative w-full max-w-3xl max-h-[85vh] bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] shadow-xl overflow-hidden flex flex-col mx-4 animate-fade-in">
         {/* Header */}
@@ -302,7 +302,7 @@ export function JournalEntryModal({ isOpen, onClose, onSubmit, accounts = [] }: 
               className={clsx(
                 'h-9 px-5 rounded-lg text-[13px] font-medium transition-all duration-150',
                 totals.balanced
-                  ? 'bg-[var(--color-neutral-900)] text-white hover:bg-[var(--color-neutral-800)]'
+                  ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] hover:bg-[var(--color-neutral-800)]'
                   : 'bg-[var(--color-neutral-200)] text-[var(--color-text-tertiary)] cursor-not-allowed',
               )}
             >

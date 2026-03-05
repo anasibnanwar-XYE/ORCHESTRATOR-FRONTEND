@@ -36,7 +36,7 @@ export function Tooltip({ content, children, position = 'top', delay = 400, clas
         <div
           className={clsx(
             'absolute z-50 px-2.5 py-1.5',
-            'text-[11px] font-medium text-white',
+            'text-[11px] font-medium text-[var(--color-text-inverse)]',
             'bg-[var(--color-neutral-800)] rounded-lg',
             'whitespace-nowrap pointer-events-none',
             'shadow-lg',

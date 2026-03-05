@@ -18,7 +18,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: clsx(
-    'bg-[var(--color-neutral-900)] text-white',
+    'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]',
     'hover:bg-[var(--color-neutral-800)]',
     'active:bg-[var(--color-neutral-900)]',
   ),

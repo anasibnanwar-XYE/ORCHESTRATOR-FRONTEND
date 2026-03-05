@@ -34,6 +34,7 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { MODULE_KEYS, isModuleEnabled } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
 import { CommandPaletteButton } from '@/components/CommandPalette';
 
@@ -42,14 +43,16 @@ interface NavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Optional module key — item is hidden if this module is disabled */
+  module?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/superadmin', icon: LayoutDashboard, end: true },
-  { label: 'Tenants', to: '/superadmin/tenants', icon: Building2 },
-  { label: 'Platform Roles', to: '/superadmin/roles', icon: Users },
-  { label: 'Audit Trail', to: '/superadmin/audit', icon: ScrollText },
-  { label: 'Support Tickets', to: '/superadmin/tickets', icon: LifeBuoy },
+  { label: 'Tenants', to: '/superadmin/tenants', icon: Building2, module: MODULE_KEYS.SUPERADMIN_TENANTS },
+  { label: 'Platform Roles', to: '/superadmin/roles', icon: Users, module: MODULE_KEYS.SUPERADMIN_ROLES },
+  { label: 'Audit Trail', to: '/superadmin/audit', icon: ScrollText, module: MODULE_KEYS.SUPERADMIN_AUDIT },
+  { label: 'Support Tickets', to: '/superadmin/tickets', icon: LifeBuoy, module: MODULE_KEYS.SUPERADMIN_TICKETS },
 ];
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -62,7 +65,18 @@ const ROUTE_LABELS: Record<string, string> = {
   edit: 'Edit',
 };
 
-function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
+function SidebarContent({
+  enabledModules,
+  onNavClick,
+}: {
+  enabledModules: string[];
+  onNavClick?: () => void;
+}) {
+  // Filter out nav items whose module is disabled
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.module || isModuleEnabled(enabledModules, item.module)
+  );
+
   return (
     <div className="flex h-full flex-col">
       {/* Brand with Shield indicator */}
@@ -82,7 +96,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto no-scrollbar">
-        {NAV_ITEMS.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -92,7 +106,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               clsx(
                 'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                 isActive
-                  ? 'bg-[var(--color-neutral-900)] text-white'
+                  ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
                   : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
               )
             }
@@ -101,7 +115,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               <>
                 <item.icon
                   size={15}
-                  className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
+                  className={isActive ? 'opacity-70' : 'text-[var(--color-text-tertiary)]'}
+                  style={isActive ? { color: 'var(--color-text-inverse)' } : undefined}
                 />
                 {item.label}
               </>
@@ -114,7 +129,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 }
 
 export function SuperadminLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, enabledModules } = useAuth();
   const { toggle, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
@@ -125,7 +140,7 @@ export function SuperadminLayout() {
     <div className="flex h-screen overflow-hidden bg-[var(--color-surface-secondary)]">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-[220px] shrink-0 border-r border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
-        <SidebarContent />
+        <SidebarContent enabledModules={enabledModules} />
       </aside>
 
       {/* Mobile Drawer */}
@@ -143,7 +158,7 @@ export function SuperadminLayout() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <SidebarContent onNavClick={() => setMobileOpen(false)} />
+            <SidebarContent enabledModules={enabledModules} onNavClick={() => setMobileOpen(false)} />
           </div>
         </div>
       </MobileSidebar>

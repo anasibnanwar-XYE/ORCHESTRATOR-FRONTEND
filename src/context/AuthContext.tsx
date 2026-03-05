@@ -170,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...stored,
             user,
             mustChangePassword: user.mustChangePassword ?? false,
+            enabledModules: user.enabledModules ?? stored.enabledModules,
           };
           setSession(updated);
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));

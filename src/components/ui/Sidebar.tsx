@@ -73,7 +73,7 @@ export function Sidebar({
                       'w-full flex items-center justify-between rounded-lg transition-all duration-150',
                       collapsed ? 'h-9 justify-center' : 'h-8 px-3',
                       isActive
-                        ? 'bg-[var(--color-neutral-900)] text-white'
+                        ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
                         : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
                     )}
                     title={collapsed ? item.label : undefined}
@@ -87,7 +87,7 @@ export function Sidebar({
                           <span className={clsx(
                             'text-[10px] font-semibold tabular-nums rounded-full px-1.5 py-px',
                             isActive
-                              ? 'bg-white/20 text-white'
+                              ? 'bg-[var(--color-badge-active-bg)] text-[var(--color-text-inverse)]'
                               : 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)]',
                           )}>
                             {item.badge}
@@ -135,7 +135,7 @@ export function MobileSidebar({
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] lg:hidden">
-      <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]" onClick={onClose} />
       <div
         className="absolute left-0 top-0 bottom-0"
         style={{ animation: 'slideInLeft 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards' }}

@@ -51,7 +51,7 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
             align === 'right' ? 'right-0' : 'left-0',
           )}
           style={{
-            boxShadow: '0 8px 30px -8px rgba(0,0,0,0.12), 0 2px 8px -2px rgba(0,0,0,0.04)',
+            boxShadow: 'var(--shadow-dropdown)',
             animation: 'o-scale-in 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
             transformOrigin: align === 'right' ? 'top right' : 'top left',
           }}

@@ -28,14 +28,14 @@ export function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]"
         onClick={onCancel}
         style={{ animation: 'fadeIn 200ms ease-out forwards' }}
       />
       <div
         className="relative w-full max-w-sm bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] p-6"
         style={{
-          boxShadow: '0 24px 80px -16px rgba(0,0,0,0.12), 0 4px 12px -4px rgba(0,0,0,0.05)',
+          boxShadow: 'var(--shadow-modal)',
           animation: 'slideUp 350ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
         }}
       >
@@ -60,10 +60,10 @@ export function ConfirmDialog({
               'h-9 px-4 rounded-lg text-[13px] font-medium transition-all duration-150',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
               variant === 'danger'
-                ? 'bg-[var(--color-error)] text-white hover:bg-[var(--color-error-hover)] focus-visible:ring-[var(--color-error-ring)] active:scale-[0.98]'
+                ? 'bg-[var(--color-error)] text-[var(--color-text-inverse)] hover:bg-[var(--color-error-hover)] focus-visible:ring-[var(--color-error-ring)] active:scale-[0.98]'
                 : variant === 'warning'
-                  ? 'bg-[var(--color-warning)] text-white hover:bg-[var(--color-warning-hover)] focus-visible:ring-[var(--color-warning-ring)] active:scale-[0.98]'
-                  : 'bg-[var(--color-neutral-900)] text-white hover:bg-[var(--color-neutral-800)] focus-visible:ring-[var(--color-neutral-300)] active:scale-[0.98]',
+                  ? 'bg-[var(--color-warning)] text-[var(--color-text-inverse)] hover:bg-[var(--color-warning-hover)] focus-visible:ring-[var(--color-warning-ring)] active:scale-[0.98]'
+                  : 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] hover:bg-[var(--color-neutral-800)] focus-visible:ring-[var(--color-neutral-300)] active:scale-[0.98]',
               isLoading && 'opacity-60 pointer-events-none',
             )}
           >

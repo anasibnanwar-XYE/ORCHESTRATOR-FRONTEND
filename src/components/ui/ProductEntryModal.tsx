@@ -63,12 +63,12 @@ export function ProductEntryModal({ isOpen, onClose, onSubmit, editData }: Produ
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-start justify-center pt-[5vh] sm:pt-[8vh]">
-      <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]" onClick={onClose} />
 
       <div
         className="relative w-full max-w-xl max-h-[85vh] bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] overflow-hidden flex flex-col mx-4"
         style={{
-          boxShadow: '0 24px 80px -16px rgba(0,0,0,0.12), 0 4px 12px -4px rgba(0,0,0,0.05)',
+          boxShadow: 'var(--shadow-modal)',
           animation: 'slideUp 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
         }}
       >
@@ -166,7 +166,7 @@ export function ProductEntryModal({ isOpen, onClose, onSubmit, editData }: Produ
             className={clsx(
               'h-9 px-5 rounded-lg text-[13px] font-medium transition-all duration-150',
               form.name && form.sku
-                ? 'bg-[var(--color-neutral-900)] text-white hover:bg-[var(--color-neutral-800)]'
+                ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] hover:bg-[var(--color-neutral-800)]'
                 : 'bg-[var(--color-neutral-200)] text-[var(--color-text-tertiary)] cursor-not-allowed',
             )}
           >

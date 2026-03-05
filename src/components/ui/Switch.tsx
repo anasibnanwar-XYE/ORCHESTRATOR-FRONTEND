@@ -32,7 +32,7 @@ export function Switch({ checked, onChange, label, description, disabled, size =
       >
         <span
           className={clsx(
-            'absolute top-[2px] left-[2px] bg-white rounded-full shadow-sm',
+            'absolute top-[2px] left-[2px] bg-[var(--color-switch-thumb)] rounded-full shadow-sm',
             'transition-transform duration-200 ease-out',
             thumbSize,
             checked && thumbOffset,
