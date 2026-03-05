@@ -234,6 +234,37 @@ const SettlementsPage = lazy(() =>
    }))
  );
 
+/** Accounting portal — Product Catalog */
+const ProductCatalogPage = lazy(() =>
+  import('@/pages/accounting/ProductCatalogPage').then((m) => ({
+    default: m.ProductCatalogPage,
+  }))
+);
+/** Accounting portal — Raw Materials Inventory */
+const RawMaterialsInventoryPage = lazy(() =>
+  import('@/pages/accounting/RawMaterialsInventoryPage').then((m) => ({
+    default: m.RawMaterialsInventoryPage,
+  }))
+);
+/** Accounting portal — Inventory Adjustments */
+const InventoryAdjustmentsPage = lazy(() =>
+  import('@/pages/accounting/InventoryAdjustmentsPage').then((m) => ({
+    default: m.InventoryAdjustmentsPage,
+  }))
+);
+/** Accounting portal — Opening Stock */
+const OpeningStockPage = lazy(() =>
+  import('@/pages/accounting/OpeningStockPage').then((m) => ({
+    default: m.OpeningStockPage,
+  }))
+);
+/** Accounting portal — Finished Goods */
+const FinishedGoodsPage = lazy(() =>
+  import('@/pages/accounting/FinishedGoodsPage').then((m) => ({
+    default: m.FinishedGoodsPage,
+  }))
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -497,6 +528,11 @@ function AppRouter() {
             <Route path="purchasing/raw-material-purchases" element={<RawMaterialPurchasesPage />} />
             <Route path="purchasing/returns" element={<PurchaseReturnsPage />} />
             <Route path="reports/pl" element={<ProfitLossPage />} />
+            <Route path="catalog" element={<ProductCatalogPage />} />
+            <Route path="raw-materials" element={<RawMaterialsInventoryPage />} />
+            <Route path="adjustments" element={<InventoryAdjustmentsPage />} />
+            <Route path="opening-stock" element={<OpeningStockPage />} />
+            <Route path="finished-goods" element={<FinishedGoodsPage />} />
             <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
             <Route path="reports/cash-flow" element={<CashFlowPage />} />
             <Route path="reports/aged-debtors" element={<AgedDebtorsPage />} />

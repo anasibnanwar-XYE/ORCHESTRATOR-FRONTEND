@@ -131,6 +131,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Raw Materials', to: '/accounting/raw-materials', icon: FlaskConical },
       { label: 'Finished Goods', to: '/accounting/finished-goods', icon: Boxes },
       { label: 'Adjustments', to: '/accounting/adjustments', icon: ClipboardEdit },
+      { label: 'Opening Stock', to: '/accounting/opening-stock', icon: CheckSquare },
     ],
   },
   {
@@ -194,6 +195,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/raw-materials': 'Raw Materials',
   '/accounting/finished-goods': 'Finished Goods',
   '/accounting/adjustments': 'Adjustments',
+  '/accounting/opening-stock': 'Opening Stock',
   '/accounting/employees': 'Employees',
   '/accounting/attendance': 'Attendance',
   '/accounting/leave': 'Leave',
