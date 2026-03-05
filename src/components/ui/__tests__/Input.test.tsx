@@ -60,7 +60,7 @@ describe('Input', () => {
   it('applies error border class when error prop is set', () => {
     render(<Input error="Required" />);
     const input = screen.getByRole('textbox');
-    expect(input.className).toContain('border-red-300');
+    expect(input.className).toContain('border-[var(--color-error-border)]');
   });
 
   it('forwards ref', () => {

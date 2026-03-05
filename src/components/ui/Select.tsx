@@ -62,7 +62,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 'transition-all duration-150 ease-out',
                 'focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm',
                 sizeStyles[selectSize],
-                error && 'border-red-300 focus:border-red-400',
+                error && 'border-[var(--color-error-border)] focus:border-[var(--color-error-icon)]',
                 props.disabled && 'opacity-50 cursor-not-allowed bg-[var(--color-surface-tertiary)]',
               ),
               className,
@@ -82,14 +82,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
             {error ? (
-              <AlertCircle size={14} className="text-red-400" />
+              <AlertCircle size={14} className="text-[var(--color-error-icon)]" />
             ) : (
               <ChevronDown size={14} />
             )}
           </div>
         </div>
         {error && (
-          <p className="text-[11px] text-red-600">{error}</p>
+          <p className="text-[11px] text-[var(--color-error)]">{error}</p>
         )}
         {hint && !error && (
           <p className="text-[11px] text-[var(--color-text-tertiary)]">{hint}</p>

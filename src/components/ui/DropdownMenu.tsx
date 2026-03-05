@@ -70,7 +70,7 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
                   item.disabled
                     ? 'text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed'
                     : item.destructive
-                      ? 'text-red-600 hover:bg-red-50'
+                      ? 'text-[var(--color-error)] hover:bg-[var(--color-error-bg)]'
                       : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)]',
                 )}
               >

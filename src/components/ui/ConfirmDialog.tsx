@@ -60,9 +60,9 @@ export function ConfirmDialog({
               'h-9 px-4 rounded-lg text-[13px] font-medium transition-all duration-150',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
               variant === 'danger'
-                ? 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-300 active:scale-[0.98]'
+                ? 'bg-[var(--color-error)] text-white hover:bg-[var(--color-error-hover)] focus-visible:ring-[var(--color-error-ring)] active:scale-[0.98]'
                 : variant === 'warning'
-                  ? 'bg-amber-500 text-white hover:bg-amber-600 focus-visible:ring-amber-300 active:scale-[0.98]'
+                  ? 'bg-[var(--color-warning)] text-white hover:bg-[var(--color-warning-hover)] focus-visible:ring-[var(--color-warning-ring)] active:scale-[0.98]'
                   : 'bg-[var(--color-neutral-900)] text-white hover:bg-[var(--color-neutral-800)] focus-visible:ring-[var(--color-neutral-300)] active:scale-[0.98]',
               isLoading && 'opacity-60 pointer-events-none',
             )}

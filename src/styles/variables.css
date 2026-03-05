@@ -26,6 +26,31 @@
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
 
+  /* Semantic Error Tokens */
+  --color-error: #dc2626;
+  --color-error-hover: #b91c1c;
+  --color-error-bg: #fef2f2;
+  --color-error-bg-hover: #fee2e2;
+  --color-error-border: #fca5a5;
+  --color-error-border-subtle: #fecaca;
+  --color-error-ring: #fca5a5;
+  --color-error-icon: #f87171;
+
+  /* Semantic Success Tokens */
+  --color-success: #059669;
+  --color-success-icon: #10b981;
+  --color-success-bg: #ecfdf5;
+
+  /* Semantic Warning Tokens */
+  --color-warning: #d97706;
+  --color-warning-hover: #b45309;
+  --color-warning-icon: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-warning-ring: #fcd34d;
+
+  /* Semantic Info Tokens */
+  --color-info: #2563eb;
+
   /* Status Colors - Success */
   --color-status-success-bg: #dcfce7;
   --color-status-success-text: #166534;
@@ -50,6 +75,10 @@
   --color-status-pending-bg: #fef9c3;
   --color-status-pending-text: #854d0e;
   --color-status-pending-border: #fde047;
+
+  /* Ledger / Financial */
+  --color-debit: #2563eb;
+  --color-credit: #059669;
 
   /* Surface Colors */
   --color-surface-primary: #ffffff;
@@ -147,6 +176,35 @@
   --color-border-default: #262626;
   --color-border-strong: #404040;
   --color-border-subtle: #1a1a1a;
+
+  /* Semantic Error Tokens (dark) */
+  --color-error: #f87171;
+  --color-error-hover: #ef4444;
+  --color-error-bg: #1a0808;
+  --color-error-bg-hover: #2a0f0f;
+  --color-error-border: #7f1d1d;
+  --color-error-border-subtle: #450a0a;
+  --color-error-ring: #7f1d1d;
+  --color-error-icon: #f87171;
+
+  /* Semantic Success Tokens (dark) */
+  --color-success: #34d399;
+  --color-success-icon: #4ade80;
+  --color-success-bg: #022c22;
+
+  /* Semantic Warning Tokens (dark) */
+  --color-warning: #fbbf24;
+  --color-warning-hover: #f59e0b;
+  --color-warning-icon: #fbbf24;
+  --color-warning-bg: #1c0f00;
+  --color-warning-ring: #92400e;
+
+  /* Semantic Info Tokens (dark) */
+  --color-info: #60a5fa;
+
+  /* Ledger / Financial (dark) */
+  --color-debit: #60a5fa;
+  --color-credit: #34d399;
 
   --color-status-success-bg: #052e16;
   --color-status-success-text: #4ade80;

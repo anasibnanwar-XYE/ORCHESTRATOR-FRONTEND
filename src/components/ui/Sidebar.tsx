@@ -108,7 +108,7 @@ export function Sidebar({
         <button
           onClick={onLogout}
           className={clsx(
-            'w-full rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:text-red-600 hover:bg-red-50 transition-colors',
+            'w-full rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors',
             collapsed ? 'h-9 flex items-center justify-center' : 'h-8 px-3 text-left',
           )}
         >

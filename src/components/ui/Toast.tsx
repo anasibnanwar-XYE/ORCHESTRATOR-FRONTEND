@@ -31,17 +31,17 @@ export function useToast() {
 }
 
 const icons = {
-  success: <CheckCircle2 size={16} className="text-[#10b981]" />,
-  error: <AlertCircle size={16} className="text-[#ef4444]" />,
-  warning: <AlertTriangle size={16} className="text-[#f59e0b]" />,
+  success: <CheckCircle2 size={16} className="text-[var(--color-success-icon)]" />,
+  error: <AlertCircle size={16} className="text-[var(--color-error)]" />,
+  warning: <AlertTriangle size={16} className="text-[var(--color-warning-icon)]" />,
   info: <Info size={16} className="text-[var(--color-neutral-800)]" />,
 };
 
 function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: string) => void }) {
   const [phase, setPhase] = useState<'enter' | 'idle' | 'exit'>('enter');
-  const [paused, setPaused] = useState(false);
   const timerRef = useRef<{ start: number; remaining: number } | undefined>(undefined);
   const rafRef = useRef<number | undefined>(undefined);
+  const pausedRef = useRef(false);
   const duration = data.duration ?? 4500;
 
   useEffect(() => {
@@ -53,15 +53,14 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
 
     const tick = () => {
       if (!timerRef.current) return;
-      if (paused) {
+      if (pausedRef.current) {
         rafRef.current = requestAnimationFrame(tick);
         return;
       }
 
       const elapsed = Date.now() - timerRef.current.start;
-      const pct = Math.max(0, 100 - (elapsed / duration) * 100);
 
-      if (pct <= 0) {
+      if (elapsed >= timerRef.current.remaining) {
         setPhase('exit');
         setTimeout(() => onDismiss(data.id), 350);
         return;
@@ -71,7 +70,7 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [data.id, duration, onDismiss, paused]);
+  }, [data.id, duration, onDismiss]);
 
   const handleDismiss = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -82,12 +81,19 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
   return (
     <div
       role="status"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => {
-        setPaused(false);
+      onMouseEnter={() => {
+        pausedRef.current = true;
         if (timerRef.current) {
-          const elapsed = duration - timerRef.current.remaining;
-          timerRef.current.start = Date.now() - elapsed;
+          // Capture how much time has elapsed so far
+          const elapsed = Date.now() - timerRef.current.start;
+          timerRef.current.remaining = timerRef.current.remaining - elapsed;
+        }
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+        if (timerRef.current) {
+          // Resume: reset start so the remaining time counts from now
+          timerRef.current.start = Date.now();
         }
       }}
       className={clsx(

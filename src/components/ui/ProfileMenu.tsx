@@ -87,7 +87,7 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
           <div className="border-t border-[var(--color-border-subtle)] py-1">
             <button
               onClick={() => { onLogout(); setIsOpen(false); }}
-              className="w-full text-left px-3.5 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors duration-100"
+              className="w-full text-left px-3.5 py-2 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors duration-100"
             >
               Sign out
             </button>

@@ -53,7 +53,7 @@ export function LedgerCard({
           </p>
           <span className={clsx(
             'text-[10px] font-semibold uppercase tracking-wider',
-            balanceType === 'Dr' ? 'text-blue-600' : 'text-emerald-600',
+            balanceType === 'Dr' ? 'text-[var(--color-debit)]' : 'text-[var(--color-credit)]',
           )}>
             {balanceType}
           </span>
@@ -71,7 +71,7 @@ export function LedgerCard({
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={clsx(
                     'text-[12px] tabular-nums font-medium',
-                    isDebit ? 'text-[var(--color-text-primary)]' : 'text-emerald-600',
+                    isDebit ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-credit)]',
                   )}>
                     {isDebit ? '' : '+'} ₹{formatINR(amount)}
                   </span>

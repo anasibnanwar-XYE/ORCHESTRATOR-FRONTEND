@@ -75,7 +75,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 input,
                 leftIcon && iconPl,
                 (rightIcon || error) && 'pr-9',
-                error && 'border-red-300 focus:border-red-400',
+                error && 'border-[var(--color-error-border)] focus:border-[var(--color-error-icon)]',
                 props.disabled && 'opacity-50 cursor-not-allowed bg-[var(--color-surface-tertiary)]',
               ),
               className,
@@ -83,7 +83,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {error ? (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-error-icon)] pointer-events-none">
               <AlertCircle size={14} />
             </div>
           ) : rightIcon ? (
@@ -93,7 +93,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ) : null}
         </div>
         {error && (
-          <p className="text-[11px] text-red-600">{error}</p>
+          <p className="text-[11px] text-[var(--color-error)]">{error}</p>
         )}
         {hint && !error && (
           <p className="text-[11px] text-[var(--color-text-tertiary)]">{hint}</p>

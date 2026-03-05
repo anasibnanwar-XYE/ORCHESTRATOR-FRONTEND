@@ -23,7 +23,7 @@ export function StatCard({ label, value, change, className }: StatCardProps) {
       </p>
       {change && (
         <p className="mt-1.5 text-[11px] tabular-nums">
-          <span className={isPositive ? 'text-emerald-600' : 'text-red-600'}>
+          <span className={isPositive ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}>
             {isPositive ? '+' : ''}{change.value}%
           </span>
           {change.label && (

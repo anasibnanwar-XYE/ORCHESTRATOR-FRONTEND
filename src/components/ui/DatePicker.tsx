@@ -89,7 +89,7 @@ export function DatePicker({
           'bg-[var(--color-surface-primary)] border rounded-lg text-[13px]',
           'transition-all duration-150',
           error
-            ? 'border-red-400 focus-visible:ring-2 focus-visible:ring-red-100'
+            ? 'border-[var(--color-error-icon)] focus-visible:ring-2 focus-visible:ring-[var(--color-error-bg-hover)]'
             : 'border-[var(--color-border-default)] focus-visible:ring-2 focus-visible:ring-[var(--color-neutral-900)]/10 focus-visible:border-[var(--color-neutral-400)]',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
@@ -101,7 +101,7 @@ export function DatePicker({
       </button>
 
       {error && (
-        <p className="text-[11px] text-red-600 mt-1">{error}</p>
+        <p className="text-[11px] text-[var(--color-error)] mt-1">{error}</p>
       )}
 
       {isOpen && (

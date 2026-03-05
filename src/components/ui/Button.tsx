@@ -34,10 +34,10 @@ const variantStyles: Record<ButtonVariant, string> = {
     'active:bg-[var(--color-neutral-100)]',
   ),
   danger: clsx(
-    'bg-[var(--color-surface-primary)] text-red-600',
-    'border border-red-200',
-    'hover:bg-red-50 hover:border-red-300',
-    'active:bg-red-100',
+    'bg-[var(--color-surface-primary)] text-[var(--color-error)]',
+    'border border-[var(--color-error-border-subtle)]',
+    'hover:bg-[var(--color-error-bg)] hover:border-[var(--color-error-border)]',
+    'active:bg-[var(--color-error-bg-hover)]',
   ),
 };
 

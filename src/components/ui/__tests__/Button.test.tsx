@@ -24,7 +24,7 @@ describe('Button', () => {
   it('applies danger variant styles', () => {
     render(<Button variant="danger">Danger</Button>);
     const btn = screen.getByRole('button');
-    expect(btn.className).toContain('text-red-600');
+    expect(btn.className).toContain('text-[var(--color-error)]');
   });
 
   it('applies ghost variant styles', () => {
