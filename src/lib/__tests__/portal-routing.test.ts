@@ -1,0 +1,328 @@
+/**
+ * Tests for portal-routing.ts
+ *
+ * Covers: resolvePortalAccess, shouldShowHub, getDefaultPortalPath,
+ *         getAccessiblePortals, canAccessPortal
+ */
+
+import { describe, it, expect } from 'vitest';
+import {
+  resolvePortalAccess,
+  shouldShowHub,
+  getDefaultPortalPath,
+  getAccessiblePortals,
+  canAccessPortal,
+  PORTAL_ROLES,
+} from '../portal-routing';
+import type { User } from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function makeUser(role: string): User {
+  return {
+    id: 1,
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    role,
+    isActive: true,
+    mfaEnabled: false,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resolvePortalAccess
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('resolvePortalAccess', () => {
+  it('returns all-false for null user', () => {
+    const access = resolvePortalAccess(null);
+    expect(access).toEqual({
+      superadmin: false,
+      admin: false,
+      accounting: false,
+      factory: false,
+      sales: false,
+      dealer: false,
+    });
+  });
+
+  it('ROLE_SUPER_ADMIN → superadmin only', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+    expect(access.superadmin).toBe(true);
+    expect(access.admin).toBe(false);
+    expect(access.accounting).toBe(false);
+    expect(access.factory).toBe(false);
+    expect(access.sales).toBe(false);
+    expect(access.dealer).toBe(false);
+  });
+
+  it('ROLE_ADMIN → admin + accounting + factory + sales', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+    expect(access.superadmin).toBe(false);
+    expect(access.admin).toBe(true);
+    expect(access.accounting).toBe(true);
+    expect(access.factory).toBe(true);
+    expect(access.sales).toBe(true);
+    expect(access.dealer).toBe(false);
+  });
+
+  it('ROLE_ACCOUNTING → accounting only', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+    expect(access.accounting).toBe(true);
+    expect(access.admin).toBe(false);
+    expect(access.factory).toBe(false);
+    expect(access.sales).toBe(false);
+  });
+
+  it('ROLE_FACTORY → factory only', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.FACTORY));
+    expect(access.factory).toBe(true);
+    expect(access.admin).toBe(false);
+    expect(access.accounting).toBe(false);
+    expect(access.sales).toBe(false);
+  });
+
+  it('ROLE_SALES → sales only', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+    expect(access.sales).toBe(true);
+    expect(access.admin).toBe(false);
+    expect(access.accounting).toBe(false);
+    expect(access.factory).toBe(false);
+  });
+
+  it('ROLE_DEALER → dealer only', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+    expect(access.dealer).toBe(true);
+    expect(access.admin).toBe(false);
+    expect(access.accounting).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// shouldShowHub
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('shouldShowHub', () => {
+  it('returns false for null user (no portals)', () => {
+    expect(shouldShowHub(resolvePortalAccess(null))).toBe(false);
+  });
+
+  it('returns false for ROLE_SUPER_ADMIN (isolated)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+    expect(shouldShowHub(access)).toBe(false);
+  });
+
+  it('returns true for ROLE_ADMIN (4 portals)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+    expect(shouldShowHub(access)).toBe(true);
+  });
+
+  it('returns false for ROLE_ACCOUNTING (1 portal)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+    expect(shouldShowHub(access)).toBe(false);
+  });
+
+  it('returns false for ROLE_FACTORY (1 portal)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.FACTORY));
+    expect(shouldShowHub(access)).toBe(false);
+  });
+
+  it('returns false for ROLE_SALES (1 portal)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+    expect(shouldShowHub(access)).toBe(false);
+  });
+
+  it('returns false for ROLE_DEALER (1 portal)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+    expect(shouldShowHub(access)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getDefaultPortalPath
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getDefaultPortalPath', () => {
+  it('ROLE_SUPER_ADMIN → /superadmin', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+    expect(getDefaultPortalPath(access)).toBe('/superadmin');
+  });
+
+  it('ROLE_ADMIN → /hub (multi-portal)', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+    expect(getDefaultPortalPath(access)).toBe('/hub');
+  });
+
+  it('ROLE_ACCOUNTING → /accounting', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+    expect(getDefaultPortalPath(access)).toBe('/accounting');
+  });
+
+  it('ROLE_FACTORY → /factory', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.FACTORY));
+    expect(getDefaultPortalPath(access)).toBe('/factory');
+  });
+
+  it('ROLE_SALES → /sales', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+    expect(getDefaultPortalPath(access)).toBe('/sales');
+  });
+
+  it('ROLE_DEALER → /dealer', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+    expect(getDefaultPortalPath(access)).toBe('/dealer');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getAccessiblePortals
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('getAccessiblePortals', () => {
+  it('returns empty array for null user', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(null));
+    expect(portals).toHaveLength(0);
+  });
+
+  it('returns only superadmin portal for ROLE_SUPER_ADMIN', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN)));
+    expect(portals).toHaveLength(1);
+    expect(portals[0].key).toBe('superadmin');
+  });
+
+  it('returns 4 portals for ROLE_ADMIN (admin, accounting, sales, factory)', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN)));
+    const keys = portals.map((p) => p.key);
+    expect(keys).toContain('admin');
+    expect(keys).toContain('accounting');
+    expect(keys).toContain('sales');
+    expect(keys).toContain('factory');
+    expect(keys).not.toContain('dealer');
+    expect(keys).not.toContain('superadmin');
+  });
+
+  it('returns 1 portal for ROLE_ACCOUNTING', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING)));
+    expect(portals).toHaveLength(1);
+    expect(portals[0].key).toBe('accounting');
+  });
+
+  it('returns 1 portal for ROLE_DEALER', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER)));
+    expect(portals).toHaveLength(1);
+    expect(portals[0].key).toBe('dealer');
+  });
+
+  it('each portal has label, description, and path', () => {
+    const portals = getAccessiblePortals(resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN)));
+    for (const portal of portals) {
+      expect(portal.label).toBeTruthy();
+      expect(portal.description).toBeTruthy();
+      expect(portal.path).toMatch(/^\//);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// canAccessPortal
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('canAccessPortal', () => {
+  describe('ROLE_SUPER_ADMIN', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+
+    it('can access /superadmin', () => {
+      expect(canAccessPortal(access, '/superadmin')).toBe(true);
+    });
+
+    it('cannot access /admin', () => {
+      expect(canAccessPortal(access, '/admin')).toBe(false);
+    });
+
+    it('cannot access /accounting', () => {
+      expect(canAccessPortal(access, '/accounting')).toBe(false);
+    });
+  });
+
+  describe('ROLE_ADMIN', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+
+    it('can access /admin', () => {
+      expect(canAccessPortal(access, '/admin')).toBe(true);
+    });
+
+    it('can access /accounting', () => {
+      expect(canAccessPortal(access, '/accounting')).toBe(true);
+    });
+
+    it('can access /factory', () => {
+      expect(canAccessPortal(access, '/factory')).toBe(true);
+    });
+
+    it('can access /sales', () => {
+      expect(canAccessPortal(access, '/sales')).toBe(true);
+    });
+
+    it('cannot access /superadmin', () => {
+      expect(canAccessPortal(access, '/superadmin')).toBe(false);
+    });
+
+    it('cannot access /dealer', () => {
+      expect(canAccessPortal(access, '/dealer')).toBe(false);
+    });
+  });
+
+  describe('ROLE_DEALER', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+
+    it('can access /dealer', () => {
+      expect(canAccessPortal(access, '/dealer')).toBe(true);
+    });
+
+    it('cannot access /admin', () => {
+      expect(canAccessPortal(access, '/admin')).toBe(false);
+    });
+
+    it('cannot access /superadmin', () => {
+      expect(canAccessPortal(access, '/superadmin')).toBe(false);
+    });
+  });
+
+  it('returns false for unknown path prefix', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+    expect(canAccessPortal(access, '/unknown')).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Superadmin isolation (VAL-SHELL-003)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Superadmin isolation (VAL-SHELL-003)', () => {
+  it('superadmin cannot access any non-superadmin portal path', () => {
+    const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+    const blockedPaths = ['/admin', '/accounting', '/factory', '/sales', '/dealer'];
+    for (const path of blockedPaths) {
+      expect(canAccessPortal(access, path)).toBe(false);
+    }
+  });
+
+  it('non-superadmin cannot access /superadmin', () => {
+    const roles = [
+      PORTAL_ROLES.ADMIN,
+      PORTAL_ROLES.ACCOUNTING,
+      PORTAL_ROLES.FACTORY,
+      PORTAL_ROLES.SALES,
+      PORTAL_ROLES.DEALER,
+    ];
+    for (const role of roles) {
+      const access = resolvePortalAccess(makeUser(role));
+      expect(canAccessPortal(access, '/superadmin')).toBe(false);
+    }
+  });
+});
