@@ -321,27 +321,15 @@
      setIsLoading(true);
      setError(null);
      try {
-       // We don't have a direct GET /sales/orders/{id}, so use searchOrders to find it
-       // Actually, use the list endpoint with page 0 and search by orderNumber
-       // OR we can just use the search endpoint with page/size to find the order
-       // The backend contract shows: GET /api/v1/sales/orders/{id}/timeline but no GET /api/v1/sales/orders/{id}
-       // We'll get all orders and find the one by id, or use the search endpoint
       const [timelineResult] = await Promise.all([
          salesApi.getOrderTimeline(Number(id)),
        ]);
-       // Look for order in orders list - if not there, try getting it
-       // We actually have getOrder method but backend might not have the endpoint
-       // Let's try it directly
-       const orderData = await salesApi.getOrder(Number(id)).catch(async () => {
-         // Fallback: search by broader list
-         const all = await salesApi.getOrders({ page: 0, size: 200 });
-         return all.find((o) => o.id === Number(id)) ?? null;
-       });
+      const orderData = await salesApi.getOrder(Number(id));
        if (!orderData) {
          setError('Order not found');
          return;
        }
-       setOrder(orderData as unknown as SalesOrderDto);
+      setOrder(orderData);
        setTimeline(timelineResult);
      } catch {
        setError("Couldn't load order details.");
@@ -422,8 +410,12 @@
    }
  
    const isCancelled = order.status.toUpperCase() === 'CANCELLED';
-   const canConfirm = ['DRAFT', 'RESERVED', 'PENDING_PRODUCTION', 'PENDING_INVENTORY', 'READY_TO_SHIP', 'PROCESSING'].includes(order.status.toUpperCase());
-   const canCancel = ['DRAFT', 'CONFIRMED', 'RESERVED', 'PENDING_PRODUCTION'].includes(order.status.toUpperCase());
+  // Action gating: only show actions valid for the current lifecycle stage
+  // Draft: Edit, Delete, Confirm
+  // Confirmed: Cancel (if not dispatched)
+  // Ready to Ship / Dispatched / Invoiced / Settled / Closed: no edit/delete/confirm
+  const canConfirm = order.status.toUpperCase() === 'DRAFT';
+  const canCancel = ['DRAFT', 'CONFIRMED'].includes(order.status.toUpperCase());
  
    // GST breakdown
    const subtotal = order.subtotalAmount ?? order.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);

@@ -70,9 +70,16 @@
    },
  
    /** Get order by ID */
-   async getOrder(id: number): Promise<SalesOrderDto> {
-     return apiData<SalesOrderDto>(`/sales/orders/${id}`);
-   },
+  /**
+   * Get order by ID.
+   *
+   * NOTE: The backend does not expose GET /api/v1/sales/orders/{id}.
+   * We fetch the full list (up to 500) and find the matching record by id.
+   */
+  async getOrder(id: number): Promise<SalesOrderDto | null> {
+    const orders = await apiData<SalesOrderDto[]>('/sales/orders?size=500');
+    return orders.find((o) => o.id === id) ?? null;
+  },
  
    /** Create a new sales order */
    async createOrder(request: SalesOrderRequest): Promise<SalesOrderDto> {
