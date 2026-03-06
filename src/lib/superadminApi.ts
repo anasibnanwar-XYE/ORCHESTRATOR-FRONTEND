@@ -46,228 +46,259 @@
    TicketPriorityRequest,
    TicketAssignRequest,
  } from '@/types';
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Tenant Management
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminTenantsApi = {
-   /** List all tenants with optional search/filter params */
-   async listTenants(params?: {
-     search?: string;
-     status?: string;
-     page?: number;
-     size?: number;
-   }): Promise<Tenant[]> {
-     const qs = new URLSearchParams();
-     if (params?.search) qs.set('search', params.search);
-     if (params?.status) qs.set('status', params.status);
-     if (params?.page !== undefined) qs.set('page', String(params.page));
-     if (params?.size !== undefined) qs.set('size', String(params.size));
-     const query = qs.toString();
-     const response = await apiRequest.get<ApiResponse<Tenant[]>>(
-       `/companies${query ? `?${query}` : ''}`
-     );
-     return response.data.data;
-   },
- 
-   /** Get a single tenant by ID */
-   async getTenant(id: number): Promise<Tenant> {
-     const response = await apiRequest.get<ApiResponse<Tenant>>(`/companies/${id}`);
-     return response.data.data;
-   },
- 
-   /** Onboard a new tenant (atomically creates company + initial admin user) */
-   async onboardTenant(data: TenantOnboardRequest): Promise<Tenant> {
-     const response = await apiRequest.post<ApiResponse<Tenant>>('/companies', data);
-     return response.data.data;
-   },
- 
-   /** Update tenant details */
-   async updateTenant(id: number, data: TenantUpdateRequest): Promise<Tenant> {
-     const response = await apiRequest.put<ApiResponse<Tenant>>(`/companies/${id}`, data);
-     return response.data.data;
-   },
- 
-   /** Activate a deactivated/new tenant */
-   async activateTenant(id: number): Promise<void> {
-     const response = await apiRequest.patch<ApiResponse<void>>(
-       `/companies/${id}/unsuspend`
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- 
-   /** Suspend an active tenant (warns about user access loss) */
-   async suspendTenant(id: number): Promise<void> {
-     const response = await apiRequest.patch<ApiResponse<void>>(
-       `/companies/${id}/suspend`
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- 
-   /** Deactivate a suspended tenant (destructive, retains data but revokes all access) */
-   async deactivateTenant(id: number): Promise<void> {
-     const response = await apiRequest.delete<ApiResponse<void>>(`/companies/${id}`);
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- 
-   /** Reset the admin user password for a tenant */
-   async resetAdminPassword(id: number, data: AdminPasswordResetRequest): Promise<void> {
-     const response = await apiRequest.post<ApiResponse<void>>(
-       `/companies/${id}/admin-password-reset`,
-       data
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- 
-   /** Send a support warning to a tenant */
-   async sendSupportWarning(id: number, data: SupportWarningRequest): Promise<void> {
-     const response = await apiRequest.post<ApiResponse<void>>(
-       `/companies/${id}/support-warnings`,
-       data
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- };
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Platform Dashboard Metrics
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminDashboardApi = {
-   /** Get platform-level dashboard metrics (aggregated from tenant + user data) */
-   async getMetrics(): Promise<PlatformDashboardMetrics> {
-     // Fetches tenant list and user list to derive metrics
-     const [tenantsRes, usersRes] = await Promise.allSettled([
-       apiRequest.get<ApiResponse<Tenant[]>>('/companies'),
-       apiRequest.get<ApiResponse<unknown[]>>('/admin/users'),
-     ]);
- 
-     const tenants: Tenant[] =
-       tenantsRes.status === 'fulfilled' ? (tenantsRes.value.data.data ?? []) : [];
-     const users: unknown[] =
-       usersRes.status === 'fulfilled' ? (usersRes.value.data.data ?? []) : [];
- 
-     const totalTenants = tenants.length;
-     const activeTenants = tenants.filter((t) => t.isActive && t.status !== 'SUSPENDED').length;
-     const suspendedTenants = tenants.filter((t) => t.status === 'SUSPENDED').length;
-     const totalPlatformUsers = users.length;
-     const storageConsumption = tenants.reduce(
-       (sum, t) => sum + (t.storageUsedMb ?? 0),
-       0
-     );
- 
-     return {
-       totalTenants,
-       activeTenants,
-       suspendedTenants,
-       totalPlatformUsers,
-       storageConsumption,
-     };
-   },
- };
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Platform Roles
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminRolesApi = {
-   async listRoles(): Promise<Role[]> {
-     const response = await apiRequest.get<ApiResponse<Role[]>>('/admin/roles');
-     return response.data.data;
-   },
- 
-   async createRole(data: CreateRoleRequest): Promise<Role> {
-     const response = await apiRequest.post<ApiResponse<Role>>('/admin/roles', data);
-     return response.data.data;
-   },
- 
-   async getRoleByKey(key: string): Promise<Role> {
-     const response = await apiRequest.get<ApiResponse<Role>>(`/admin/roles/${key}`);
-     return response.data.data;
-   },
- };
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Superadmin Audit Trail
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminAuditApi = {
-   async getBusinessEvents(
-     filters: AuditEventFilters & { tenant?: string } = {}
-   ): Promise<PageResponse<BusinessEvent>> {
-     const params = new URLSearchParams();
-     if (filters.actor) params.set('actor', filters.actor);
-     if (filters.action) params.set('action', filters.action);
-     if (filters.resource) params.set('resource', filters.resource);
-     if (filters.from) params.set('from', filters.from);
-     if (filters.to) params.set('to', filters.to);
-     if (filters.page !== undefined) params.set('page', String(filters.page));
-     if (filters.size !== undefined) params.set('size', String(filters.size));
-     const qs = params.toString();
-     const response = await apiRequest.get<ApiResponse<PageResponse<BusinessEvent>>>(
-       `/audit/business-events${qs ? `?${qs}` : ''}`
-     );
-     return response.data.data;
-   },
- };
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Support Tickets
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminTicketsApi = {
-   async listTickets(params?: {
-     status?: string;
-     priority?: string;
-     search?: string;
-     page?: number;
-     size?: number;
-   }): Promise<PageResponse<SupportTicket>> {
-     const qs = new URLSearchParams();
-     if (params?.status) qs.set('status', params.status);
-     if (params?.priority) qs.set('priority', params.priority);
-     if (params?.search) qs.set('search', params.search);
-     if (params?.page !== undefined) qs.set('page', String(params.page));
-     if (params?.size !== undefined) qs.set('size', String(params.size));
-     const query = qs.toString();
-     const response = await apiRequest.get<ApiResponse<PageResponse<SupportTicket>>>(
-       `/support/tickets${query ? `?${query}` : ''}`
-     );
-     return response.data.data;
-   },
- 
-   async getTicket(id: string): Promise<SupportTicket> {
-     const response = await apiRequest.get<ApiResponse<SupportTicket>>(`/support/tickets/${id}`);
-     return response.data.data;
-   },
-   
-   async addResponse(id: string, message: string): Promise<void> {
-     const response = await apiRequest.post<ApiResponse<void>>(
-       `/support/tickets/${id}/responses`,
-       { message }
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- 
-   async updateStatus(id: string, status: string): Promise<void> {
-     const response = await apiRequest.patch<ApiResponse<void>>(
-       `/support/tickets/${id}/status`,
-       { status }
-     );
-     if (!response.data.success) throw new Error(response.data.message);
-   },
- };
+import type {
+  SuperAdminDashboardDto,
+  SuperAdminTenantDto,
+  TenantOnboardingRequest,
+  TenantOnboardingResponse,
+  CoATemplateDto,
+  SupportTicketResponse,
+  SupportTicketListResponse,
+} from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Management — /api/v1/superadmin/tenants/*
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminTenantsApi = {
+  /** List all tenants with optional status filter */
+  async listTenants(params?: {
+    search?: string;
+    status?: string;
+  }): Promise<SuperAdminTenantDto[]> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    const query = qs.toString();
+    const response = await apiRequest.get<ApiResponse<SuperAdminTenantDto[]>>(
+      `/superadmin/tenants${query ? `?${query}` : ''}`
+    );
+    return response.data.data;
+  },
+
+  /** Get CoA templates available for onboarding */
+  async getCoATemplates(): Promise<CoATemplateDto[]> {
+    const response = await apiRequest.get<ApiResponse<CoATemplateDto[]>>(
+      '/superadmin/tenants/coa-templates'
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Onboard a new tenant via POST /api/v1/superadmin/tenants/onboard.
+   * Atomically creates company, admin user, default period, and CoA accounts.
+   * Returns TenantOnboardingResponse with one-time adminTemporaryPassword.
+   */
+  async onboardTenant(data: TenantOnboardingRequest): Promise<TenantOnboardingResponse> {
+    const response = await apiRequest.post<ApiResponse<TenantOnboardingResponse>>(
+      '/superadmin/tenants/onboard',
+      data
+    );
+    return response.data.data;
+  },
+
+  /** Update tenant details via PUT /api/v1/companies/{id} (admin endpoint shared with superadmin) */
+  async updateTenant(id: number, data: TenantUpdateRequest): Promise<Tenant> {
+    const response = await apiRequest.put<ApiResponse<Tenant>>(`/companies/${id}`, data);
+    return response.data.data;
+  },
+
+  /** Activate a tenant via POST /api/v1/superadmin/tenants/{id}/activate */
+  async activateTenant(id: number): Promise<SuperAdminTenantDto> {
+    const response = await apiRequest.post<ApiResponse<SuperAdminTenantDto>>(
+      `/superadmin/tenants/${id}/activate`
+    );
+    return response.data.data;
+  },
+
+  /** Suspend an active tenant via POST /api/v1/superadmin/tenants/{id}/suspend */
+  async suspendTenant(id: number): Promise<SuperAdminTenantDto> {
+    const response = await apiRequest.post<ApiResponse<SuperAdminTenantDto>>(
+      `/superadmin/tenants/${id}/suspend`
+    );
+    return response.data.data;
+  },
+
+  /** Deactivate a suspended tenant (terminal) via POST /api/v1/superadmin/tenants/{id}/deactivate */
+  async deactivateTenant(id: number): Promise<SuperAdminTenantDto> {
+    const response = await apiRequest.post<ApiResponse<SuperAdminTenantDto>>(
+      `/superadmin/tenants/${id}/deactivate`
+    );
+    return response.data.data;
+  },
+
+  /** Reset the admin user password for a tenant */
+  async resetAdminPassword(id: number, data: AdminPasswordResetRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/superadmin/tenants/${id}/reset-admin-password`,
+      data
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /** Send a support warning to a tenant via POST /api/v1/superadmin/tenants/{id}/warnings */
+  async sendSupportWarning(id: number, data: SupportWarningRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/superadmin/tenants/${id}/warnings`,
+      data
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform Dashboard Metrics — /api/v1/superadmin/dashboard
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminDashboardApi = {
+  /** Get platform-level dashboard metrics from GET /api/v1/superadmin/dashboard */
+  async getMetrics(): Promise<SuperAdminDashboardDto> {
+    const response = await apiRequest.get<ApiResponse<SuperAdminDashboardDto>>(
+      '/superadmin/dashboard'
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform Roles — /api/v1/admin/roles
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminRolesApi = {
+  async listRoles(): Promise<Role[]> {
+    const response = await apiRequest.get<ApiResponse<Role[]>>('/admin/roles');
+    return response.data.data;
+  },
+
+  async createRole(data: CreateRoleRequest): Promise<Role> {
+    const response = await apiRequest.post<ApiResponse<Role>>('/admin/roles', data);
+    return response.data.data;
+  },
+
+  async getRoleByKey(key: string): Promise<Role> {
+    const response = await apiRequest.get<ApiResponse<Role>>(`/admin/roles/${key}`);
+    return response.data.data;
+  },
+
+  /**
+   * List superadmin platform users for role assignment.
+   * Uses GET /api/v1/admin/users to get all users with ROLE_SUPER_ADMIN.
+   */
+  async listPlatformUsers(): Promise<Array<{ id: number; email: string; displayName: string; roles: string[] }>> {
+    const response = await apiRequest.get<ApiResponse<Array<{ id: number; email: string; displayName: string; roles: string[] }>>>(
+      '/admin/users'
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Assign a role to a superadmin user via PUT /api/v1/admin/users/{id}.
+   * Merges the new role into the user's existing roles array.
+   */
+  async assignRoleToUser(userId: number, roleKey: string, currentRoles: string[]): Promise<void> {
+    const roles = currentRoles.includes(roleKey)
+      ? currentRoles
+      : [...currentRoles, roleKey];
+    const response = await apiRequest.put<ApiResponse<void>>(
+      `/admin/users/${userId}`,
+      { roles }
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /**
+   * Revoke a role from a superadmin user via PUT /api/v1/admin/users/{id}.
+   */
+  async revokeRoleFromUser(userId: number, roleKey: string, currentRoles: string[]): Promise<void> {
+    const roles = currentRoles.filter((r) => r !== roleKey);
+    const response = await apiRequest.put<ApiResponse<void>>(
+      `/admin/users/${userId}`,
+      { roles }
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Superadmin Audit Trail — /api/v1/audit/business-events
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminAuditApi = {
+  async getBusinessEvents(
+    filters: AuditEventFilters & { tenant?: string } = {}
+  ): Promise<PageResponse<BusinessEvent>> {
+    const params = new URLSearchParams();
+    if (filters.actor) params.set('actor', filters.actor);
+    if (filters.action) params.set('action', filters.action);
+    if (filters.resource) params.set('resource', filters.resource);
+    if (filters.tenant) params.set('tenant', filters.tenant);
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+    if (filters.page !== undefined) params.set('page', String(filters.page));
+    if (filters.size !== undefined) params.set('size', String(filters.size));
+    const qs = params.toString();
+    const response = await apiRequest.get<ApiResponse<PageResponse<BusinessEvent>>>(
+      `/audit/business-events${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Support Tickets — /api/v1/support/tickets
+// Returns SupportTicketListResponse { tickets: SupportTicketResponse[] }
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminTicketsApi = {
+  /**
+   * List all support tickets.
+   * Backend returns SupportTicketListResponse { tickets: SupportTicketResponse[] }.
+   * Status/search filtering is done client-side since backend doesn't expose query params.
+   */
+  async listTickets(params?: {
+    status?: string;
+    priority?: string;
+    search?: string;
+  }): Promise<SupportTicketResponse[]> {
+    const response = await apiRequest.get<ApiResponse<SupportTicketListResponse>>(
+      '/support/tickets'
+    );
+    let tickets = response.data.data.tickets ?? [];
+    // Client-side filtering
+    if (params?.status) {
+      tickets = tickets.filter((t) => t.status === params.status);
+    }
+    if (params?.search) {
+      const q = params.search.toLowerCase();
+      tickets = tickets.filter(
+        (t) =>
+          t.subject.toLowerCase().includes(q) ||
+          t.companyCode.toLowerCase().includes(q) ||
+          t.publicId.toLowerCase().includes(q) ||
+          (t.requesterEmail ?? '').toLowerCase().includes(q)
+      );
+    }
+    return tickets;
+  },
+
+  async getTicket(id: string | number): Promise<SupportTicketResponse> {
+    const response = await apiRequest.get<ApiResponse<SupportTicketResponse>>(
+      `/support/tickets/${id}`
+    );
+    return response.data.data;
+  },
+};
 
 export const superadminTicketsDetailApi = {
   /** Get full ticket detail including responses, attachments, and status history */
-  async getTicket(id: string): Promise<SupportTicketDetail> {
-    const response = await apiRequest.get<ApiResponse<SupportTicketDetail>>(`/support/tickets/${id}`);
+  async getTicket(id: string | number): Promise<SupportTicketResponse> {
+    const response = await apiRequest.get<ApiResponse<SupportTicketResponse>>(
+      `/support/tickets/${id}`
+    );
     return response.data.data;
   },
 
   /** Add a response to a ticket (can be internal note or public reply) */
-  async addResponse(id: string, req: TicketResponseRequest): Promise<void> {
+  async addResponse(id: string | number, req: TicketResponseRequest): Promise<void> {
     const response = await apiRequest.post<ApiResponse<void>>(
       `/support/tickets/${id}/responses`,
       req
@@ -276,7 +307,7 @@ export const superadminTicketsDetailApi = {
   },
 
   /** Update ticket status (IN_PROGRESS, RESOLVED, CLOSED) */
-  async updateStatus(id: string, status: string): Promise<void> {
+  async updateStatus(id: string | number, status: string): Promise<void> {
     const response = await apiRequest.patch<ApiResponse<void>>(
       `/support/tickets/${id}/status`,
       { status }
@@ -285,7 +316,7 @@ export const superadminTicketsDetailApi = {
   },
 
   /** Update ticket priority */
-  async updatePriority(id: string, req: TicketPriorityRequest): Promise<void> {
+  async updatePriority(id: string | number, req: TicketPriorityRequest): Promise<void> {
     const response = await apiRequest.patch<ApiResponse<void>>(
       `/support/tickets/${id}/priority`,
       req
@@ -294,7 +325,7 @@ export const superadminTicketsDetailApi = {
   },
 
   /** Assign a support agent to this ticket */
-  async assignAgent(id: string, req: TicketAssignRequest): Promise<void> {
+  async assignAgent(id: string | number, req: TicketAssignRequest): Promise<void> {
     const response = await apiRequest.patch<ApiResponse<void>>(
       `/support/tickets/${id}/assign`,
       req
@@ -302,29 +333,43 @@ export const superadminTicketsDetailApi = {
     if (!response.data.success) throw new Error(response.data.message);
   },
 };
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Re-export tenant runtime and policy (same endpoints as admin)
- // ─────────────────────────────────────────────────────────────────────────────
- 
- export const superadminRuntimeApi = {
-   async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
-     const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
-       '/admin/settings/runtime'
-     );
-     return response.data.data;
-   },
- 
-   async getPolicy(): Promise<TenantPolicy> {
-     const response = await apiRequest.get<ApiResponse<TenantPolicy>>('/admin/settings/policy');
-     return response.data.data;
-   },
- 
-   async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
-     const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
-       '/admin/settings/policy',
-       data
-     );
-     return response.data.data;
-   },
- };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Runtime and Policy (shared admin endpoints)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const superadminRuntimeApi = {
+  async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
+    const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
+      '/admin/settings/runtime'
+    );
+    return response.data.data;
+  },
+
+  async getPolicy(): Promise<TenantPolicy> {
+    const response = await apiRequest.get<ApiResponse<TenantPolicy>>('/admin/settings/policy');
+    return response.data.data;
+  },
+
+  async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
+    const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
+      '/admin/settings/policy',
+      data
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Legacy re-exports for backward compatibility with older import references
+// ─────────────────────────────────────────────────────────────────────────────
+export type {
+  Tenant,
+  TenantOnboardRequest,
+  TenantUpdateRequest,
+  SupportWarningRequest,
+  AdminPasswordResetRequest,
+  PlatformDashboardMetrics,
+  SupportTicket,
+  SupportTicketDetail,
+};

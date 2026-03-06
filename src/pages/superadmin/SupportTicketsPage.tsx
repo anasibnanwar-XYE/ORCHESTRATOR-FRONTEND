@@ -24,12 +24,12 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/Badge';
 import { Select } from '@/components/ui/Select';
 import { superadminTicketsApi } from '@/lib/superadminApi';
-import type { SupportTicket, PageResponse } from '@/types';
+import type { SupportTicketResponse } from '@/types';
 
 const PAGE_SIZE = 20;
 
-type TicketStatus = SupportTicket['status'];
-type TicketPriority = SupportTicket['priority'];
+type TicketStatus = SupportTicketResponse['status'];
+type TicketPriority = NonNullable<SupportTicketResponse['priority']>;
 
 function statusVariant(status: TicketStatus): 'success' | 'warning' | 'danger' | 'default' {
   if (status === 'OPEN') return 'warning';
@@ -39,7 +39,7 @@ function statusVariant(status: TicketStatus): 'success' | 'warning' | 'danger' |
   return 'default';
 }
 
-function priorityVariant(priority: TicketPriority): 'danger' | 'warning' | 'default' {
+function priorityVariant(priority: TicketPriority | undefined): 'danger' | 'warning' | 'default' {
   if (priority === 'CRITICAL') return 'danger';
   if (priority === 'HIGH') return 'warning';
   return 'default';
@@ -69,13 +69,13 @@ function statusLabel(status: TicketStatus): string {
 
 export function SupportTicketsPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState<PageResponse<SupportTicket> | null>(null);
+  const [tickets, setTickets] = useState<SupportTicketResponse[]>([]);
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
-  const [page, setPage] = useState(0);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -85,22 +85,19 @@ export function SupportTicketsPage() {
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: search || undefined,
-        page,
-        size: PAGE_SIZE,
       });
-      setData(result);
+      setTickets(result);
     } catch {
       setError("Couldn't load support tickets. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, priorityFilter, search, page]);
+  }, [statusFilter, priorityFilter, search]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const tickets = data?.content ?? [];
 
   return (
     <div className="space-y-6">
@@ -229,29 +226,27 @@ export function SupportTicketsPage() {
                   <tr
                     key={ticket.id}
                     className="hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer"
-                    onClick={() => navigate(`/superadmin/tickets/${ticket.id}`)}
+                    onClick={() => navigate(`/superadmin/tickets/${ticket.publicId}`)}
                   >
                     <td className="px-4 py-3">
                       <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate max-w-[240px]">
                         {ticket.subject}
                       </p>
                       <p className="text-[11px] text-[var(--color-text-tertiary)] font-mono mt-0.5">
-                        #{ticket.id}
+                        {ticket.publicId}
                       </p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-[12px] text-[var(--color-text-secondary)]">
-                        {ticket.tenantName ?? '—'}
+                        {ticket.requesterEmail ?? '—'}
                       </p>
-                      {ticket.tenantCode && (
-                        <span className="text-[10px] font-mono bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded text-[var(--color-text-tertiary)]">
-                          {ticket.tenantCode}
-                        </span>
-                      )}
+                      <span className="text-[10px] font-mono bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded text-[var(--color-text-tertiary)]">
+                        {ticket.companyCode}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={priorityVariant(ticket.priority)}>
-                        {ticket.priority}
+                        {ticket.priority ?? '—'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
@@ -276,10 +271,10 @@ export function SupportTicketsPage() {
               <div
                 key={ticket.id}
                 className="p-4 rounded-xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] cursor-pointer hover:bg-[var(--color-surface-secondary)] transition-colors"
-                onClick={() => navigate(`/superadmin/tickets/${ticket.id}`)}
+                onClick={() => navigate(`/superadmin/tickets/${ticket.publicId}`)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/superadmin/tickets/${ticket.id}`); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/superadmin/tickets/${ticket.publicId}`); }}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
@@ -287,15 +282,15 @@ export function SupportTicketsPage() {
                       {ticket.subject}
                     </p>
                     <p className="text-[11px] font-mono text-[var(--color-text-tertiary)] mt-0.5">
-                      #{ticket.id}
+                      {ticket.publicId}
                     </p>
                   </div>
-                  <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority}</Badge>
+                  <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority ?? '—'}</Badge>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={statusVariant(ticket.status)}>{statusLabel(ticket.status)}</Badge>
                   <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                    {ticket.tenantName ?? '—'}
+                    {ticket.companyCode}
                   </span>
                   <span className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums ml-auto">
                     {formatDate(ticket.createdAt)}
@@ -306,10 +301,10 @@ export function SupportTicketsPage() {
           </div>
 
           {/* Pagination */}
-          {data && data.totalPages > 1 && (
+          {tickets.length >= PAGE_SIZE && (
             <div className="flex items-center justify-between gap-4 pt-1">
               <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                Page {data.page + 1} of {data.totalPages}
+                Page {page + 1}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -323,7 +318,7 @@ export function SupportTicketsPage() {
                 <button
                   type="button"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page + 1 >= data.totalPages}
+                  disabled={tickets.length < PAGE_SIZE}
                   className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[12px] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Next <ChevronRight size={13} />

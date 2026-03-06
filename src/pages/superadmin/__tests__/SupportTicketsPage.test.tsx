@@ -37,32 +37,49 @@ import { superadminTicketsApi } from '@/lib/superadminApi';
 
 const mockTickets = [
   {
-    id: 'TKT-001',
-    tenantName: 'Acme Corp',
-    tenantCode: 'ACME',
+    id: 1,
+    publicId: 'TKT-001',
+    companyCode: 'ACME',
+    userId: 10,
+    requesterEmail: 'user@acme.com',
+    category: 'SUPPORT' as const,
     subject: 'Cannot access payroll module',
+    description: 'Detailed description',
     priority: 'HIGH' as const,
     status: 'OPEN' as const,
+    githubIssueNumber: null,
+    githubIssueUrl: null,
+    githubIssueState: null,
+    githubSyncedAt: null,
+    githubLastError: null,
+    resolvedAt: null,
+    resolvedNotificationSentAt: null,
     createdAt: '2024-03-01T10:00:00Z',
+    updatedAt: '2024-03-01T10:00:00Z',
   },
   {
-    id: 'TKT-002',
-    tenantName: 'Beta Ltd',
-    tenantCode: 'BETA',
+    id: 2,
+    publicId: 'TKT-002',
+    companyCode: 'BETA',
+    userId: 20,
+    requesterEmail: 'admin@beta.com',
+    category: 'BUG' as const,
     subject: 'Login issue for admin user',
+    description: 'User cannot log in',
     priority: 'CRITICAL' as const,
     status: 'IN_PROGRESS' as const,
+    githubIssueNumber: null,
+    githubIssueUrl: null,
+    githubIssueState: null,
+    githubSyncedAt: null,
+    githubLastError: null,
+    resolvedAt: null,
+    resolvedNotificationSentAt: null,
     createdAt: '2024-03-02T14:30:00Z',
+    updatedAt: '2024-03-02T14:30:00Z',
   },
 ];
 
-const mockPageResponse = {
-  content: mockTickets,
-  totalElements: 2,
-  totalPages: 1,
-  page: 0,
-  size: 20,
-};
 
 function renderPage() {
   return render(
@@ -76,7 +93,7 @@ describe('SupportTicketsPage', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('renders page heading', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
       expect(screen.getByText('Support Tickets')).toBeDefined();
@@ -84,7 +101,7 @@ describe('SupportTicketsPage', () => {
   });
 
   it('renders ticket subjects in table', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
       expect(screen.getAllByText('Cannot access payroll module').length).toBeGreaterThan(0);
@@ -93,16 +110,16 @@ describe('SupportTicketsPage', () => {
   });
 
   it('renders tenant names', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
-      expect(screen.getAllByText('Acme Corp').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Beta Ltd').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('ACME').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('BETA').length).toBeGreaterThan(0);
     });
   });
 
   it('renders priority and status badges', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
       const highBadges = screen.queryAllByText('HIGH');
@@ -133,9 +150,7 @@ describe('SupportTicketsPage', () => {
   });
 
   it('shows empty state when no tickets', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue({
-      content: [], totalElements: 0, totalPages: 0, page: 0, size: 20,
-    });
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     renderPage();
     await waitFor(() => {
       const emptyMsg = screen.queryAllByText(/no support tickets/i);
@@ -144,7 +159,7 @@ describe('SupportTicketsPage', () => {
   });
 
   it('shows search input and status/priority filters', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
       const searchInput = document.querySelector('input[placeholder="Search tickets…"]');
@@ -155,7 +170,7 @@ describe('SupportTicketsPage', () => {
   });
 
   it('calls listTickets on mount', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
       expect(superadminTicketsApi.listTickets).toHaveBeenCalledTimes(1);
@@ -163,10 +178,10 @@ describe('SupportTicketsPage', () => {
   });
 
   it('renders ticket IDs with hash prefix', async () => {
-    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockPageResponse);
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     await waitFor(() => {
-      const ticketIdElements = screen.queryAllByText(/#TKT-001/);
+      const ticketIdElements = screen.queryAllByText('TKT-001');
       expect(ticketIdElements.length).toBeGreaterThan(0);
     });
   });

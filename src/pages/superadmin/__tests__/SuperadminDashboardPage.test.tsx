@@ -41,8 +41,11 @@
    totalTenants: 12,
    activeTenants: 9,
    suspendedTenants: 2,
-   totalPlatformUsers: 143,
-   storageConsumption: 2048,
+  deactivatedTenants: 1,
+  totalUsers: 143,
+  totalApiCalls: 5000,
+  totalStorageBytes: 2147483648,
+  recentActivityAt: null,
  };
  
  function renderPage() {

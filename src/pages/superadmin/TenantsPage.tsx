@@ -33,25 +33,44 @@
  import { DropdownMenu } from '@/components/ui/DropdownMenu';
  import { useToast } from '@/components/ui/Toast';
  import { superadminTenantsApi } from '@/lib/superadminApi';
- import type {
-   Tenant,
-   TenantOnboardRequest,
-   TenantUpdateRequest,
-   SupportWarningRequest,
-   AdminPasswordResetRequest,
- } from '@/types';
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Helpers
- // ─────────────────────────────────────────────────────────────────────────────
- 
- type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'NEW';
- 
- function getStatus(tenant: Tenant): TenantStatus {
-   if (tenant.status) return tenant.status;
-   if (!tenant.isActive) return 'SUSPENDED';
-   return 'ACTIVE';
- }
+import type {
+  Tenant,
+  TenantUpdateRequest,
+  SupportWarningRequest,
+  AdminPasswordResetRequest,
+  SuperAdminTenantDto,
+  TenantOnboardingRequest,
+  CoATemplateDto,
+} from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'NEW';
+
+/**
+ * Normalize SuperAdminTenantDto (from /api/v1/superadmin/tenants) to the
+ * internal Tenant shape used in this page's modals and table.
+ */
+function normalizeTenant(dto: SuperAdminTenantDto): Tenant {
+  return {
+    id: dto.companyId,
+    code: dto.companyCode,
+    name: dto.companyName,
+    isActive: dto.status === 'ACTIVE',
+    status: dto.status,
+    storageUsedMb: Math.round(dto.storageBytes / (1024 * 1024)),
+    createdAt: dto.lastActivityAt ?? new Date().toISOString(),
+    updatedAt: dto.lastActivityAt ?? new Date().toISOString(),
+  };
+}
+
+function getStatus(tenant: Tenant): TenantStatus {
+  if (tenant.status) return tenant.status;
+  if (!tenant.isActive) return 'SUSPENDED';
+  return 'ACTIVE';
+}
  
  function formatDate(iso: string): string {
    return new Date(iso).toLocaleDateString('en-IN', {
@@ -101,27 +120,29 @@
  // Step 1: Company Details Form
  // ─────────────────────────────────────────────────────────────────────────────
  
- interface CompanyDetailsFormData {
-   name: string;
-   code: string;
-   address: string;
-   phone: string;
-   email: string;
-   gstNumber: string;
-   timezone: string;
-   defaultGstRate: string;
- }
- 
- const emptyCompanyForm: CompanyDetailsFormData = {
-   name: '',
-   code: '',
-   address: '',
-   phone: '',
-   email: '',
-   gstNumber: '',
-   timezone: 'Asia/Kolkata',
-   defaultGstRate: '18',
- };
+interface CompanyDetailsFormData {
+  name: string;
+  code: string;
+  address: string;
+  phone: string;
+  email: string;
+  gstNumber: string;
+  timezone: string;
+  defaultGstRate: string;
+  coaTemplateCode: string;
+}
+
+const emptyCompanyForm: CompanyDetailsFormData = {
+  name: '',
+  code: '',
+  address: '',
+  phone: '',
+  email: '',
+  gstNumber: '',
+  timezone: 'Asia/Kolkata',
+  defaultGstRate: '18',
+  coaTemplateCode: '',
+};
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Step 2: Admin User Form
@@ -146,7 +167,7 @@
  interface OnboardModalProps {
    isOpen: boolean;
    onClose: () => void;
-   onSuccess: (tenant: Tenant) => void;
+   onSuccess: () => void;
  }
  
  function OnboardTenantModal({ isOpen, onClose, onSuccess }: OnboardModalProps) {
@@ -154,14 +175,31 @@
    const [step, setStep] = useState<1 | 2>(1);
    const [companyData, setCompanyData] = useState<CompanyDetailsFormData>(emptyCompanyForm);
    const [adminData, setAdminData] = useState<AdminUserFormData>(emptyAdminForm);
+   const [coaTemplates, setCoaTemplates] = useState<CoATemplateDto[]>([]);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [errors, setErrors] = useState<Record<string, string>>({});
+   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
  
-   const resetForm = () => {
+   useEffect(() => {
+    if (isOpen) {
+      superadminTenantsApi.getCoATemplates().then((templates) => {
+        setCoaTemplates(templates);
+        if (templates.length > 0 && !companyData.coaTemplateCode) {
+          setCompanyData((p) => ({ ...p, coaTemplateCode: templates[0].code }));
+        }
+      }).catch(() => {
+        // non-blocking — templates optional
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Only re-fetch when modal opens; companyData.coaTemplateCode is checked via closure intentionally
+
+  const resetForm = () => {
      setStep(1);
      setCompanyData(emptyCompanyForm);
      setAdminData(emptyAdminForm);
      setErrors({});
+     setTemporaryPassword(null);
    };
  
    const handleClose = () => {
@@ -177,6 +215,7 @@
        errs.code = 'Code must be 2–12 uppercase letters/numbers/underscores';
      if (companyData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyData.email))
        errs.email = 'Enter a valid email address';
+     if (!companyData.coaTemplateCode) errs.coaTemplateCode = 'Please select a Chart of Accounts template';
      return errs;
    };
  
@@ -205,29 +244,25 @@
  
      setIsSubmitting(true);
      try {
-       const payload: TenantOnboardRequest = {
-         name: companyData.name,
-         code: companyData.code.toUpperCase(),
+       const payload: TenantOnboardingRequest = {
+         companyName: companyData.name,
+         companyCode: companyData.code.toUpperCase(),
+         adminEmail: adminData.adminEmail,
+         adminDisplayName: adminData.adminDisplayName,
+         adminTemporaryPassword: adminData.adminPassword,
+         coaTemplateCode: companyData.coaTemplateCode,
          address: companyData.address || undefined,
          phone: companyData.phone || undefined,
-         email: companyData.email || undefined,
          gstNumber: companyData.gstNumber || undefined,
          timezone: companyData.timezone || 'Asia/Kolkata',
          defaultGstRate: companyData.defaultGstRate
            ? parseFloat(companyData.defaultGstRate)
            : undefined,
-         adminEmail: adminData.adminEmail,
-         adminDisplayName: adminData.adminDisplayName,
-         adminPassword: adminData.adminPassword,
        };
-       const tenant = await superadminTenantsApi.onboardTenant(payload);
-       toast({
-         title: 'Tenant onboarded',
-         description: `Tenant ID: ${tenant.id} — Admin: ${adminData.adminEmail}`,
-         type: 'success',
-       });
-       handleClose();
-       onSuccess(tenant);
+       const result = await superadminTenantsApi.onboardTenant(payload);
+       // Show the one-time temporary password before closing
+       setTemporaryPassword(result.adminTemporaryPassword);
+       onSuccess();
      } catch (err) {
        toast({
          title: 'Onboarding failed',
@@ -243,12 +278,12 @@
      <Modal
        isOpen={isOpen}
        onClose={handleClose}
-       title={step === 1 ? 'Onboard Tenant — Company Details' : 'Onboard Tenant — Admin User'}
-       description={`Step ${step} of 2`}
+      title={temporaryPassword ? 'Tenant Onboarded' : step === 1 ? 'Onboard Tenant — Company Details' : 'Onboard Tenant — Admin User'}
+      description={temporaryPassword ? 'Save the temporary password before closing.' : `Step ${step} of 2`}
        size="lg"
        footer={
          <>
-           {step === 1 ? (
+          {temporaryPassword ? null : step === 1 ? (
              <Button variant="secondary" size="sm" onClick={handleClose}>
                Cancel
              </Button>
@@ -262,7 +297,11 @@
                Back
              </Button>
            )}
-           {step === 1 ? (
+          {temporaryPassword ? (
+            <Button variant="primary" size="sm" onClick={handleClose}>
+              Done
+            </Button>
+          ) : step === 1 ? (
              <Button
                variant="primary"
                size="sm"
@@ -284,7 +323,26 @@
          </>
        }
      >
-       {step === 1 ? (
+      {temporaryPassword ? (
+        <div className="space-y-4">
+          <div className="p-3 rounded-lg bg-[var(--color-success-bg)] text-[13px] text-[var(--color-success)]">
+            Tenant <strong>{companyData.name}</strong> has been successfully onboarded.
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1.5">
+              One-Time Admin Password
+            </label>
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)]">
+              <code className="flex-1 text-[13px] font-mono text-[var(--color-text-primary)] select-all">
+                {temporaryPassword}
+              </code>
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+              Share this password securely with the admin. They will be prompted to change it on first login.
+            </p>
+          </div>
+        </div>
+      ) : step === 1 ? (
          <div className="space-y-4">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <div className="sm:col-span-2">
@@ -356,6 +414,21 @@
                  placeholder="123 Business Park, Mumbai"
                />
              </div>
+            {coaTemplates.length > 0 && (
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1.5">
+                  Chart of Accounts Template <span className="text-[var(--color-error)]">*</span>
+                </label>
+                <Select
+                  value={companyData.coaTemplateCode}
+                  onChange={(e) => setCompanyData((p) => ({ ...p, coaTemplateCode: e.target.value }))}
+                  options={coaTemplates.map((t) => ({ value: t.code, label: t.name }))}
+                />
+                {errors.coaTemplateCode && (
+                  <p className="mt-1 text-[11px] text-[var(--color-error)]">{errors.coaTemplateCode}</p>
+                )}
+              </div>
+            )}
            </div>
          </div>
        ) : (
@@ -766,23 +839,21 @@
    const { toast } = useToast();
  
    const loadTenants = useCallback(async () => {
-     setIsLoading(true);
-     setError(null);
-     try {
-       const data = await superadminTenantsApi.listTenants({
-         search: search || undefined,
-         status: statusFilter || undefined,
-         page,
-         size: PAGE_SIZE,
-       });
-       setTenants(Array.isArray(data) ? data : []);
-     } catch {
-       setError("Couldn't load tenants. Please try again.");
-     } finally {
-       setIsLoading(false);
-     }
-   }, [search, statusFilter, page]);
- 
+    setIsLoading(true);
+    setError(null);
+    try {
+      // GET /api/v1/superadmin/tenants — returns SuperAdminTenantDto[], normalized here
+      const dtos = await superadminTenantsApi.listTenants({
+        status: statusFilter || undefined,
+      });
+      setTenants(Array.isArray(dtos) ? dtos.map(normalizeTenant) : []);
+    } catch {
+      setError("Couldn't load tenants. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter]);
+   
    useEffect(() => {
      void loadTenants();
    }, [loadTenants]);

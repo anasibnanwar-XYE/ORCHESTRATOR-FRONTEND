@@ -26,7 +26,6 @@ import {
   RefreshCw,
   User,
   Clock,
-  Paperclip,
   MessageSquare,
   Lock,
   Send,
@@ -41,10 +40,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { superadminTicketsDetailApi } from '@/lib/superadminApi';
 import type {
-  SupportTicketDetail,
-  TicketResponse,
-  TicketAttachment,
-  TicketStatusHistory,
+  SupportTicketResponse,
   TicketPriority,
 } from '@/types';
 
@@ -94,131 +90,9 @@ function formatDateShort(ts: string): string {
   }
 }
 
-function fileSizeLabel(bytes?: number): string {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Conversation Thread
 // ─────────────────────────────────────────────────────────────────────────────
-
-function ResponseItem({ response }: { response: TicketResponse }) {
-  const isInternal = response.isInternal;
-  const isSuperadmin =
-    response.authorRole === 'SUPERADMIN' || response.authorRole === 'SUPPORT_AGENT';
-
-  return (
-    <div
-      className={clsx(
-        'flex gap-3',
-        isSuperadmin ? 'flex-row-reverse' : 'flex-row',
-      )}
-    >
-      {/* Avatar */}
-      <div
-        className={clsx(
-          'shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold',
-          isSuperadmin
-            ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
-            : 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]',
-        )}
-      >
-        {response.author.slice(0, 2).toUpperCase()}
-      </div>
-
-      {/* Bubble */}
-      <div
-        className={clsx(
-          'max-w-[75%] flex flex-col gap-1',
-          isSuperadmin ? 'items-end' : 'items-start',
-        )}
-      >
-        <div className="flex items-center gap-2">
-          {isInternal && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              <Lock size={9} />
-              Internal
-            </span>
-          )}
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">
-            {response.author} · {formatTs(response.createdAt)}
-          </span>
-        </div>
-        <div
-          className={clsx(
-            'px-3 py-2.5 rounded-xl text-[13px] leading-relaxed',
-            isInternal
-              ? 'border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] italic'
-              : isSuperadmin
-              ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
-              : 'bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] text-[var(--color-text-primary)]',
-          )}
-        >
-          {response.message}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Attachments List
-// ─────────────────────────────────────────────────────────────────────────────
-
-function AttachmentItem({ attachment }: { attachment: TicketAttachment }) {
-  return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors group"
-    >
-      <Paperclip size={13} className="shrink-0 text-[var(--color-text-tertiary)]" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-[var(--color-text-primary)] truncate group-hover:underline">
-          {attachment.filename}
-        </p>
-        {attachment.sizeBytes && (
-          <p className="text-[11px] text-[var(--color-text-tertiary)]">
-            {fileSizeLabel(attachment.sizeBytes)}
-          </p>
-        )}
-      </div>
-    </a>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Status History
-// ─────────────────────────────────────────────────────────────────────────────
-
-function StatusHistoryItem({ entry }: { entry: TicketStatusHistory }) {
-  return (
-    <div className="flex items-start gap-2.5">
-      <div className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-[var(--color-border-strong)]" />
-      <div>
-        <p className="text-[12px] text-[var(--color-text-primary)]">
-          {entry.fromStatus ? (
-            <>
-              <span className="text-[var(--color-text-tertiary)]">{statusLabel(entry.fromStatus)}</span>
-              {' → '}
-              <span className="font-medium">{statusLabel(entry.toStatus)}</span>
-            </>
-          ) : (
-            <span className="font-medium">{statusLabel(entry.toStatus)}</span>
-          )}
-        </p>
-        <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
-          {entry.changedBy} · {formatTs(entry.changedAt)}
-          {entry.reason && <span className="ml-1 italic">— {entry.reason}</span>}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Assign Agent Modal
@@ -308,7 +182,7 @@ export function TicketDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [ticket, setTicket] = useState<SupportTicketDetail | null>(null);
+  const [ticket, setTicket] = useState<SupportTicketResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -472,20 +346,17 @@ export function TicketDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-mono text-[var(--color-text-tertiary)]">#{ticket.id}</span>
+            <span className="text-[11px] font-mono text-[var(--color-text-tertiary)]">{ticket.publicId}</span>
             <Badge variant={statusVariant(ticket.status as TicketStatus)}>{statusLabel(ticket.status)}</Badge>
-            <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority}</Badge>
+            {ticket.priority && <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority}</Badge>}
           </div>
           <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)] truncate">
             {ticket.subject}
           </h1>
           <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
-            {ticket.tenantName ?? 'Unknown tenant'}
-            {ticket.tenantCode && (
-              <span className="ml-1.5 font-mono bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded text-[10px]">
-                {ticket.tenantCode}
-              </span>
-            )}
+            <span className="ml-1.5 font-mono bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded text-[10px]">
+              {ticket.companyCode}
+            </span>
             {' · '}Opened {formatDateShort(ticket.createdAt)}
           </p>
         </div>
@@ -520,33 +391,13 @@ export function TicketDetailPage() {
             <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
               Conversation
             </p>
-            {ticket.responses.length === 0 ? (
-              <div className="py-8 text-center">
-                <MessageSquare size={24} className="mx-auto text-[var(--color-text-tertiary)] opacity-30 mb-2" />
-                <p className="text-[12px] text-[var(--color-text-tertiary)]">No replies yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {ticket.responses.map((r) => (
-                  <ResponseItem key={r.id} response={r} />
-                ))}
-              </div>
-            )}
+            <div className="py-8 text-center">
+              <MessageSquare size={24} className="mx-auto text-[var(--color-text-tertiary)] opacity-30 mb-2" />
+              <p className="text-[12px] text-[var(--color-text-tertiary)]">No replies yet.</p>
+            </div>
           </div>
 
           {/* Attachments */}
-          {ticket.attachments.length > 0 && (
-            <div className="p-4 rounded-xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-                Attachments
-              </p>
-              <div className="space-y-2">
-                {ticket.attachments.map((a) => (
-                  <AttachmentItem key={a.id} attachment={a} />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Reply box */}
           {canAct && (
@@ -637,7 +488,7 @@ export function TicketDetailPage() {
               <div>
                 <label className="block text-[11px] text-[var(--color-text-tertiary)] mb-1">Priority</label>
                 <Select
-                  value={ticket.priority}
+                  value={ticket.priority ?? ''}
                   onChange={(e) => void handlePriorityChange(e.target.value)}
                   options={[
                     { value: 'LOW', label: 'Low' },
@@ -692,20 +543,11 @@ export function TicketDetailPage() {
               <div>
                 <dt className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wide mb-0.5">Tenant</dt>
                 <dd className="text-[12px] text-[var(--color-text-primary)]">
-                  {ticket.tenantName ?? '—'}
-                  {ticket.tenantCode && (
-                    <span className="ml-1 font-mono text-[10px] bg-[var(--color-surface-tertiary)] px-1 py-0.5 rounded">
-                      {ticket.tenantCode}
-                    </span>
-                  )}
+                  <span className="font-mono text-[10px] bg-[var(--color-surface-tertiary)] px-1 py-0.5 rounded">
+                    {ticket.companyCode}
+                  </span>
                 </dd>
               </div>
-              {ticket.assignedAgent && (
-                <div>
-                  <dt className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wide mb-0.5">Assigned To</dt>
-                  <dd className="text-[12px] text-[var(--color-text-primary)]">{ticket.assignedAgent}</dd>
-                </div>
-              )}
               <div>
                 <dt className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wide mb-0.5">Opened</dt>
                 <dd className="text-[12px] text-[var(--color-text-tertiary)] tabular-nums flex items-center gap-1.5">
@@ -726,24 +568,12 @@ export function TicketDetailPage() {
           </div>
 
           {/* Status history */}
-          {ticket.statusHistory.length > 0 && (
-            <div className="p-4 rounded-xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-                Status History
-              </p>
-              <div className="space-y-3">
-                {ticket.statusHistory.map((h) => (
-                  <StatusHistoryItem key={h.id} entry={h} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* ── Assign agent modal ─────────────────────────────────────── */}
       <AssignAgentModal
-        ticketId={ticket.id}
+        ticketId={ticket.publicId}
         isOpen={assignOpen}
         onClose={() => setAssignOpen(false)}
         onSuccess={() => void loadTicket()}

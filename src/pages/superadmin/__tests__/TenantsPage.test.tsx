@@ -33,6 +33,7 @@
  vi.mock('@/lib/superadminApi', () => ({
    superadminTenantsApi: {
      listTenants: vi.fn(),
+    getCoATemplates: vi.fn().mockResolvedValue([]),
      onboardTenant: vi.fn(),
      updateTenant: vi.fn(),
      activateTenant: vi.fn(),
@@ -52,24 +53,24 @@
  
  const mockTenants = [
    {
-     id: 1,
-     code: 'ACME',
-     name: 'Acme Industries',
-     email: 'admin@acme.com',
-     isActive: true,
+    companyId: 1,
+    companyCode: 'ACME',
+    companyName: 'Acme Industries',
      status: 'ACTIVE',
-     createdAt: '2024-01-01T00:00:00Z',
-     updatedAt: '2024-01-01T00:00:00Z',
+    activeUsers: 5,
+    apiCallCount: 100,
+    storageBytes: 1024 * 1024,
+    lastActivityAt: '2024-01-01T00:00:00Z',
    },
    {
-     id: 2,
-     code: 'GLOBEX',
-     name: 'Globex Corp',
-     email: 'admin@globex.com',
-     isActive: false,
+    companyId: 2,
+    companyCode: 'GLOBEX',
+    companyName: 'Globex Corp',
      status: 'SUSPENDED',
-     createdAt: '2024-02-01T00:00:00Z',
-     updatedAt: '2024-02-01T00:00:00Z',
+    activeUsers: 3,
+    apiCallCount: 50,
+    storageBytes: 512 * 1024,
+    lastActivityAt: '2024-02-01T00:00:00Z',
    },
  ];
  

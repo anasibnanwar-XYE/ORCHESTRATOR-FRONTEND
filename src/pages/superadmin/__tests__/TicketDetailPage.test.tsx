@@ -72,60 +72,25 @@ import { TicketDetailPage } from '../TicketDetailPage';
 import { superadminTicketsDetailApi } from '@/lib/superadminApi';
 
 const mockTicket = {
-  id: 'TKT-001',
-  tenantName: 'Acme Corp',
-  tenantCode: 'ACME',
+  id: 1,
+  publicId: 'TKT-001',
+  companyCode: 'ACME',
+  userId: 10,
+  requesterEmail: 'user@acme.com',
+  category: 'SUPPORT' as const,
   subject: 'Cannot access payroll module',
+  description: 'Users are unable to access the payroll module since yesterday.',
   priority: 'HIGH' as const,
   status: 'OPEN' as const,
+  githubIssueNumber: null,
+  githubIssueUrl: null,
+  githubIssueState: null,
+  githubSyncedAt: null,
+  githubLastError: null,
+  resolvedAt: null,
+  resolvedNotificationSentAt: null,
   createdAt: '2024-03-01T10:00:00Z',
   updatedAt: '2024-03-02T12:00:00Z',
-  description: 'Users are unable to access the payroll module since yesterday.',
-  assignedAgent: 'support@orchestrator.com',
-  responses: [
-    {
-      id: 'resp-1',
-      author: 'Jane Smith',
-      authorRole: 'TENANT_USER' as const,
-      message: 'Hello, we cannot access the payroll module.',
-      isInternal: false,
-      createdAt: '2024-03-01T10:00:00Z',
-    },
-    {
-      id: 'resp-2',
-      author: 'support@orchestrator.com',
-      authorRole: 'SUPPORT_AGENT' as const,
-      message: 'We are investigating this issue.',
-      isInternal: false,
-      createdAt: '2024-03-01T11:00:00Z',
-    },
-  ],
-  attachments: [
-    {
-      id: 'att-1',
-      filename: 'screenshot.png',
-      url: 'https://example.com/screenshot.png',
-      sizeBytes: 204800,
-      uploadedAt: '2024-03-01T10:05:00Z',
-      uploadedBy: 'Jane Smith',
-    },
-  ],
-  statusHistory: [
-    {
-      id: 'hist-1',
-      fromStatus: undefined,
-      toStatus: 'OPEN',
-      changedBy: 'system',
-      changedAt: '2024-03-01T10:00:00Z',
-    },
-    {
-      id: 'hist-2',
-      fromStatus: 'OPEN',
-      toStatus: 'IN_PROGRESS',
-      changedBy: 'support@orchestrator.com',
-      changedAt: '2024-03-01T11:00:00Z',
-    },
-  ],
 };
 
 function renderPage(ticketId: string = 'TKT-001') {
@@ -153,7 +118,7 @@ describe('TicketDetailPage', () => {
     (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
     renderPage();
     await waitFor(() => {
-      expect(screen.getAllByText(/#TKT-001/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText('TKT-001').length).toBeGreaterThan(0);
     });
   });
 
@@ -169,8 +134,7 @@ describe('TicketDetailPage', () => {
     (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText('Hello, we cannot access the payroll module.')).toBeDefined();
-      expect(screen.getByText('We are investigating this issue.')).toBeDefined();
+      expect(screen.getAllByText(/conversation/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -178,7 +142,8 @@ describe('TicketDetailPage', () => {
     (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText('screenshot.png')).toBeDefined();
+      // Attachments section removed — page shows description instead
+      expect(screen.getByText('Users are unable to access the payroll module since yesterday.')).toBeDefined();
     });
   });
 
@@ -186,7 +151,8 @@ describe('TicketDetailPage', () => {
     (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
     renderPage();
     await waitFor(() => {
-      expect(screen.getAllByText(/In Progress/i).length).toBeGreaterThan(0);
+      // Status is shown as a badge
+      expect(screen.getAllByText(/OPEN|open/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -194,8 +160,9 @@ describe('TicketDetailPage', () => {
     (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
     renderPage();
     await waitFor(() => {
-      const agentText = screen.queryAllByText('support@orchestrator.com');
-      expect(agentText.length).toBeGreaterThan(0);
+      // Assigned agent field removed — tenant code shown instead
+      const codeElements = screen.queryAllByText('ACME');
+      expect(codeElements.length).toBeGreaterThan(0);
     });
   });
 

@@ -1003,10 +1003,18 @@ export interface BusinessEvent {
   action: string;
   resource: string;
   resourceId?: string;
+  /** Target tenant (company code) for platform-level governance events */
+  targetTenant?: string;
   details?: Record<string, unknown> | string;
   companyCode?: string;
   severity?: 'INFO' | 'WARNING' | 'ERROR';
 }
+ 
+ /** Role-assignment request for assigning a platform role to a superadmin user */
+ export interface RoleAssignmentRequest {
+   userId: number;
+   roleKey: string;
+ }
 
 export interface MlEvent {
   id: string | number;
@@ -1479,7 +1487,80 @@ export interface ApiErrorBody {
    adminDisplayName: string;
    adminPassword: string;
  }
- 
+ /**
+  * SuperAdminTenantDto — tenant record as returned by /api/v1/superadmin/tenants.
+  * This is NOT the same as CompanyDto/Tenant. It exposes usage metrics and status.
+  */
+ export interface SuperAdminTenantDto {
+   companyId: number;
+   companyCode: string;
+   companyName: string;
+   status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
+   activeUsers: number;
+   apiCallCount: number;
+   storageBytes: number;
+   lastActivityAt: string | null;
+ }
+
+ /** Dashboard metrics from GET /api/v1/superadmin/dashboard */
+ export interface SuperAdminDashboardDto {
+   totalTenants: number;
+   activeTenants: number;
+   suspendedTenants: number;
+   deactivatedTenants: number;
+   totalUsers: number;
+   totalApiCalls: number;
+   totalStorageBytes: number;
+   recentActivityAt: string | null;
+ }
+
+ /** Usage metrics for a single tenant from GET /api/v1/superadmin/tenants/{id}/usage */
+ export interface SuperAdminTenantUsageDto {
+   companyId: number;
+   companyCode: string;
+   status: string;
+   apiCallCount: number;
+   activeUsers: number;
+   storageBytes: number;
+   lastActivityAt: string | null;
+ }
+
+ /** CoA template from GET /api/v1/superadmin/tenants/coa-templates */
+ export interface CoATemplateDto {
+   code: string;
+   name: string;
+   description?: string;
+   accountCount?: number;
+ }
+
+ /**
+  * Onboarding request for POST /api/v1/superadmin/tenants/onboard.
+  * Requires coaTemplateCode in addition to company and admin user details.
+  */
+ export interface TenantOnboardingRequest {
+   companyName: string;
+   companyCode: string;
+   adminEmail: string;
+   adminDisplayName: string;
+   adminTemporaryPassword: string;
+   coaTemplateCode: string;
+   timezone?: string;
+   defaultGstRate?: number;
+   address?: string;
+   phone?: string;
+   gstNumber?: string;
+ }
+
+ /** Response from POST /api/v1/superadmin/tenants/onboard (includes one-time admin password) */
+ export interface TenantOnboardingResponse {
+   companyId: number;
+   companyCode: string;
+   companyName: string;
+   status: string;
+   adminTemporaryPassword: string;
+ }
+
+ /** Request body for updating tenant details */
  /** Request body for updating tenant details */
  export interface TenantUpdateRequest {
    name?: string;
@@ -1512,19 +1593,51 @@ export interface ApiErrorBody {
    storageConsumption: number;
  }
  
- /** Support ticket (cross-tenant) */
- export interface SupportTicket {
-   id: string;
-   tenantName?: string;
-   tenantCode?: string;
-   subject: string;
-   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-   createdAt: string;
-   updatedAt?: string;
-   description?: string;
-   responses?: Array<{ author: string; message: string; createdAt: string }>;
- }
+/** Support ticket (cross-tenant) */
+export interface SupportTicket {
+  id: string;
+  tenantName?: string;
+  tenantCode?: string;
+  subject: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  createdAt: string;
+  updatedAt?: string;
+  description?: string;
+  responses?: Array<{ author: string; message: string; createdAt: string }>;
+}
+
+/**
+ * SupportTicketResponse — ticket record matching backend SupportTicketResponse DTO.
+ * Used by /api/v1/support/tickets (list) and /api/v1/support/tickets/{ticketId} (detail).
+ */
+export interface SupportTicketResponse {
+  id: number;
+  publicId: string;
+  companyCode: string;
+  userId: number;
+  requesterEmail: string | null;
+  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
+  subject: string;
+  description: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  githubIssueNumber: number | null;
+  githubIssueUrl: string | null;
+  githubIssueState: string | null;
+  githubSyncedAt: string | null;
+  githubLastError: string | null;
+  resolvedAt: string | null;
+  resolvedNotificationSentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Legacy priority field — may be absent from backend response */
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+/** Response from GET /api/v1/support/tickets */
+export interface SupportTicketListResponse {
+  tickets: SupportTicketResponse[];
+}
 
 /** Ticket priority levels */
 export type TicketPriority = SupportTicket['priority'];
