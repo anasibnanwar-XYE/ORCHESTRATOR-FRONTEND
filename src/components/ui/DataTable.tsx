@@ -144,17 +144,28 @@ export function DataTable<T>({
 
       {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[13px]" role="grid">
           <thead
             className={clsx(
               stickyHeader && 'sticky top-0 z-10',
             )}
+            role="rowgroup"
           >
-            <tr className="border-b border-[var(--color-border-default)]">
+            <tr className="border-b border-[var(--color-border-default)]" role="row">
               {columns.map((col) => (
                 <th
                   key={col.id}
                   style={{ width: col.width, minWidth: col.minWidth }}
+                  scope="col"
+                  aria-sort={
+                    col.sortable
+                      ? sort.columnId === col.id
+                        ? sort.direction === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                      : undefined
+                  }
                   className={clsx(
                     'px-3 py-2.5 font-medium text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]',
                     'bg-[var(--color-surface-primary)]',
@@ -164,6 +175,8 @@ export function DataTable<T>({
                     col.sortable && 'cursor-pointer select-none hover:text-[var(--color-text-secondary)]',
                   )}
                   onClick={col.sortable ? () => handleSort(col.id) : undefined}
+                  onKeyDown={col.sortable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSort(col.id); } } : undefined}
+                  tabIndex={col.sortable ? 0 : undefined}
                 >
                   <span
                     className={clsx(
@@ -177,20 +190,20 @@ export function DataTable<T>({
                 </th>
               ))}
               {rowActions && (
-                <th className="px-3 py-2.5 w-10 bg-[var(--color-surface-primary)]" />
+                <th className="px-3 py-2.5 w-10 bg-[var(--color-surface-primary)]" scope="col" />
               )}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {isLoading ? (
               Array.from({ length: pageSize > 5 ? 5 : pageSize }).map((_, i) => (
-                <tr key={`sk-${i}`} className="border-b border-[var(--color-border-subtle)]">
+                <tr key={`sk-${i}`} className="border-b border-[var(--color-border-subtle)]" role="row">
                   {columns.map((col) => (
-                    <td key={col.id} className="px-3 py-3">
+                    <td key={col.id} className="px-3 py-3" role="gridcell">
                       <div className="h-3.5 rounded bg-[var(--color-surface-tertiary)] animate-pulse" style={{ width: `${40 + (i * 13 + col.id.length * 7) % 40}%` }} />
                     </td>
                   ))}
-                  {rowActions && <td className="px-3 py-3" />}
+                  {rowActions && <td className="px-3 py-3" role="gridcell" />}
                 </tr>
               ))
             ) : paginatedData.length === 0 ? (
@@ -198,6 +211,7 @@ export function DataTable<T>({
                 <td
                   colSpan={columns.length + (rowActions ? 1 : 0)}
                   className="px-3 py-10 text-center text-[13px] text-[var(--color-text-tertiary)]"
+                  role="gridcell"
                 >
                   {emptyMessage}
                 </td>
@@ -207,16 +221,21 @@ export function DataTable<T>({
                 <tr
                   key={keyExtractor(row)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onKeyDown={onRowClick ? (e) => { if (e.key === 'Enter') onRowClick(row); } : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role="row"
                   className={clsx(
                     'border-b border-[var(--color-border-subtle)]',
                     'transition-colors duration-100',
                     'hover:bg-[var(--color-surface-secondary)]',
                     onRowClick && 'cursor-pointer',
+                    onRowClick && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-neutral-900)]',
                   )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.id}
+                      role="gridcell"
                       className={clsx(
                         'px-3 py-2.5 text-[var(--color-text-primary)]',
                         col.align === 'center' && 'text-center',
@@ -227,7 +246,7 @@ export function DataTable<T>({
                     </td>
                   ))}
                   {rowActions && (
-                    <td className="px-3 py-2.5">
+                    <td className="px-3 py-2.5" role="gridcell">
                       {rowActions(row)}
                     </td>
                   )}

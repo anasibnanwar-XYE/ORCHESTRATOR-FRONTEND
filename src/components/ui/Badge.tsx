@@ -13,10 +13,10 @@ interface BadgeProps {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)]',
-  success: 'text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)]',
-  warning: 'text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)]',
-  danger: 'text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)]',
-  info: 'text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)]',
+  success: 'text-[var(--color-status-success-text)] bg-[var(--color-status-success-bg)]',
+  warning: 'text-[var(--color-status-warning-text)] bg-[var(--color-status-warning-bg)]',
+  danger: 'text-[var(--color-status-error-text)] bg-[var(--color-status-error-bg)]',
+  info: 'text-[var(--color-status-info-text)] bg-[var(--color-status-info-bg)]',
 };
 
 const dotColors: Record<BadgeVariant, string> = {

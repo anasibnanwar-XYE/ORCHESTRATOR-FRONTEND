@@ -100,7 +100,7 @@ describe('DataTable', () => {
     const nameHeaders = screen.getAllByText('Name');
     fireEvent.click(nameHeaders[0]);
     // After asc sort Alice (30), Bob (25), Charlie (35) -> alphabetically Alice < Bob < Charlie
-    const cells = screen.getAllByRole('cell');
+    const cells = screen.getAllByRole('gridcell');
     // Alice should appear first in the sorted rows
     const textContent = cells.map((c) => c.textContent || '');
     const aliceIdx = textContent.findIndex((t) => t === 'Alice');

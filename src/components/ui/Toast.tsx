@@ -84,7 +84,9 @@ function ToastItem({ data, onDismiss }: { data: ToastData; onDismiss: (id: strin
 
   return (
     <div
-      role="status"
+      role={data.type === 'error' || data.type === 'warning' ? 'alert' : 'status'}
+      aria-live={data.type === 'error' || data.type === 'warning' ? 'assertive' : 'polite'}
+      aria-atomic="true"
       onMouseEnter={() => {
         pausedRef.current = true;
         if (timerRef.current) {

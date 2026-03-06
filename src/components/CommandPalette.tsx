@@ -236,6 +236,9 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const listboxId = 'cmd-palette-listbox';
+  const inputId = 'cmd-palette-input';
 
   // Auto-focus input on open
   useEffect(() => {
@@ -316,6 +319,7 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
   return (
     <div
       className="fixed inset-0 z-[var(--z-modal,800)] flex items-start justify-center pt-[12vh] px-4"
+      role="presentation"
     >
       {/* Backdrop — clicking it dismisses the palette */}
       <div
@@ -326,6 +330,10 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
 
       {/* Panel */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]"
         style={{
           boxShadow: '0 24px 80px -16px rgba(0,0,0,0.14), 0 4px 16px -4px rgba(0,0,0,0.06)',
@@ -348,6 +356,12 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
             className="flex-1 bg-transparent text-[13px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none"
             autoComplete="off"
             spellCheck={false}
+            id={inputId}
+            role="combobox"
+            aria-expanded={flatItems.length > 0}
+            aria-autocomplete="list"
+            aria-controls={listboxId}
+            aria-activedescendant={flatItems[selectedIndex] ? `cmd-item-${flatItems[selectedIndex].id}` : undefined}
             aria-label="Command palette search"
           />
           <KBD>esc</KBD>
@@ -357,6 +371,9 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
         <div
           ref={listRef}
           className="max-h-[360px] overflow-y-auto overscroll-contain py-2"
+          id={listboxId}
+          role="listbox"
+          aria-label="Commands"
         >
           {flatItems.length === 0 ? (
             <div className="py-10 text-center">
@@ -382,7 +399,10 @@ function PaletteModal({ isOpen, onClose, items }: PaletteModalProps) {
                     <button
                       key={item.id}
                       type="button"
+                      id={`cmd-item-${item.id}`}
                       data-selected={isSelected}
+                      role="option"
+                      aria-selected={isSelected}
                       onClick={() => item.action()}
                       onMouseEnter={() => setSelectedIndex(currentIndex)}
                       className={clsx(
