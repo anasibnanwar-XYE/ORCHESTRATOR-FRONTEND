@@ -34,7 +34,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
         className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]"
         onClick={onClose}
@@ -42,8 +42,9 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
       />
       <div
         className={clsx(
-          'relative w-full bg-[var(--color-surface-primary)]',
-          'rounded-2xl border border-[var(--color-border-default)]',
+          'relative w-full max-h-[90vh] flex flex-col overflow-hidden bg-[var(--color-surface-primary)]',
+          'rounded-t-2xl sm:rounded-2xl border border-[var(--color-border-default)]',
+          'mx-0 sm:mx-auto',
           sizeStyles[size],
         )}
         style={{
@@ -52,22 +53,23 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
         }}
       >
         {(title || description) && (
-          <div className="flex items-start justify-between px-5 pt-5 pb-0">
+          <div className="flex items-start justify-between px-5 pt-5 pb-0 shrink-0">
             <div>
               {title && <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">{title}</h2>}
               {description && <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">{description}</p>}
             </div>
             <button
               onClick={onClose}
-              className="shrink-0 h-7 w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
+              className="shrink-0 h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
+              aria-label="Close dialog"
             >
               <X size={15} />
             </button>
           </div>
         )}
-        <div className="p-5">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1 overscroll-contain">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
+          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[var(--color-border-subtle)] shrink-0">
             {footer}
           </div>
         )}

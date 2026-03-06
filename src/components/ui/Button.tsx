@@ -42,14 +42,16 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeConfig: Record<ButtonSize, { button: string; icon: number }> = {
-  sm: { button: 'h-8 px-3 text-[13px] gap-1.5 rounded-lg', icon: 14 },
-  md: { button: 'h-9 px-3.5 text-[13px] gap-1.5 rounded-lg', icon: 15 },
+  // min-h-[44px] ensures ≥44px touch target on mobile; sm: breakpoint restores
+  // the visual height for desktop layouts.
+  sm: { button: 'min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 text-[13px] gap-1.5 rounded-lg', icon: 14 },
+  md: { button: 'min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 text-[13px] gap-1.5 rounded-lg', icon: 15 },
   lg: { button: 'h-11 px-5 text-sm gap-2 rounded-xl', icon: 17 },
 };
 
 const iconOnlySize: Record<ButtonSize, string> = {
-  sm: 'h-8 w-8 rounded-lg',
-  md: 'h-9 w-9 rounded-lg',
+  sm: 'min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 sm:min-h-[32px] sm:min-w-[32px] rounded-lg',
+  md: 'min-h-[44px] min-w-[44px] sm:h-9 sm:w-9 sm:min-h-[36px] sm:min-w-[36px] rounded-lg',
   lg: 'h-11 w-11 rounded-xl',
 };
 

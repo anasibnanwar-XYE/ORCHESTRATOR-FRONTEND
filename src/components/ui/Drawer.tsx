@@ -64,7 +64,8 @@ export function Drawer({ isOpen, onClose, title, description, children, footer, 
             </div>
             <button
               onClick={onClose}
-              className="shrink-0 h-7 w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
+              className="shrink-0 h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
+              aria-label="Close panel"
             >
               <X size={15} />
             </button>

@@ -19,6 +19,7 @@
  import { dealerApi } from '@/lib/dealerApi';
  import { useToast } from '@/components/ui/Toast';
  import type { DealerPortalInvoice } from '@/types';
+import { downloadBlob } from '@/utils/mobileUtils';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -111,14 +112,7 @@
      setDownloadingId(invoice.id);
      try {
        const blob = await dealerApi.getInvoicePdf(invoice.id);
-       const url = URL.createObjectURL(blob);
-       const link = document.createElement('a');
-       link.href = url;
-       link.download = `${invoice.invoiceNumber ?? `invoice-${invoice.id}`}.pdf`;
-       document.body.appendChild(link);
-       link.click();
-       document.body.removeChild(link);
-       URL.revokeObjectURL(url);
+      downloadBlob(blob, `${invoice.invoiceNumber ?? `invoice-${invoice.id}`}.pdf`);
        toast({ title: 'Download started', type: 'success' });
      } catch {
        toast({ title: 'Could not download PDF', type: 'error' });

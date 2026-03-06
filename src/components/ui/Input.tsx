@@ -13,8 +13,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const sizeStyles = {
-  sm: { input: 'h-8 px-2.5 text-[12px]', iconPl: 'pl-8', iconSize: 13 },
-  md: { input: 'h-9 px-3 text-[13px]', iconPl: 'pl-9', iconSize: 14 },
+  // On mobile (touch): use min-h-[44px] to meet touch-target requirements.
+  // On desktop (sm+): let the explicit height govern.
+  sm: { input: 'min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 text-[12px]', iconPl: 'pl-8', iconSize: 13 },
+  md: { input: 'min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 text-[13px]', iconPl: 'pl-9', iconSize: 14 },
   lg: { input: 'h-11 px-3.5 text-sm', iconPl: 'pl-10', iconSize: 16 },
 };
 

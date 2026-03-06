@@ -85,7 +85,7 @@ export function DatePicker({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          'flex items-center justify-between w-full h-9 px-3',
+          'flex items-center justify-between w-full min-h-[44px] sm:h-9 sm:min-h-0 px-3',
           'bg-[var(--color-surface-primary)] border rounded-lg text-[13px]',
           'transition-all duration-150',
           error
@@ -105,12 +105,13 @@ export function DatePicker({
       )}
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-[280px] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl shadow-lg z-[var(--z-dropdown)] p-3 animate-fade-in">
+        <div className="absolute top-full left-0 sm:left-0 mt-1.5 w-[280px] max-w-[calc(100vw-2rem)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl shadow-lg z-[var(--z-dropdown)] p-3 animate-fade-in">
           {/* Month nav */}
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={prevMonth}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] transition-colors"
+              className="h-10 w-10 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] transition-colors touch-target"
+              aria-label="Previous month"
             >
               <ChevronLeft size={14} />
             </button>
@@ -119,7 +120,8 @@ export function DatePicker({
             </span>
             <button
               onClick={nextMonth}
-              className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] transition-colors"
+              className="h-10 w-10 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] transition-colors touch-target"
+              aria-label="Next month"
             >
               <ChevronRight size={14} />
             </button>
@@ -149,7 +151,7 @@ export function DatePicker({
                     setIsOpen(false);
                   }}
                   className={clsx(
-                    'h-8 w-full flex items-center justify-center text-[12px] rounded-lg transition-colors',
+                    'h-9 sm:h-8 w-full flex items-center justify-center text-[12px] rounded-lg transition-colors',
                     isSelected
                       ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] font-medium'
                       : isToday

@@ -47,6 +47,7 @@
    type PaymentTerms,
    type GstRegistrationType,
  } from '@/lib/purchasingApi';
+import { downloadBlob } from '@/utils/mobileUtils';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -69,15 +70,6 @@
    };
    const m = map[status] ?? { variant: 'default' as const, label: status };
    return <Badge variant={m.variant} dot>{m.label}</Badge>;
- }
- 
- function downloadBlob(blob: Blob, filename: string) {
-   const url = URL.createObjectURL(blob);
-   const a = document.createElement('a');
-   a.href = url;
-   a.download = filename;
-   a.click();
-   URL.revokeObjectURL(url);
  }
  
  // ─────────────────────────────────────────────────────────────────────────────

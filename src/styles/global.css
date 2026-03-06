@@ -110,6 +110,24 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /**
+   * touch-target: ensures a minimum 44×44px tap area on touch devices.
+   * Apply to any interactive element whose visual size is below 44px.
+   * Uses a pseudo-element overlay so layout is not affected.
+   */
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 /* ─── Spring-based animation system ─── */
@@ -226,5 +244,58 @@
 
   .table-responsive tr {
     @apply mb-4 card p-4;
+  }
+}
+
+/**
+  * Mobile touch-target enforcement.
+  * All interactive elements (buttons, links, selects) in the app shell and
+  * page content areas must have a minimum 44px hit area on touch devices.
+  *
+  * We use the "safe area" technique — a transparent ::after pseudo-element
+  * that expands the clickable region without altering visual layout.
+  *
+  * This targets elements whose visual height is ≤ 36px (h-7 / h-8 / p-1.5
+  * icon buttons) but not full-size elements like modals or form inputs.
+  */
+@media (hover: none) and (pointer: coarse) {
+  /* Icon-only small action buttons (p-1, p-1.5, p-2 sized icon buttons) */
+  button[aria-label],
+  a[aria-label] {
+    position: relative;
+  }
+
+  button[aria-label]::after,
+  a[aria-label]::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Navigation links in sidebars — increase height to 44px */
+  nav a,
+  nav button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Pagination buttons */
+  .pagination-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Inputs, textareas, and selects: scroll into view above the virtual
+     keyboard when focused. The 8px margin ensures the label above is
+     also visible. */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    scroll-margin-top: 8px;
+    scroll-margin-bottom: 8px;
   }
 }

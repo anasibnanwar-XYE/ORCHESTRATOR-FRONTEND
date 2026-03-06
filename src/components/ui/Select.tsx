@@ -19,8 +19,10 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'siz
 }
 
 const sizeStyles = {
-  sm: 'h-8 px-2.5 text-[12px] pr-7',
-  md: 'h-9 px-3 text-[13px] pr-9',
+  // On mobile (touch devices) we use min-h-[44px] to meet the WCAG touch-target
+  // guideline; on sm+ breakpoints the explicit height governs.
+  sm: 'min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 text-[12px] pr-7',
+  md: 'min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 text-[13px] pr-9',
   lg: 'h-11 px-3.5 text-sm pr-10',
 };
 

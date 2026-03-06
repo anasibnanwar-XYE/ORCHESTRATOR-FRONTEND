@@ -301,7 +301,7 @@ export function DataTable<T>({
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
-              className="h-7 px-1.5 text-[11px] border border-[var(--color-border-default)] rounded-md bg-[var(--color-surface-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-300)] text-[var(--color-text-secondary)]"
+              className="h-8 sm:h-7 px-1.5 text-[11px] border border-[var(--color-border-default)] rounded-md bg-[var(--color-surface-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-300)] text-[var(--color-text-secondary)]"
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>{opt} rows</option>
@@ -316,14 +316,14 @@ export function DataTable<T>({
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                className="h-11 w-11 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors pagination-btn touch-target"
               >
                 <ChevronLeft size={14} />
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                className="h-11 w-11 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors pagination-btn touch-target"
               >
                 <ChevronRight size={14} />
               </button>

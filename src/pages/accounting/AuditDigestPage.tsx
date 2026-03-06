@@ -33,6 +33,7 @@
    type AuditTrailPageResponse,
    type AccountingAuditTrailEntryDto,
  } from '@/lib/accountingApi';
+import { downloadBlob } from '@/utils/mobileUtils';
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -129,14 +130,7 @@
      try {
        const csvText = await auditApi.getAuditDigestCsv();
        const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
-       const url = URL.createObjectURL(blob);
-       const a = document.createElement('a');
-       a.href = url;
-       a.download = `audit-trail-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-       document.body.appendChild(a);
-       a.click();
-       document.body.removeChild(a);
-       URL.revokeObjectURL(url);
+      downloadBlob(blob, `audit-trail-${format(new Date(), 'yyyy-MM-dd')}.csv`);
        toast({ title: 'CSV downloaded', type: 'success' });
      } catch {
        toast({ title: 'Export failed. Try again.', type: 'error' });

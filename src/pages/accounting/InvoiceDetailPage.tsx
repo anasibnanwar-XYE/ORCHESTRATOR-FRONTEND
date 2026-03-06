@@ -32,6 +32,7 @@
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { invoicesApi, type InvoiceDto } from '@/lib/reportsApi';
+import { downloadBlob } from '@/utils/mobileUtils';
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -179,14 +180,7 @@
      setIsDownloading(true);
      try {
        const blob = await invoicesApi.downloadInvoicePdf(invoice.id);
-       const url = URL.createObjectURL(blob);
-       const link = document.createElement('a');
-       link.href = url;
-       link.download = `invoice-${invoice.invoiceNumber}.pdf`;
-       document.body.appendChild(link);
-       link.click();
-       document.body.removeChild(link);
-       URL.revokeObjectURL(url);
+      downloadBlob(blob, `invoice-${invoice.invoiceNumber}.pdf`);
        toast.success('PDF downloaded', `${invoice.invoiceNumber} saved to your downloads.`);
      } catch {
        toast.error('Download failed', 'Could not download the invoice PDF. Please try again.');

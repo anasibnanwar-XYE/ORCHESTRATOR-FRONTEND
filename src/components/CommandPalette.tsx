@@ -658,7 +658,10 @@ export function CommandPaletteButton() {
       type="button"
       onClick={open}
       className={clsx(
-        'hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg',
+        'flex items-center justify-center rounded-lg',
+        // Mobile: icon-only button, min 44px touch target
+        'sm:gap-1.5 sm:h-8 sm:px-2.5',
+        'h-11 w-11 sm:h-8 sm:w-auto',
         'text-[12px] text-[var(--color-text-tertiary)]',
         'bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]',
         'hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)]',
@@ -666,9 +669,10 @@ export function CommandPaletteButton() {
       )}
       aria-label="Open command palette"
     >
-      <Zap size={12} />
-      <span>Search</span>
-      <KBD>⌘K</KBD>
+      <Zap size={14} className="sm:hidden" />
+      <Zap size={12} className="hidden sm:block" />
+      <span className="hidden sm:inline">Search</span>
+      <KBD className="hidden sm:inline-flex">⌘K</KBD>
     </button>
   );
 }

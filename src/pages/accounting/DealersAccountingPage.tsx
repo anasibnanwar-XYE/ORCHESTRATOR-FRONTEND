@@ -23,6 +23,7 @@
  import { useToast } from '@/components/ui/Toast';
  import { accountingApi, type DealerResponse } from '@/lib/accountingApi';
  import { purchasingApi } from '@/lib/purchasingApi';
+import { downloadBlob } from '@/utils/mobileUtils';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -34,15 +35,6 @@
      currency: 'INR',
      maximumFractionDigits: 0,
    }).format(amount);
- }
- 
- function downloadBlob(blob: Blob, filename: string) {
-   const url = URL.createObjectURL(blob);
-   const a = document.createElement('a');
-   a.href = url;
-   a.download = filename;
-   a.click();
-   URL.revokeObjectURL(url);
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
