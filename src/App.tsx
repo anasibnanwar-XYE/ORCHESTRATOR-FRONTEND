@@ -327,6 +327,36 @@ const AdminUsersPage = lazy(() =>
     default: m.UsersPage,
   }))
 );
+ /** Admin portal — Roles */
+ const AdminRolesPage = lazy(() =>
+   import('@/pages/admin/RolesPage').then((m) => ({
+     default: m.RolesPage,
+   }))
+ );
+ /** Admin portal — Companies */
+ const AdminCompaniesPage = lazy(() =>
+   import('@/pages/admin/CompaniesPage').then((m) => ({
+     default: m.CompaniesPage,
+   }))
+ );
+ /** Admin portal — Settings */
+ const AdminSettingsPage = lazy(() =>
+   import('@/pages/admin/SettingsPage').then((m) => ({
+     default: m.SettingsPage,
+   }))
+ );
+ /** Admin portal — Notifications */
+ const AdminNotificationsPage = lazy(() =>
+   import('@/pages/admin/NotificationsPage').then((m) => ({
+     default: m.NotificationsPage,
+   }))
+ );
+ /** Admin portal — Changelog */
+ const AdminChangelogPage = lazy(() =>
+   import('@/pages/admin/ChangelogPage').then((m) => ({
+     default: m.ChangelogPage,
+   }))
+ );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -562,6 +592,11 @@ function AppRouter() {
           >
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="roles" element={<AdminRolesPage />} />
+            <Route path="companies" element={<AdminCompaniesPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
+            <Route path="notifications" element={<AdminNotificationsPage />} />
+            <Route path="changelog" element={<AdminChangelogPage />} />
             <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 

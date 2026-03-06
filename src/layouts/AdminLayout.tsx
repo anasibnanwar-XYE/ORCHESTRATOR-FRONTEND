@@ -2,8 +2,8 @@
  * AdminLayout — shell for the Admin portal.
  *
  * Nav items:
- *  Dashboard, Operations, Approvals, User Management, Role Management,
- *  Companies, Settings
+ *  Dashboard, Operations, Approvals, Users, Roles, Companies,
+ *  Notifications, Changelog, Settings
  *
  * Features:
  *  - Collapsible sidebar (220px desktop, drawer on mobile < lg)
@@ -27,6 +27,8 @@ import {
   Building2,
   Settings,
   BarChart3,
+  Bell,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -62,6 +64,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Users', to: '/admin/users', icon: Users },
   { label: 'Roles', to: '/admin/roles', icon: Shield },
   { label: 'Companies', to: '/admin/companies', icon: Building2 },
+  { label: 'Notifications', to: '/admin/notifications', icon: Bell },
+  { label: 'Changelog', to: '/admin/changelog', icon: BookOpen },
   { label: 'Settings', to: '/admin/settings', icon: Settings },
 ];
 
@@ -72,6 +76,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/users': 'Users',
   '/admin/roles': 'Roles',
   '/admin/companies': 'Companies',
+  '/admin/notifications': 'Notifications',
+  '/admin/changelog': 'Changelog',
   '/admin/settings': 'Settings',
   new: 'New',
   edit: 'Edit',

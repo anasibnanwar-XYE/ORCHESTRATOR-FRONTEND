@@ -224,6 +224,21 @@ export interface AdminSettings {
   emailNotifications: boolean;
   autoApproveThreshold?: number;
 }
+ 
+ /**
+  * Extended AdminSettings — mirrors the backend AdminSettingsResponse.
+  * The backend GET /admin/settings may return any combination of these fields.
+  */
+ export interface ExtendedAdminSettings extends AdminSettings {
+   periodLockEnabled?: boolean;
+   exportApprovalRequired?: boolean;
+   corsAllowedOrigins?: string;
+   smtpHost?: string;
+   smtpPort?: number;
+   smtpUsername?: string;
+   smtpFromEmail?: string;
+   smtpFromName?: string;
+ }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard Types
