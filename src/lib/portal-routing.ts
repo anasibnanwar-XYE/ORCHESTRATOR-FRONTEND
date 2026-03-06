@@ -48,6 +48,8 @@ export const MODULE_KEYS = {
   SUPERADMIN_AUDIT: 'superadmin_audit',
   /** Superadmin: support tickets */
   SUPERADMIN_TICKETS: 'superadmin_tickets',
+  /** Superadmin: tenant runtime metrics and policy */
+  SUPERADMIN_RUNTIME: 'superadmin_runtime',
 } as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[keyof typeof MODULE_KEYS];

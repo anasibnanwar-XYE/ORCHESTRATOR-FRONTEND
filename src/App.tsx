@@ -400,6 +400,47 @@ const AdminUsersPage = lazy(() =>
      default: m.OperationsControlPage,
    }))
  );
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Lazy-loaded Superadmin portal pages
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ /** Superadmin portal — Dashboard */
+ const SuperadminDashboardPage = lazy(() =>
+   import('@/pages/superadmin/SuperadminDashboardPage').then((m) => ({
+     default: m.SuperadminDashboardPage,
+   }))
+ );
+ /** Superadmin portal — Tenants */
+ const SuperadminTenantsPage = lazy(() =>
+   import('@/pages/superadmin/TenantsPage').then((m) => ({
+     default: m.TenantsPage,
+   }))
+ );
+ /** Superadmin portal — Platform Roles */
+ const SuperadminRolesPage = lazy(() =>
+   import('@/pages/superadmin/PlatformRolesPage').then((m) => ({
+     default: m.PlatformRolesPage,
+   }))
+ );
+ /** Superadmin portal — Audit Trail */
+ const SuperadminAuditTrailPage = lazy(() =>
+   import('@/pages/superadmin/SuperadminAuditTrailPage').then((m) => ({
+     default: m.SuperadminAuditTrailPage,
+   }))
+ );
+ /** Superadmin portal — Support Tickets */
+ const SuperadminSupportTicketsPage = lazy(() =>
+   import('@/pages/superadmin/SupportTicketsPage').then((m) => ({
+     default: m.SupportTicketsPage,
+   }))
+ );
+/** Superadmin portal — Runtime Metrics and Policy */
+const SuperadminRuntimePage = lazy(() =>
+  import('@/pages/superadmin/SuperadminRuntimePage').then((m) => ({
+    default: m.SuperadminRuntimePage,
+  }))
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -747,8 +788,13 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Platform" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Platform" />} />
+            <Route index element={<SuperadminDashboardPage />} />
+            <Route path="tenants" element={<SuperadminTenantsPage />} />
+            <Route path="roles" element={<SuperadminRolesPage />} />
+            <Route path="runtime" element={<SuperadminRuntimePage />} />
+            <Route path="audit" element={<SuperadminAuditTrailPage />} />
+            <Route path="tickets" element={<SuperadminSupportTicketsPage />} />
+            <Route path="*" element={<SuperadminDashboardPage />} />
           </Route>
 
           {/* ── Default ─────────────────────────────────────────────── */}

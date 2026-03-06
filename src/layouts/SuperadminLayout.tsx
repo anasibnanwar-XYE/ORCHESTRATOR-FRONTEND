@@ -24,6 +24,7 @@ import {
   Users,
   ScrollText,
   LifeBuoy,
+  Server,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/superadmin', icon: LayoutDashboard, end: true },
   { label: 'Tenants', to: '/superadmin/tenants', icon: Building2, module: MODULE_KEYS.SUPERADMIN_TENANTS },
   { label: 'Platform Roles', to: '/superadmin/roles', icon: Users, module: MODULE_KEYS.SUPERADMIN_ROLES },
+  { label: 'Runtime', to: '/superadmin/runtime', icon: Server, module: MODULE_KEYS.SUPERADMIN_RUNTIME },
   { label: 'Audit Trail', to: '/superadmin/audit', icon: ScrollText, module: MODULE_KEYS.SUPERADMIN_AUDIT },
   { label: 'Support Tickets', to: '/superadmin/tickets', icon: LifeBuoy, module: MODULE_KEYS.SUPERADMIN_TICKETS },
 ];
@@ -59,6 +61,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/superadmin': 'Dashboard',
   '/superadmin/tenants': 'Tenants',
   '/superadmin/roles': 'Platform Roles',
+  '/superadmin/runtime': 'Runtime',
   '/superadmin/audit': 'Audit Trail',
   '/superadmin/tickets': 'Support Tickets',
   new: 'New',

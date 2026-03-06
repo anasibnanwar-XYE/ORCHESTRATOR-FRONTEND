@@ -442,3 +442,94 @@ export interface ApiErrorBody {
   errors?: Record<string, string> | string[];
   timestamp?: string;
 }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Superadmin / Tenant Types
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ /**
+  * Tenant (company) record as seen by superadmin.
+  * Extends Company with lifecycle status and usage metrics.
+  */
+ export interface Tenant {
+   id: number;
+   code: string;
+   name: string;
+   address?: string;
+   phone?: string;
+   email?: string;
+   gstNumber?: string;
+   /** isActive drives whether the tenant is enabled */
+   isActive: boolean;
+   /** Explicit lifecycle status (ACTIVE | SUSPENDED | DEACTIVATED | NEW) */
+   status?: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'NEW';
+   /** Storage consumed by this tenant in megabytes */
+   storageUsedMb?: number;
+   timezone?: string;
+   defaultGstRate?: number;
+   createdAt: string;
+   updatedAt: string;
+ }
+ 
+ /** Request body for onboarding a new tenant (atomically creates company + admin user) */
+ export interface TenantOnboardRequest {
+   // Step 1 — Company details
+   name: string;
+   code: string;
+   address?: string;
+   phone?: string;
+   email?: string;
+   gstNumber?: string;
+   timezone?: string;
+   defaultGstRate?: number;
+   // Step 2 — Initial admin user
+   adminEmail: string;
+   adminDisplayName: string;
+   adminPassword: string;
+ }
+ 
+ /** Request body for updating tenant details */
+ export interface TenantUpdateRequest {
+   name?: string;
+   address?: string;
+   phone?: string;
+   email?: string;
+   gstNumber?: string;
+   timezone?: string;
+   defaultGstRate?: number;
+ }
+ 
+ /** Request body for sending a support warning to a tenant */
+ export interface SupportWarningRequest {
+   severity: 'INFO' | 'WARNING' | 'CRITICAL';
+   message: string;
+ }
+ 
+ /** Request body for resetting a tenant admin's password */
+ export interface AdminPasswordResetRequest {
+   adminEmail: string;
+   newPassword?: string;
+ }
+ 
+ /** Platform-level dashboard metrics */
+ export interface PlatformDashboardMetrics {
+   totalTenants: number;
+   activeTenants: number;
+   suspendedTenants: number;
+   totalPlatformUsers: number;
+   storageConsumption: number;
+ }
+ 
+ /** Support ticket (cross-tenant) */
+ export interface SupportTicket {
+   id: string;
+   tenantName?: string;
+   tenantCode?: string;
+   subject: string;
+   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+   createdAt: string;
+   updatedAt?: string;
+   description?: string;
+   responses?: Array<{ author: string; message: string; createdAt: string }>;
+ }
