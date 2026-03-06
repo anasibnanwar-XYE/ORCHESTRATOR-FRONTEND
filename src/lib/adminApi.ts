@@ -17,6 +17,7 @@ import type {
   AdminSettings,
   CreditRequestDecisionRequest,
 } from '@/types';
+ import type { ExportRequestDto, ExportRequestDecisionRequest } from '@/types';
 
 export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
@@ -71,6 +72,32 @@ export const adminApi = {
     if (!response.data.success) {
       throw new Error(response.data.message);
     }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Export Approvals
+  // ─────────────────────────────────────────────────────────────────────────
+
+  async getPendingExports(): Promise<ExportRequestDto[]> {
+    const response = await apiRequest.get<ApiResponse<ExportRequestDto[]>>(
+      '/admin/exports/pending'
+    );
+    return response.data.data;
+  },
+
+  async approveExport(requestId: string): Promise<ExportRequestDto> {
+    const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
+      `/admin/exports/${requestId}/approve`
+    );
+    return response.data.data;
+  },
+
+  async rejectExport(requestId: string, data?: ExportRequestDecisionRequest): Promise<ExportRequestDto> {
+    const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
+      `/admin/exports/${requestId}/reject`,
+      data
+    );
+    return response.data.data;
   },
 
   // ─────────────────────────────────────────────────────────────────────────

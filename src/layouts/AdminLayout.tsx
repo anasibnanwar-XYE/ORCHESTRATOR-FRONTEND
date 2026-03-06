@@ -31,6 +31,7 @@ import {
   BookOpen,
   type LucideIcon,
 } from 'lucide-react';
+ import { FileDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/admin', icon: LayoutGrid, end: true },
   { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
   { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
+   { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
   { label: 'Users', to: '/admin/users', icon: Users },
   { label: 'Roles', to: '/admin/roles', icon: Shield },
   { label: 'Companies', to: '/admin/companies', icon: Building2 },
@@ -73,6 +75,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/operations': 'Operations',
   '/admin/approvals': 'Approvals',
+   '/admin/export-approvals': 'Export Approvals',
   '/admin/users': 'Users',
   '/admin/roles': 'Roles',
   '/admin/companies': 'Companies',

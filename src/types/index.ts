@@ -194,6 +194,26 @@ export interface ApprovalsResponse {
 export interface CreditRequestDecisionRequest {
   reason: string;
 }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Export Approval Types
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ export type ExportApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+ 
+ export interface ExportRequestDto {
+   requestId: string;
+   requester: string;
+   reportType: string;
+   requestedAt: string;
+   status: ExportApprovalStatus;
+   parameters?: string;
+   message?: string;
+ }
+ 
+ export interface ExportRequestDecisionRequest {
+   reason?: string;
+ }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Company Types

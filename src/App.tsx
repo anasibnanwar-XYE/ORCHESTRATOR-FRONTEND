@@ -357,6 +357,18 @@ const AdminUsersPage = lazy(() =>
      default: m.ChangelogPage,
    }))
  );
+ /** Admin portal — Approvals */
+ const AdminApprovalsPage = lazy(() =>
+   import('@/pages/admin/ApprovalsPage').then((m) => ({
+     default: m.ApprovalsPage,
+   }))
+ );
+ /** Admin portal — Export Approvals */
+ const AdminExportApprovalsPage = lazy(() =>
+   import('@/pages/admin/ExportApprovalsPage').then((m) => ({
+     default: m.ExportApprovalsPage,
+   }))
+ );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -598,6 +610,8 @@ function AppRouter() {
             <Route path="notifications" element={<AdminNotificationsPage />} />
             <Route path="changelog" element={<AdminChangelogPage />} />
             <Route path="*" element={<AdminDashboardPage />} />
+           <Route path="approvals" element={<AdminApprovalsPage />} />
+           <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
           </Route>
 
           {/* ── Accounting portal ──────────────────────────────────── */}
