@@ -2,11 +2,11 @@
   * DealerDashboardPage
   *
   * Dealer self-service dashboard — shows the dealer's own account metrics:
-  *  - Total Orders (→ /dealer/orders)
-  *  - Outstanding Balance (→ /dealer/ledger)
-  *  - Last Payment Date (→ /dealer/ledger)
+ *  - Total Outstanding (→ /dealer/ledger)
   *  - Available Credit (→ /dealer/credit-requests)
-  *  - Pending Requests (→ /dealer/credit-requests)
+ *  - Credit Status & Utilization
+ *  - Pending Order Exposure (→ /dealer/orders)
+ *  - Pending Invoices (→ /dealer/invoices)
   *
   * All data is scoped to the authenticated dealer — no dealer ID needed.
   */
@@ -14,17 +14,16 @@
  import { useCallback, useEffect, useState } from 'react';
  import { useNavigate } from 'react-router-dom';
  import {
-   ShoppingBag,
    CreditCard,
-   Calendar,
    Wallet,
    Clock,
    RefreshCcw,
    AlertCircle,
    ArrowRight,
+  Package,
+  FileText,
  } from 'lucide-react';
  import { clsx } from 'clsx';
- import { format } from 'date-fns';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { dealerApi } from '@/lib/dealerApi';
  import type { DealerPortalDashboard } from '@/types';
@@ -38,15 +37,6 @@
    if (value >= 10_000_000) return `₹${(value / 10_000_000).toFixed(2)}Cr`;
    if (value >= 100_000) return `₹${(value / 100_000).toFixed(2)}L`;
    return '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
- }
- 
- function fmtDate(iso: string | undefined): string {
-   if (!iso) return '—';
-   try {
-     return format(new Date(iso), 'd MMM yyyy');
-   } catch {
-     return iso;
-   }
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -176,45 +166,45 @@
        {!error && (
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
            <KpiCard
-             label="Total Orders"
-             value={isLoading ? '—' : (dashboard?.totalOrders ?? 0)}
-             description="All time orders"
-             onClick={() => navigate('/dealer/orders')}
-             isLoading={isLoading}
-             icon={<ShoppingBag size={16} />}
-           />
-           <KpiCard
-             label="Outstanding Balance"
-             value={isLoading ? '—' : fmtCurrency(dashboard?.outstandingBalance)}
+            label="Outstanding Balance"
+            value={isLoading ? '—' : fmtCurrency(dashboard?.totalOutstanding)}
              description="Amount due"
              onClick={() => navigate('/dealer/ledger')}
              isLoading={isLoading}
              icon={<Wallet size={16} />}
            />
            <KpiCard
-             label="Last Payment"
-             value={isLoading ? '—' : fmtDate(dashboard?.lastPaymentDate)}
-             description="Most recent payment received"
-             onClick={() => navigate('/dealer/ledger')}
+            label="Available Credit"
+            value={isLoading ? '—' : fmtCurrency(dashboard?.availableCredit)}
+            description="Credit limit remaining"
+            onClick={() => navigate('/dealer/credit-requests')}
              isLoading={isLoading}
-             icon={<Calendar size={16} />}
+            icon={<CreditCard size={16} />}
            />
            <KpiCard
-             label="Available Credit"
-             value={isLoading ? '—' : fmtCurrency(dashboard?.availableCredit)}
-             description="Credit limit remaining"
-             onClick={() => navigate('/dealer/credit-requests')}
+            label="Pending Invoices"
+            value={isLoading ? '—' : (dashboard?.pendingInvoices ?? 0)}
+            description="Invoices with outstanding amounts"
+            onClick={() => navigate('/dealer/invoices')}
              isLoading={isLoading}
-             icon={<CreditCard size={16} />}
+            icon={<FileText size={16} />}
            />
            <KpiCard
-             label="Pending Requests"
-             value={isLoading ? '—' : (dashboard?.pendingRequests ?? 0)}
-             description="Awaiting review"
-             onClick={() => navigate('/dealer/credit-requests')}
+            label="Pending Orders"
+            value={isLoading ? '—' : (dashboard?.pendingOrderCount ?? 0)}
+            description="Orders pending credit exposure"
+            onClick={() => navigate('/dealer/orders')}
              isLoading={isLoading}
              icon={<Clock size={16} />}
            />
+          <KpiCard
+            label="Order Exposure"
+            value={isLoading ? '—' : fmtCurrency(dashboard?.pendingOrderExposure)}
+            description="Pending order value"
+            onClick={() => navigate('/dealer/orders')}
+            isLoading={isLoading}
+            icon={<Package size={16} />}
+          />
          </div>
        )}
  
@@ -226,7 +216,7 @@
            </p>
            <div className="flex items-center justify-between mb-2">
              <span className="text-[12px] text-[var(--color-text-secondary)]">
-               {fmtCurrency(dashboard.outstandingBalance)} used
+              {fmtCurrency(dashboard.creditUsed)} used
              </span>
              <span className="text-[12px] text-[var(--color-text-secondary)]">
                {fmtCurrency(dashboard.creditLimit)} limit
@@ -237,7 +227,7 @@
                <div
                  className="h-full bg-[var(--color-neutral-900)] rounded-full transition-all duration-500"
                  style={{
-                   width: `${Math.min(100, ((dashboard.outstandingBalance ?? 0) / dashboard.creditLimit) * 100)}%`,
+                  width: `${Math.min(100, ((dashboard.creditUsed ?? 0) / dashboard.creditLimit) * 100)}%`,
                  }}
                />
              </div>

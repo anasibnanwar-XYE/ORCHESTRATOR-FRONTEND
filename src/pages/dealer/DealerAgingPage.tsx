@@ -2,9 +2,9 @@
   * DealerAgingPage — My Aging
   *
   * Shows the dealer's aging report:
-  *  - Bucket cards: Current, 1-30, 31-60, 61-90, 90+ days
+ *  - Bucket cards from agingBuckets map (current, 1-30 days, 31-60 days, 61-90 days, 90+ days)
   *  - Bucket amounts sum to total outstanding
-  *  - Detailed line items table
+ *  - Overdue invoices table (overdueInvoices[])
   */
  
  import { useCallback, useEffect, useState } from 'react';
@@ -17,7 +17,7 @@
  import { format } from 'date-fns';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { dealerApi } from '@/lib/dealerApi';
- import type { DealerPortalAging, AgingLineItem } from '@/types';
+ import type { DealerPortalAging, DealerPortalOverdueInvoice } from '@/types';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -118,8 +118,7 @@
  
    // Verify bucket amounts sum to total
    const bucketSum = !isLoading && aging
-     ? (aging.current ?? 0) + (aging.days1to30 ?? 0) + (aging.days31to60 ?? 0) +
-       (aging.days61to90 ?? 0) + (aging.over90 ?? 0)
+    ? Object.values(aging.agingBuckets ?? {}).reduce((acc, v) => acc + (v ?? 0), 0)
      : 0;
  
    return (
@@ -183,58 +182,58 @@
  
            {/* ── Aging Buckets ─────────────────────────────────────────── */}
            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-             <BucketCard
-               label="Current"
-               amount={aging?.current}
-               total={aging?.totalOutstanding ?? bucketSum}
-               isLoading={isLoading}
-             />
-             <BucketCard
-               label="1–30 Days"
-               amount={aging?.days1to30}
-               total={aging?.totalOutstanding ?? bucketSum}
-               isOverdue
-               isLoading={isLoading}
-             />
-             <BucketCard
-               label="31–60 Days"
-               amount={aging?.days31to60}
-               total={aging?.totalOutstanding ?? bucketSum}
-               isOverdue
-               isLoading={isLoading}
-             />
-             <BucketCard
-               label="61–90 Days"
-               amount={aging?.days61to90}
-               total={aging?.totalOutstanding ?? bucketSum}
-               isOverdue
-               isLoading={isLoading}
-             />
-             <BucketCard
-               label="90+ Days"
-               amount={aging?.over90}
-               total={aging?.totalOutstanding ?? bucketSum}
-               isOverdue
-               isLoading={isLoading}
-             />
+            <BucketCard
+              label="Current"
+              amount={aging?.agingBuckets?.['current']}
+              total={aging?.totalOutstanding ?? bucketSum}
+              isLoading={isLoading}
+            />
+            <BucketCard
+              label="1–30 Days"
+              amount={aging?.agingBuckets?.['1-30 days']}
+              total={aging?.totalOutstanding ?? bucketSum}
+              isOverdue
+              isLoading={isLoading}
+            />
+            <BucketCard
+              label="31–60 Days"
+              amount={aging?.agingBuckets?.['31-60 days']}
+              total={aging?.totalOutstanding ?? bucketSum}
+              isOverdue
+              isLoading={isLoading}
+            />
+            <BucketCard
+              label="61–90 Days"
+              amount={aging?.agingBuckets?.['61-90 days']}
+              total={aging?.totalOutstanding ?? bucketSum}
+              isOverdue
+              isLoading={isLoading}
+            />
+            <BucketCard
+              label="90+ Days"
+              amount={aging?.agingBuckets?.['90+ days']}
+              total={aging?.totalOutstanding ?? bucketSum}
+              isOverdue
+              isLoading={isLoading}
+            />
            </div>
  
-           {/* ── Line Items ───────────────────────────────────────────── */}
-           {!isLoading && (aging?.lineItems ?? []).length > 0 && (
+          {/* ── Overdue Invoices ─────────────────────────────────────── */}
+          {!isLoading && (aging?.overdueInvoices ?? []).length > 0 && (
              <div>
                <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-                 Invoice breakdown
+                Overdue invoices
                </p>
                <div className="overflow-x-auto rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
                  <table className="w-full border-collapse">
                    <thead>
                      <tr className="border-b border-[var(--color-border-default)]">
-                       {['Invoice', 'Due Date', 'Amount', 'Outstanding', 'Days Overdue', 'Bucket'].map((h) => (
+                      {['Invoice', 'Issue Date', 'Due Date', 'Outstanding', 'Days Overdue'].map((h) => (
                          <th
                            key={h}
                            className={clsx(
                              'px-4 py-2.5 text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]',
-                             ['Amount', 'Outstanding'].includes(h) ? 'text-right' : 'text-left',
+                            h === 'Outstanding' ? 'text-right' : 'text-left',
                            )}
                          >
                            {h}
@@ -243,7 +242,7 @@
                      </tr>
                    </thead>
                    <tbody>
-                     {(aging?.lineItems ?? []).map((item: AgingLineItem, idx: number) => (
+                    {(aging?.overdueInvoices ?? []).map((item: DealerPortalOverdueInvoice, idx: number) => (
                        <tr
                          key={`${item.invoiceNumber ?? ''}-${idx}`}
                          className="border-b border-[var(--color-border-subtle)] last:border-0"
@@ -252,26 +251,16 @@
                            {item.invoiceNumber ?? '—'}
                          </td>
                          <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                           {fmtDate(item.dueDate)}
+                          {fmtDate(item.issueDate)}
                          </td>
-                         <td className="px-4 py-3 text-[13px] tabular-nums text-right text-[var(--color-text-secondary)]">
-                           {fmtCurrency(item.amount)}
-                         </td>
+                        <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
+                          {fmtDate(item.dueDate)}
+                        </td>
                          <td className="px-4 py-3 text-[13px] tabular-nums text-right font-medium text-[var(--color-error)]">
-                           {fmtCurrency(item.outstanding)}
+                          {fmtCurrency(item.outstandingAmount)}
                          </td>
                          <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
                            {item.daysOverdue !== undefined ? `${item.daysOverdue}d` : '—'}
-                         </td>
-                         <td className="px-4 py-3">
-                           <span className={clsx(
-                             'text-[10px] font-medium px-1.5 py-px rounded-full whitespace-nowrap',
-                             item.bucket?.toUpperCase() === 'CURRENT'
-                               ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
-                               : 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
-                           )}>
-                             {item.bucket ?? '—'}
-                           </span>
                          </td>
                        </tr>
                      ))}

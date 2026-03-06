@@ -622,6 +622,12 @@ const CostAllocationPage = lazy(() =>
      default: m.DealerSupportTicketsPage,
    }))
  );
+ /** Dealer portal — Profile */
+ const DealerProfilePage = lazy(() =>
+   import('@/pages/dealer/DealerProfilePage').then((m) => ({
+     default: m.DealerProfilePage,
+   }))
+ );
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -982,6 +988,7 @@ function AppRouter() {
             <Route path="aging" element={<DealerAgingPage />} />
             <Route path="credit-requests" element={<DealerCreditRequestsPage />} />
             <Route path="support" element={<DealerSupportTicketsPage />} />
+            <Route path="profile" element={<DealerProfilePage />} />
             <Route path="*" element={<DealerDashboardPage />} />
           </Route>
 

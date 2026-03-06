@@ -22,20 +22,22 @@
  
  const mockAging = {
    totalOutstanding: 125000,
-   current: 50000,
-   days1to30: 35000,
-   days31to60: 25000,
-   days61to90: 10000,
-   over90: 5000,
-   lineItems: [
+  dealerId: 1,
+  dealerName: 'Test Dealer',
+  agingBuckets: {
+    'current': 50000,
+    '1-30 days': 35000,
+    '31-60 days': 25000,
+    '61-90 days': 10000,
+    '90+ days': 5000,
+  },
+  overdueInvoices: [
      {
        invoiceNumber: 'INV-001',
-       issueDate: '2026-01-01T00:00:00Z',
+      issueDate: '2026-01-01',
        dueDate: '2026-01-31T00:00:00Z',
-       amount: 50000,
-       outstanding: 50000,
-       daysOverdue: 0,
-       bucket: 'CURRENT',
+      outstandingAmount: 50000,
+      daysOverdue: 5,
      },
    ],
  };

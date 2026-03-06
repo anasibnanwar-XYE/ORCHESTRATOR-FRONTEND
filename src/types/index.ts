@@ -1963,13 +1963,20 @@ export interface RawMaterialIntakeRequest {
 
  /** Dealer portal dashboard summary */
  export interface DealerPortalDashboard {
-   totalOrders?: number;
-   outstandingBalance?: number;
-   lastPaymentDate?: string;
-   availableCredit?: number;
-   pendingRequests?: number;
+   dealerId?: number;
+   dealerName?: string;
+   dealerCode?: string;
+   currentBalance?: number;
    creditLimit?: number;
+   availableCredit?: number;
+   totalOutstanding?: number;
+   pendingInvoices?: number;
+   pendingOrderCount?: number;
+   pendingOrderExposure?: number;
+   creditUsed?: number;
    creditStatus?: string;
+   /** Aging buckets keyed by string labels e.g. "current", "1-30 days", "31-60 days", "61-90 days", "90+ days" */
+   agingBuckets?: Record<string, number>;
  }
 
  /** Dealer portal order (read-only) */
@@ -2007,14 +2014,27 @@ export interface RawMaterialIntakeRequest {
  }
 
  /** Dealer portal aging report */
+ /** Overdue invoice from dealer portal aging response */
+ export interface DealerPortalOverdueInvoice {
+   invoiceNumber?: string;
+   issueDate?: string;
+   dueDate?: string;
+   daysOverdue?: number;
+   outstandingAmount?: number;
+ }
+
  export interface DealerPortalAging {
+   dealerId?: number;
+   dealerName?: string;
+   creditLimit?: number;
    totalOutstanding?: number;
-   current?: number;
-   days1to30?: number;
-   days31to60?: number;
-   days61to90?: number;
-   over90?: number;
-   lineItems?: AgingLineItem[];
+   pendingOrderCount?: number;
+   pendingOrderExposure?: number;
+   creditUsed?: number;
+   availableCredit?: number;
+   /** Aging buckets keyed by string labels e.g. "current", "1-30 days", "31-60 days", "61-90 days", "90+ days" */
+   agingBuckets?: Record<string, number>;
+   overdueInvoices?: DealerPortalOverdueInvoice[];
  }
 
  /** Request to create a credit request from the dealer portal */
