@@ -28,6 +28,15 @@
    CreditOverrideRequestDto,
    CreditOverrideCreateRequest,
    CreditOverrideDecisionRequest,
+  PromotionDto,
+  PromotionRequest,
+  SalesTargetDto,
+  SalesTargetRequest,
+  SalesDispatchConfirmRequest,
+  SalesDispatchConfirmResponse,
+  DispatchMarkerReconciliationResponse,
+  InvoiceDto,
+  SalesReturnRequest,
  } from '@/types';
  
  export const salesApi = {
@@ -240,6 +249,108 @@
      return response.data.data;
    },
  
+  // ─────────────────────────────────────────────────────────────────────────
+  // Promotions
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** List all promotions */
+  async listPromotions(): Promise<PromotionDto[]> {
+    return apiData<PromotionDto[]>('/sales/promotions');
+  },
+
+  /** Create a promotion */
+  async createPromotion(request: PromotionRequest): Promise<PromotionDto> {
+    const response = await apiRequest.post<ApiResponse<PromotionDto>>('/sales/promotions', request);
+    return response.data.data;
+  },
+
+  /** Update a promotion */
+  async updatePromotion(id: number, request: PromotionRequest): Promise<PromotionDto> {
+    const response = await apiRequest.put<ApiResponse<PromotionDto>>(`/sales/promotions/${id}`, request);
+    return response.data.data;
+  },
+
+  /** Delete a promotion */
+  async deletePromotion(id: number): Promise<void> {
+    await apiRequest.delete(`/sales/promotions/${id}`);
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sales Targets
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** List all sales targets */
+  async listSalesTargets(): Promise<SalesTargetDto[]> {
+    return apiData<SalesTargetDto[]>('/sales/targets');
+  },
+
+  /** Create a sales target */
+  async createSalesTarget(request: SalesTargetRequest): Promise<SalesTargetDto> {
+    const response = await apiRequest.post<ApiResponse<SalesTargetDto>>('/sales/targets', request);
+    return response.data.data;
+  },
+
+  /** Update a sales target */
+  async updateSalesTarget(id: number, request: SalesTargetRequest): Promise<SalesTargetDto> {
+    const response = await apiRequest.put<ApiResponse<SalesTargetDto>>(`/sales/targets/${id}`, request);
+    return response.data.data;
+  },
+
+  /** Delete a sales target */
+  async deleteSalesTarget(id: number): Promise<void> {
+    await apiRequest.delete(`/sales/targets/${id}`);
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Dispatch
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Confirm dispatch for an order */
+  async confirmDispatch(request: SalesDispatchConfirmRequest): Promise<SalesDispatchConfirmResponse> {
+    const response = await apiRequest.post<ApiResponse<SalesDispatchConfirmResponse>>(
+      '/sales/dispatch/confirm',
+      request
+    );
+    return response.data.data;
+  },
+
+  /** Reconcile order markers (packed vs dispatched) */
+  async reconcileOrderMarkers(limit?: number): Promise<DispatchMarkerReconciliationResponse> {
+    const params = limit !== undefined ? `?limit=${limit}` : '';
+    const response = await apiRequest.post<ApiResponse<DispatchMarkerReconciliationResponse>>(
+      `/sales/dispatch/reconcile-order-markers${params}`
+    );
+    return response.data.data;
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Invoices
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** List all invoices */
+  async listInvoices(params?: { page?: number; size?: number; status?: string }): Promise<InvoiceDto[]> {
+    const p = new URLSearchParams();
+    if (params?.page !== undefined) p.set('page', String(params.page));
+    if (params?.size !== undefined) p.set('size', String(params.size));
+    if (params?.status) p.set('status', params.status);
+    const q = p.toString();
+    return apiData<InvoiceDto[]>(`/invoices${q ? `?${q}` : ''}`);
+  },
+
+  /** Get invoice by ID */
+  async getInvoice(id: number): Promise<InvoiceDto> {
+    return apiData<InvoiceDto>(`/invoices/${id}`);
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sales Returns
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Process a sales return (POST /api/v1/accounting/sales/returns) */
+  async processSalesReturn(request: SalesReturnRequest): Promise<void> {
+    await apiRequest.post('/accounting/sales/returns', request);
+  },
+
    // ─────────────────────────────────────────────────────────────────────────
    // Dashboard
    // ─────────────────────────────────────────────────────────────────────────

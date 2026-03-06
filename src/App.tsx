@@ -489,6 +489,36 @@ const SalesCreditOverridesPage = lazy(() =>
     default: m.CreditOverridesPage,
   }))
 );
+/** Sales portal — Promotions */
+const SalesPromotionsPage = lazy(() =>
+  import('@/pages/sales/PromotionsPage').then((m) => ({
+    default: m.PromotionsPage,
+  }))
+);
+/** Sales portal — Sales Targets */
+const SalesTargetsPage = lazy(() =>
+  import('@/pages/sales/SalesTargetsPage').then((m) => ({
+    default: m.SalesTargetsPage,
+  }))
+);
+/** Sales portal — Dispatch */
+const SalesDispatchPage = lazy(() =>
+  import('@/pages/sales/DispatchPage').then((m) => ({
+    default: m.DispatchPage,
+  }))
+);
+/** Sales portal — Invoices */
+const SalesInvoicesPage = lazy(() =>
+  import('@/pages/sales/SalesInvoicesPage').then((m) => ({
+    default: m.SalesInvoicesPage,
+  }))
+);
+/** Sales portal — Returns */
+const SalesReturnsPage = lazy(() =>
+  import('@/pages/sales/SalesReturnsPage').then((m) => ({
+    default: m.SalesReturnsPage,
+  }))
+);
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -804,6 +834,11 @@ function AppRouter() {
             <Route path="credit-requests" element={<SalesCreditRequestsPage />} />
             <Route path="credit-overrides" element={<SalesCreditOverridesPage />} />
             <Route path="*" element={<SalesDashboardPage />} />
+            <Route path="promotions" element={<SalesPromotionsPage />} />
+            <Route path="targets" element={<SalesTargetsPage />} />
+            <Route path="dispatch" element={<SalesDispatchPage />} />
+            <Route path="invoices" element={<SalesInvoicesPage />} />
+            <Route path="returns" element={<SalesReturnsPage />} />
           </Route>
 
           {/* ── Factory portal ──────────────────────────────────────── */}

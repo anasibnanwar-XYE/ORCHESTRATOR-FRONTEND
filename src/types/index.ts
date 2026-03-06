@@ -323,6 +323,172 @@ export interface CreditOverrideDecisionRequest {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Promotions Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Promotion DTO from GET /api/v1/sales/promotions */
+export interface PromotionDto {
+  id?: number;
+  publicId?: string;
+  name?: string;
+  description?: string;
+  discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  discountValue?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  imageUrl?: string;
+}
+
+/** Request to create or update a promotion */
+export interface PromotionRequest {
+  name: string;
+  discountType: 'PERCENTAGE' | 'FLAT';
+  discountValue: number;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  status?: string;
+  imageUrl?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sales Targets Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Sales Target DTO from GET /api/v1/sales/targets */
+export interface SalesTargetDto {
+  id?: number;
+  publicId?: string;
+  name?: string;
+  assignee?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  targetAmount?: number;
+  achievedAmount?: number;
+}
+
+/** Request to create or update a sales target */
+export interface SalesTargetRequest {
+  name: string;
+  assignee: string;
+  periodStart: string;
+  periodEnd: string;
+  targetAmount: number;
+  achievedAmount?: number;
+  changeReason: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dispatch Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Single line in a dispatch confirm request */
+export interface DispatchConfirmLine {
+  lineId?: number;
+  shipQty: number;
+  batchId?: number;
+  priceOverride?: number;
+  discount?: number;
+  taxRate?: number;
+  taxInclusive?: boolean;
+  notes?: string;
+}
+
+/** Request to confirm dispatch via POST /api/v1/sales/dispatch/confirm */
+export interface SalesDispatchConfirmRequest {
+  orderId: number;
+  packingSlipId?: number;
+  confirmedBy?: string;
+  dispatchNotes?: string;
+  lines: DispatchConfirmLine[];
+  adminOverrideCreditLimit?: boolean;
+  overrideRequestId?: number;
+  overrideReason?: string;
+}
+
+/** Response from dispatch confirm */
+export interface SalesDispatchConfirmResponse {
+  salesOrderId?: number;
+  packingSlipId?: number;
+  dispatched?: boolean;
+  finalInvoiceId?: number;
+  gstBreakdown?: {
+    cgst?: number;
+    sgst?: number;
+    igst?: number;
+    taxableAmount?: number;
+    totalTax?: number;
+  };
+}
+
+/** Reconcile order markers response */
+export interface DispatchMarkerReconciliationResponse {
+  scannedOrders?: number;
+  reconciledOrders?: number;
+  reconciledOrderIds?: number[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice Types (full sales invoice, distinct from DealerInvoiceDto)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Invoice line DTO */
+export interface InvoiceLineDto {
+  id?: number;
+  description?: string;
+  productCode?: string;
+  quantity?: number;
+  unitPrice?: number;
+  taxableAmount?: number;
+  taxRate?: number;
+  taxAmount?: number;
+  cgstAmount?: number;
+  sgstAmount?: number;
+  igstAmount?: number;
+  discountAmount?: number;
+  lineTotal?: number;
+}
+
+/** Full invoice DTO from GET /api/v1/invoices */
+export interface InvoiceDto {
+  id?: number;
+  publicId?: string;
+  invoiceNumber?: string;
+  status?: string;
+  salesOrderId?: number;
+  dealerId?: number;
+  dealerName?: string;
+  issueDate?: string;
+  dueDate?: string;
+  subtotal?: number;
+  taxTotal?: number;
+  totalAmount?: number;
+  outstandingAmount?: number;
+  currency?: string;
+  journalEntryId?: number;
+  createdAt?: string;
+  lines?: InvoiceLineDto[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sales Returns Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Single return line item */
+export interface SalesReturnLine {
+  invoiceLineId: number;
+  quantity: number;
+}
+
+/** Request to process a sales return POST /api/v1/accounting/sales/returns */
+export interface SalesReturnRequest {
+  invoiceId: number;
+  reason: string;
+  lines: SalesReturnLine[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Orchestrator Dashboard Types
 // ─────────────────────────────────────────────────────────────────────────────
 
