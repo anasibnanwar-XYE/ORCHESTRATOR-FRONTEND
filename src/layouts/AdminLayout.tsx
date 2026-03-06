@@ -64,7 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/admin', icon: LayoutGrid, end: true },
   { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
   { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
-   { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
+  { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
   { label: 'Users', to: '/admin/users', icon: Users },
   { label: 'Roles', to: '/admin/roles', icon: Shield },
   { label: 'Companies', to: '/admin/companies', icon: Building2 },
@@ -73,17 +73,17 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Settings', to: '/admin/settings', icon: Settings },
 ];
 
- // Orchestrator & insights nav items (grouped separately)
- const ORCHESTRATOR_NAV_ITEMS: NavItem[] = [
-   { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
-   { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
- ];
+// Orchestrator & insights nav items (grouped separately)
+const ORCHESTRATOR_NAV_ITEMS: NavItem[] = [
+  { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
+  { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
+];
 
 const ROUTE_LABELS: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/operations': 'Operations',
   '/admin/approvals': 'Approvals',
-   '/admin/export-approvals': 'Export Approvals',
+  '/admin/export-approvals': 'Export Approvals',
   '/admin/users': 'Users',
   '/admin/roles': 'Roles',
   '/admin/companies': 'Companies',
@@ -94,11 +94,11 @@ const ROUTE_LABELS: Record<string, string> = {
   edit: 'Edit',
 };
 
- // Add orchestrator route labels
- Object.assign(ROUTE_LABELS, {
-   '/admin/orchestrator': 'Orchestrator',
-   '/admin/audit-trail': 'Audit Trail',
- });
+// Add orchestrator route labels
+Object.assign(ROUTE_LABELS, {
+  '/admin/orchestrator': 'Orchestrator',
+  '/admin/audit-trail': 'Audit Trail',
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar content (shared between desktop and mobile drawer)
@@ -140,7 +140,7 @@ function SidebarContent({
               onNavClick?.();
               navigate('/hub');
             }}
-            className="w-full flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
+            className="w-full flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
           >
             <ChevronLeft size={14} />
             All portals
@@ -155,7 +155,7 @@ function SidebarContent({
             onClick={onNavClick}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                 isActive
                   ? 'bg-[var(--color-neutral-900)] text-white'
                   : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
@@ -187,7 +187,7 @@ function SidebarContent({
               onClick={onNavClick}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                  'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                   isActive
                     ? 'bg-[var(--color-neutral-900)] text-white'
                     : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
@@ -207,11 +207,9 @@ function SidebarContent({
           ))}
         </div>
       </nav>
-
     </div>
   );
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout
@@ -237,7 +235,7 @@ export function AdminLayout() {
 
       {/* ── Mobile Drawer ────────────────────────────────────────────── */}
       <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <div className="flex flex-col w-[220px] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
+        <div className="flex flex-col w-[min(280px,80vw)] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
           <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
             <OrchestratorLogo size={18} variant="full" />
             <button
@@ -276,12 +274,14 @@ export function AdminLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Command palette button */}
             <CommandPaletteButton />
 
-            {/* Company switcher */}
-            <AdminCompanySwitcher />
+            {/* Company switcher — hidden on mobile to reduce header crowding */}
+            <span className="hidden sm:block">
+              <AdminCompanySwitcher />
+            </span>
 
             {/* Theme toggle */}
             <button

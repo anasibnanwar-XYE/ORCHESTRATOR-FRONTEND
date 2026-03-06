@@ -27,41 +27,41 @@ import {
   Moon,
   ChevronLeft,
   LayoutDashboard,
-  BookOpen,    // Journals
-  Clock,       // Periods
-  SlidersHorizontal, // Default Accounts
-  Users,       // Dealers
-  Building2,   // Suppliers
-  ArrowLeftRight, // Settlements
-  Package,     // Catalog
-  FlaskConical, // Raw Materials
-  Boxes,       // Finished Goods
-  ClipboardEdit, // Adjustments
-  UserCheck,   // Employees
-  CalendarDays, // Attendance
-  Palmtree,    // Leave
-  Banknote,    // Payroll
-  Scale,       // Trial Balance
-  TrendingUp,  // P&L
-  PieChart,    // Balance Sheet
-  Activity,    // Cash Flow
-  UserX,       // Aged Debtors
-  Receipt,     // GST
-  Warehouse,   // Inventory Valuation
-  ClipboardList, // Audit
-  ShieldCheck, // Config Health
-  CheckSquare, // Month-End
-  FileText,    // Invoices
-  ShoppingCart, // Purchase Orders
-  PackageCheck, // Goods Receipts
-  ReceiptText,  // Purchase Invoices
-  Undo2,        // Purchase Returns
+  BookOpen,
+  Clock,
+  SlidersHorizontal,
+  Users,
+  Building2,
+  ArrowLeftRight,
+  Package,
+  FlaskConical,
+  Boxes,
+  ClipboardEdit,
+  UserCheck,
+  CalendarDays,
+  Palmtree,
+  Banknote,
+  Scale,
+  TrendingUp,
+  PieChart,
+  Activity,
+  UserX,
+  Receipt,
+  Warehouse,
+  ClipboardList,
+  ShieldCheck,
+  CheckSquare,
+  FileText,
+  ShoppingCart,
+  PackageCheck,
+  ReceiptText,
+  Undo2,
   type LucideIcon,
 } from 'lucide-react';
 import {
-   ListChecks,   // Transaction Audit
-   FileBarChart2, // Audit Digest
- } from 'lucide-react';
+  ListChecks,
+  FileBarChart2,
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -119,15 +119,15 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Invoices', to: '/accounting/invoices', icon: FileText },
     ],
   },
-   {
-     title: 'Purchasing',
-     items: [
-       { label: 'Purchase Orders', to: '/accounting/purchasing/purchase-orders', icon: ShoppingCart },
-       { label: 'Goods Receipts', to: '/accounting/purchasing/goods-receipts', icon: PackageCheck },
-       { label: 'Purchase Invoices', to: '/accounting/purchasing/raw-material-purchases', icon: ReceiptText },
-       { label: 'Purchase Returns', to: '/accounting/purchasing/returns', icon: Undo2 },
-     ],
-   },
+  {
+    title: 'Purchasing',
+    items: [
+      { label: 'Purchase Orders', to: '/accounting/purchasing/purchase-orders', icon: ShoppingCart },
+      { label: 'Goods Receipts', to: '/accounting/purchasing/goods-receipts', icon: PackageCheck },
+      { label: 'Purchase Invoices', to: '/accounting/purchasing/raw-material-purchases', icon: ReceiptText },
+      { label: 'Purchase Returns', to: '/accounting/purchasing/returns', icon: Undo2 },
+    ],
+  },
   {
     title: 'Inventory',
     items: [
@@ -160,13 +160,13 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Audit', to: '/accounting/reports/audit', icon: ClipboardList },
     ],
   },
-   {
-     title: 'Audit & Operations',
-     items: [
-       { label: 'Audit Digest', to: '/accounting/audit-digest', icon: FileBarChart2 },
-       { label: 'Transaction Audit', to: '/accounting/transaction-audit', icon: ListChecks },
-     ],
-   },
+  {
+    title: 'Audit & Operations',
+    items: [
+      { label: 'Audit Digest', to: '/accounting/audit-digest', icon: FileBarChart2 },
+      { label: 'Transaction Audit', to: '/accounting/transaction-audit', icon: ListChecks },
+    ],
+  },
   {
     title: 'Settings',
     items: [
@@ -175,9 +175,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
-
- // These routes were previously placeholders, now pointing to real pages
- // (config-health and month-end are now real pages - NAV already correct)
 
 /**
  * Map of route path prefixes to their module keys.
@@ -202,7 +199,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/settlements': 'Settlements',
   '/accounting/invoices': 'Invoices',
   '/accounting/catalog': 'Catalog',
-   '/accounting/purchasing/purchase-orders': 'Purchase Orders',
+  '/accounting/purchasing/purchase-orders': 'Purchase Orders',
   '/accounting/purchasing/goods-receipts': 'Goods Receipts',
   '/accounting/purchasing/raw-material-purchases': 'Purchase Invoices',
   '/accounting/purchasing/returns': 'Purchase Returns',
@@ -224,15 +221,11 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/reports/audit': 'Audit',
   '/accounting/config-health': 'Config Health',
   '/accounting/month-end': 'Month-End',
+  '/accounting/audit-digest': 'Audit Digest',
+  '/accounting/transaction-audit': 'Transaction Audit',
   new: 'New',
   edit: 'Edit',
 };
-
- // Add new route labels
- Object.assign(ROUTE_LABELS, {
-   '/accounting/audit-digest': 'Audit Digest',
-   '/accounting/transaction-audit': 'Transaction Audit',
- });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar content
@@ -268,7 +261,7 @@ function SidebarContent({
               onNavClick?.();
               navigate('/hub');
             }}
-            className="w-full flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
+            className="w-full flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
           >
             <ChevronLeft size={14} />
             All portals
@@ -297,7 +290,7 @@ function SidebarContent({
                     onClick={onNavClick}
                     className={({ isActive }) =>
                       clsx(
-                        'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                        'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                         isActive
                           ? 'bg-[var(--color-neutral-900)] text-white'
                           : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
@@ -354,7 +347,7 @@ export function AccountingLayout() {
 
       {/* Mobile Drawer */}
       <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <div className="flex flex-col w-[220px] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
+        <div className="flex flex-col w-[min(280px,80vw)] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
           <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
             <OrchestratorLogo size={18} variant="full" />
             <button
@@ -392,12 +385,14 @@ export function AccountingLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Command palette button */}
             <CommandPaletteButton />
 
-            {/* Company switcher */}
-            <AdminCompanySwitcher />
+            {/* Company switcher — hidden on mobile to reduce header crowding */}
+            <span className="hidden sm:block">
+              <AdminCompanySwitcher />
+            </span>
 
             <button
               type="button"

@@ -15,7 +15,7 @@ export function PageHeader({ title, description, actions, breadcrumb, className 
       {breadcrumb}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)] tracking-tight truncate">
+          <h1 className="text-[22px] sm:text-xl font-semibold text-[var(--color-text-primary)] tracking-tight truncate">
             {title}
           </h1>
           {description && (

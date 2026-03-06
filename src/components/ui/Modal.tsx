@@ -73,6 +73,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
       className="fixed inset-0 z-[var(--z-modal)] flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="presentation"
     >
+      {/* Bottom-sheet on mobile, centered dialog on desktop */}
       <div
         className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]"
         onClick={onClose}
@@ -85,9 +86,12 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descId : undefined}
         className={clsx(
-          'relative w-full max-h-[90vh] flex flex-col overflow-hidden bg-[var(--color-surface-primary)]',
+          'relative w-full flex flex-col bg-[var(--color-surface-primary)]',
           'rounded-t-2xl sm:rounded-2xl border border-[var(--color-border-default)]',
           'mx-0 sm:mx-auto',
+          // Mobile: limit height to 92vh (slightly more than 90 to reduce cut-off feeling)
+          // Desktop: standard 90vh
+          'max-h-[92vh] sm:max-h-[90vh]',
           sizeStyles[size],
         )}
         style={{
@@ -110,7 +114,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
             </button>
           </div>
         )}
-        <div className="p-5 overflow-y-auto flex-1 overscroll-contain">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1 overscroll-contain min-h-0">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[var(--color-border-subtle)] shrink-0">
             {footer}

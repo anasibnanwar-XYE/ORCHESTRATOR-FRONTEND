@@ -114,7 +114,7 @@ function SidebarContent({
             onClick={onNavClick}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                 isActive
                   ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
                   : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
@@ -155,7 +155,7 @@ export function SuperadminLayout() {
 
       {/* Mobile Drawer */}
       <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <div className="flex flex-col w-[220px] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
+        <div className="flex flex-col w-[min(280px,80vw)] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
           <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
             <OrchestratorLogo size={18} variant="full" />
             <button
@@ -189,7 +189,7 @@ export function SuperadminLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Command palette button */}
             <CommandPaletteButton />
 
