@@ -322,7 +322,8 @@ export const factoryApi = {
   async cancelBackorder(slipId: number, reason?: string): Promise<PackagingSlipDto> {
     const response = await apiRequest.post<ApiResponse<PackagingSlipDto>>(
       `/dispatch/backorder/${slipId}/cancel`,
-      reason ? { reason } : {},
+      undefined,
+      { params: reason ? { reason } : undefined },
     );
     return response.data.data;
   },

@@ -38,16 +38,6 @@
 
  type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info';
 
- function priorityVariant(priority: string | undefined): BadgeVariant {
-   switch (priority) {
-     case 'CRITICAL': return 'danger';
-     case 'HIGH': return 'warning';
-     case 'MEDIUM': return 'info';
-     case 'LOW': return 'default';
-     default: return 'default';
-   }
- }
-
  function statusVariant(status: string | undefined): BadgeVariant {
    switch (status) {
      case 'DONE': return 'success';
@@ -101,7 +91,7 @@
      title: task.title ?? '',
      description: task.description ?? '',
      assignee: task.assignee ?? '',
-     priority: (task.priority as FactoryTaskPriority) ?? 'MEDIUM',
+    priority: 'MEDIUM',
      status: (task.status as FactoryTaskStatus) ?? 'OPEN',
      dueDate: task.dueDate ? task.dueDate.substring(0, 10) : '',
    };
@@ -185,7 +175,6 @@
        title: form.title.trim(),
        description: form.description.trim() || undefined,
        assignee: form.assignee.trim() || undefined,
-       priority: form.priority,
        status: form.status,
        dueDate: form.dueDate || undefined,
      };
@@ -250,16 +239,6 @@
          <span className="text-[13px] text-[var(--color-text-secondary)]">
            {row.assignee ?? '—'}
          </span>
-       ),
-       hideOnMobile: true,
-     },
-     {
-       id: 'priority',
-       header: 'Priority',
-       accessor: (row) => (
-         <Badge variant={priorityVariant(row.priority)} dot>
-           {row.priority ?? '—'}
-         </Badge>
        ),
        hideOnMobile: true,
      },

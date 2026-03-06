@@ -37,6 +37,21 @@
    PackingRecordDto,
  } from '@/types';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bulk pack packaging material
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface BulkPackMaterial {
+  id: string;
+  materialId: string;
+  quantity: string;
+  unit: string;
+}
+
+function emptyMaterial(): BulkPackMaterial {
+  return { id: crypto.randomUUID(), materialId: '', quantity: '', unit: '' };
+}
+
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
  // ─────────────────────────────────────────────────────────────────────────────
@@ -376,6 +391,28 @@
      }
    }, [isOpen]);
 
+  const [bulkBatchIdInput, setBulkBatchIdInput] = useState('');
+  const [materials, setMaterials] = useState<BulkPackMaterial[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setBulkBatchIdInput('');
+      setMaterials([]);
+    }
+  }, [isOpen]);
+
+  function addMaterial() {
+    setMaterials((ms) => [...ms, emptyMaterial()]);
+  }
+
+  function updateMaterial(id: string, field: keyof BulkPackMaterial, value: string) {
+    setMaterials((ms) => ms.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
+  }
+
+  function removeMaterial(id: string) {
+    setMaterials((ms) => ms.filter((m) => m.id !== id));
+  }
+
    function updateLine(id: string, field: keyof BulkPackLine, value: string) {
      setLines((ls) => ls.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
    }
@@ -420,12 +457,19 @@
      setError(null);
      try {
        await factoryApi.bulkPack({
-         bulkBatchId: batch.id,
+        bulkBatchId: bulkBatchIdInput ? parseInt(bulkBatchIdInput) : batch.id,
          packs: validLines.map((l) => ({
            childSkuId: parseInt(l.childSkuId),
            quantity: parseFloat(l.quantity),
            sizeLabel: l.sizeLabel,
          })),
+        packagingMaterials: materials
+          .filter((m) => m.materialId && m.quantity)
+          .map((m) => ({
+            materialId: parseInt(m.materialId),
+            quantity: parseFloat(m.quantity),
+            unit: m.unit.trim() || undefined,
+          })),
          packedBy: packedBy.trim() || undefined,
          notes: notes.trim() || undefined,
          idempotencyKey: uuidv4(),
@@ -507,6 +551,16 @@
              />
            </div>
          </div>
+
+        {/* Bulk Batch ID */}
+        <Input
+          label="Bulk Batch ID"
+          type="number"
+          value={bulkBatchIdInput}
+          onChange={(e) => setBulkBatchIdInput(e.target.value)}
+          placeholder={`Defaults to batch ID ${batch?.id ?? ''} — enter override if known`}
+          min={1}
+        />
 
          {/* Size pack lines */}
          <div className="space-y-2">
@@ -591,6 +645,72 @@
              </span>
            </div>
          </div>
+
+        {/* Packaging Materials (optional) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+              Packaging Materials <span className="text-[11px] font-normal text-[var(--color-text-tertiary)]">(optional)</span>
+            </p>
+            <button
+              type="button"
+              onClick={addMaterial}
+              className="text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              + Add material
+            </button>
+          </div>
+          {materials.length > 0 && (
+            <div className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
+              <div className="grid grid-cols-[1fr_100px_80px_32px] gap-0 px-3 py-2 bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">Material ID</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">Quantity</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">Unit</p>
+                <p />
+              </div>
+              {materials.map((mat) => (
+                <div
+                  key={mat.id}
+                  className="grid grid-cols-[1fr_100px_80px_32px] gap-0 px-3 py-2 border-b last:border-b-0 border-[var(--color-border-subtle)] items-center"
+                >
+                  <input
+                    type="number"
+                    value={mat.materialId}
+                    onChange={(e) => updateMaterial(mat.id, 'materialId', e.target.value)}
+                    placeholder="ID"
+                    min={1}
+                    className="h-8 px-2 mr-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg text-[12px] text-[var(--color-text-primary)] tabular-nums focus:outline-none focus:border-[var(--color-neutral-300)] w-full"
+                  />
+                  <input
+                    type="number"
+                    value={mat.quantity}
+                    onChange={(e) => updateMaterial(mat.id, 'quantity', e.target.value)}
+                    placeholder="0"
+                    min={0}
+                    step="0.001"
+                    className="h-8 px-2 mr-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg text-[12px] text-[var(--color-text-primary)] tabular-nums focus:outline-none focus:border-[var(--color-neutral-300)] w-full"
+                  />
+                  <input
+                    type="text"
+                    value={mat.unit}
+                    onChange={(e) => updateMaterial(mat.id, 'unit', e.target.value)}
+                    placeholder="kg"
+                    className="h-8 px-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg text-[12px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-neutral-300)] w-full"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeMaterial(mat.id)}
+                    className="ml-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 2L12 12M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
        </form>
      </Modal>
    );
@@ -661,18 +781,6 @@
        ),
        sortable: true,
        sortAccessor: (row) => row.productionCode ?? '',
-     },
-     {
-       id: 'product',
-       header: 'Product',
-       accessor: (row) => (
-         <div>
-           <p className="text-[13px] text-[var(--color-text-primary)]">{row.productName ?? '—'}</p>
-           {row.brandName && (
-             <p className="text-[11px] text-[var(--color-text-tertiary)]">{row.brandName}</p>
-           )}
-         </div>
-       ),
      },
      {
        id: 'mixed',
@@ -897,56 +1005,47 @@
          </span>
        ),
      },
-     {
-       id: 'product',
-       header: 'Product',
-       accessor: (row) => (
-         <span className="text-[13px] text-[var(--color-text-secondary)]">
-           {row.productName ?? '—'}
-         </span>
-       ),
-       hideOnMobile: true,
-     },
-     {
-       id: 'sizes',
-       header: 'Sizes',
-       accessor: (row) => (
-         <div className="flex flex-wrap gap-1">
-           {(row.lines ?? []).map((line, idx) => (
-             <span
-               key={idx}
-               className="inline-flex items-center px-1.5 py-0.5 bg-[var(--color-surface-tertiary)] rounded text-[11px] tabular-nums text-[var(--color-text-secondary)]"
-             >
-               {line.sizeVariantLabel ?? line.packagingSize}: {fmtNum(line.quantityLiters)}L
-             </span>
-           ))}
-           {(!row.lines || row.lines.length === 0) && (
-             <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
-           )}
-         </div>
-       ),
-       hideOnMobile: true,
-     },
-     {
-       id: 'packedBy',
-       header: 'Operator',
-       accessor: (row) => (
-         <span className="text-[13px] text-[var(--color-text-secondary)]">
-           {row.packedBy ?? '—'}
-         </span>
-       ),
-       hideOnMobile: true,
-     },
-     {
-       id: 'packedDate',
-       header: 'Date',
-       accessor: (row) => (
-         <span className="text-[13px] text-[var(--color-text-secondary)]">
-           {fmtDate(row.packedDate ?? row.createdAt)}
-         </span>
-       ),
-     },
-   ];
+    {
+      id: 'packagingSize',
+      header: 'Size',
+      accessor: (row) => (
+        <span className="inline-flex items-center px-1.5 py-0.5 bg-[var(--color-surface-tertiary)] rounded text-[11px] tabular-nums text-[var(--color-text-secondary)]">
+          {row.sizeVariantLabel ?? row.packagingSize ?? '—'}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'quantityPacked',
+      header: 'Qty Packed',
+      accessor: (row) => (
+        <span className="tabular-nums text-[13px] text-[var(--color-text-primary)]">
+          {row.quantityPacked != null ? fmtNum(row.quantityPacked) : '—'}
+        </span>
+      ),
+      align: 'right',
+      hideOnMobile: true,
+    },
+    {
+      id: 'packedBy',
+      header: 'Operator',
+      accessor: (row) => (
+        <span className="text-[13px] text-[var(--color-text-secondary)]">
+          {row.packedBy ?? '—'}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'packedDate',
+      header: 'Date',
+      accessor: (row) => (
+        <span className="text-[13px] text-[var(--color-text-secondary)]">
+          {fmtDate(row.packedDate ?? row.createdAt)}
+        </span>
+      ),
+    },
+  ];
 
    return (
      <div className="space-y-4">

@@ -49,27 +49,22 @@ export interface PackingRecordDto {
   productionLogId?: number;
   productionCode?: string;
   productName?: string;
-  brandName?: string;
-  packedBy?: string;
+  packagingSize?: string;
+  quantityPacked?: number;
   packedDate?: string;
   createdAt?: string;
-  lines?: PackingRecordLineDto[];
-  sizeVariantId?: number;
   sizeVariantLabel?: string;
+  sizeVariantId?: number;
+  packedBy?: string;
+  piecesCount?: number;
+  boxesCount?: number;
+  piecesPerBox?: number;
+  childBatchCount?: number;
+  finishedGoodBatchId?: number;
+  finishedGoodBatchCode?: string;
 }
 
 /** Line in a packing record */
-export interface PackingRecordLineDto {
-  id?: number;
-  packagingSize?: string;
-  quantityLiters?: number;
-  piecesCount?: number;
-  boxesCount?: number;
-  sizeVariantId?: number;
-  sizeVariantLabel?: string;
-}
-
-/** Bulk pack line */
 export interface BulkPackLine {
   childSkuId: number;
   quantity: number;
@@ -163,11 +158,10 @@ export interface FactoryTaskDto {
   title?: string;
   description?: string;
   assignee?: string;
-  priority?: FactoryTaskPriority;
   status?: FactoryTaskStatus;
   dueDate?: string;
   salesOrderId?: number;
-  slipId?: number;
+  packagingSlipId?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -177,11 +171,10 @@ export interface FactoryTaskRequest {
   title: string;
   description?: string;
   assignee?: string;
-  priority?: FactoryTaskPriority;
   status?: FactoryTaskStatus;
   dueDate?: string;
   salesOrderId?: number;
-  slipId?: number;
+  packagingSlipId?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -295,6 +288,7 @@ export interface ProductionBatchDto {
   createdAt?: string;
   planId?: number;
 }
+
 
 /** Request to create a production batch */
 export interface ProductionBatchRequest {
