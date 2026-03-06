@@ -19,6 +19,23 @@ import type {
 } from '@/types';
  import type { ExportRequestDto, ExportRequestDecisionRequest } from '@/types';
 
+ import type {
+   OrchestratorAdminDashboard,
+   OrchestratorFactoryDashboard,
+   OrchestratorFinanceDashboard,
+   OrchestratorDispatchRequest,
+   OrchestratorFulfillmentRequest,
+   PortalDashboard,
+   PortalOperations,
+   PortalWorkforce,
+   BusinessEvent,
+   MlEvent,
+   AuditEventFilters,
+   TenantRuntimeMetrics,
+   TenantPolicy,
+   OperationsStatus,
+   PageResponse,
+ } from '@/types';
 export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
   // Approvals
@@ -215,6 +232,200 @@ export const adminApi = {
       userId,
       message,
     });
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Orchestrator APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const orchestratorApi = {
+  // Dashboards
+  async getAdminDashboard(): Promise<OrchestratorAdminDashboard> {
+    const response = await apiRequest.get<ApiResponse<OrchestratorAdminDashboard>>(
+      '/orchestrator/dashboard/admin'
+    );
+    return response.data.data;
+  },
+
+  async getFactoryDashboard(): Promise<OrchestratorFactoryDashboard> {
+    const response = await apiRequest.get<ApiResponse<OrchestratorFactoryDashboard>>(
+      '/orchestrator/dashboard/factory'
+    );
+    return response.data.data;
+  },
+
+  async getFinanceDashboard(): Promise<OrchestratorFinanceDashboard> {
+    const response = await apiRequest.get<ApiResponse<OrchestratorFinanceDashboard>>(
+      '/orchestrator/dashboard/finance'
+    );
+    return response.data.data;
+  },
+
+  // Order actions
+  async approveOrder(orderId: number): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/orchestrator/orders/${orderId}/approve`
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  async fulfillOrder(orderId: number, data: OrchestratorFulfillmentRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/orchestrator/orders/${orderId}/fulfillment`,
+      data
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  // Dispatch
+  async createDispatch(data: OrchestratorDispatchRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>('/orchestrator/dispatch', data);
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  // Health
+  async getEventHealth(): Promise<Record<string, unknown>> {
+    const response = await apiRequest.get<ApiResponse<Record<string, unknown>>>(
+      '/orchestrator/health/events'
+    );
+    return response.data.data;
+  },
+
+  async getIntegrationsHealth(): Promise<Record<string, unknown>> {
+    const response = await apiRequest.get<ApiResponse<Record<string, unknown>>>(
+      '/orchestrator/health/integrations'
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Portal Insights APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const portalInsightsApi = {
+  async getDashboard(): Promise<PortalDashboard> {
+    const response = await apiRequest.get<ApiResponse<PortalDashboard>>('/portal/dashboard');
+    return response.data.data;
+  },
+
+  async getOperations(): Promise<PortalOperations> {
+    const response = await apiRequest.get<ApiResponse<PortalOperations>>('/portal/operations');
+    return response.data.data;
+  },
+
+  async getWorkforce(): Promise<PortalWorkforce> {
+    const response = await apiRequest.get<ApiResponse<PortalWorkforce>>('/portal/workforce');
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit Trail APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const auditApi = {
+  async getBusinessEvents(
+    filters: AuditEventFilters = {}
+  ): Promise<PageResponse<BusinessEvent>> {
+    const params = new URLSearchParams();
+    if (filters.actor) params.set('actor', filters.actor);
+    if (filters.action) params.set('action', filters.action);
+    if (filters.resource) params.set('resource', filters.resource);
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+    if (filters.page !== undefined) params.set('page', String(filters.page));
+    if (filters.size !== undefined) params.set('size', String(filters.size));
+    const qs = params.toString();
+    const response = await apiRequest.get<ApiResponse<PageResponse<BusinessEvent>>>(
+      `/audit/business-events${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data;
+  },
+
+  async getMlEvents(filters: { page?: number; size?: number } = {}): Promise<PageResponse<MlEvent>> {
+    const params = new URLSearchParams();
+    if (filters.page !== undefined) params.set('page', String(filters.page));
+    if (filters.size !== undefined) params.set('size', String(filters.size));
+    const qs = params.toString();
+    const response = await apiRequest.get<ApiResponse<PageResponse<MlEvent>>>(
+      `/audit/ml-events${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Runtime APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const tenantApi = {
+  async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
+    // Uses admin settings endpoint for runtime data
+    const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
+      '/admin/settings/runtime'
+    );
+    return response.data.data;
+  },
+
+  async getPolicy(): Promise<TenantPolicy> {
+    const response = await apiRequest.get<ApiResponse<TenantPolicy>>('/admin/settings/policy');
+    return response.data.data;
+  },
+
+  async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
+    const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
+      '/admin/settings/policy',
+      data
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Operations Control APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const operationsControlApi = {
+  async getStatus(): Promise<OperationsStatus> {
+    const response = await apiRequest.get<ApiResponse<OperationsStatus>>(
+      '/admin/operations/status'
+    );
+    return response.data.data;
+  },
+
+  async setMaintenanceMode(enabled: boolean): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      '/admin/operations/maintenance',
+      { enabled }
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  async toggleFeatureFlag(key: string, enabled: boolean): Promise<void> {
+    const response = await apiRequest.patch<ApiResponse<void>>(
+      `/admin/operations/flags/${key}`,
+      { enabled }
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  async purgeCache(): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>('/admin/operations/cache/purge');
     if (!response.data.success) {
       throw new Error(response.data.message);
     }

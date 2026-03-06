@@ -32,6 +32,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
  import { FileDown } from 'lucide-react';
+ import { GitBranch, Globe, ClipboardList, Server, Sliders } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -71,6 +72,15 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Settings', to: '/admin/settings', icon: Settings },
 ];
 
+ // Orchestrator & insights nav items (grouped separately)
+ const ORCHESTRATOR_NAV_ITEMS: NavItem[] = [
+   { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
+   { label: 'Portal Insights', to: '/admin/portal-insights', icon: Globe },
+   { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
+   { label: 'Tenant Runtime', to: '/admin/tenant-runtime', icon: Server },
+   { label: 'Operations Control', to: '/admin/operations-control', icon: Sliders },
+ ];
+
 const ROUTE_LABELS: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/operations': 'Operations',
@@ -85,6 +95,15 @@ const ROUTE_LABELS: Record<string, string> = {
   new: 'New',
   edit: 'Edit',
 };
+
+ // Add orchestrator route labels
+ Object.assign(ROUTE_LABELS, {
+   '/admin/orchestrator': 'Orchestrator',
+   '/admin/portal-insights': 'Portal Insights',
+   '/admin/audit-trail': 'Audit Trail',
+   '/admin/tenant-runtime': 'Tenant Runtime',
+   '/admin/operations-control': 'Operations Control',
+ });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar content (shared between desktop and mobile drawer)
@@ -159,10 +178,45 @@ function SidebarContent({
             )}
           </NavLink>
         ))}
+
+        {/* Orchestrator / Insights section */}
+        <div className="mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
+          <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+            Insights
+          </p>
+          {ORCHESTRATOR_NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onNavClick}
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-2.5 px-3 h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                  isActive
+                    ? 'bg-[var(--color-neutral-900)] text-white'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon
+                    size={15}
+                    className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
+                  />
+                  {item.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
       </nav>
+
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Layout

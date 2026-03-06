@@ -1,0 +1,123 @@
+ /**
+  * Tests for TenantRuntimePage
+  */
+ 
+ import { describe, it, expect, vi, beforeEach } from 'vitest';
+ import { render, screen, waitFor } from '@testing-library/react';
+ import { MemoryRouter } from 'react-router-dom';
+ 
+ vi.mock('lucide-react', () => {
+   const M = () => null;
+   return {
+     Activity: M, Server: M, HardDrive: M, Users: M, Shield: M, RefreshCcw: M,
+     AlertCircle: M, Save: M, Lock: M, Clock: M, ChevronDown: M, X: M,
+   };
+ });
+ 
+ vi.mock('@/lib/adminApi', () => ({
+   tenantApi: {
+     getRuntimeMetrics: vi.fn(),
+     getPolicy: vi.fn(),
+     updatePolicy: vi.fn(),
+   },
+ }));
+ 
+ vi.mock('@/components/ui/Toast', () => ({
+   useToast: () => ({ toast: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn(), dismiss: vi.fn() }),
+   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+ }));
+ 
+ import { TenantRuntimePage } from '../TenantRuntimePage';
+ import { tenantApi } from '@/lib/adminApi';
+ 
+ const mockMetrics = {
+   apiCalls: 125430,
+   storageUsedMb: 2048,
+   activeSessions: 34,
+   apiCallsLimit: 1000000,
+   storageLimit: 10240,
+   period: '2024-03',
+ };
+ 
+ const mockPolicy = {
+   sessionTimeoutMinutes: 60,
+   passwordMinLength: 8,
+   passwordRequireUppercase: true,
+   passwordRequireNumbers: true,
+   passwordRequireSymbols: false,
+   maxLoginAttempts: 5,
+   mfaRequired: false,
+ };
+ 
+ function renderPage() {
+   return render(
+     <MemoryRouter>
+       <TenantRuntimePage />
+     </MemoryRouter>
+   );
+ }
+ 
+ describe('TenantRuntimePage', () => {
+   beforeEach(() => {
+     vi.resetAllMocks();
+     vi.mocked(tenantApi.getRuntimeMetrics).mockResolvedValue(mockMetrics);
+     vi.mocked(tenantApi.getPolicy).mockResolvedValue(mockPolicy);
+     vi.mocked(tenantApi.updatePolicy).mockResolvedValue(mockPolicy);
+   });
+ 
+   it('renders the page heading', async () => {
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('Tenant Runtime')).toBeInTheDocument();
+     });
+   });
+ 
+   it('shows API calls metric', async () => {
+     renderPage();
+     await waitFor(() => {
+      const allMatches = screen.getAllByText(/1,25,430|125,430|125430/);
+       expect(allMatches.length).toBeGreaterThan(0);
+     });
+   });
+ 
+   it('shows active sessions metric', async () => {
+     renderPage();
+     await waitFor(() => {
+       const allMatches = screen.getAllByText(/34/);
+       expect(allMatches.length).toBeGreaterThan(0);
+     });
+   });
+ 
+   it('shows policy section', async () => {
+     renderPage();
+     await waitFor(() => {
+       const allMatches = screen.getAllByText(/Policy|Session Timeout|Password/i);
+       expect(allMatches.length).toBeGreaterThan(0);
+     });
+   });
+ 
+   it('shows session timeout value from policy', async () => {
+     renderPage();
+     await waitFor(() => {
+      // Should show session timeout label
+      const allMatches = screen.getAllByText(/Session Timeout/i);
+       expect(allMatches.length).toBeGreaterThan(0);
+     });
+   });
+ 
+   it('shows save policy button', async () => {
+     renderPage();
+     await waitFor(() => {
+       const allMatches = screen.getAllByText(/Save|Update/i);
+       expect(allMatches.length).toBeGreaterThan(0);
+     });
+   });
+ 
+   it('shows error state on API failure', async () => {
+     vi.mocked(tenantApi.getRuntimeMetrics).mockRejectedValue(new Error('API error'));
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText(/Failed to load/i)).toBeInTheDocument();
+     });
+   });
+ });

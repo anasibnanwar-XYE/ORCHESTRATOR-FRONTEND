@@ -370,6 +370,37 @@ const AdminUsersPage = lazy(() =>
    }))
  );
 
+ /** Admin portal — Orchestrator Dashboard */
+ const AdminOrchestratorDashboardPage = lazy(() =>
+   import('@/pages/admin/OrchestratorDashboardPage').then((m) => ({
+     default: m.OrchestratorDashboardPage,
+   }))
+ );
+ /** Admin portal — Portal Insights */
+ const AdminPortalInsightsPage = lazy(() =>
+   import('@/pages/admin/PortalInsightsPage').then((m) => ({
+     default: m.PortalInsightsPage,
+   }))
+ );
+ /** Admin portal — Audit Trail */
+ const AdminAuditTrailPage = lazy(() =>
+   import('@/pages/admin/AuditTrailPage').then((m) => ({
+     default: m.AuditTrailPage,
+   }))
+ );
+ /** Admin portal — Tenant Runtime */
+ const AdminTenantRuntimePage = lazy(() =>
+   import('@/pages/admin/TenantRuntimePage').then((m) => ({
+     default: m.TenantRuntimePage,
+   }))
+ );
+ /** Admin portal — Operations Control */
+ const AdminOperationsControlPage = lazy(() =>
+   import('@/pages/admin/OperationsControlPage').then((m) => ({
+     default: m.OperationsControlPage,
+   }))
+ );
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -612,6 +643,11 @@ function AppRouter() {
             <Route path="*" element={<AdminDashboardPage />} />
            <Route path="approvals" element={<AdminApprovalsPage />} />
            <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
+           <Route path="orchestrator" element={<AdminOrchestratorDashboardPage />} />
+           <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
+           <Route path="audit-trail" element={<AdminAuditTrailPage />} />
+           <Route path="tenant-runtime" element={<AdminTenantRuntimePage />} />
+           <Route path="operations-control" element={<AdminOperationsControlPage />} />
           </Route>
 
           {/* ── Accounting portal ──────────────────────────────────── */}

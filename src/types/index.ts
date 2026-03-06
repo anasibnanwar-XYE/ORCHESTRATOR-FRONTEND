@@ -1,3 +1,151 @@
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Orchestrator Dashboard Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface OrchestratorAdminDashboard {
+  totalOrders: number;
+  totalDispatches: number;
+  totalFulfilments: number;
+  pendingApprovals: number;
+  revenueThisMonth?: number;
+  activeUsers?: number;
+}
+
+export interface OrchestratorFactoryDashboard {
+  activeJobs: number;
+  throughput: number;
+  packingQueue: number;
+  completedToday: number;
+  efficiencyRate?: number;
+}
+
+export interface OrchestratorFinanceDashboard {
+  revenue: number;
+  cogs: number;
+  grossProfit: number;
+  receivables: number;
+  payables: number;
+  netCashFlow?: number;
+}
+
+export interface OrchestratorDispatchRequest {
+  orderId: number;
+  notes?: string;
+  lineItems?: { productId: number; quantity: number }[];
+}
+
+export interface OrchestratorFulfillmentRequest {
+  lineItems: { productId: number; quantity: number; status: 'SHIPPED' | 'DELIVERED' }[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Portal Insights Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PortalDashboard {
+  sessions: number;
+  pageViews: number;
+  errors: number;
+  activeUsers?: number;
+  avgSessionDuration?: number;
+  bounceRate?: number;
+}
+
+export interface PortalOperations {
+  apiLatencyP50: number;
+  apiLatencyP95: number;
+  apiLatencyP99: number;
+  queueDepths: { queue: string; depth: number }[];
+  errorRate?: number;
+  uptime?: number;
+}
+
+export interface PortalWorkforce {
+  attendanceRate: number;
+  overtime: number;
+  departmentHeadcount: { department: string; count: number }[];
+  leaveUtilisation: number;
+  totalHeadcount?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit Trail Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BusinessEvent {
+  id: string | number;
+  timestamp: string;
+  actor: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details?: Record<string, unknown> | string;
+  companyCode?: string;
+  severity?: 'INFO' | 'WARNING' | 'ERROR';
+}
+
+export interface MlEvent {
+  id: string | number;
+  timestamp: string;
+  model: string;
+  action: string;
+  input?: string;
+  output?: string;
+  confidence?: number;
+  latencyMs?: number;
+  status?: 'SUCCESS' | 'FAILURE' | 'PARTIAL';
+}
+
+export interface AuditEventFilters {
+  actor?: string;
+  action?: string;
+  resource?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Runtime Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TenantRuntimeMetrics {
+  apiCalls: number;
+  storageUsedMb: number;
+  activeSessions: number;
+  apiCallsLimit?: number;
+  storageLimit?: number;
+  period?: string;
+}
+
+export interface TenantPolicy {
+  sessionTimeoutMinutes: number;
+  passwordMinLength: number;
+  passwordRequireUppercase: boolean;
+  passwordRequireNumbers: boolean;
+  passwordRequireSymbols: boolean;
+  maxLoginAttempts: number;
+  mfaRequired?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Operations Control Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface FeatureFlag {
+  key: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+}
+
+export interface OperationsStatus {
+  maintenanceMode: boolean;
+  featureFlags: FeatureFlag[];
+  cacheLastPurged?: string;
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Core API Types
 // ─────────────────────────────────────────────────────────────────────────────
