@@ -567,6 +567,24 @@ const CostAllocationPage = lazy(() =>
     default: m.CostAllocationPage,
   }))
 );
+ /** Factory portal — Dispatch */
+ const FactoryDispatchPage = lazy(() =>
+   import('@/pages/factory/FactoryDispatchPage').then((m) => ({
+     default: m.FactoryDispatchPage,
+   }))
+ );
+ /** Factory portal — Finished Goods */
+ const FactoryFinishedGoodsPage = lazy(() =>
+   import('@/pages/factory/FinishedGoodsPage').then((m) => ({
+     default: m.FinishedGoodsPage,
+   }))
+ );
+ /** Factory portal — Raw Materials */
+ const FactoryRawMaterialsPage = lazy(() =>
+   import('@/pages/factory/RawMaterialsPage').then((m) => ({
+     default: m.RawMaterialsPage,
+   }))
+ );
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -907,6 +925,9 @@ function AppRouter() {
             <Route path="config/packaging" element={<PackagingMappingsPage />} />
             <Route path="config/tasks" element={<FactoryTasksPage />} />
             <Route path="cost-allocation" element={<CostAllocationPage />} />
+            <Route path="dispatch" element={<FactoryDispatchPage />} />
+            <Route path="inventory/finished-goods" element={<FactoryFinishedGoodsPage />} />
+            <Route path="inventory/raw-materials" element={<FactoryRawMaterialsPage />} />
           </Route>
 
           {/* ── Dealer portal ───────────────────────────────────────── */}

@@ -1510,3 +1510,268 @@ export interface TicketPriorityRequest {
 export interface TicketAssignRequest {
   agentEmail: string;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Factory Dispatch Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Status of a packaging slip */
+export type PackagingSlipStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'DISPATCHED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'BACKORDER';
+
+/** A line item within a packaging slip */
+export interface PackagingSlipLineDto {
+  id?: number;
+  productCode?: string;
+  productName?: string;
+  quantity?: number;
+  orderedQuantity?: number;
+  shippedQuantity?: number;
+  backorderQuantity?: number;
+  batchCode?: string;
+  batchPublicId?: string;
+  unitCost?: number;
+  notes?: string;
+}
+
+/** A packaging slip (dispatch slip) */
+export interface PackagingSlipDto {
+  id: number;
+  publicId?: string;
+  slipNumber?: string;
+  orderNumber?: string;
+  salesOrderId?: number;
+  dealerName?: string;
+  status?: PackagingSlipStatus;
+  dispatchNotes?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  dispatchedAt?: string;
+  createdAt?: string;
+  journalEntryId?: number;
+  cogsJournalEntryId?: number;
+  lines?: PackagingSlipLineDto[];
+}
+
+/** Line preview in dispatch preview */
+export interface DispatchLinePreview {
+  lineId?: number;
+  productCode?: string;
+  productName?: string;
+  finishedGoodId?: number;
+  orderedQuantity?: number;
+  availableQuantity?: number;
+  suggestedShipQuantity?: number;
+  batchCode?: string;
+  hasShortage?: boolean;
+  unitPrice?: number;
+  lineSubtotal?: number;
+  lineTax?: number;
+  lineTotal?: number;
+}
+
+/** GST breakdown in preview */
+export interface GstBreakdown {
+  taxableAmount?: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
+  totalTax?: number;
+  grandTotal?: number;
+}
+
+/** Dispatch preview DTO */
+export interface DispatchPreviewDto {
+  packagingSlipId?: number;
+  slipNumber?: string;
+  salesOrderId?: number;
+  salesOrderNumber?: string;
+  dealerCode?: string;
+  dealerName?: string;
+  status?: string;
+  lines?: DispatchLinePreview[];
+  gstBreakdown?: GstBreakdown;
+  totalOrderedAmount?: number;
+  totalAvailableAmount?: number;
+  createdAt?: string;
+}
+
+/** Line confirmation request */
+export interface LineConfirmation {
+  lineId: number;
+  shippedQuantity: number;
+  notes?: string;
+}
+
+/** Dispatch confirmation request (Factory portal) */
+export interface FactoryDispatchConfirmRequest {
+  packagingSlipId: number;
+  confirmedBy?: string;
+  notes?: string;
+  overrideRequestId?: number;
+  lines: LineConfirmation[];
+}
+
+/** Dispatch confirmation response (Factory portal) */
+export interface FactoryDispatchConfirmationResponse {
+  packagingSlipId?: number;
+  slipNumber?: string;
+  status?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  totalOrderedAmount?: number;
+  totalShippedAmount?: number;
+  totalBackorderAmount?: number;
+  backorderSlipId?: number;
+  journalEntryId?: number;
+  cogsJournalEntryId?: number;
+  lines?: Array<{
+    lineId?: number;
+    productCode?: string;
+    productName?: string;
+    orderedQuantity?: number;
+    shippedQuantity?: number;
+    backorderQuantity?: number;
+    unitCost?: number;
+    lineTotal?: number;
+    notes?: string;
+  }>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finished Goods (Factory) Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Finished good DTO (from /api/v1/finished-goods) */
+export interface FactoryFinishedGoodDto {
+  id: number;
+  publicId?: string;
+  name: string;
+  productCode?: string;
+  unit?: string;
+  currentStock?: number;
+  reservedStock?: number;
+  costingMethod?: string;
+  cogsAccountId?: number;
+  revenueAccountId?: number;
+  valuationAccountId?: number;
+  discountAccountId?: number;
+  taxAccountId?: number;
+}
+
+/** Request to create/update a finished good */
+export interface FactoryFinishedGoodRequest {
+  name: string;
+  productCode: string;
+  unit?: string;
+  costingMethod?: string;
+  cogsAccountId?: number;
+  revenueAccountId?: number;
+  valuationAccountId?: number;
+  discountAccountId?: number;
+  taxAccountId?: number;
+}
+
+/** Finished good batch DTO */
+export interface FactoryFinishedGoodBatchDto {
+  id: number;
+  publicId?: string;
+  batchCode?: string;
+  quantityTotal?: number;
+  quantityAvailable?: number;
+  unitCost?: number;
+  manufacturedAt?: string;
+  expiryDate?: string;
+}
+
+/** Request to register a finished good batch */
+export interface FactoryFinishedGoodBatchRequest {
+  finishedGoodId: number;
+  quantity: number;
+  unitCost: number;
+  batchCode?: string;
+  manufacturedAt?: string;
+  expiryDate?: string;
+}
+
+/** Stock summary DTO */
+export interface FactoryStockSummaryDto {
+  id?: number;
+  publicId?: string;
+  name?: string;
+  code?: string;
+  currentStock?: number;
+  reservedStock?: number;
+  availableStock?: number;
+  weightedAverageCost?: number;
+  totalBatches?: number;
+  totalMaterials?: number;
+  lowStockMaterials?: number;
+  criticalStockMaterials?: number;
+}
+
+/** Low stock threshold DTO */
+export interface FinishedGoodLowStockThresholdDto {
+  finishedGoodId?: number;
+  productCode?: string;
+  threshold?: number;
+}
+
+/** Child batch DTO (for batch hierarchy) */
+export interface ChildBatchDto {
+  id?: number;
+  publicId?: string;
+  batchCode?: string;
+  sizeLabel?: string;
+  quantity?: number;
+  unitCost?: number;
+  totalValue?: number;
+  finishedGoodId?: number;
+  finishedGoodName?: string;
+  finishedGoodCode?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Raw Materials (Factory view) Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Raw material batch DTO */
+export interface FactoryRawMaterialBatchDto {
+  id?: number;
+  publicId?: string;
+  batchCode?: string;
+  supplierId?: number;
+  supplierName?: string;
+  quantity?: number;
+  unit?: string;
+  costPerUnit?: number;
+  receivedAt?: string;
+  notes?: string;
+}
+
+/** Inventory stock snapshot */
+export interface InventoryStockSnapshot {
+  sku?: string;
+  name?: string;
+  currentStock?: number;
+  reorderLevel?: number;
+  status?: string;
+}
+
+/** Raw material intake request */
+export interface RawMaterialIntakeRequest {
+  rawMaterialId: number;
+  supplierId: number;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  batchCode?: string;
+  expiryDate?: string;
+  manufacturingDate?: string;
+  notes?: string;
+}
