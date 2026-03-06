@@ -22,9 +22,10 @@ const sizeStyles = {
 
 function renderIcon(icon: ReactNode, size: number) {
   if (isValidElement(icon)) {
+    const existing = (icon.props as { className?: string }).className;
     return cloneElement(icon as React.ReactElement<{ size?: number; className?: string }>, {
       size,
-      className: 'shrink-0',
+      className: clsx('shrink-0', existing),
     });
   }
   return icon;
@@ -89,7 +90,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               <AlertCircle size={14} />
             </div>
           ) : rightIcon ? (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]">
               {renderIcon(rightIcon, iconSize)}
             </div>
           ) : null}

@@ -16,7 +16,7 @@ function applyTheme(theme: Theme) {
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem('o-theme') as Theme | null;
-    return stored || 'light';
+    return stored || 'system';
   });
 
   useEffect(() => {

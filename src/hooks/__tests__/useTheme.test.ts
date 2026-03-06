@@ -68,9 +68,10 @@ Object.defineProperty(window, 'matchMedia', { value: matchMediaMock, writable: t
      setWindowElectron(undefined);
    });
  
-   it('defaults to light theme when nothing is stored', () => {
+   it('defaults to system theme when nothing is stored', () => {
      const { result } = renderHook(() => useTheme());
-     expect(result.current.theme).toBe('light');
+     expect(result.current.theme).toBe('system');
+     // matchMedia mock returns matches: false (light), so dark class should be absent
      expect(getHtmlClass()).toBe(false);
    });
  

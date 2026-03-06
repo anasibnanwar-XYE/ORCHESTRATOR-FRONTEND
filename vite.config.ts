@@ -77,6 +77,7 @@ export default defineConfig({
   },
   server: {
     port: 3002,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://100.109.241.47:8081',
