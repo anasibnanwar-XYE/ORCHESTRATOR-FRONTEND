@@ -31,6 +31,20 @@
  import { adminApi } from '@/lib/adminApi';
  import type { ApprovalItem, ApprovalsResponse } from '@/types';
  import { format } from 'date-fns';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Normalize grouped backend response into flat items array
+// ─────────────────────────────────────────────────────────────────────────────
+
+function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
+  const mapBucket = (items: ApprovalItem[] | undefined): ApprovalItem[] => items ?? [];
+  return [
+    ...mapBucket(raw.creditRequests),
+    ...mapBucket(raw.payrollRuns),
+    ...mapBucket(raw.exportRequests),
+    ...mapBucket(raw.periodCloseRequests),
+  ].filter((item) => item.status?.toUpperCase() === 'PENDING' || !item.status);
+}
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Type badge helpers
@@ -313,12 +327,13 @@
      if (!isActing) setPendingAction(null);
    }, [isActing]);
  
-   // ── Render ─────────────────────────────────────────────────────────────────
- 
-   const groups = data ? groupByType(data.items.filter((i) => i.status === 'PENDING' || i.status?.toUpperCase() === 'PENDING')) : {};
-   const groupKeys = sortedGroupKeys(groups);
-   const totalPending = data?.pending ?? 0;
- 
+  // ── Render ─────────────────────────────────────────────────────────────────
+  // Normalize grouped backend response (AdminApprovalsResponse) into flat pending items
+  const pendingItems = data ? normalizeApprovals(data) : [];
+  const groups = groupByType(pendingItems);
+  const groupKeys = sortedGroupKeys(groups);
+  const totalPending = pendingItems.length;
+
    return (
      <div className="space-y-6">
        {/* Header */}

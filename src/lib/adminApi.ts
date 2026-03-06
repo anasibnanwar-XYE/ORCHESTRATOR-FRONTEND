@@ -16,29 +16,33 @@ import type {
   Company,
   AdminSettings,
   CreditRequestDecisionRequest,
+  AdminNotifyRequest,
+  ChangelogEntryRequest,
+  ChangelogEntryResponse,
+  TenantRuntimePolicyUpdateRequest,
 } from '@/types';
- import type { ExportRequestDto, ExportRequestDecisionRequest } from '@/types';
+import type { ExportRequestDto, ExportRequestDecisionRequest } from '@/types';
+import type {
+  OrchestratorAdminDashboard,
+  OrchestratorFactoryDashboard,
+  OrchestratorFinanceDashboard,
+  OrchestratorDispatchRequest,
+  OrchestratorFulfillmentRequest,
+  PortalDashboard,
+  PortalOperations,
+  PortalWorkforce,
+  BusinessEvent,
+  MlEvent,
+  AuditEventFilters,
+  TenantRuntimeMetrics,
+  TenantPolicy,
+  OperationsStatus,
+  PageResponse,
+} from '@/types';
 
- import type {
-   OrchestratorAdminDashboard,
-   OrchestratorFactoryDashboard,
-   OrchestratorFinanceDashboard,
-   OrchestratorDispatchRequest,
-   OrchestratorFulfillmentRequest,
-   PortalDashboard,
-   PortalOperations,
-   PortalWorkforce,
-   BusinessEvent,
-   MlEvent,
-   AuditEventFilters,
-   TenantRuntimeMetrics,
-   TenantPolicy,
-   OperationsStatus,
-   PageResponse,
- } from '@/types';
 export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
-  // Approvals
+  // Approvals — returns grouped AdminApprovalsResponse
   // ─────────────────────────────────────────────────────────────────────────
 
   async getApprovals(): Promise<ApprovalsResponse> {
@@ -224,17 +228,67 @@ export const adminApi = {
   },
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Notifications
+  // Notifications — POST /admin/notify with AdminNotifyRequest { to, subject, body }
   // ─────────────────────────────────────────────────────────────────────────
 
-  async notifyUser(userId: number, message: string): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>('/admin/notify', {
-      userId,
-      message,
-    });
+  /**
+   * Send an admin notification to a user via email.
+   * Backend expects AdminNotifyRequest: { to, subject, body }
+   */
+  async sendNotification(payload: AdminNotifyRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>('/admin/notify', payload);
     if (!response.data.success) {
       throw new Error(response.data.message);
     }
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Changelog APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const changelogApi = {
+  /** List all changelog entries — GET /changelog */
+  async list(page = 0, size = 20): Promise<{ content: ChangelogEntryResponse[]; totalElements: number }> {
+    const response = await apiRequest.get<ApiResponse<{ content: ChangelogEntryResponse[]; totalElements: number }>>(
+      `/changelog?page=${page}&size=${size}`
+    );
+    return response.data.data;
+  },
+
+  /** Get latest highlighted entry — GET /changelog/latest-highlighted */
+  async getLatestHighlighted(): Promise<ChangelogEntryResponse | null> {
+    try {
+      const response = await apiRequest.get<ApiResponse<ChangelogEntryResponse>>(
+        '/changelog/latest-highlighted'
+      );
+      return response.data.data;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Create a new changelog entry (admin only) — POST /admin/changelog */
+  async create(data: ChangelogEntryRequest): Promise<ChangelogEntryResponse> {
+    const response = await apiRequest.post<ApiResponse<ChangelogEntryResponse>>(
+      '/admin/changelog',
+      data
+    );
+    return response.data.data;
+  },
+
+  /** Update an existing entry — PUT /admin/changelog/{id} */
+  async update(id: number, data: ChangelogEntryRequest): Promise<ChangelogEntryResponse> {
+    const response = await apiRequest.put<ApiResponse<ChangelogEntryResponse>>(
+      `/admin/changelog/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /** Delete a changelog entry — DELETE /admin/changelog/{id} */
+  async remove(id: number): Promise<void> {
+    await apiRequest.delete<ApiResponse<void>>(`/admin/changelog/${id}`);
   },
 };
 
@@ -370,10 +424,10 @@ export const auditApi = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const tenantApi = {
+  /** GET /admin/tenant-runtime/metrics — current rate-limit and concurrency metrics */
   async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
-    // Uses admin settings endpoint for runtime data
     const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
-      '/admin/settings/runtime'
+      '/admin/tenant-runtime/metrics'
     );
     return response.data.data;
   },
@@ -386,6 +440,17 @@ export const tenantApi = {
   async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
     const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
       '/admin/settings/policy',
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Update tenant rate-limit / concurrency policy — PUT /admin/tenant-runtime/policy
+   */
+  async updateRuntimePolicy(data: TenantRuntimePolicyUpdateRequest): Promise<TenantRuntimeMetrics> {
+    const response = await apiRequest.put<ApiResponse<TenantRuntimeMetrics>>(
+      '/admin/tenant-runtime/policy',
       data
     );
     return response.data.data;

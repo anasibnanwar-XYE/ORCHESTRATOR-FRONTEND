@@ -38,12 +38,20 @@
  import { superadminRuntimeApi } from '@/lib/superadminApi';
  
  const mockMetrics = {
-   apiCalls: 12500,
-   storageUsedMb: 512,
-   activeSessions: 37,
-   apiCallsLimit: 50000,
-   storageLimit: 2048,
- };
+  apiCalls: 12500,
+  storageUsedMb: 512,
+  activeSessions: 37,
+  apiCallsLimit: 50000,
+  storageLimit: 2048,
+  totalUsers: 20,
+  enabledUsers: 18,
+  maxActiveUsers: 50,
+  requestsThisMinute: 150,
+  maxRequestsPerMinute: 500,
+  inFlightRequests: 3,
+  maxConcurrentRequests: 25,
+  blockedThisMinute: 0,
+};
  
  const mockPolicy = {
    sessionTimeoutMinutes: 30,

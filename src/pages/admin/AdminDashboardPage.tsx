@@ -254,7 +254,15 @@
    const activeUsers = data?.users.filter((u) => u.enabled).length ?? 0;
    const totalCompanies = data?.companies.length ?? 0;
    const activeCompanies = data?.companies.filter((c) => c.isActive).length ?? 0;
-   const pendingApprovals = data?.approvals.pending ?? 0;
+  // Pending approvals — computed from grouped ApprovalsResponse buckets
+  const pendingApprovals = data?.approvals
+    ? [
+        ...(data.approvals.creditRequests ?? []),
+        ...(data.approvals.payrollRuns ?? []),
+        ...(data.approvals.exportRequests ?? []),
+        ...(data.approvals.periodCloseRequests ?? []),
+      ].filter((item) => item.status?.toUpperCase() === 'PENDING' || !item.status).length
+    : 0;
  
    // HR pulse metrics (derived from user data as proxy)
    const hrMetrics: HrMetric[] = [

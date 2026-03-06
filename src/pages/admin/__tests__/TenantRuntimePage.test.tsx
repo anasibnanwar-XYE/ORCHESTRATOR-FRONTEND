@@ -31,13 +31,21 @@
  import { tenantApi } from '@/lib/adminApi';
  
  const mockMetrics = {
-   apiCalls: 125430,
-   storageUsedMb: 2048,
-   activeSessions: 34,
-   apiCallsLimit: 1000000,
-   storageLimit: 10240,
-   period: '2024-03',
- };
+  apiCalls: 125430,
+  storageUsedMb: 2048,
+  activeSessions: 34,
+  apiCallsLimit: 1000000,
+  storageLimit: 10240,
+  period: '2024-03',
+  totalUsers: 50,
+  enabledUsers: 45,
+  maxActiveUsers: 100,
+  requestsThisMinute: 320,
+  maxRequestsPerMinute: 1000,
+  inFlightRequests: 5,
+  maxConcurrentRequests: 50,
+  blockedThisMinute: 0,
+};
  
  const mockPolicy = {
    sessionTimeoutMinutes: 60,

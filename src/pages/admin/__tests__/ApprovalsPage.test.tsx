@@ -50,39 +50,42 @@
  import { ApprovalsPage } from '../ApprovalsPage';
  import { adminApi } from '@/lib/adminApi';
  
- const mockApprovals = {
-   items: [
-     {
-       type: 'CREDIT_REQUEST',
-       id: 1,
-       publicId: 'CR-001',
-       reference: 'CR-2024-001',
-       status: 'PENDING',
-       summary: 'Credit request for dealer ABC - ₹50,000',
-       createdAt: '2024-03-01T10:00:00Z',
-     },
-     {
-       type: 'PAYROLL_RUN',
-       id: 2,
-       publicId: 'PR-001',
-       reference: 'PR-2024-001',
-       status: 'PENDING',
-       summary: 'March 2024 Payroll Run - 45 employees',
-       createdAt: '2024-03-01T09:00:00Z',
-     },
-     {
-       type: 'CREDIT_OVERRIDE',
-       id: 3,
-       publicId: 'CO-001',
-       reference: 'CO-2024-001',
-       status: 'PENDING',
-       summary: 'Credit override request - increase limit to ₹2,00,000',
-       createdAt: '2024-03-01T08:00:00Z',
-     },
-   ],
-   total: 3,
-   pending: 3,
- };
+const mockApprovals = {
+  creditRequests: [
+    {
+      type: 'CREDIT_REQUEST',
+      id: 1,
+      publicId: 'CR-001',
+      reference: 'CR-2024-001',
+      status: 'PENDING',
+      summary: 'Credit request for dealer ABC - ₹50,000',
+      createdAt: '2024-03-01T10:00:00Z',
+    },
+  ],
+  payrollRuns: [
+    {
+      type: 'PAYROLL_RUN',
+      id: 2,
+      publicId: 'PR-001',
+      reference: 'PR-2024-001',
+      status: 'PENDING',
+      summary: 'March 2024 Payroll Run - 45 employees',
+      createdAt: '2024-03-01T09:00:00Z',
+    },
+  ],
+  exportRequests: [],
+  periodCloseRequests: [
+    {
+      type: 'CREDIT_OVERRIDE',
+      id: 3,
+      publicId: 'CO-001',
+      reference: 'CO-2024-001',
+      status: 'PENDING',
+      summary: 'Credit override request - increase limit to ₹2,00,000',
+      createdAt: '2024-03-01T08:00:00Z',
+    },
+  ],
+};
  
  function renderPage() {
    return render(

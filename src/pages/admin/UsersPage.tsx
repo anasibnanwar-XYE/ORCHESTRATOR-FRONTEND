@@ -366,7 +366,7 @@
        email: data.email,
        displayName: data.displayName,
        roles: data.roles,
-       companyCode: companies.find((c) => c.id === data.companyIds[0])?.code,
+      companyIds: data.companyIds,
      };
      try {
        await adminApi.createUser(payload);
@@ -383,9 +383,9 @@
    const handleUpdateUser = async (data: UserFormData) => {
      if (!editingUser) return;
      const payload: UpdateUserRequest = {
-       email: data.email,
        displayName: data.displayName,
        roles: data.roles,
+      companyIds: data.companyIds,
      };
      try {
        await adminApi.updateUser(editingUser.id, payload);

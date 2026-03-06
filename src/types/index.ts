@@ -962,29 +962,34 @@ export interface OrchestratorFulfillmentRequest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PortalDashboard {
+  // PortalDashboardInsights from GET /api/v1/portal/dashboard
   sessions: number;
   pageViews: number;
   errors: number;
   activeUsers?: number;
   avgSessionDuration?: number;
   bounceRate?: number;
+  topVisitedPages?: Array<{ page: string; views: number }>;
 }
 
 export interface PortalOperations {
+  // PortalOperationsInsights from GET /api/v1/portal/operations
   apiLatencyP50: number;
   apiLatencyP95: number;
   apiLatencyP99: number;
-  queueDepths: { queue: string; depth: number }[];
+  queueDepths: Array<{ queue: string; depth: number }>;
   errorRate?: number;
   uptime?: number;
+  backgroundJobs?: Array<{ name: string; status: string; lastRun?: string }>;
 }
 
 export interface PortalWorkforce {
+  // PortalWorkforceInsights from GET /api/v1/portal/workforce
   attendanceRate: number;
   overtime: number;
-  departmentHeadcount: { department: string; count: number }[];
   leaveUtilisation: number;
   totalHeadcount?: number;
+  departmentHeadcount: Array<{ department: string; count: number }>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1030,12 +1035,41 @@ export interface AuditEventFilters {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TenantRuntimeMetrics {
+  // TenantRuntimeMetricsDto from GET /api/v1/admin/tenant-runtime/metrics
+  companyCode?: string;
+  // Backend rate-limit fields
+  totalUsers: number;
+  enabledUsers: number;
+  maxActiveUsers: number;
+  requestsThisMinute: number;
+  maxRequestsPerMinute: number;
+  inFlightRequests: number;
+  maxConcurrentRequests: number;
+  blockedThisMinute: number;
+  holdState?: string;
+  holdReason?: string;
+  policyReference?: string;
+  policyUpdatedAt?: string;
+  // Legacy / enriched usage fields also returned by the runtime endpoint
   apiCalls: number;
+  apiCallsLimit: number;
   storageUsedMb: number;
+  storageLimit: number;
   activeSessions: number;
-  apiCallsLimit?: number;
-  storageLimit?: number;
   period?: string;
+  /** IP addresses allowed to bypass rate-limiting (allowlist) */
+  ipAllowlist?: string[];
+  /** Remaining requests allowed before rate-limit is hit */
+  rateLimitHeadroom?: number;
+}
+
+export interface TenantRuntimePolicyUpdateRequest {
+  maxActiveUsers?: number;
+  maxConcurrentRequests?: number;
+  maxRequestsPerMinute?: number;
+  holdState?: string;
+  holdReason?: string;
+  changeReason?: string;
 }
 
 export interface TenantPolicy {
@@ -1206,13 +1240,14 @@ export interface CreateUserRequest {
   displayName: string;
   roles: string[];
   password?: string;
-  companyCode?: string;
+  companyIds: number[];
 }
 
 export interface UpdateUserRequest {
-  email?: string;
   displayName?: string;
   roles?: string[];
+  companyIds?: number[];
+  enabled?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1252,15 +1287,54 @@ export interface ApprovalItem {
 }
 
 export interface ApprovalsResponse {
-  items: ApprovalItem[];
-  total: number;
-  pending: number;
+  // AdminApprovalsResponse from GET /api/v1/admin/approvals
+  // grouped by type — UI normalises into flat items
+  creditRequests: ApprovalItem[];
+  payrollRuns: ApprovalItem[];
+  exportRequests: ApprovalItem[];
+  periodCloseRequests: ApprovalItem[];
 }
 
 export interface CreditRequestDecisionRequest {
   reason: string;
 }
  
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Export Approval Types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Notification Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AdminNotifyRequest {
+  /** Email address of the recipient */
+  to: string;
+  subject: string;
+  body: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Changelog Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ChangelogEntryRequest {
+  title: string;
+  body: string;
+  version: string;
+  isHighlighted?: boolean;
+}
+
+export interface ChangelogEntryResponse {
+  id: number;
+  title: string;
+  body: string;
+  version: string;
+  isHighlighted?: boolean;
+  publishedAt: string;
+  createdBy?: string;
+}
+
  // ─────────────────────────────────────────────────────────────────────────────
  // Export Approval Types
  // ─────────────────────────────────────────────────────────────────────────────

@@ -50,6 +50,7 @@
    const [isLoading, setIsLoading] = useState(true);
    const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
    const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState('');
    const [isSending, setIsSending] = useState(false);
    const [sent, setSent] = useState<SentRecord[]>([]);
    const [sentPulse, setSentPulse] = useState(false);
@@ -78,7 +79,11 @@
      if (!selectedUserId || !message.trim()) return;
      setIsSending(true);
      try {
-       await adminApi.notifyUser(selectedUserId as number, message.trim());
+      await adminApi.sendNotification({
+        to: selectedUser?.email ?? String(selectedUserId),
+        subject: subject.trim() || 'Notification from Admin',
+        body: message.trim(),
+      });
        const record: SentRecord = {
          id: Date.now(),
          userId: selectedUserId as number,
@@ -88,6 +93,7 @@
        };
        setSent((prev) => [record, ...prev]);
        setMessage('');
+      setSubject('');
        setSelectedUserId('');
        setSentPulse(true);
        setTimeout(() => setSentPulse(false), 2000);
@@ -155,8 +161,27 @@
              {/* Message */}
              <div className="space-y-1.5">
                <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-                 Message
+                Subject
                </label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject..."
+                className={clsx(
+                  'w-full h-9 rounded-lg border border-[var(--color-border-default)] px-3',
+                  'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
+                  'placeholder:text-[var(--color-text-tertiary)]',
+                  'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
+                )}
+              />
+            </div>
+
+            {/* Body */}
+            <div className="space-y-1.5">
+              <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
+                Body
+              </label>
                <textarea
                  value={message}
                  onChange={(e) => setMessage(e.target.value)}
