@@ -1,7 +1,7 @@
  /**
   * Sales API wrapper
   *
-  * Sales portal operations: orders, dealers, dispatch, credit requests.
+  * Sales portal operations: orders, dealers, dispatch, credit requests, credit overrides.
   */
  
  import { apiRequest, apiData } from './api';
@@ -15,6 +15,19 @@
    CancelOrderRequest,
    DealerLookupResponse,
    SalesDashboardMetrics,
+   DealerDto,
+   CreateDealerRequest,
+   UpdateDealerRequest,
+   DealerAgingDetailedReport,
+   LedgerEntryDto,
+   DealerInvoiceDto,
+   CreditRequestDto,
+   CreditRequestCreateRequest,
+   CreditRequestUpdateRequest,
+   CreditDecisionRequest,
+   CreditOverrideRequestDto,
+   CreditOverrideCreateRequest,
+   CreditOverrideDecisionRequest,
  } from '@/types';
  
  export const salesApi = {
@@ -96,6 +109,22 @@
    // Dealers
    // ─────────────────────────────────────────────────────────────────────────
  
+   /** List dealers with pagination */
+   async listDealers(params?: { page?: number; size?: number; status?: string }): Promise<PageResponse<DealerDto>> {
+     const p = new URLSearchParams();
+     if (params?.page !== undefined) p.set('page', String(params.page));
+     if (params?.size !== undefined) p.set('size', String(params.size));
+     if (params?.status) p.set('status', params.status);
+     const q = p.toString();
+     return apiData<PageResponse<DealerDto>>(`/dealers${q ? `?${q}` : ''}`);
+   },
+ 
+   /** Search dealers by name or code */
+   async searchDealersManagement(query: string): Promise<DealerDto[]> {
+     const p = new URLSearchParams({ query });
+     return apiData<DealerDto[]>(`/dealers/search?${p.toString()}`);
+   },
+ 
    /** Search dealers (active/non-dunning for order creation) */
    async searchDealers(query?: string, status?: string, creditStatus?: string): Promise<DealerLookupResponse[]> {
      const params = new URLSearchParams();
@@ -105,6 +134,115 @@
      const q = params.toString();
      return apiData<DealerLookupResponse[]>(`/sales/dealers/search${q ? `?${q}` : ''}`);
    },
+ 
+   /** Create a dealer */
+   async createDealer(request: CreateDealerRequest): Promise<DealerDto> {
+     const response = await apiRequest.post<ApiResponse<DealerDto>>('/dealers', request);
+     return response.data.data;
+   },
+ 
+   /** Update a dealer */
+   async updateDealer(dealerId: number, request: UpdateDealerRequest): Promise<DealerDto> {
+     const response = await apiRequest.put<ApiResponse<DealerDto>>(`/dealers/${dealerId}`, request);
+     return response.data.data;
+   },
+ 
+   /** Get dealer aging report */
+   async getDealerAging(dealerId: number): Promise<DealerAgingDetailedReport> {
+     return apiData<DealerAgingDetailedReport>(`/dealers/${dealerId}/aging`);
+   },
+ 
+   /** Toggle dunning hold on a dealer */
+   async holdDealerDunning(dealerId: number): Promise<DealerDto> {
+     const response = await apiRequest.post<ApiResponse<DealerDto>>(`/dealers/${dealerId}/dunning/hold`);
+     return response.data.data;
+   },
+ 
+   /** Get dealer ledger (chronological transactions) */
+   async getDealerLedger(dealerId: number): Promise<LedgerEntryDto[]> {
+     return apiData<LedgerEntryDto[]>(`/dealers/${dealerId}/ledger`);
+   },
+ 
+   /** Get dealer invoices */
+   async getDealerInvoices(dealerId: number): Promise<DealerInvoiceDto[]> {
+     return apiData<DealerInvoiceDto[]>(`/dealers/${dealerId}/invoices`);
+   },
+ 
+   // ─────────────────────────────────────────────────────────────────────────
+   // Credit Requests
+   // ─────────────────────────────────────────────────────────────────────────
+ 
+   /** List all credit requests */
+   async listCreditRequests(): Promise<CreditRequestDto[]> {
+     return apiData<CreditRequestDto[]>('/sales/credit-requests');
+   },
+ 
+   /** Create a new credit request */
+   async createCreditRequest(request: CreditRequestCreateRequest): Promise<CreditRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditRequestDto>>('/sales/credit-requests', request);
+     return response.data.data;
+   },
+ 
+   /** Update an existing credit request */
+   async updateCreditRequest(id: number, request: CreditRequestUpdateRequest): Promise<CreditRequestDto> {
+     const response = await apiRequest.put<ApiResponse<CreditRequestDto>>(`/sales/credit-requests/${id}`, request);
+     return response.data.data;
+   },
+ 
+   /** Approve a credit request (updates credit limit on approval) */
+   async approveCreditRequest(id: number, req?: CreditDecisionRequest): Promise<CreditRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditRequestDto>>(
+       `/sales/credit-requests/${id}/approve`,
+       req ?? {}
+     );
+     return response.data.data;
+   },
+ 
+   /** Reject a credit request */
+   async rejectCreditRequest(id: number, req?: CreditDecisionRequest): Promise<CreditRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditRequestDto>>(
+       `/sales/credit-requests/${id}/reject`,
+       req ?? {}
+     );
+     return response.data.data;
+   },
+ 
+   // ─────────────────────────────────────────────────────────────────────────
+   // Credit Override Requests
+   // ─────────────────────────────────────────────────────────────────────────
+ 
+   /** List all credit override requests */
+   async listCreditOverrides(): Promise<CreditOverrideRequestDto[]> {
+     return apiData<CreditOverrideRequestDto[]>('/credit/override-requests');
+   },
+ 
+   /** Create a credit override request */
+   async createCreditOverride(request: CreditOverrideCreateRequest): Promise<CreditOverrideRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditOverrideRequestDto>>('/credit/override-requests', request);
+     return response.data.data;
+   },
+ 
+   /** Approve a credit override request */
+   async approveCreditOverride(id: number, req?: CreditOverrideDecisionRequest): Promise<CreditOverrideRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditOverrideRequestDto>>(
+       `/credit/override-requests/${id}/approve`,
+       req ?? {}
+     );
+     return response.data.data;
+   },
+ 
+   /** Reject a credit override request */
+   async rejectCreditOverride(id: number, req?: CreditOverrideDecisionRequest): Promise<CreditOverrideRequestDto> {
+     const response = await apiRequest.post<ApiResponse<CreditOverrideRequestDto>>(
+       `/credit/override-requests/${id}/reject`,
+       req ?? {}
+     );
+     return response.data.data;
+   },
+ 
+   // ─────────────────────────────────────────────────────────────────────────
+   // Dashboard
+   // ─────────────────────────────────────────────────────────────────────────
  
    /** Get dashboard metrics — derived from orders/dealers */
    async getDashboardMetrics(): Promise<SalesDashboardMetrics> {

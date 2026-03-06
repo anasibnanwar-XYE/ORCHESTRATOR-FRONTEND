@@ -130,6 +130,199 @@
  }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Dealer Management Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Full dealer record from /api/v1/dealers */
+export interface DealerDto {
+  id: number;
+  publicId?: string;
+  code?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  creditLimit?: number;
+  outstandingBalance?: number;
+  /** Dunning status: NONE | ON_HOLD */
+  dunningStatus?: 'NONE' | 'ON_HOLD' | string;
+  /** ACTIVE | INACTIVE */
+  status?: 'ACTIVE' | 'INACTIVE' | string;
+  region?: string;
+  gstNumber?: string;
+  companyName?: string;
+  stateCode?: string;
+  gstRegistrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
+  paymentTerms?: 'NET_30' | 'NET_60' | 'NET_90';
+  portalEmail?: string;
+  generatedPassword?: string;
+}
+
+/** Request to create a new dealer */
+export interface CreateDealerRequest {
+  name: string;
+  companyName: string;
+  contactEmail: string;
+  contactPhone: string;
+  address?: string;
+  gstNumber?: string;
+  creditLimit?: number;
+  region?: string;
+  stateCode?: string;
+  gstRegistrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
+  paymentTerms?: 'NET_30' | 'NET_60' | 'NET_90';
+}
+
+/** Request to update dealer */
+export type UpdateDealerRequest = Partial<CreateDealerRequest>;
+
+/** Aging bucket summary for a dealer */
+export interface AgingBucketDto {
+  label?: string;
+  fromDays?: number;
+  toDays?: number;
+  amount?: number;
+}
+
+/** Aging buckets (structured format) */
+export interface AgingBuckets {
+  current?: number;
+  days1to30?: number;
+  days31to60?: number;
+  days61to90?: number;
+  over90?: number;
+}
+
+/** Aging line item */
+export interface AgingLineItem {
+  invoiceId?: number;
+  invoiceNumber?: string;
+  issueDate?: string;
+  dueDate?: string;
+  amount?: number;
+  outstanding?: number;
+  daysOverdue?: number;
+  bucket?: string;
+}
+
+/** Detailed aging report for a dealer */
+export interface DealerAgingDetailedReport {
+  dealerId?: number;
+  dealerCode?: string;
+  dealerName?: string;
+  lineItems?: AgingLineItem[];
+  buckets?: AgingBuckets;
+  totalOutstanding?: number;
+  averageDSO?: number;
+}
+
+/** Ledger entry */
+export interface LedgerEntryDto {
+  dealerName?: string;
+  date?: string;
+  reference?: string;
+  debit?: number;
+  credit?: number;
+  balance?: number;
+}
+
+/** Invoice DTO for dealer invoices list */
+export interface DealerInvoiceDto {
+  id?: number;
+  publicId?: string;
+  invoiceNumber?: string;
+  status?: string;
+  subtotal?: number;
+  taxTotal?: number;
+  totalAmount?: number;
+  outstandingAmount?: number;
+  currency?: string;
+  issueDate?: string;
+  dueDate?: string;
+  dealerId?: number;
+  dealerName?: string;
+  salesOrderId?: number;
+  createdAt?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Credit Request Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Credit request DTO */
+export interface CreditRequestDto {
+  id?: number;
+  publicId?: string;
+  dealerId?: number;
+  dealerName?: string;
+  amountRequested?: number;
+  status?: string;
+  reason?: string;
+  createdAt?: string;
+}
+
+/** Request to create a credit request */
+export interface CreditRequestCreateRequest {
+  dealerId: number;
+  amountRequested: number;
+  reason?: string;
+}
+
+/** Request to update a credit request */
+export interface CreditRequestUpdateRequest {
+  dealerId?: number;
+  amountRequested?: number;
+  reason?: string;
+  status?: string;
+}
+
+/** Decision request for credit request approve/reject */
+export interface CreditDecisionRequest {
+  reason?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Credit Override Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Credit limit override request DTO */
+export interface CreditOverrideRequestDto {
+  id?: number;
+  publicId?: string;
+  dealerId?: number;
+  dealerName?: string;
+  packagingSlipId?: number;
+  salesOrderId?: number;
+  dispatchAmount?: number;
+  currentExposure?: number;
+  creditLimit?: number;
+  requiredHeadroom?: number;
+  status?: string;
+  reason?: string;
+  requestedBy?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  expiresAt?: string;
+  createdAt?: string;
+}
+
+/** Request to create a credit override request */
+export interface CreditOverrideCreateRequest {
+  dealerId?: number;
+  packagingSlipId?: number;
+  salesOrderId?: number;
+  dispatchAmount: number;
+  reason?: string;
+  expiresAt?: string;
+}
+
+/** Decision request for credit override approve/reject */
+export interface CreditOverrideDecisionRequest {
+  reason?: string;
+  expiresAt?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Orchestrator Dashboard Types
 // ─────────────────────────────────────────────────────────────────────────────
 

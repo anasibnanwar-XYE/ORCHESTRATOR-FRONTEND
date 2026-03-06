@@ -471,6 +471,24 @@ const SuperadminRuntimePage = lazy(() =>
    }))
  );
 
+/** Sales portal — Dealers */
+const SalesDealersPage = lazy(() =>
+  import('@/pages/sales/DealersPage').then((m) => ({
+    default: m.DealersPage,
+  }))
+);
+/** Sales portal — Credit Requests */
+const SalesCreditRequestsPage = lazy(() =>
+  import('@/pages/sales/CreditRequestsPage').then((m) => ({
+    default: m.CreditRequestsPage,
+  }))
+);
+/** Sales portal — Credit Overrides */
+const SalesCreditOverridesPage = lazy(() =>
+  import('@/pages/sales/CreditOverridesPage').then((m) => ({
+    default: m.CreditOverridesPage,
+  }))
+);
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -781,6 +799,10 @@ function AppRouter() {
             <Route index element={<SalesDashboardPage />} />
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="orders/:id" element={<SalesOrderDetailPage />} />
+            <Route path="*" element={<SalesDashboardPage />} />
+            <Route path="dealers" element={<SalesDealersPage />} />
+            <Route path="credit-requests" element={<SalesCreditRequestsPage />} />
+            <Route path="credit-overrides" element={<SalesCreditOverridesPage />} />
             <Route path="*" element={<SalesDashboardPage />} />
           </Route>
 

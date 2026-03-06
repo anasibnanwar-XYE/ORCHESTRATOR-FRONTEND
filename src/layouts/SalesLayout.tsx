@@ -75,7 +75,6 @@ const ROUTE_LABELS: Record<string, string> = {
   new: 'New',
   edit: 'Edit',
 };
-
 function SidebarContent({
   showBackToHub,
   enabledModules,
@@ -91,7 +90,6 @@ function SidebarContent({
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.module || isModuleEnabled(enabledModules, item.module)
   );
-
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 py-5 border-b border-[var(--color-border-subtle)]">
