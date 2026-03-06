@@ -94,7 +94,7 @@ import { downloadBlob } from '@/utils/mobileUtils';
      setError(null);
      try {
        const data = await dealerApi.getInvoices({ page: 0, size: 100 });
-       setInvoices(Array.isArray(data) ? data : []);
+      setInvoices(data);
        setPage(0);
      } catch {
        setError("Couldn't load your invoices. Please try again.");

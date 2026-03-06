@@ -50,7 +50,10 @@
      if (params?.page !== undefined) q.set('page', String(params.page));
      if (params?.size !== undefined) q.set('size', String(params.size));
      const qs = q.toString();
-     return apiData<DealerPortalOrder[]>(`/dealer-portal/orders${qs ? `?${qs}` : ''}`);
+    const response = await apiRequest.get<ApiResponse<{ orders: DealerPortalOrder[] }>>(
+      `/dealer-portal/orders${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data?.orders ?? [];
    },
  
    // ─────────────────────────────────────────────────────────────────────────
@@ -63,7 +66,10 @@
      if (params?.page !== undefined) q.set('page', String(params.page));
      if (params?.size !== undefined) q.set('size', String(params.size));
      const qs = q.toString();
-     return apiData<DealerPortalInvoice[]>(`/dealer-portal/invoices${qs ? `?${qs}` : ''}`);
+    const response = await apiRequest.get<ApiResponse<{ invoices: DealerPortalInvoice[] }>>(
+      `/dealer-portal/invoices${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data?.invoices ?? [];
    },
  
    /** Download invoice PDF (returns blob) */
@@ -80,7 +86,10 @@
  
    /** Get dealer's transaction ledger */
    async getLedger(): Promise<DealerPortalLedgerEntry[]> {
-     return apiData<DealerPortalLedgerEntry[]>('/dealer-portal/ledger');
+    const response = await apiRequest.get<ApiResponse<{ entries: DealerPortalLedgerEntry[] }>>(
+      '/dealer-portal/ledger'
+    );
+    return response.data.data?.entries ?? [];
    },
  
    // ─────────────────────────────────────────────────────────────────────────

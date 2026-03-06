@@ -137,7 +137,7 @@
      setError(null);
      try {
        const data = await dealerApi.getOrders({ page: 0, size: 100 });
-       setOrders(Array.isArray(data) ? data : []);
+      setOrders(data);
        setPage(0);
      } catch {
        setError("Couldn't load your orders. Please try again.");

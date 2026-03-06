@@ -92,7 +92,7 @@
      setError(null);
      try {
        const data = await dealerApi.getLedger();
-       setEntries(Array.isArray(data) ? data : []);
+      setEntries(data);
      } catch {
        setError("Couldn't load your ledger. Please try again.");
      } finally {
