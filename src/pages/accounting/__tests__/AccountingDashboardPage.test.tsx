@@ -64,12 +64,16 @@
  };
  
  const mockReceivables = {
-   totalOutstanding: 75000,
-   current: 50000,
-   days1to30: 15000,
-   days31to60: 8000,
-   days61to90: 2000,
-   daysOver90: 0,
+   asOfDate: '2024-03-01',
+   dealers: [],
+   totalBuckets: {
+     current: 50000,
+     days1to30: 15000,
+     days31to60: 8000,
+     days61to90: 2000,
+     over90: 0,
+   },
+   grandTotal: 75000,
  };
  
  const mockJournals = Array.from({ length: 5 }, (_, i) => ({

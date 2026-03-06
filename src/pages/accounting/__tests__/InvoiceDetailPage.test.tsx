@@ -120,6 +120,30 @@
      });
    });
 
+   it('email dialog shows editable subject and message fields', async () => {
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /send email/i })).toBeInTheDocument();
+     });
+     fireEvent.click(screen.getByRole('button', { name: /send email/i }));
+     await waitFor(() => {
+       expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
+       expect(screen.getByPlaceholderText(/write your message/i)).toBeInTheDocument();
+     });
+   });
+
+   it('email dialog pre-fills subject with invoice number', async () => {
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /send email/i })).toBeInTheDocument();
+     });
+     fireEvent.click(screen.getByRole('button', { name: /send email/i }));
+     await waitFor(() => {
+       const subjectInput = screen.getByLabelText(/subject/i) as HTMLInputElement;
+       expect(subjectInput.value).toContain('INV-2026-001');
+     });
+   });
+
    it('shows error state on API failure', async () => {
      vi.mocked(invoicesApi.getInvoice).mockRejectedValue(new Error('Not found'));
      renderPage();

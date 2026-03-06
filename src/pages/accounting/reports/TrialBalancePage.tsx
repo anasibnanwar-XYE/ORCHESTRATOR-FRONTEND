@@ -20,6 +20,7 @@
  import { ExportButton } from '@/components/ui/ExportButton';
  import { reportsApi, type TrialBalanceDto, type TrialBalanceRow } from '@/lib/reportsApi';
  import { useToast } from '@/components/ui/Toast';
+import { exportTrialBalanceCsv, printToPdf } from '@/utils/reportExport';
 
  function formatINR(amount: number): string {
    return new Intl.NumberFormat('en-IN', {
@@ -111,8 +112,16 @@
 
    const handleExport = async (format: 'PDF' | 'CSV') => {
      try {
-       await reportsApi.getTrialBalance({ exportFormat: format });
-       toast.success(`Export ready`, `Trial balance ${format} export has been prepared.`);
+      if (format === 'CSV') {
+        if (!data?.rows?.length) {
+          toast.error('No data to export', 'Load the trial balance first.');
+          return;
+        }
+        exportTrialBalanceCsv(data.rows, 'trial-balance.csv');
+        toast.success('CSV downloaded', 'Trial balance exported as CSV.');
+      } else {
+        printToPdf();
+      }
      } catch {
        toast.error('Export failed', 'Could not export the trial balance. Please try again.');
      }

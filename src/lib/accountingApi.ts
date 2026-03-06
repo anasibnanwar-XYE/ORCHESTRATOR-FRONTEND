@@ -84,15 +84,26 @@
 
  /** Account type per backend AccountType enum */
  /** Account type per backend AccountType enum */
- export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+export type AccountType =
+  | 'ASSET'
+  | 'LIABILITY'
+  | 'EQUITY'
+  | 'REVENUE'
+  | 'EXPENSE'
+  | 'COGS'
+  | 'OTHER_INCOME'
+  | 'OTHER_EXPENSE';
 
- export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-   ASSET: 'Assets',
-   LIABILITY: 'Liabilities',
-   EQUITY: 'Equity',
-   REVENUE: 'Revenue',
-   EXPENSE: 'Expenses',
- };
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  ASSET: 'Assets',
+  LIABILITY: 'Liabilities',
+  EQUITY: 'Equity',
+  REVENUE: 'Revenue',
+  EXPENSE: 'Expenses',
+  COGS: 'Cost of Goods Sold',
+  OTHER_INCOME: 'Other Income',
+  OTHER_EXPENSE: 'Other Expense',
+};
 
  export interface AccountNode {
    id: number;
@@ -163,20 +174,33 @@
    netIncome: number;
  }
 
- export interface AgedReceivablesReport {
-   totalOutstanding: number;
-   current: number;
-   days1to30: number;
-   days31to60: number;
-   days61to90: number;
-   daysOver90: number;
-   dealers?: Array<{
-     dealerId: number;
-     dealerName: string;
-     totalOutstanding: number;
-   }>;
- }
+/** AgingBuckets — matches backend AgingBuckets record */
+export interface AgingBuckets {
+  current: number;
+  days1to30: number;
+  days31to60: number;
+  days61to90: number;
+  over90: number;
+}
 
+/** DealerAgingDetail — per-dealer breakdown in AgedReceivablesReport */
+export interface DealerAgingDetail {
+  dealerId: number;
+  dealerCode: string;
+  dealerName: string;
+  buckets: AgingBuckets;
+  totalOutstanding: number;
+}
+
+/** AgedReceivablesReport — matches backend AgingReportService.AgedReceivablesReport */
+export interface AgedReceivablesReport {
+  asOfDate: string;
+  dealers: DealerAgingDetail[];
+  totalBuckets: AgingBuckets;
+  grandTotal: number;
+  /** @deprecated use grandTotal */
+  totalOutstanding?: number;
+}
  export interface TrialBalanceSnapshot {
    asOfDate: string;
    entries: Array<{
@@ -366,6 +390,26 @@
    code?: string;
    status: string;
  }
+
+/** Light invoice reference for settlement allocation dropdowns */
+export interface InvoiceRef {
+  id: number;
+  invoiceNumber: string;
+  outstandingAmount: number;
+  totalAmount: number;
+  dueDate: string;
+  status: string;
+}
+
+/** Light purchase reference for settlement allocation dropdowns */
+export interface PurchaseRef {
+  id: number;
+  invoiceNumber: string;
+  outstandingAmount: number;
+  totalAmount: number;
+  invoiceDate: string;
+  status: string;
+}
 
  export interface ManualJournalRequest {
    narration?: string;
@@ -757,6 +801,22 @@
      const response = await apiRequest.get<ApiResponse<SupplierResponse[]>>('/suppliers');
      return response.data.data;
    },
+
+  /** GET /api/v1/invoices/dealers/{dealerId} — invoices for a dealer (for allocation dropdowns) */
+  async getDealerInvoices(dealerId: number): Promise<InvoiceRef[]> {
+    const response = await apiRequest.get<ApiResponse<InvoiceRef[]>>(
+      `/invoices/dealers/${dealerId}`
+    );
+    return response.data.data;
+  },
+
+  /** GET /api/v1/purchasing/raw-material-purchases?supplierId={id} — purchases for a supplier */
+  async getSupplierPurchases(supplierId: number): Promise<PurchaseRef[]> {
+    const response = await apiRequest.get<ApiResponse<PurchaseRef[]>>(
+      `/purchasing/raw-material-purchases?supplierId=${supplierId}`
+    );
+    return response.data.data;
+  },
  };
  
  // ─────────────────────────────────────────────────────────────────────────────

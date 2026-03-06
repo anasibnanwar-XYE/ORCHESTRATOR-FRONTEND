@@ -861,7 +861,6 @@ function AppRouter() {
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="notifications" element={<AdminNotificationsPage />} />
             <Route path="changelog" element={<AdminChangelogPage />} />
-            <Route path="*" element={<AdminDashboardPage />} />
            <Route path="approvals" element={<AdminApprovalsPage />} />
            <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
            <Route path="orchestrator" element={<AdminOrchestratorDashboardPage />} />
@@ -869,6 +868,7 @@ function AppRouter() {
            <Route path="audit-trail" element={<AdminAuditTrailPage />} />
            <Route path="tenant-runtime" element={<AdminTenantRuntimePage />} />
            <Route path="operations-control" element={<AdminOperationsControlPage />} />
+           <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 
           {/* ── Accounting portal ──────────────────────────────────── */}
@@ -913,11 +913,11 @@ function AppRouter() {
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="leave" element={<LeaveRequestsPage />} />
             <Route path="payroll" element={<PayrollPage />} />
+            <Route path="month-end" element={<MonthEndChecklistPage />} />
+            <Route path="audit-digest" element={<AuditDigestPage />} />
+            <Route path="config-health" element={<ConfigHealthPage />} />
+            <Route path="transaction-audit" element={<TransactionAuditPage />} />
             <Route path="*" element={<AccountingDashboard />} />
-             <Route path="month-end" element={<MonthEndChecklistPage />} />
-             <Route path="audit-digest" element={<AuditDigestPage />} />
-             <Route path="config-health" element={<ConfigHealthPage />} />
-             <Route path="transaction-audit" element={<TransactionAuditPage />} />
           </Route>
 
           {/* ── Sales portal ────────────────────────────────────────── */}
@@ -932,16 +932,15 @@ function AppRouter() {
             <Route index element={<SalesDashboardPage />} />
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="orders/:id" element={<SalesOrderDetailPage />} />
-            <Route path="*" element={<SalesDashboardPage />} />
             <Route path="dealers" element={<SalesDealersPage />} />
             <Route path="credit-requests" element={<SalesCreditRequestsPage />} />
             <Route path="credit-overrides" element={<SalesCreditOverridesPage />} />
-            <Route path="*" element={<SalesDashboardPage />} />
             <Route path="promotions" element={<SalesPromotionsPage />} />
             <Route path="targets" element={<SalesTargetsPage />} />
             <Route path="dispatch" element={<SalesDispatchPage />} />
             <Route path="invoices" element={<SalesInvoicesPage />} />
             <Route path="returns" element={<SalesReturnsPage />} />
+            <Route path="*" element={<SalesDashboardPage />} />
           </Route>
 
           {/* ── Factory portal ──────────────────────────────────────── */}
@@ -957,7 +956,6 @@ function AppRouter() {
             <Route path="production/plans" element={<ProductionPlansPage />} />
             <Route path="production/logs" element={<ProductionLogsPage />} />
             <Route path="production/batches" element={<ProductionBatchesPage />} />
-            <Route path="*" element={<FactoryDashboardPage />} />
             <Route path="packing" element={<PackingPage />} />
             <Route path="config/packaging" element={<PackagingMappingsPage />} />
             <Route path="config/tasks" element={<FactoryTasksPage />} />
@@ -965,6 +963,7 @@ function AppRouter() {
             <Route path="dispatch" element={<FactoryDispatchPage />} />
             <Route path="inventory/finished-goods" element={<FactoryFinishedGoodsPage />} />
             <Route path="inventory/raw-materials" element={<FactoryRawMaterialsPage />} />
+            <Route path="*" element={<FactoryDashboardPage />} />
           </Route>
 
           {/* ── Dealer portal ───────────────────────────────────────── */}
@@ -1001,8 +1000,8 @@ function AppRouter() {
             <Route path="runtime" element={<SuperadminRuntimePage />} />
             <Route path="audit" element={<SuperadminAuditTrailPage />} />
             <Route path="tickets" element={<SuperadminSupportTicketsPage />} />
-            <Route path="*" element={<SuperadminDashboardPage />} />
             <Route path="tickets/:id" element={<SuperadminTicketDetailPage />} />
+            <Route path="*" element={<SuperadminDashboardPage />} />
           </Route>
 
           {/* ── Default ─────────────────────────────────────────────── */}

@@ -29,6 +29,7 @@
  import { Button } from '@/components/ui/Button';
  import { Badge } from '@/components/ui/Badge';
  import { Modal } from '@/components/ui/Modal';
+ import { Input } from '@/components/ui/Input';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { invoicesApi, type InvoiceDto } from '@/lib/reportsApi';
@@ -79,6 +80,12 @@ import { downloadBlob } from '@/utils/mobileUtils';
  function EmailDialog({ isOpen, onClose, invoice }: EmailDialogProps) {
    const toast = useToast();
    const [isSending, setIsSending] = useState(false);
+   const [subject, setSubject] = useState(
+     `Invoice ${invoice.invoiceNumber} from Orchestrator ERP`
+   );
+   const [message, setMessage] = useState(
+     `Dear ${invoice.dealerName},\n\nPlease find attached invoice ${invoice.invoiceNumber} for ${formatINR(invoice.totalAmount)}.\n\nKind regards,\nOrchestrator ERP`
+   );
 
    const handleSend = async () => {
      setIsSending(true);
@@ -98,7 +105,7 @@ import { downloadBlob } from '@/utils/mobileUtils';
        isOpen={isOpen}
        onClose={onClose}
        title="Send Invoice by Email"
-       description={`Send ${invoice.invoiceNumber} to ${invoice.dealerName}`}
+       description={`Compose email for ${invoice.invoiceNumber}`}
        size="md"
        footer={
          <>
@@ -118,25 +125,36 @@ import { downloadBlob } from '@/utils/mobileUtils';
        }
      >
        <div className="space-y-4">
-         <div className="p-3 rounded-lg bg-[var(--color-surface-secondary)] space-y-2">
-           <div className="flex items-center justify-between">
-             <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Recipient</span>
-             <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{invoice.dealerName}</span>
-           </div>
-           <div className="flex items-center justify-between">
-             <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Invoice</span>
-             <span className="text-[13px] tabular-nums text-[var(--color-text-primary)]">{invoice.invoiceNumber}</span>
-           </div>
-           <div className="flex items-center justify-between">
-             <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Amount</span>
-             <span className="text-[13px] tabular-nums font-medium text-[var(--color-text-primary)]">
-               {formatINR(invoice.totalAmount)}
-             </span>
-           </div>
+         {/* Recipient (read-only) */}
+         <div className="p-3 rounded-lg bg-[var(--color-surface-secondary)] flex items-center justify-between gap-3">
+           <span className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] shrink-0">To</span>
+           <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{invoice.dealerName}</span>
          </div>
 
-         <p className="text-[12px] text-[var(--color-text-tertiary)]">
-           The invoice PDF will be attached and sent to the dealer's registered email address.
+         {/* Subject */}
+         <Input
+           label="Subject"
+           value={subject}
+           onChange={(e) => setSubject(e.target.value)}
+           placeholder="Email subject"
+         />
+
+         {/* Message body */}
+         <div className="space-y-1.5">
+           <label className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+             Message
+           </label>
+           <textarea
+             value={message}
+             onChange={(e) => setMessage(e.target.value)}
+             rows={6}
+             placeholder="Write your message..."
+             className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[13px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-neutral-900)] focus:ring-offset-1 transition-shadow"
+           />
+         </div>
+
+         <p className="text-[11px] text-[var(--color-text-tertiary)]">
+           The invoice PDF will be attached automatically.
          </p>
        </div>
      </Modal>

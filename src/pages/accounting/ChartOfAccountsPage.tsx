@@ -49,7 +49,16 @@
  // Helpers
  // ─────────────────────────────────────────────────────────────────────────────
 
- const ACCOUNT_TYPES: AccountType[] = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+const ACCOUNT_TYPES: AccountType[] = [
+  'ASSET',
+  'LIABILITY',
+  'EQUITY',
+  'REVENUE',
+  'EXPENSE',
+  'COGS',
+  'OTHER_INCOME',
+  'OTHER_EXPENSE',
+];
 
  function formatINR(amount: number): string {
    return new Intl.NumberFormat('en-IN', {
@@ -77,12 +86,15 @@
 
  function AccountTypeBadge({ type }: { type: string }) {
    const badgeMap: Record<string, 'success' | 'warning' | 'default' | 'danger'> = {
-     ASSET: 'success',
-     LIABILITY: 'danger',
-     EQUITY: 'warning',
-     REVENUE: 'success',
-     EXPENSE: 'default',
-   };
+    ASSET: 'success',
+    LIABILITY: 'danger',
+    EQUITY: 'warning',
+    REVENUE: 'success',
+    EXPENSE: 'default',
+    COGS: 'warning',
+    OTHER_INCOME: 'success',
+    OTHER_EXPENSE: 'default',
+  };
    return (
      <Badge variant={badgeMap[type] ?? 'default'}>
        {ACCOUNT_TYPE_LABELS[type as AccountType] ?? type}

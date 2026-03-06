@@ -373,7 +373,7 @@
          />
          <KpiCard
            label="Outstanding Receivables"
-           value={receivables ? formatINR(receivables.totalOutstanding) : '—'}
+          value={receivables ? formatINR(receivables.grandTotal) : '—'}
            description="Total unpaid invoices"
            onClick={() => navigate('/accounting/dealers')}
            isLoading={kpiLoading}

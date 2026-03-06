@@ -14,7 +14,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Save, AlertCircle, CheckCircle2, RefreshCcw } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2, RefreshCcw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -216,7 +216,24 @@ export function DefaultAccountsPage() {
             </div>
 
             {/* Divider + Actions */}
-            <div className="pt-3 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
+            {/* System-managed accounts notice */}
+            <div className="rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)] px-4 py-3 flex items-start gap-2.5">
+              <Info size={14} className="text-[var(--color-text-tertiary)] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-[12px] font-medium text-[var(--color-text-secondary)]">
+                  Additional accounts (AR, AP, Retained Earnings)
+                </p>
+                <p className="text-[11px] text-[var(--color-text-tertiary)] leading-relaxed">
+                  Accounts Receivable (AR), Accounts Payable (AP), and Retained Earnings accounts are
+                  resolved automatically by the system from your Chart of Accounts using account type
+                  mappings. Ensure accounts of type <strong>Asset</strong> (AR), <strong>Liability</strong> (AP),
+                  and <strong>Equity</strong> (Retained Earnings) are set up in the Chart of Accounts.
+                </p>
+              </div>
+            </div>
+
+            {/* Divider + Actions */}
+            <div className="pt-1 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
               <p className="text-[11px] text-[var(--color-text-tertiary)]">
                 Changes apply to future automated journal entries only.
               </p>

@@ -29,6 +29,8 @@ import {
   type AccountDto,
   type DealerResponse,
   type SupplierResponse,
+  type InvoiceRef,
+  type PurchaseRef,
 } from '@/lib/accountingApi';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,13 +118,30 @@ function DealerReceiptForm({ dealers, accounts }: DealerReceiptFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dealerInvoices, setDealerInvoices] = useState<InvoiceRef[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  const handleDealerChange = useCallback(async (id: string) => {
+    setDealerId(id);
+    setInvoiceId('');
+    if (!id) { setDealerInvoices([]); return; }
+    setInvoicesLoading(true);
+    try {
+      const inv = await accountingApi.getDealerInvoices(Number(id));
+      setDealerInvoices(inv.filter((i) => i.status !== 'PAID' && Number(i.outstandingAmount) > 0));
+    } catch {
+      setDealerInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!dealerId) errs.dealerId = 'Select a dealer';
     if (!cashAccountId) errs.cashAccountId = 'Select a payment account';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
-    if (!invoiceId) errs.invoiceId = 'Enter an invoice ID to allocate';
+    if (!invoiceId) errs.invoiceId = 'Select an invoice to allocate';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -156,6 +175,7 @@ function DealerReceiptForm({ dealers, accounts }: DealerReceiptFormProps) {
         onReset={() => {
           setResult(null);
           setDealerId(''); setCashAccountId(''); setAmount(''); setInvoiceId(''); setMemo('');
+          setDealerInvoices([]);
         }}
       />
     );
@@ -169,6 +189,13 @@ function DealerReceiptForm({ dealers, accounts }: DealerReceiptFormProps) {
     { value: '', label: 'Select account...' },
     ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
   ];
+  const invoiceOptions = [
+    { value: '', label: invoicesLoading ? 'Loading invoices...' : dealerId ? 'Select invoice...' : 'Select dealer first' },
+    ...dealerInvoices.map((inv) => ({
+      value: String(inv.id),
+      label: `${inv.invoiceNumber} — Outstanding: ₹${Number(inv.outstandingAmount).toLocaleString('en-IN')}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -180,7 +207,7 @@ function DealerReceiptForm({ dealers, accounts }: DealerReceiptFormProps) {
           label="Dealer"
           options={dealerOptions}
           value={dealerId}
-          onChange={(e) => setDealerId(e.target.value)}
+          onChange={(e) => { void handleDealerChange(e.target.value); }}
           error={errors.dealerId}
         />
         <Select
@@ -200,14 +227,13 @@ function DealerReceiptForm({ dealers, accounts }: DealerReceiptFormProps) {
           onChange={(e) => setAmount(e.target.value)}
           error={errors.amount}
         />
-        <Input
-          label="Invoice ID to Allocate"
-          type="number"
-          placeholder="Invoice ID"
+        <Select
+          label="Invoice to Allocate"
+          options={invoiceOptions}
           value={invoiceId}
           onChange={(e) => setInvoiceId(e.target.value)}
           error={errors.invoiceId}
-          hint="Enter the invoice ID this payment is against"
+          disabled={!dealerId || invoicesLoading}
         />
         <div className="sm:col-span-2">
           <Input
@@ -411,13 +437,30 @@ function SupplierPaymentForm({ suppliers, accounts }: SupplierPaymentFormProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [supplierPurchases, setSupplierPurchases] = useState<PurchaseRef[]>([]);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
+
+  const handleSupplierChange = useCallback(async (id: string) => {
+    setSupplierId(id);
+    setPurchaseId('');
+    if (!id) { setSupplierPurchases([]); return; }
+    setPurchasesLoading(true);
+    try {
+      const purchases = await accountingApi.getSupplierPurchases(Number(id));
+      setSupplierPurchases(purchases.filter((p) => Number(p.outstandingAmount) > 0));
+    } catch {
+      setSupplierPurchases([]);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!supplierId) errs.supplierId = 'Select a supplier';
     if (!cashAccountId) errs.cashAccountId = 'Select a payment account';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
-    if (!purchaseId) errs.purchaseId = 'Enter a purchase ID to allocate';
+    if (!purchaseId) errs.purchaseId = 'Select a purchase invoice to allocate';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -451,6 +494,7 @@ function SupplierPaymentForm({ suppliers, accounts }: SupplierPaymentFormProps) 
         onReset={() => {
           setResult(null);
           setSupplierId(''); setCashAccountId(''); setAmount(''); setPurchaseId(''); setMemo('');
+          setSupplierPurchases([]);
         }}
       />
     );
@@ -458,28 +502,35 @@ function SupplierPaymentForm({ suppliers, accounts }: SupplierPaymentFormProps) 
 
   const supplierOptions = [
     { value: '', label: 'Select supplier...' },
-    ...suppliers.map((s) => ({ value: String(s.id), label: `${s.name}${s.code ? ` (${s.code})` : ''}` })),
+    ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
   ];
   const accountOptions = [
     { value: '', label: 'Select account...' },
     ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
   ];
+  const purchaseOptions = [
+    { value: '', label: purchasesLoading ? 'Loading purchases...' : supplierId ? 'Select purchase...' : 'Select supplier first' },
+    ...supplierPurchases.map((p) => ({
+      value: String(p.id),
+      label: `${p.invoiceNumber} — Outstanding: ₹${Number(p.outstandingAmount).toLocaleString('en-IN')}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
       <p className="text-[12px] text-[var(--color-text-tertiary)]">
-        Record a payment to a supplier against a purchase invoice or PO.
+        Record a payment to a supplier against a specific purchase invoice.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
           label="Supplier"
           options={supplierOptions}
           value={supplierId}
-          onChange={(e) => setSupplierId(e.target.value)}
+          onChange={(e) => { void handleSupplierChange(e.target.value); }}
           error={errors.supplierId}
         />
         <Select
-          label="Payment Account (Cash/Bank)"
+          label="Payment Account"
           options={accountOptions}
           value={cashAccountId}
           onChange={(e) => setCashAccountId(e.target.value)}
@@ -495,14 +546,13 @@ function SupplierPaymentForm({ suppliers, accounts }: SupplierPaymentFormProps) 
           onChange={(e) => setAmount(e.target.value)}
           error={errors.amount}
         />
-        <Input
-          label="Purchase ID to Allocate"
-          type="number"
-          placeholder="Purchase ID"
+        <Select
+          label="Purchase Invoice to Allocate"
+          options={purchaseOptions}
           value={purchaseId}
           onChange={(e) => setPurchaseId(e.target.value)}
           error={errors.purchaseId}
-          hint="Enter the purchase invoice ID"
+          disabled={!supplierId || purchasesLoading}
         />
         <div className="sm:col-span-2">
           <Input
@@ -543,11 +593,28 @@ function DealerSettlementForm({ dealers, accounts }: DealerSettlementFormProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ totalApplied: number; refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dealerInvoices, setDealerInvoices] = useState<InvoiceRef[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  const handleDealerChange = useCallback(async (id: string) => {
+    setDealerId(id);
+    setInvoiceId('');
+    if (!id) { setDealerInvoices([]); return; }
+    setInvoicesLoading(true);
+    try {
+      const inv = await accountingApi.getDealerInvoices(Number(id));
+      setDealerInvoices(inv.filter((i) => i.status !== 'PAID' && Number(i.outstandingAmount) > 0));
+    } catch {
+      setDealerInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!dealerId) errs.dealerId = 'Select a dealer';
-    if (!invoiceId) errs.invoiceId = 'Enter an invoice ID';
+    if (!invoiceId) errs.invoiceId = 'Select an invoice';
     if (!allocAmount || Number(allocAmount) <= 0) errs.allocAmount = 'Enter amount';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -578,19 +645,33 @@ function DealerSettlementForm({ dealers, accounts }: DealerSettlementFormProps) 
   if (result) {
     return (
       <SuccessResult
-        message={`Settlement posted. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
+        message={`Dealer settlement created. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
         referenceNumber={result.refNumber}
         onReset={() => {
           setResult(null);
-          setDealerId(''); setCashAccountId(''); setDiscountAccountId('');
-          setInvoiceId(''); setAllocAmount(''); setMemo('');
+          setDealerId(''); setCashAccountId(''); setDiscountAccountId(''); setInvoiceId('');
+          setAllocAmount(''); setSettlementDate(todayISO()); setMemo('');
+          setDealerInvoices([]);
         }}
       />
     );
   }
 
-  const dealerOptions = [{ value: '', label: 'Select dealer...' }, ...dealers.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` }))];
-  const accountOptions = [{ value: '', label: 'None' }, ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` }))];
+  const dealerOptions = [
+    { value: '', label: 'Select dealer...' },
+    ...dealers.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` })),
+  ];
+  const accountOptions = [
+    { value: '', label: 'Select account...' },
+    ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
+  ];
+  const invoiceOptions = [
+    { value: '', label: invoicesLoading ? 'Loading invoices...' : dealerId ? 'Select invoice...' : 'Select dealer first' },
+    ...dealerInvoices.map((inv) => ({
+      value: String(inv.id),
+      label: `${inv.invoiceNumber} — Outstanding: ₹${Number(inv.outstandingAmount).toLocaleString('en-IN')}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -598,11 +679,18 @@ function DealerSettlementForm({ dealers, accounts }: DealerSettlementFormProps) 
         Net unsettled invoices and receipts into a settlement document with journal posting.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Dealer" options={dealerOptions} value={dealerId} onChange={(e) => setDealerId(e.target.value)} error={errors.dealerId} />
+        <Select label="Dealer" options={dealerOptions} value={dealerId} onChange={(e) => { void handleDealerChange(e.target.value); }} error={errors.dealerId} />
         <Select label="Cash/Bank Account (optional)" options={accountOptions} value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)} />
         <Select label="Discount Account (optional)" options={accountOptions} value={discountAccountId} onChange={(e) => setDiscountAccountId(e.target.value)} />
         <Input label="Settlement Date" type="date" value={settlementDate} onChange={(e) => setSettlementDate(e.target.value)} />
-        <Input label="Invoice ID" type="number" placeholder="Invoice ID" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} error={errors.invoiceId} />
+        <Select
+          label="Invoice"
+          options={invoiceOptions}
+          value={invoiceId}
+          onChange={(e) => setInvoiceId(e.target.value)}
+          error={errors.invoiceId}
+          disabled={!dealerId || invoicesLoading}
+        />
         <Input label="Allocation Amount" type="number" min="0.01" step="0.01" placeholder="0.00" value={allocAmount} onChange={(e) => setAllocAmount(e.target.value)} error={errors.allocAmount} />
         <div className="sm:col-span-2">
           <Input label="Memo (optional)" placeholder="Settlement notes..." value={memo} onChange={(e) => setMemo(e.target.value)} />
@@ -637,12 +725,29 @@ function SupplierSettlementForm({ suppliers, accounts }: SupplierSettlementFormP
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ totalApplied: number; refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [supplierPurchases, setSupplierPurchases] = useState<PurchaseRef[]>([]);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
+
+  const handleSupplierChange = useCallback(async (id: string) => {
+    setSupplierId(id);
+    setPurchaseId('');
+    if (!id) { setSupplierPurchases([]); return; }
+    setPurchasesLoading(true);
+    try {
+      const purchases = await accountingApi.getSupplierPurchases(Number(id));
+      setSupplierPurchases(purchases.filter((p) => Number(p.outstandingAmount) > 0));
+    } catch {
+      setSupplierPurchases([]);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!supplierId) errs.supplierId = 'Select a supplier';
     if (!cashAccountId) errs.cashAccountId = 'Select a payment account';
-    if (!purchaseId) errs.purchaseId = 'Enter a purchase ID';
+    if (!purchaseId) errs.purchaseId = 'Select a purchase invoice';
     if (!allocAmount || Number(allocAmount) <= 0) errs.allocAmount = 'Enter amount';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -672,11 +777,13 @@ function SupplierSettlementForm({ suppliers, accounts }: SupplierSettlementFormP
   if (result) {
     return (
       <SuccessResult
-        message={`Settlement posted. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
+        message={`Supplier settlement created. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
         referenceNumber={result.refNumber}
         onReset={() => {
           setResult(null);
-          setSupplierId(''); setCashAccountId(''); setPurchaseId(''); setAllocAmount(''); setMemo('');
+          setSupplierId(''); setCashAccountId(''); setPurchaseId(''); setAllocAmount('');
+          setSettlementDate(todayISO()); setMemo('');
+          setSupplierPurchases([]);
         }}
       />
     );
@@ -684,6 +791,13 @@ function SupplierSettlementForm({ suppliers, accounts }: SupplierSettlementFormP
 
   const supplierOptions = [{ value: '', label: 'Select supplier...' }, ...suppliers.map((s) => ({ value: String(s.id), label: `${s.name}` }))];
   const accountOptions = [{ value: '', label: 'Select account...' }, ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` }))];
+  const purchaseOptions = [
+    { value: '', label: purchasesLoading ? 'Loading purchases...' : supplierId ? 'Select purchase...' : 'Select supplier first' },
+    ...supplierPurchases.map((p) => ({
+      value: String(p.id),
+      label: `${p.invoiceNumber} — Outstanding: ₹${Number(p.outstandingAmount).toLocaleString('en-IN')}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -691,10 +805,17 @@ function SupplierSettlementForm({ suppliers, accounts }: SupplierSettlementFormP
         Settle outstanding supplier invoices with a payment allocation.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Supplier" options={supplierOptions} value={supplierId} onChange={(e) => setSupplierId(e.target.value)} error={errors.supplierId} />
+        <Select label="Supplier" options={supplierOptions} value={supplierId} onChange={(e) => { void handleSupplierChange(e.target.value); }} error={errors.supplierId} />
         <Select label="Payment Account" options={accountOptions} value={cashAccountId} onChange={(e) => setCashAccountId(e.target.value)} error={errors.cashAccountId} />
         <Input label="Settlement Date" type="date" value={settlementDate} onChange={(e) => setSettlementDate(e.target.value)} />
-        <Input label="Purchase ID" type="number" placeholder="Purchase invoice ID" value={purchaseId} onChange={(e) => setPurchaseId(e.target.value)} error={errors.purchaseId} />
+        <Select
+          label="Purchase Invoice"
+          options={purchaseOptions}
+          value={purchaseId}
+          onChange={(e) => setPurchaseId(e.target.value)}
+          error={errors.purchaseId}
+          disabled={!supplierId || purchasesLoading}
+        />
         <Input label="Allocation Amount" type="number" min="0.01" step="0.01" placeholder="0.00" value={allocAmount} onChange={(e) => setAllocAmount(e.target.value)} error={errors.allocAmount} />
         <div className="sm:col-span-2">
           <Input label="Memo (optional)" placeholder="Notes..." value={memo} onChange={(e) => setMemo(e.target.value)} />
@@ -713,8 +834,9 @@ function SupplierSettlementForm({ suppliers, accounts }: SupplierSettlementFormP
 // 6. Credit Note Form
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CreditNoteForm() {
+function CreditNoteForm({ dealers }: { dealers: DealerResponse[]; accounts?: AccountDto[] }) {
   const toast = useToast();
+  const [dealerId, setDealerId] = useState('');
   const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
@@ -722,10 +844,28 @@ function CreditNoteForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dealerInvoices, setDealerInvoices] = useState<InvoiceRef[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  const handleDealerChange = useCallback(async (id: string) => {
+    setDealerId(id);
+    setInvoiceId('');
+    if (!id) { setDealerInvoices([]); return; }
+    setInvoicesLoading(true);
+    try {
+      const inv = await accountingApi.getDealerInvoices(Number(id));
+      setDealerInvoices(inv);
+    } catch {
+      setDealerInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!invoiceId) errs.invoiceId = 'Enter an invoice ID';
+    if (!dealerId) errs.dealerId = 'Select a dealer';
+    if (!invoiceId) errs.invoiceId = 'Select an invoice';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -754,12 +894,28 @@ function CreditNoteForm() {
   if (result) {
     return (
       <SuccessResult
-        message="Credit note created and partner balance updated."
+        message="Credit note created successfully."
         referenceNumber={result.refNumber}
-        onReset={() => { setResult(null); setInvoiceId(''); setAmount(''); setMemo(''); }}
+        onReset={() => {
+          setResult(null);
+          setDealerId(''); setInvoiceId(''); setAmount(''); setMemo(''); setEntryDate(todayISO());
+          setDealerInvoices([]);
+        }}
       />
     );
   }
+
+  const dealerOptions = [
+    { value: '', label: 'Select dealer...' },
+    ...dealers.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` })),
+  ];
+  const invoiceOptions = [
+    { value: '', label: invoicesLoading ? 'Loading invoices...' : dealerId ? 'Select invoice...' : 'Select dealer first' },
+    ...dealerInvoices.map((inv) => ({
+      value: String(inv.id),
+      label: `${inv.invoiceNumber}${inv.outstandingAmount ? ` — ₹${Number(inv.outstandingAmount).toLocaleString('en-IN')}` : ''}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -767,7 +923,15 @@ function CreditNoteForm() {
         Issue a credit against a sales invoice to reduce the dealer's outstanding balance.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Invoice ID" type="number" placeholder="Sales invoice ID" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} error={errors.invoiceId} />
+        <Select label="Dealer" options={dealerOptions} value={dealerId} onChange={(e) => { void handleDealerChange(e.target.value); }} error={errors.dealerId} />
+        <Select
+          label="Invoice"
+          options={invoiceOptions}
+          value={invoiceId}
+          onChange={(e) => setInvoiceId(e.target.value)}
+          error={errors.invoiceId}
+          disabled={!dealerId || invoicesLoading}
+        />
         <Input label="Amount" type="number" min="0.01" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} error={errors.amount} />
         <Input label="Entry Date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
         <div className="sm:col-span-2">
@@ -784,11 +948,10 @@ function CreditNoteForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. Debit Note Form
-// ─────────────────────────────────────────────────────────────────────────────
 
-function DebitNoteForm() {
+function DebitNoteForm({ suppliers }: { suppliers: SupplierResponse[] }) {
   const toast = useToast();
+  const [supplierId, setSupplierId] = useState('');
   const [purchaseId, setPurchaseId] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
@@ -796,10 +959,28 @@ function DebitNoteForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [supplierPurchases, setSupplierPurchases] = useState<PurchaseRef[]>([]);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
+
+  const handleSupplierChange = useCallback(async (id: string) => {
+    setSupplierId(id);
+    setPurchaseId('');
+    if (!id) { setSupplierPurchases([]); return; }
+    setPurchasesLoading(true);
+    try {
+      const purchases = await accountingApi.getSupplierPurchases(Number(id));
+      setSupplierPurchases(purchases);
+    } catch {
+      setSupplierPurchases([]);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!purchaseId) errs.purchaseId = 'Enter a purchase ID';
+    if (!supplierId) errs.supplierId = 'Select a supplier';
+    if (!purchaseId) errs.purchaseId = 'Select a purchase invoice';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -828,12 +1009,28 @@ function DebitNoteForm() {
   if (result) {
     return (
       <SuccessResult
-        message="Debit note created and supplier balance updated."
+        message="Debit note created successfully."
         referenceNumber={result.refNumber}
-        onReset={() => { setResult(null); setPurchaseId(''); setAmount(''); setMemo(''); }}
+        onReset={() => {
+          setResult(null);
+          setSupplierId(''); setPurchaseId(''); setAmount(''); setMemo(''); setEntryDate(todayISO());
+          setSupplierPurchases([]);
+        }}
       />
     );
   }
+
+  const supplierOptions = [
+    { value: '', label: 'Select supplier...' },
+    ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
+  ];
+  const purchaseOptions = [
+    { value: '', label: purchasesLoading ? 'Loading purchases...' : supplierId ? 'Select purchase...' : 'Select supplier first' },
+    ...supplierPurchases.map((p) => ({
+      value: String(p.id),
+      label: `${p.invoiceNumber}${p.totalAmount ? ` — ₹${Number(p.totalAmount).toLocaleString('en-IN')}` : ''}`,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -841,7 +1038,15 @@ function DebitNoteForm() {
         Issue a debit note against a purchase invoice to reduce the supplier's balance.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Purchase Invoice ID" type="number" placeholder="Purchase ID" value={purchaseId} onChange={(e) => setPurchaseId(e.target.value)} error={errors.purchaseId} />
+        <Select label="Supplier" options={supplierOptions} value={supplierId} onChange={(e) => { void handleSupplierChange(e.target.value); }} error={errors.supplierId} />
+        <Select
+          label="Purchase Invoice"
+          options={purchaseOptions}
+          value={purchaseId}
+          onChange={(e) => setPurchaseId(e.target.value)}
+          error={errors.purchaseId}
+          disabled={!supplierId || purchasesLoading}
+        />
         <Input label="Amount" type="number" min="0.01" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} error={errors.amount} />
         <Input label="Entry Date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
         <div className="sm:col-span-2">
@@ -858,15 +1063,10 @@ function DebitNoteForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8. Bad Debt Write-off Form
-// ─────────────────────────────────────────────────────────────────────────────
 
-interface BadDebtFormProps {
-  accounts: AccountDto[];
-}
-
-function BadDebtForm({ accounts }: BadDebtFormProps) {
+function BadDebtForm({ accounts, dealers }: { accounts: AccountDto[]; dealers: DealerResponse[] }) {
   const toast = useToast();
+  const [dealerId, setDealerId] = useState('');
   const [invoiceId, setInvoiceId] = useState('');
   const [expenseAccountId, setExpenseAccountId] = useState('');
   const [amount, setAmount] = useState('');
@@ -875,10 +1075,28 @@ function BadDebtForm({ accounts }: BadDebtFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dealerInvoices, setDealerInvoices] = useState<InvoiceRef[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+
+  const handleDealerChange = useCallback(async (id: string) => {
+    setDealerId(id);
+    setInvoiceId('');
+    if (!id) { setDealerInvoices([]); return; }
+    setInvoicesLoading(true);
+    try {
+      const inv = await accountingApi.getDealerInvoices(Number(id));
+      setDealerInvoices(inv.filter((i) => i.status !== 'PAID'));
+    } catch {
+      setDealerInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!invoiceId) errs.invoiceId = 'Enter an invoice ID';
+    if (!dealerId) errs.dealerId = 'Select a dealer';
+    if (!invoiceId) errs.invoiceId = 'Select an invoice';
     if (!expenseAccountId) errs.expenseAccountId = 'Select bad debt expense account';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
     setErrors(errs);
@@ -909,15 +1127,31 @@ function BadDebtForm({ accounts }: BadDebtFormProps) {
   if (result) {
     return (
       <SuccessResult
-        message="Bad debt written off and journal posted."
+        message="Bad debt written off successfully."
         referenceNumber={result.refNumber}
-        onReset={() => { setResult(null); setInvoiceId(''); setExpenseAccountId(''); setAmount(''); setMemo(''); }}
+        onReset={() => {
+          setResult(null);
+          setDealerId(''); setInvoiceId(''); setExpenseAccountId(''); setAmount('');
+          setMemo(''); setEntryDate(todayISO());
+          setDealerInvoices([]);
+        }}
       />
     );
   }
 
+  const dealerOptions = [
+    { value: '', label: 'Select dealer...' },
+    ...dealers.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` })),
+  ];
+  const invoiceOptions = [
+    { value: '', label: invoicesLoading ? 'Loading invoices...' : dealerId ? 'Select invoice...' : 'Select dealer first' },
+    ...dealerInvoices.map((inv) => ({
+      value: String(inv.id),
+      label: `${inv.invoiceNumber}${inv.outstandingAmount ? ` — ₹${Number(inv.outstandingAmount).toLocaleString('en-IN')} outstanding` : ''}`,
+    })),
+  ];
   const accountOptions = [
-    { value: '', label: 'Select expense account...' },
+    { value: '', label: 'Select account...' },
     ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
   ];
 
@@ -930,7 +1164,15 @@ function BadDebtForm({ accounts }: BadDebtFormProps) {
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Invoice ID" type="number" placeholder="Sales invoice ID" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} error={errors.invoiceId} />
+        <Select label="Dealer" options={dealerOptions} value={dealerId} onChange={(e) => { void handleDealerChange(e.target.value); }} error={errors.dealerId} />
+        <Select
+          label="Invoice"
+          options={invoiceOptions}
+          value={invoiceId}
+          onChange={(e) => setInvoiceId(e.target.value)}
+          error={errors.invoiceId}
+          disabled={!dealerId || invoicesLoading}
+        />
         <Select label="Bad Debt Expense Account" options={accountOptions} value={expenseAccountId} onChange={(e) => setExpenseAccountId(e.target.value)} error={errors.expenseAccountId} />
         <Input label="Amount to Write Off" type="number" min="0.01" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} error={errors.amount} />
         <Input label="Entry Date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
@@ -947,8 +1189,6 @@ function BadDebtForm({ accounts }: BadDebtFormProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 9. Accrual Form
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AccrualFormProps {
@@ -1100,9 +1340,9 @@ export function SettlementsPage() {
       case 'supplier-payment': return <SupplierPaymentForm suppliers={suppliers} accounts={accounts} />;
       case 'dealer-settlement': return <DealerSettlementForm dealers={dealers} accounts={accounts} />;
       case 'supplier-settlement': return <SupplierSettlementForm suppliers={suppliers} accounts={accounts} />;
-      case 'credit-note': return <CreditNoteForm />;
-      case 'debit-note': return <DebitNoteForm />;
-      case 'bad-debt': return <BadDebtForm accounts={accounts} />;
+      case 'credit-note': return <CreditNoteForm dealers={dealers} accounts={accounts} />;
+      case 'debit-note': return <DebitNoteForm suppliers={suppliers} />;
+      case 'bad-debt': return <BadDebtForm accounts={accounts} dealers={dealers} />;
       case 'accrual': return <AccrualForm accounts={accounts} />;
     }
   };
