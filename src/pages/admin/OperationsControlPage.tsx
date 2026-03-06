@@ -80,14 +80,10 @@ import { Switch } from '@/components/ui/Switch';
      if (maintenanceConfirm === null) return;
      setMaintenanceSaving(true);
      try {
-       await operationsControlApi.setMaintenanceMode(maintenanceConfirm);
-       setStatus((prev) => prev ? { ...prev, maintenanceMode: maintenanceConfirm } : prev);
-       toast({
-         title: maintenanceConfirm ? 'Maintenance mode enabled' : 'Maintenance mode disabled',
-        type: 'success',
-       });
+       const nextStatus = await operationsControlApi.setMaintenanceMode(maintenanceConfirm);
+       setStatus(nextStatus);
      } catch {
-      toast({ title: 'Failed to update maintenance mode', type: 'error' });
+       toast({ title: 'Failed to update maintenance mode', type: 'error' });
      } finally {
        setMaintenanceSaving(false);
        setMaintenanceConfirm(null);
@@ -103,22 +99,13 @@ import { Switch } from '@/components/ui/Switch';
      if (!flagConfirm) return;
      setFlagSaving(flagConfirm.key);
      try {
-       await operationsControlApi.toggleFeatureFlag(flagConfirm.key, flagConfirm.enabled);
-       setStatus((prev) => {
-         if (!prev) return prev;
-         return {
-           ...prev,
-           featureFlags: prev.featureFlags.map((f) =>
-             f.key === flagConfirm.key ? { ...f, enabled: flagConfirm.enabled } : f
-           ),
-         };
-       });
-       toast({
-         title: `${flagConfirm.label} ${flagConfirm.enabled ? 'enabled' : 'disabled'}`,
-        type: 'success',
-       });
+       const nextStatus = await operationsControlApi.toggleFeatureFlag(
+         flagConfirm.key,
+         flagConfirm.enabled
+       );
+       setStatus(nextStatus);
      } catch {
-      toast({ title: 'Failed to update feature flag', type: 'error' });
+       toast({ title: 'Failed to update feature flag', type: 'error' });
      } finally {
        setFlagSaving(null);
        setFlagConfirm(null);
@@ -133,13 +120,10 @@ import { Switch } from '@/components/ui/Switch';
    const confirmCachePurge = async () => {
      setCachePurging(true);
      try {
-       await operationsControlApi.purgeCache();
-       setStatus((prev) =>
-         prev ? { ...prev, cacheLastPurged: new Date().toISOString() } : prev
-       );
-      toast({ title: 'Cache purged successfully', type: 'success' });
+       const nextStatus = await operationsControlApi.purgeCache();
+       setStatus(nextStatus);
      } catch {
-      toast({ title: 'Failed to purge cache', type: 'error' });
+       toast({ title: 'Failed to purge cache', type: 'error' });
      } finally {
        setCachePurging(false);
        setCacheConfirm(false);

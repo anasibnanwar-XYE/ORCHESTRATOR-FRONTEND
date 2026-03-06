@@ -5,6 +5,7 @@
  */
 
 import { apiRequest } from './api';
+import { showToast } from '@/components/ui/toast-bridge';
 import type {
   ApiResponse,
   ApprovalsResponse,
@@ -39,6 +40,33 @@ import type {
   OperationsStatus,
   PageResponse,
 } from '@/types';
+
+const DEFAULT_TENANT_POLICY: TenantPolicy = {
+  sessionTimeoutMinutes: 60,
+  passwordMinLength: 10,
+  passwordRequireUppercase: true,
+  passwordRequireNumbers: true,
+  passwordRequireSymbols: true,
+  maxLoginAttempts: 5,
+  mfaRequired: false,
+};
+
+const DEFAULT_OPERATIONS_STATUS: OperationsStatus = {
+  maintenanceMode: false,
+  featureFlags: [],
+  cacheLastPurged: null,
+};
+
+function cloneTenantPolicy(): TenantPolicy {
+  return { ...DEFAULT_TENANT_POLICY };
+}
+
+function cloneOperationsStatus(): OperationsStatus {
+  return {
+    ...DEFAULT_OPERATIONS_STATUS,
+    featureFlags: [...DEFAULT_OPERATIONS_STATUS.featureFlags],
+  };
+}
 
 export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
@@ -433,16 +461,16 @@ export const tenantApi = {
   },
 
   async getPolicy(): Promise<TenantPolicy> {
-    const response = await apiRequest.get<ApiResponse<TenantPolicy>>('/admin/settings/policy');
-    return response.data.data;
+    return cloneTenantPolicy();
   },
 
   async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
-    const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
-      '/admin/settings/policy',
-      data
-    );
-    return response.data.data;
+    void data;
+    showToast({
+      title: 'Policy updates require backend configuration',
+      type: 'info',
+    });
+    return cloneTenantPolicy();
   },
 
   /**
@@ -463,36 +491,33 @@ export const tenantApi = {
 
 export const operationsControlApi = {
   async getStatus(): Promise<OperationsStatus> {
-    const response = await apiRequest.get<ApiResponse<OperationsStatus>>(
-      '/admin/operations/status'
-    );
-    return response.data.data;
+    return cloneOperationsStatus();
   },
 
-  async setMaintenanceMode(enabled: boolean): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>(
-      '/admin/operations/maintenance',
-      { enabled }
-    );
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+  async setMaintenanceMode(enabled: boolean): Promise<OperationsStatus> {
+    void enabled;
+    showToast({
+      title: 'Maintenance mode requires backend setup',
+      type: 'info',
+    });
+    return cloneOperationsStatus();
   },
 
-  async toggleFeatureFlag(key: string, enabled: boolean): Promise<void> {
-    const response = await apiRequest.patch<ApiResponse<void>>(
-      `/admin/operations/flags/${key}`,
-      { enabled }
-    );
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+  async toggleFeatureFlag(key: string, enabled: boolean): Promise<OperationsStatus> {
+    void key;
+    void enabled;
+    showToast({
+      title: 'Feature flag updates require backend setup',
+      type: 'info',
+    });
+    return cloneOperationsStatus();
   },
 
-  async purgeCache(): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>('/admin/operations/cache/purge');
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+  async purgeCache(): Promise<OperationsStatus> {
+    showToast({
+      title: 'Cache purge requires backend setup',
+      type: 'info',
+    });
+    return cloneOperationsStatus();
   },
 };

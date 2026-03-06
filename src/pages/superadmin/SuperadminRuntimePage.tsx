@@ -215,8 +215,9 @@
      if (!draft) return;
      setSaving(true);
      try {
-       await superadminRuntimeApi.updatePolicy(draft);
-       toast({ title: 'Policy updated', type: 'success' });
+       const result = await superadminRuntimeApi.updatePolicy(draft);
+       setPolicy(result);
+       setDraft(result);
      } catch {
        toast({ title: 'Failed to update policy', type: 'error' });
      } finally {

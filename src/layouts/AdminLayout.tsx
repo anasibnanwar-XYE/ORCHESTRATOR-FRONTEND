@@ -29,10 +29,11 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  FileDown,
+  GitBranch,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
- import { FileDown } from 'lucide-react';
- import { GitBranch, Globe, ClipboardList, Server, Sliders } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -75,10 +76,7 @@ const NAV_ITEMS: NavItem[] = [
  // Orchestrator & insights nav items (grouped separately)
  const ORCHESTRATOR_NAV_ITEMS: NavItem[] = [
    { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
-   { label: 'Portal Insights', to: '/admin/portal-insights', icon: Globe },
    { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
-   { label: 'Tenant Runtime', to: '/admin/tenant-runtime', icon: Server },
-   { label: 'Operations Control', to: '/admin/operations-control', icon: Sliders },
  ];
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -99,10 +97,7 @@ const ROUTE_LABELS: Record<string, string> = {
  // Add orchestrator route labels
  Object.assign(ROUTE_LABELS, {
    '/admin/orchestrator': 'Orchestrator',
-   '/admin/portal-insights': 'Portal Insights',
    '/admin/audit-trail': 'Audit Trail',
-   '/admin/tenant-runtime': 'Tenant Runtime',
-   '/admin/operations-control': 'Operations Control',
  });
 
 // ─────────────────────────────────────────────────────────────────────────────

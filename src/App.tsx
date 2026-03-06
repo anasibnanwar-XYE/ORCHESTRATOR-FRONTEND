@@ -378,12 +378,6 @@ const AdminUsersPage = lazy(() =>
      default: m.AuditTrailPage,
    }))
  );
- /** Admin portal — Tenant Runtime */
- const AdminTenantRuntimePage = lazy(() =>
-   import('@/pages/admin/TenantRuntimePage').then((m) => ({
-     default: m.TenantRuntimePage,
-   }))
- );
  /** Admin portal — Operations Control */
  const AdminOperationsControlPage = lazy(() =>
    import('@/pages/admin/OperationsControlPage').then((m) => ({
@@ -870,10 +864,7 @@ function AppRouter() {
            <Route path="approvals" element={<AdminApprovalsPage />} />
            <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
            <Route path="orchestrator" element={<AdminOrchestratorDashboardPage />} />
-           <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
            <Route path="audit-trail" element={<AdminAuditTrailPage />} />
-           <Route path="tenant-runtime" element={<AdminTenantRuntimePage />} />
-           <Route path="operations-control" element={<AdminOperationsControlPage />} />
            <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 
@@ -1004,7 +995,10 @@ function AppRouter() {
             <Route index element={<SuperadminDashboardPage />} />
             <Route path="tenants" element={<SuperadminTenantsPage />} />
             <Route path="roles" element={<SuperadminRolesPage />} />
-            <Route path="runtime" element={<SuperadminRuntimePage />} />
+            <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
+            <Route path="tenant-runtime" element={<SuperadminRuntimePage />} />
+            <Route path="runtime" element={<Navigate to="/superadmin/tenant-runtime" replace />} />
+            <Route path="operations-control" element={<AdminOperationsControlPage />} />
             <Route path="audit" element={<SuperadminAuditTrailPage />} />
             <Route path="tickets" element={<SuperadminSupportTicketsPage />} />
             <Route path="tickets/:id" element={<SuperadminTicketDetailPage />} />

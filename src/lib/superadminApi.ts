@@ -23,6 +23,7 @@
   */
  
  import { apiRequest } from './api';
+ import { showToast } from '@/components/ui/toast-bridge';
  import type {
    ApiResponse,
    PageResponse,
@@ -55,6 +56,20 @@ import type {
   SupportTicketResponse,
   SupportTicketListResponse,
 } from '@/types';
+
+const DEFAULT_TENANT_POLICY: TenantPolicy = {
+  sessionTimeoutMinutes: 60,
+  passwordMinLength: 10,
+  passwordRequireUppercase: true,
+  passwordRequireNumbers: true,
+  passwordRequireSymbols: true,
+  maxLoginAttempts: 5,
+  mfaRequired: false,
+};
+
+function cloneTenantPolicy(): TenantPolicy {
+  return { ...DEFAULT_TENANT_POLICY };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tenant Management — /api/v1/superadmin/tenants/*
@@ -347,16 +362,16 @@ export const superadminRuntimeApi = {
   },
 
   async getPolicy(): Promise<TenantPolicy> {
-    const response = await apiRequest.get<ApiResponse<TenantPolicy>>('/admin/settings/policy');
-    return response.data.data;
+    return cloneTenantPolicy();
   },
 
   async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
-    const response = await apiRequest.put<ApiResponse<TenantPolicy>>(
-      '/admin/settings/policy',
-      data
-    );
-    return response.data.data;
+    void data;
+    showToast({
+      title: 'Policy updates require backend configuration',
+      type: 'info',
+    });
+    return cloneTenantPolicy();
   },
 };
 

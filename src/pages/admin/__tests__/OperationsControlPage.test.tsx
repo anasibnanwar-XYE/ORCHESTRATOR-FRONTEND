@@ -54,9 +54,9 @@
    beforeEach(() => {
      vi.resetAllMocks();
      vi.mocked(operationsControlApi.getStatus).mockResolvedValue(mockStatus);
-     vi.mocked(operationsControlApi.setMaintenanceMode).mockResolvedValue(undefined);
-     vi.mocked(operationsControlApi.toggleFeatureFlag).mockResolvedValue(undefined);
-     vi.mocked(operationsControlApi.purgeCache).mockResolvedValue(undefined);
+     vi.mocked(operationsControlApi.setMaintenanceMode).mockResolvedValue(mockStatus);
+     vi.mocked(operationsControlApi.toggleFeatureFlag).mockResolvedValue(mockStatus);
+     vi.mocked(operationsControlApi.purgeCache).mockResolvedValue(mockStatus);
    });
  
    it('renders the page heading', async () => {

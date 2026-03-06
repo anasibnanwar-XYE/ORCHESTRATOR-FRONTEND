@@ -1098,7 +1098,7 @@ export interface FeatureFlag {
 export interface OperationsStatus {
   maintenanceMode: boolean;
   featureFlags: FeatureFlag[];
-  cacheLastPurged?: string;
+  cacheLastPurged?: string | null;
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Core API Types

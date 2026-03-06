@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, createContext, useContext, useRef, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { clearExternalToast, setExternalToast } from './toast-bridge';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -164,6 +165,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     setToasts((prev) => [...prev, { ...options, id }]);
   }, []);
+
+  useEffect(() => {
+    setExternalToast(addToast);
+
+    return () => {
+      clearExternalToast(addToast);
+    };
+  }, [addToast]);
 
   const ctx: ToastContextValue = {
     toast: addToast,

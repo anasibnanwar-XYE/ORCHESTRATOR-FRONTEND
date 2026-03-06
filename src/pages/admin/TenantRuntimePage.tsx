@@ -216,10 +216,11 @@
      if (!draft) return;
      setSaving(true);
      try {
-       await tenantApi.updatePolicy(draft);
-      toast({ title: 'Policy updated', type: 'success' });
+       const result = await tenantApi.updatePolicy(draft);
+       setPolicy(result);
+       setDraft(result);
      } catch {
-      toast({ title: 'Failed to update policy', type: 'error' });
+       toast({ title: 'Failed to update policy', type: 'error' });
      } finally {
        setSaving(false);
      }
