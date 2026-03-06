@@ -435,6 +435,12 @@ const AdminUsersPage = lazy(() =>
      default: m.SupportTicketsPage,
    }))
  );
+/** Superadmin portal — Ticket Detail */
+const SuperadminTicketDetailPage = lazy(() =>
+  import('@/pages/superadmin/TicketDetailPage').then((m) => ({
+    default: m.TicketDetailPage,
+  }))
+);
 /** Superadmin portal — Runtime Metrics and Policy */
 const SuperadminRuntimePage = lazy(() =>
   import('@/pages/superadmin/SuperadminRuntimePage').then((m) => ({
@@ -795,6 +801,7 @@ function AppRouter() {
             <Route path="audit" element={<SuperadminAuditTrailPage />} />
             <Route path="tickets" element={<SuperadminSupportTicketsPage />} />
             <Route path="*" element={<SuperadminDashboardPage />} />
+            <Route path="tickets/:id" element={<SuperadminTicketDetailPage />} />
           </Route>
 
           {/* ── Default ─────────────────────────────────────────────── */}

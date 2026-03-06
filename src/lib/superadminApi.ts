@@ -40,6 +40,12 @@
    TenantRuntimeMetrics,
    TenantPolicy,
  } from '@/types';
+ import type {
+   SupportTicketDetail,
+   TicketResponseRequest,
+   TicketPriorityRequest,
+   TicketAssignRequest,
+ } from '@/types';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Tenant Management
@@ -252,6 +258,50 @@
      if (!response.data.success) throw new Error(response.data.message);
    },
  };
+
+export const superadminTicketsDetailApi = {
+  /** Get full ticket detail including responses, attachments, and status history */
+  async getTicket(id: string): Promise<SupportTicketDetail> {
+    const response = await apiRequest.get<ApiResponse<SupportTicketDetail>>(`/support/tickets/${id}`);
+    return response.data.data;
+  },
+
+  /** Add a response to a ticket (can be internal note or public reply) */
+  async addResponse(id: string, req: TicketResponseRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/support/tickets/${id}/responses`,
+      req
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /** Update ticket status (IN_PROGRESS, RESOLVED, CLOSED) */
+  async updateStatus(id: string, status: string): Promise<void> {
+    const response = await apiRequest.patch<ApiResponse<void>>(
+      `/support/tickets/${id}/status`,
+      { status }
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /** Update ticket priority */
+  async updatePriority(id: string, req: TicketPriorityRequest): Promise<void> {
+    const response = await apiRequest.patch<ApiResponse<void>>(
+      `/support/tickets/${id}/priority`,
+      req
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /** Assign a support agent to this ticket */
+  async assignAgent(id: string, req: TicketAssignRequest): Promise<void> {
+    const response = await apiRequest.patch<ApiResponse<void>>(
+      `/support/tickets/${id}/assign`,
+      req
+    );
+    if (!response.data.success) throw new Error(response.data.message);
+  },
+};
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Re-export tenant runtime and policy (same endpoints as admin)

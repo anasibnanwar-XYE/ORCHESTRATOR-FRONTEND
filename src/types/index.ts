@@ -533,3 +533,62 @@ export interface ApiErrorBody {
    description?: string;
    responses?: Array<{ author: string; message: string; createdAt: string }>;
  }
+
+/** Ticket priority levels */
+export type TicketPriority = SupportTicket['priority'];
+
+/** Ticket response/message in a conversation thread */
+export interface TicketResponse {
+  id: string;
+  author: string;
+  authorRole?: 'SUPPORT_AGENT' | 'SUPERADMIN' | 'TENANT_USER';
+  message: string;
+  isInternal?: boolean;
+  createdAt: string;
+}
+
+/** Ticket attachment */
+export interface TicketAttachment {
+  id: string;
+  filename: string;
+  url: string;
+  contentType?: string;
+  sizeBytes?: number;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+/** Ticket status history entry */
+export interface TicketStatusHistory {
+  id: string;
+  fromStatus?: string;
+  toStatus: string;
+  changedBy: string;
+  changedAt: string;
+  reason?: string;
+}
+
+/** Full ticket detail (extended SupportTicket for detail view) */
+export interface SupportTicketDetail extends SupportTicket {
+  description: string;
+  assignedAgent?: string;
+  responses: TicketResponse[];
+  attachments: TicketAttachment[];
+  statusHistory: TicketStatusHistory[];
+}
+
+/** Request body for adding a response to a ticket */
+export interface TicketResponseRequest {
+  message: string;
+  isInternal?: boolean;
+}
+
+/** Request body for updating ticket priority */
+export interface TicketPriorityRequest {
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+/** Request body for assigning an agent to a ticket */
+export interface TicketAssignRequest {
+  agentEmail: string;
+}
