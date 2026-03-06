@@ -1,3 +1,133 @@
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Sales Types
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ /** Order status canonical values */
+ export type SalesOrderStatus =
+   | 'DRAFT'
+   | 'RESERVED'
+   | 'PENDING_PRODUCTION'
+   | 'PENDING_INVENTORY'
+   | 'READY_TO_SHIP'
+   | 'PROCESSING'
+   | 'CONFIRMED'
+   | 'DISPATCHED'
+   | 'INVOICED'
+   | 'SETTLED'
+   | 'CLOSED'
+   | 'CANCELLED';
+ 
+ /** Line item within a sales order */
+ export interface SalesOrderItemDto {
+   id?: number;
+   productCode: string;
+   description?: string;
+   quantity: number;
+   unitPrice: number;
+   gstRate?: number;
+   lineSubtotal?: number;
+   lineTax?: number;
+   lineTotal?: number;
+   cgstAmount?: number;
+   sgstAmount?: number;
+   igstAmount?: number;
+ }
+ 
+ /** Order timeline history entry */
+ export interface SalesOrderStatusHistoryDto {
+   id: number;
+   fromStatus?: string;
+   toStatus: string;
+   reasonCode?: string;
+   reason?: string;
+   changedBy: string;
+   changedAt: string;
+ }
+ 
+ /** Full sales order DTO from API */
+ export interface SalesOrderDto {
+   id: number;
+   publicId?: string;
+   orderNumber: string;
+   status: SalesOrderStatus;
+   totalAmount: number;
+   subtotalAmount?: number;
+   gstTotal?: number;
+   gstRate?: number;
+   gstTreatment?: string;
+   gstInclusive?: boolean;
+   gstRoundingAdjustment?: number;
+   currency?: string;
+   dealerId?: number;
+   dealerName?: string;
+   traceId?: string;
+   createdAt: string;
+   updatedAt?: string;
+   items: SalesOrderItemDto[];
+   timeline?: SalesOrderStatusHistoryDto[];
+ }
+ 
+ /** Request to create or update a sales order */
+ export interface SalesOrderRequest {
+   dealerId: number;
+   totalAmount: number;
+   currency?: string;
+   gstTreatment?: 'NONE' | 'PER_ITEM' | 'ORDER_TOTAL';
+   gstRate?: number;
+   gstInclusive?: boolean;
+   items: {
+     productCode: string;
+     description?: string;
+     quantity: number;
+     unitPrice: number;
+     gstRate?: number;
+   }[];
+ }
+ 
+ /** Cancel order request */
+ export interface CancelOrderRequest {
+   reasonCode: string;
+   reason?: string;
+ }
+ 
+ /** Filters for searching orders */
+ export interface SalesOrderSearchFilters {
+   status?: string;
+   dealerId?: number;
+   orderNumber?: string;
+   fromDate?: string;
+   toDate?: string;
+   page?: number;
+   size?: number;
+ }
+ 
+ /** Dealer lookup response from search API */
+ export interface DealerLookupResponse {
+   id: number;
+   name: string;
+   code: string;
+   contactEmail?: string;
+   contactPhone?: string;
+   stateCode?: string;
+   gstNumber?: string;
+   gstRegistrationType?: 'REGULAR' | 'COMPOSITION' | 'UNREGISTERED';
+   paymentTerms?: 'NET_30' | 'NET_60' | 'NET_90';
+   region?: string;
+   creditStatus?: 'WITHIN_LIMIT' | 'NEAR_LIMIT' | 'OVER_LIMIT';
+   status?: string;
+   creditLimit?: number;
+   outstandingAmount?: number;
+ }
+ 
+ /** Sales dashboard computed metrics */
+ export interface SalesDashboardMetrics {
+   totalOrders: number;
+   revenue: number;
+   outstandingReceivables: number;
+   pendingDispatches: number;
+   activeOrders: number;
+ }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Orchestrator Dashboard Types

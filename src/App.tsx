@@ -447,6 +447,29 @@ const SuperadminRuntimePage = lazy(() =>
     default: m.SuperadminRuntimePage,
   }))
 );
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Lazy-loaded Sales portal pages
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ /** Sales portal — Dashboard */
+ const SalesDashboardPage = lazy(() =>
+   import('@/pages/sales/SalesDashboardPage').then((m) => ({
+     default: m.SalesDashboardPage,
+   }))
+ );
+ /** Sales portal — Orders list */
+ const SalesOrdersPage = lazy(() =>
+   import('@/pages/sales/SalesOrdersPage').then((m) => ({
+     default: m.SalesOrdersPage,
+   }))
+ );
+ /** Sales portal — Order detail */
+ const SalesOrderDetailPage = lazy(() =>
+   import('@/pages/sales/OrderDetailPage').then((m) => ({
+     default: m.OrderDetailPage,
+   }))
+ );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
@@ -755,8 +778,10 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Sales" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Sales" />} />
+            <Route index element={<SalesDashboardPage />} />
+            <Route path="orders" element={<SalesOrdersPage />} />
+            <Route path="orders/:id" element={<SalesOrderDetailPage />} />
+            <Route path="*" element={<SalesDashboardPage />} />
           </Route>
 
           {/* ── Factory portal ──────────────────────────────────────── */}
