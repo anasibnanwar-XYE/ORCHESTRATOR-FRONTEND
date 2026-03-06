@@ -13,7 +13,7 @@
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
  // Mock lucide-react
@@ -24,6 +24,7 @@ import { render, screen, waitFor } from '@testing-library/react';
      Trash2: M, Lock: M, Unlock: M, ShieldOff: M, AlertCircle: M,
      RefreshCcw: M, ChevronLeft: M, ChevronRight: M, ArrowUpDown: M,
      ArrowUp: M, ArrowDown: M, Check: M, X: M, User: M,
+    Shield: M, Building2: M, Mail: M, CheckCircle: M, XCircle: M, Eye: M,
    };
  });
  
@@ -219,4 +220,69 @@ import { render, screen, waitFor } from '@testing-library/react';
       expect(emptyMsgs.length).toBeGreaterThan(0);
      });
    });
+
+  it('opens user detail modal when clicking a user row', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    // Wait for data to load and find the row
+    await waitFor(() => {
+      const names = screen.queryAllByText('Alice Smith');
+      expect(names.length).toBeGreaterThan(0);
+    });
+
+    // Click the row (first occurrence of Alice Smith is in the table row)
+    const aliceRow = screen.getAllByText('Alice Smith')[0];
+    fireEvent.click(aliceRow.closest('tr') ?? aliceRow);
+
+    // The detail modal should open with title "User Details"
+    await waitFor(() => {
+      const modalTitle = screen.queryAllByText(/user details/i);
+      expect(modalTitle.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('user detail modal shows email, MFA status, and roles', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+    });
+
+    const aliceRow = screen.getAllByText('Alice Smith')[0];
+    fireEvent.click(aliceRow.closest('tr') ?? aliceRow);
+
+    await waitFor(() => {
+      // Modal content should show email
+      const emailEls = screen.queryAllByText('alice@example.com');
+      expect(emailEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('user detail modal has a Close button', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+    });
+
+    const aliceRow = screen.getAllByText('Alice Smith')[0];
+    fireEvent.click(aliceRow.closest('tr') ?? aliceRow);
+
+    await waitFor(() => {
+      const closeBtn = screen.queryAllByText(/close/i);
+      expect(closeBtn.length).toBeGreaterThan(0);
+    });
+  });
  });

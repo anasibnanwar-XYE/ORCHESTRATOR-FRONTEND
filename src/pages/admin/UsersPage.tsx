@@ -5,6 +5,7 @@
   *  - Paginated DataTable with search/filter (email, display name, role, status)
   *  - Create user form modal (email, displayName, roles multi-select, companies multi-select)
   *  - Update user form modal
+  *  - View/detail modal (read-only) shown on row click or View action
   *  - Delete with ConfirmDialog danger variant
   *  - Suspend/unsuspend toggle with confirmation
   *  - Force-disable MFA action with confirmation
@@ -16,6 +17,12 @@
    MoreHorizontal,
    AlertCircle,
    RefreshCcw,
+  Shield,
+   Building2,
+   Mail,
+   User,
+   CheckCircle,
+   XCircle,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
@@ -42,6 +49,8 @@
    mfaEnabled: boolean;
    enabled: boolean;
    companies: string[];
+   createdAt?: string;
+   lastLogin?: string;
  }
  
  interface UserFormData {
@@ -68,6 +77,21 @@
      .replace(/_/g, ' ')
      .toLowerCase()
      .replace(/\b\w/g, (c) => c.toUpperCase());
+ }
+ 
+ function formatDate(iso?: string): string {
+   if (!iso) return '—';
+   try {
+     return new Date(iso).toLocaleString('en-IN', {
+       day: '2-digit',
+       month: 'short',
+       year: 'numeric',
+       hour: '2-digit',
+       minute: '2-digit',
+     });
+   } catch {
+     return iso;
+   }
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -120,6 +144,182 @@
          )}
        </div>
      </div>
+   );
+ }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // User Detail Modal (read-only)
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ interface UserDetailModalProps {
+   user: AdminUser | null;
+   onClose: () => void;
+   onEdit: (user: AdminUser) => void;
+ }
+ 
+ function UserDetailField({
+   icon,
+   label,
+   value,
+ }: {
+   icon: React.ReactNode;
+   label: string;
+   value: React.ReactNode;
+ }) {
+   return (
+     <div className="flex items-start gap-3">
+       <div className="mt-0.5 h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)] shrink-0">
+         {icon}
+       </div>
+       <div className="flex-1 min-w-0">
+         <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
+           {label}
+         </p>
+         <div className="text-[13px] text-[var(--color-text-primary)]">{value}</div>
+       </div>
+     </div>
+   );
+ }
+ 
+ function UserDetailModal({ user, onClose, onEdit }: UserDetailModalProps) {
+   if (!user) return null;
+ 
+   return (
+     <Modal
+       isOpen={user !== null}
+       onClose={onClose}
+       title="User Details"
+       size="md"
+       footer={
+         <>
+           <Button variant="secondary" size="sm" onClick={onClose}>
+             Close
+           </Button>
+           <Button
+             size="sm"
+             onClick={() => {
+               onClose();
+               onEdit(user);
+             }}
+           >
+             Edit User
+           </Button>
+         </>
+       }
+     >
+       <div className="space-y-4">
+         {/* Avatar / name row */}
+         <div className="flex items-center gap-3 pb-4 border-b border-[var(--color-border-subtle)]">
+           <div className="h-10 w-10 rounded-full bg-[var(--color-surface-secondary)] flex items-center justify-center text-[14px] font-semibold text-[var(--color-text-secondary)] shrink-0">
+             {user.displayName.charAt(0).toUpperCase()}
+           </div>
+           <div className="flex-1 min-w-0">
+             <p className="font-semibold text-[15px] text-[var(--color-text-primary)] truncate">
+               {user.displayName}
+             </p>
+             <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">{user.email}</p>
+           </div>
+           <Badge variant={user.enabled ? 'success' : 'danger'} dot>
+             {user.enabled ? 'Active' : 'Suspended'}
+           </Badge>
+         </div>
+ 
+         <UserDetailField
+           icon={<Mail size={13} />}
+           label="Email"
+           value={<span className="break-all">{user.email}</span>}
+         />
+ 
+         <UserDetailField
+           icon={<User size={13} />}
+           label="Display Name"
+           value={user.displayName}
+         />
+ 
+         <UserDetailField
+           icon={<Shield size={13} />}
+           label="Roles"
+           value={
+             user.roles.length === 0 ? (
+               <span className="text-[var(--color-text-tertiary)]">No roles assigned</span>
+             ) : (
+               <div className="flex flex-wrap gap-1 mt-0.5">
+                 {user.roles.map((r) => (
+                   <span
+                     key={r}
+                     className="inline-block px-2 py-0.5 text-[11px] rounded-md bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]"
+                   >
+                     {formatRole(r)}
+                   </span>
+                 ))}
+               </div>
+             )
+           }
+         />
+ 
+         <UserDetailField
+           icon={<Building2 size={13} />}
+           label="Companies"
+           value={
+             user.companies.length === 0 ? (
+               <span className="text-[var(--color-text-tertiary)]">No companies assigned</span>
+             ) : (
+               <div className="flex flex-wrap gap-1 mt-0.5">
+                 {user.companies.map((c) => (
+                   <span
+                     key={c}
+                     className="inline-block px-2 py-0.5 text-[11px] rounded-md bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]"
+                   >
+                     {c}
+                   </span>
+                 ))}
+               </div>
+             )
+           }
+         />
+ 
+         <UserDetailField
+           icon={user.mfaEnabled ? <CheckCircle size={13} /> : <XCircle size={13} />}
+           label="MFA Status"
+           value={
+             <span
+               className={
+                 user.mfaEnabled
+                   ? 'text-[var(--color-success)]'
+                   : 'text-[var(--color-text-tertiary)]'
+               }
+             >
+               {user.mfaEnabled ? 'Enabled' : 'Not enabled'}
+             </span>
+           }
+         />
+ 
+         {(user.createdAt || user.lastLogin) && (
+           <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border-subtle)]">
+             {user.createdAt && (
+               <div>
+                 <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
+                   Created
+                 </p>
+                 <p className="text-[12px] text-[var(--color-text-secondary)]">
+                   {formatDate(user.createdAt)}
+                 </p>
+               </div>
+             )}
+             {user.lastLogin && (
+               <div>
+                 <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
+                   Last Login
+                 </p>
+                 <p className="text-[12px] text-[var(--color-text-secondary)]">
+                   {formatDate(user.lastLogin)}
+                 </p>
+               </div>
+             )}
+           </div>
+         )}
+       </div>
+     </Modal>
    );
  }
  
@@ -226,7 +426,7 @@
            label="Roles"
            options={roleOptions}
            value={form.roles}
-           onChange={(roles) => setForm((f) => ({ ...f, roles }))}
+           onChange={(newRoles) => setForm((f) => ({ ...f, roles: newRoles }))}
          />
          <MultiSelect
            label="Companies"
@@ -273,41 +473,44 @@
  
  interface RowActionsProps {
    user: AdminUser;
+   onView: (user: AdminUser) => void;
    onEdit: (user: AdminUser) => void;
    onDelete: (user: AdminUser) => void;
    onSuspend: (user: AdminUser) => void;
    onDisableMfa: (user: AdminUser) => void;
  }
  
- function RowActions({ user, onEdit, onDelete, onSuspend, onDisableMfa }: RowActionsProps) {
-  const items: { label: string; value: string; destructive?: boolean }[] = [
-    { label: 'Edit', value: 'edit' },
-    { label: user.enabled ? 'Suspend' : 'Unsuspend', value: 'suspend' },
-    ...(user.mfaEnabled ? [{ label: 'Disable MFA', value: 'disable-mfa' }] : []),
-    { label: 'Delete', value: 'delete', destructive: true },
-  ];
-
-  const handleSelect = (value: string) => {
-    if (value === 'edit') onEdit(user);
-    else if (value === 'suspend') onSuspend(user);
-    else if (value === 'disable-mfa') onDisableMfa(user);
-    else if (value === 'delete') onDelete(user);
-  };
-
-  return (
-    <DropdownMenu
-      trigger={
-        <button
-          type="button"
-          className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
-        >
-          <MoreHorizontal size={14} />
-        </button>
-      }
-      items={items}
-      onSelect={handleSelect}
-    />
-  );
+ function RowActions({ user, onView, onEdit, onDelete, onSuspend, onDisableMfa }: RowActionsProps) {
+   const items: { label: string; value: string; destructive?: boolean }[] = [
+     { label: 'View', value: 'view' },
+     { label: 'Edit', value: 'edit' },
+     { label: user.enabled ? 'Suspend' : 'Unsuspend', value: 'suspend' },
+     ...(user.mfaEnabled ? [{ label: 'Disable MFA', value: 'disable-mfa' }] : []),
+     { label: 'Delete', value: 'delete', destructive: true },
+   ];
+ 
+   const handleSelect = (value: string) => {
+     if (value === 'view') onView(user);
+     else if (value === 'edit') onEdit(user);
+     else if (value === 'suspend') onSuspend(user);
+     else if (value === 'disable-mfa') onDisableMfa(user);
+     else if (value === 'delete') onDelete(user);
+   };
+ 
+   return (
+     <DropdownMenu
+       trigger={
+         <button
+           type="button"
+           className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
+         >
+           <MoreHorizontal size={14} />
+         </button>
+       }
+       items={items}
+       onSelect={handleSelect}
+     />
+   );
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -326,6 +529,7 @@
    // Modal state
    const [showCreateModal, setShowCreateModal] = useState(false);
    const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+   const [viewingUser, setViewingUser] = useState<AdminUser | null>(null);
  
    // Confirm dialog state
    const [dialog, dispatchDialog] = useReducer(dialogReducer, {
@@ -345,11 +549,11 @@
          adminApi.getRoles(),
          adminApi.getCompanies(),
        ]);
-      setUsers(usersData as unknown as AdminUser[]);
+       setUsers(usersData as unknown as AdminUser[]);
        setRoles(rolesData);
        setCompanies(companiesData);
      } catch {
-       setLoadError("Unable to load users. Please try again.");
+       setLoadError('Unable to load users. Please try again.');
      } finally {
        setIsLoading(false);
      }
@@ -366,7 +570,7 @@
        email: data.email,
        displayName: data.displayName,
        roles: data.roles,
-      companyIds: data.companyIds,
+       companyIds: data.companyIds,
      };
      try {
        await adminApi.createUser(payload);
@@ -385,7 +589,7 @@
      const payload: UpdateUserRequest = {
        displayName: data.displayName,
        roles: data.roles,
-      companyIds: data.companyIds,
+       companyIds: data.companyIds,
      };
      try {
        await adminApi.updateUser(editingUser.id, payload);
@@ -503,10 +707,7 @@
        id: 'status',
        header: 'Status',
        accessor: (row) => (
-         <Badge
-           variant={row.enabled ? 'success' : 'danger'}
-           dot
-         >
+         <Badge variant={row.enabled ? 'success' : 'danger'} dot>
            {row.enabled ? 'Active' : 'Suspended'}
          </Badge>
        ),
@@ -575,11 +776,7 @@
              Manage system users, roles, and access control
            </p>
          </div>
-         <Button
-           size="sm"
-           leftIcon={<Plus />}
-           onClick={() => setShowCreateModal(true)}
-         >
+         <Button size="sm" leftIcon={<Plus />} onClick={() => setShowCreateModal(true)}>
            Add User
          </Button>
        </div>
@@ -601,7 +798,7 @@
        )}
  
        {/* ── Users Table ─────────────────────────────────────────────── */}
-       <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden">
+       <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
          <DataTable<AdminUser>
            columns={columns}
            data={users}
@@ -616,9 +813,11 @@
            }
            isLoading={isLoading}
            emptyMessage="No users yet. Create the first user to get started."
+           onRowClick={(row) => setViewingUser(row)}
            rowActions={(row) => (
              <RowActions
                user={row}
+               onView={(u) => setViewingUser(u)}
                onEdit={(u) => setEditingUser(u)}
                onDelete={(u) => dispatchDialog({ type: 'open', dialogType: 'delete', user: u })}
                onSuspend={(u) =>
@@ -635,6 +834,13 @@
            )}
          />
        </div>
+ 
+       {/* ── User Detail Modal ────────────────────────────────────────── */}
+       <UserDetailModal
+         user={viewingUser}
+         onClose={() => setViewingUser(null)}
+         onEdit={(u) => setEditingUser(u)}
+       />
  
        {/* ── Create User Modal ────────────────────────────────────────── */}
        <UserFormModal

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback, type ReactElement } from 'react';
+import { useState, useRef, useEffect, useCallback, type ReactElement, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 
 interface DropdownItem {
@@ -20,37 +21,56 @@ interface DropdownMenuProps {
 export function DropdownMenu({ trigger, items, onSelect, align = 'right', className }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
   const close = useCallback(() => setOpen(false), []);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const top = rect.bottom + window.scrollY + 6;
+    setMenuStyle(
+      align === 'right'
+        ? { position: 'absolute', top, left: rect.right + window.scrollX, transform: 'translateX(-100%)' }
+        : { position: 'absolute', top, left: rect.left + window.scrollX },
+    );
+  }, [align]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) close();
+      const target = e.target as Node;
+      if (!ref.current?.contains(target) && !triggerRef.current?.contains(target)) close();
     };
     const keyHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
     };
     document.addEventListener('mousedown', handler);
     document.addEventListener('keydown', keyHandler);
+    const scrollHandler = () => { updatePosition(); };
+    window.addEventListener('scroll', scrollHandler, true);
+    window.addEventListener('resize', scrollHandler);
     return () => {
       document.removeEventListener('mousedown', handler);
       document.removeEventListener('keydown', keyHandler);
+      window.removeEventListener('scroll', scrollHandler, true);
+      window.removeEventListener('resize', scrollHandler);
     };
-  }, [open, close]);
+  }, [open, close, updatePosition]);
 
   return (
-    <div ref={ref} className={clsx('relative inline-flex', className)}>
-      <div onClick={() => setOpen(!open)}>{trigger}</div>
-      {open && (
+    <div ref={ref} className={clsx('inline-flex', className)}>
+      <div ref={triggerRef} onClick={() => { updatePosition(); setOpen(!open); }}>{trigger}</div>
+      {open && createPortal(
         <div
           className={clsx(
-            'absolute z-50 mt-1.5 top-full min-w-[180px]',
+            'z-[9999] min-w-[180px]',
             'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
             'rounded-xl py-1',
-            align === 'right' ? 'right-0' : 'left-0',
           )}
           style={{
+            ...menuStyle,
             boxShadow: 'var(--shadow-dropdown)',
             animation: 'o-scale-in 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
             transformOrigin: align === 'right' ? 'top right' : 'top left',
@@ -78,7 +98,8 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

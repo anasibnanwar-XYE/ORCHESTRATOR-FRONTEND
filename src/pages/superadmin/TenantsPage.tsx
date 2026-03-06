@@ -1092,7 +1092,7 @@ const emptyCompanyForm: CompanyDetailsFormData = {
        {/* ── Desktop Table ───────────────────────────────────────────── */}
        {!isLoading && filteredTenants.length > 0 && (
          <>
-           <div className="hidden sm:block overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+           <div className="hidden sm:block rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
              <table className="min-w-full divide-y divide-[var(--color-border-subtle)]">
                <thead>
                  <tr className="bg-[var(--color-surface-secondary)]">
