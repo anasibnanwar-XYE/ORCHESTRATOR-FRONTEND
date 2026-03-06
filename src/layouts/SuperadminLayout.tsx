@@ -116,7 +116,7 @@ function SidebarContent({
               clsx(
                 'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                 isActive
-                  ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
+                 ? 'bg-[var(--color-primary-600)] text-white'
                   : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
               )
             }
@@ -125,8 +125,7 @@ function SidebarContent({
               <>
                 <item.icon
                   size={15}
-                  className={isActive ? 'opacity-70' : 'text-[var(--color-text-tertiary)]'}
-                  style={isActive ? { color: 'var(--color-text-inverse)' } : undefined}
+                 className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
                 />
                 {item.label}
               </>

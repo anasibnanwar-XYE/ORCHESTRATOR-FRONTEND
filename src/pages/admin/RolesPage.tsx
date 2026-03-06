@@ -28,6 +28,32 @@
  import { adminApi } from '@/lib/adminApi';
  import type { Role, CreateRoleRequest } from '@/types';
  
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normalize a permission item to a string.
+ * The API may return either a plain string or an object { id, code, description }.
+ */
+function permToString(perm: unknown): string {
+  if (typeof perm === 'string') return perm;
+  if (perm && typeof perm === 'object') {
+    const p = perm as Record<string, unknown>;
+    if (typeof p.code === 'string') return p.code;
+    if (typeof p.name === 'string') return p.name;
+    if (typeof p.description === 'string') return p.description;
+    if (typeof p.id === 'string') return p.id;
+    if (typeof p.id === 'number') return String(p.id);
+  }
+  return String(perm);
+}
+
+function permKey(perm: unknown, index: number): string {
+  const str = permToString(perm);
+  return str || String(index);
+}
+
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
  // ─────────────────────────────────────────────────────────────────────────────
@@ -196,16 +222,16 @@
                <p className="text-[13px] text-[var(--color-text-tertiary)]">No permissions assigned.</p>
              ) : (
                <div className="flex flex-wrap gap-1.5">
-                 {role.permissions.map((perm) => (
+                 {role.permissions.map((perm, i) => (
                    <span
-                     key={perm}
+                     key={permKey(perm, i)}
                      className={clsx(
                        'inline-flex items-center px-2 py-1 rounded-md',
                        'text-[11px] font-mono font-medium',
                        'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]',
                      )}
                    >
-                     {perm}
+                     {permToString(perm)}
                    </span>
                  ))}
                </div>

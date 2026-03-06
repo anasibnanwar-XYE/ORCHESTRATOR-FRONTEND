@@ -140,6 +140,14 @@ class ApiClient {
           originalRequest &&
           !originalRequest._retry
         ) {
+         // Skip token refresh for public routes (login, logout, password reset, etc.)
+         const isPublicRequest = PUBLIC_ROUTES.some((route) =>
+           originalRequest.url?.endsWith(route) || originalRequest.url?.includes(route + '?')
+         );
+         if (isPublicRequest) {
+           return Promise.reject(error);
+         }
+
           originalRequest._retry = true;
 
           try {

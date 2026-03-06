@@ -75,7 +75,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
     >
       {/* Bottom-sheet on mobile, centered dialog on desktop */}
       <div
-        className="absolute inset-0 bg-[var(--color-overlay)] backdrop-blur-[2px]"
+       className="absolute inset-0 bg-black/50 backdrop-blur-[4px]"
         onClick={onClose}
         style={{ animation: 'fadeIn 200ms ease-out forwards' }}
       />
