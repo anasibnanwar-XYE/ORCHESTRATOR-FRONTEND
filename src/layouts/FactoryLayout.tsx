@@ -91,6 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Packaging Mappings', to: '/factory/config/packaging', icon: SquareStack },
       { label: 'Factory Tasks', to: '/factory/config/tasks', icon: Settings2 },
+      { label: 'Cost Allocation', to: '/factory/cost-allocation', icon: ClipboardList },
     ],
   },
 ];
@@ -117,6 +118,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/factory/config': 'Configuration',
   '/factory/config/packaging': 'Packaging Mappings',
   '/factory/config/tasks': 'Factory Tasks',
+  '/factory/cost-allocation': 'Cost Allocation',
   new: 'New',
   edit: 'Edit',
 };

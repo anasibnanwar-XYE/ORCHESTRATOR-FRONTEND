@@ -21,6 +21,20 @@
    ProductionLogDetailDto,
    RawMaterialDto,
  } from '@/types';
+import type {
+  UnpackedBatchDto,
+  PackingRequest,
+  PackingRecordDto,
+  BulkPackRequest,
+  BulkPackResponse,
+  PackagingSizeMappingDto,
+  PackagingSizeMappingRequest,
+  FactoryTaskDto,
+  FactoryTaskRequest,
+  CostAllocationRequest,
+  CostAllocationResponse,
+  CostBreakdownDto,
+} from '@/types';
  
  export const factoryApi = {
    // ─────────────────────────────────────────────────────────────────────────
@@ -136,4 +150,130 @@
    async getRawMaterials(): Promise<RawMaterialDto[]> {
      return apiData<RawMaterialDto[]>('/accounting/raw-materials');
    },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Packing
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** GET /api/v1/factory/unpacked-batches */
+  async getUnpackedBatches(): Promise<UnpackedBatchDto[]> {
+    return apiData<UnpackedBatchDto[]>('/factory/unpacked-batches');
+  },
+
+  /** POST /api/v1/factory/packing-records */
+  async recordPacking(request: PackingRequest): Promise<ProductionLogDetailDto> {
+    const response = await apiRequest.post<ApiResponse<ProductionLogDetailDto>>(
+      '/factory/packing-records',
+      request,
+      { headers: { 'Idempotency-Key': request.idempotencyKey ?? crypto.randomUUID() } },
+    );
+    return response.data.data;
+  },
+
+  /** POST /api/v1/factory/packing-records/{productionLogId}/complete */
+  async completePacking(productionLogId: number): Promise<ProductionLogDetailDto> {
+    const response = await apiRequest.post<ApiResponse<ProductionLogDetailDto>>(
+      `/factory/packing-records/${productionLogId}/complete`,
+    );
+    return response.data.data;
+  },
+
+  /** GET /api/v1/factory/production-logs/{productionLogId}/packing-history */
+  async getPackingHistory(productionLogId: number): Promise<PackingRecordDto[]> {
+    return apiData<PackingRecordDto[]>(
+      `/factory/production-logs/${productionLogId}/packing-history`,
+    );
+  },
+
+  /** POST /api/v1/factory/pack (bulk-to-sizes) */
+  async bulkPack(request: BulkPackRequest): Promise<BulkPackResponse> {
+    const response = await apiRequest.post<ApiResponse<BulkPackResponse>>(
+      '/factory/pack',
+      request,
+      { headers: { 'Idempotency-Key': request.idempotencyKey ?? crypto.randomUUID() } },
+    );
+    return response.data.data;
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Packaging Size Mappings
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** GET /api/v1/factory/packaging-mappings */
+  async getPackagingMappings(): Promise<PackagingSizeMappingDto[]> {
+    return apiData<PackagingSizeMappingDto[]>('/factory/packaging-mappings');
+  },
+
+  /** POST /api/v1/factory/packaging-mappings */
+  async createPackagingMapping(request: PackagingSizeMappingRequest): Promise<PackagingSizeMappingDto> {
+    const response = await apiRequest.post<ApiResponse<PackagingSizeMappingDto>>(
+      '/factory/packaging-mappings',
+      request,
+    );
+    return response.data.data;
+  },
+
+  /** PUT /api/v1/factory/packaging-mappings/:id */
+  async updatePackagingMapping(id: number, request: PackagingSizeMappingRequest): Promise<PackagingSizeMappingDto> {
+    const response = await apiRequest.put<ApiResponse<PackagingSizeMappingDto>>(
+      `/factory/packaging-mappings/${id}`,
+      request,
+    );
+    return response.data.data;
+  },
+
+  /** DELETE /api/v1/factory/packaging-mappings/:id */
+  async deletePackagingMapping(id: number): Promise<void> {
+    await apiRequest.delete(`/factory/packaging-mappings/${id}`);
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Factory Tasks
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** GET /api/v1/factory/tasks */
+  async getFactoryTasks(): Promise<FactoryTaskDto[]> {
+    return apiData<FactoryTaskDto[]>('/factory/tasks');
+  },
+
+  /** POST /api/v1/factory/tasks */
+  async createFactoryTask(request: FactoryTaskRequest): Promise<FactoryTaskDto> {
+    const response = await apiRequest.post<ApiResponse<FactoryTaskDto>>(
+      '/factory/tasks',
+      request,
+    );
+    return response.data.data;
+  },
+
+  /** PUT /api/v1/factory/tasks/:id */
+  async updateFactoryTask(id: number, request: FactoryTaskRequest): Promise<FactoryTaskDto> {
+    const response = await apiRequest.put<ApiResponse<FactoryTaskDto>>(
+      `/factory/tasks/${id}`,
+      request,
+    );
+    return response.data.data;
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Cost Allocation
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** POST /api/v1/factory/cost-allocation */
+  async allocateCosts(request: CostAllocationRequest): Promise<CostAllocationResponse> {
+    const response = await apiRequest.post<ApiResponse<CostAllocationResponse>>(
+      '/factory/cost-allocation',
+      request,
+    );
+    return response.data.data;
+  },
+
+  /** GET /api/v1/reports/production-logs/{id}/cost-breakdown */
+  async getCostBreakdown(productionLogId: number): Promise<CostBreakdownDto> {
+    return apiData<CostBreakdownDto>(`/reports/production-logs/${productionLogId}/cost-breakdown`);
+  },
+
+  /** GET /api/v1/reports/monthly-production-costs?year=&month= */
+  async getMonthlyCosts(year: number, month: number): Promise<unknown> {
+    return apiData(`/reports/monthly-production-costs?year=${year}&month=${month}`);
+  },
  };

@@ -3,6 +3,248 @@
 // Factory Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Packing Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Unpacked batch from GET /api/v1/factory/unpacked-batches */
+export interface UnpackedBatchDto {
+  id: number;
+  publicId?: string;
+  productionCode?: string;
+  brandName?: string;
+  productName?: string;
+  batchColour?: string;
+  mixedQuantity?: number;
+  packedQuantity?: number;
+  remainingQuantity?: number;
+  unitOfMeasure?: string;
+  status?: ProductionLogStatus;
+  producedAt?: string;
+  createdAt?: string;
+}
+
+/** Single line in a packing record request */
+export interface PackingLineRequest {
+  packagingSize: string;
+  quantityLiters?: number;
+  piecesCount?: number;
+  boxesCount?: number;
+  piecesPerBox?: number;
+}
+
+/** Request to record packing POST /api/v1/factory/packing-records */
+export interface PackingRequest {
+  productionLogId: number;
+  packedDate?: string;
+  packedBy?: string;
+  idempotencyKey?: string;
+  lines: PackingLineRequest[];
+}
+
+/** Packing record DTO from history */
+export interface PackingRecordDto {
+  id?: number;
+  publicId?: string;
+  productionLogId?: number;
+  productionCode?: string;
+  productName?: string;
+  brandName?: string;
+  packedBy?: string;
+  packedDate?: string;
+  createdAt?: string;
+  lines?: PackingRecordLineDto[];
+  sizeVariantId?: number;
+  sizeVariantLabel?: string;
+}
+
+/** Line in a packing record */
+export interface PackingRecordLineDto {
+  id?: number;
+  packagingSize?: string;
+  quantityLiters?: number;
+  piecesCount?: number;
+  boxesCount?: number;
+  sizeVariantId?: number;
+  sizeVariantLabel?: string;
+}
+
+/** Bulk pack line */
+export interface BulkPackLine {
+  childSkuId: number;
+  quantity: number;
+  sizeLabel?: string;
+  unit?: string;
+}
+
+/** Bulk pack material consumption */
+export interface BulkPackMaterialConsumption {
+  materialId: number;
+  quantity: number;
+  unit?: string;
+}
+
+/** Request for POST /api/v1/factory/pack */
+export interface BulkPackRequest {
+  bulkBatchId: number;
+  packs: BulkPackLine[];
+  packagingMaterials?: BulkPackMaterialConsumption[];
+  skipPackagingConsumption?: boolean;
+  packDate?: string;
+  packedBy?: string;
+  notes?: string;
+  idempotencyKey?: string;
+}
+
+/** Child batch DTO from bulk pack response */
+export interface ChildBatchDto {
+  id?: number;
+  publicId?: string;
+  batchCode?: string;
+  skuId?: number;
+  sizeLabel?: string;
+  quantity?: number;
+  unitCost?: number;
+  totalValue?: number;
+  createdAt?: string;
+}
+
+/** Response from POST /api/v1/factory/pack */
+export interface BulkPackResponse {
+  consumedBulkQty?: number;
+  bulkCost?: number;
+  packagingCost?: number;
+  journalEntryId?: number;
+  packedAt?: string;
+  childBatches?: ChildBatchDto[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Packaging Size Mapping Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Packaging size mapping DTO from GET /api/v1/factory/packaging-mappings */
+export interface PackagingSizeMappingDto {
+  id: number;
+  publicId?: string;
+  packagingSize?: string;
+  rawMaterialId?: number;
+  rawMaterialName?: string;
+  unitsPerPack?: number;
+  cartonSize?: number;
+  litersPerUnit?: number;
+  active?: boolean;
+  createdAt?: string;
+}
+
+/** Request to create/update a packaging size mapping */
+export interface PackagingSizeMappingRequest {
+  packagingSize: string;
+  rawMaterialId?: number;
+  unitsPerPack?: number;
+  cartonSize?: number;
+  litersPerUnit?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Factory Task Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Factory task priority */
+export type FactoryTaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/** Factory task status */
+export type FactoryTaskStatus = 'OPEN' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+
+/** Factory task DTO from GET /api/v1/factory/tasks */
+export interface FactoryTaskDto {
+  id: number;
+  publicId?: string;
+  title?: string;
+  description?: string;
+  assignee?: string;
+  priority?: FactoryTaskPriority;
+  status?: FactoryTaskStatus;
+  dueDate?: string;
+  salesOrderId?: number;
+  slipId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Request to create/update a factory task */
+export interface FactoryTaskRequest {
+  title: string;
+  description?: string;
+  assignee?: string;
+  priority?: FactoryTaskPriority;
+  status?: FactoryTaskStatus;
+  dueDate?: string;
+  salesOrderId?: number;
+  slipId?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cost Allocation Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Cost allocation request POST /api/v1/factory/cost-allocation */
+export interface CostAllocationRequest {
+  periodStart?: string;
+  periodEnd?: string;
+  laborCost?: number;
+  overheadCost?: number;
+  targetAccountIds?: number[];
+  notes?: string;
+}
+
+/** Cost allocation response */
+export interface CostAllocationResponse {
+  allocationId?: number;
+  totalAllocated?: number;
+  affectedJournals?: number[];
+  summary?: string;
+  allocatedAt?: string;
+}
+
+/** Cost breakdown DTO from GET /api/v1/reports/production-logs/{id}/cost-breakdown */
+export interface CostBreakdownDto {
+  productionLogId?: number;
+  productionCode?: string;
+  productName?: string;
+  costComponents?: {
+    productionMaterialCost?: number;
+    laborCost?: number;
+    overheadCost?: number;
+    packagingCost?: number;
+    totalCost?: number;
+    mixedQuantity?: number;
+    packedQuantity?: number;
+    blendedUnitCost?: number;
+  };
+  packedBatches?: Array<{
+    packingRecordId?: number;
+    finishedGoodBatchId?: number;
+    finishedGoodCode?: string;
+    finishedGoodName?: string;
+    sizeLabel?: string;
+    packedQuantity?: number;
+    unitCost?: number;
+    totalValue?: number;
+    accountingReference?: string;
+    journalEntryId?: number;
+  }>;
+  rawMaterialTrace?: Array<{
+    movementId?: number;
+    materialName?: string;
+    quantity?: number;
+    unitCost?: number;
+    totalCost?: number;
+    movementType?: string;
+    movedAt?: string;
+  }>;
+}
+
 /** Factory dashboard DTO from GET /api/v1/factory/dashboard */
 export interface FactoryDashboardDto {
   productionEfficiency: number;

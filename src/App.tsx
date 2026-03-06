@@ -543,6 +543,30 @@ const ProductionBatchesPage = lazy(() =>
     default: m.ProductionBatchesPage,
   }))
 );
+/** Factory portal — Packing */
+const PackingPage = lazy(() =>
+  import('@/pages/factory/PackingPage').then((m) => ({
+    default: m.PackingPage,
+  }))
+);
+/** Factory portal — Packaging Mappings */
+const PackagingMappingsPage = lazy(() =>
+  import('@/pages/factory/PackagingMappingsPage').then((m) => ({
+    default: m.PackagingMappingsPage,
+  }))
+);
+/** Factory portal — Factory Tasks */
+const FactoryTasksPage = lazy(() =>
+  import('@/pages/factory/FactoryTasksPage').then((m) => ({
+    default: m.FactoryTasksPage,
+  }))
+);
+/** Factory portal — Cost Allocation */
+const CostAllocationPage = lazy(() =>
+  import('@/pages/factory/CostAllocationPage').then((m) => ({
+    default: m.CostAllocationPage,
+  }))
+);
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -879,6 +903,10 @@ function AppRouter() {
             <Route path="production/logs" element={<ProductionLogsPage />} />
             <Route path="production/batches" element={<ProductionBatchesPage />} />
             <Route path="*" element={<FactoryDashboardPage />} />
+            <Route path="packing" element={<PackingPage />} />
+            <Route path="config/packaging" element={<PackagingMappingsPage />} />
+            <Route path="config/tasks" element={<FactoryTasksPage />} />
+            <Route path="cost-allocation" element={<CostAllocationPage />} />
           </Route>
 
           {/* ── Dealer portal ───────────────────────────────────────── */}
