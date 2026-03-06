@@ -84,16 +84,6 @@ const SuperadminLayout = lazy(() =>
  * Minimal placeholder rendered inside each portal while the
  * actual pages are built in subsequent milestones.
  */
-function PortalPlaceholder({ portal }: { portal: string }) {
-  return (
-    <div className="py-12 text-center">
-      <p className="text-[13px] text-[var(--color-text-secondary)]">
-        {portal} portal — pages coming soon.
-      </p>
-    </div>
-  );
-}
-
 /** Accounting portal — Dashboard */
 const AccountingDashboard = lazy(() =>
   import('@/pages/accounting/AccountingDashboardPage').then((m) => ({
@@ -585,6 +575,53 @@ const CostAllocationPage = lazy(() =>
      default: m.RawMaterialsPage,
    }))
  );
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Lazy-loaded Dealer portal pages
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ /** Dealer portal — Dashboard */
+ const DealerDashboardPage = lazy(() =>
+   import('@/pages/dealer/DealerDashboardPage').then((m) => ({
+     default: m.DealerDashboardPage,
+   }))
+ );
+ /** Dealer portal — My Orders */
+ const DealerOrdersPage = lazy(() =>
+   import('@/pages/dealer/DealerOrdersPage').then((m) => ({
+     default: m.DealerOrdersPage,
+   }))
+ );
+ /** Dealer portal — My Invoices */
+ const DealerInvoicesPage = lazy(() =>
+   import('@/pages/dealer/DealerInvoicesPage').then((m) => ({
+     default: m.DealerInvoicesPage,
+   }))
+ );
+ /** Dealer portal — My Ledger */
+ const DealerLedgerPage = lazy(() =>
+   import('@/pages/dealer/DealerLedgerPage').then((m) => ({
+     default: m.DealerLedgerPage,
+   }))
+ );
+ /** Dealer portal — My Aging */
+ const DealerAgingPage = lazy(() =>
+   import('@/pages/dealer/DealerAgingPage').then((m) => ({
+     default: m.DealerAgingPage,
+   }))
+ );
+ /** Dealer portal — Credit Requests */
+ const DealerCreditRequestsPage = lazy(() =>
+   import('@/pages/dealer/DealerCreditRequestsPage').then((m) => ({
+     default: m.DealerCreditRequestsPage,
+   }))
+ );
+ /** Dealer portal — Support Tickets */
+ const DealerSupportTicketsPage = lazy(() =>
+   import('@/pages/dealer/DealerSupportTicketsPage').then((m) => ({
+     default: m.DealerSupportTicketsPage,
+   }))
+ );
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -939,8 +976,14 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Dealer" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Dealer" />} />
+            <Route index element={<DealerDashboardPage />} />
+            <Route path="orders" element={<DealerOrdersPage />} />
+            <Route path="invoices" element={<DealerInvoicesPage />} />
+            <Route path="ledger" element={<DealerLedgerPage />} />
+            <Route path="aging" element={<DealerAgingPage />} />
+            <Route path="credit-requests" element={<DealerCreditRequestsPage />} />
+            <Route path="support" element={<DealerSupportTicketsPage />} />
+            <Route path="*" element={<DealerDashboardPage />} />
           </Route>
 
           {/* ── Superadmin portal (isolated) ───────────────────────── */}

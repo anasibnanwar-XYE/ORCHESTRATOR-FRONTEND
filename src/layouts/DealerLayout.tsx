@@ -2,7 +2,7 @@
  * DealerLayout — shell for the Dealer self-service portal.
  *
  * Nav items:
- *  Dashboard, My Orders, Invoices, Ledger, Aging, Credit Requests, Profile
+ *  Dashboard, My Orders, Invoices, Ledger, Aging, Credit Requests, Support, Profile
  *
  * Note: Dealers are external clients, so this portal has a simpler nav
  * and no "Back to hub" (dealers always have exactly one role).
@@ -23,6 +23,7 @@ import {
   Clock,
   CreditCard,
   User,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -53,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Ledger', to: '/dealer/ledger', icon: BookOpen },
   { label: 'Aging', to: '/dealer/aging', icon: Clock },
   { label: 'Credit Requests', to: '/dealer/credit-requests', icon: CreditCard },
+  { label: 'Support', to: '/dealer/support', icon: LifeBuoy },
   { label: 'Profile', to: '/dealer/profile', icon: User },
 ];
 
@@ -63,6 +65,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/dealer/ledger': 'Ledger',
   '/dealer/aging': 'Aging',
   '/dealer/credit-requests': 'Credit Requests',
+  '/dealer/support': 'Support',
   '/dealer/profile': 'Profile',
   new: 'New',
 };

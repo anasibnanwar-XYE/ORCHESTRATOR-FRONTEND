@@ -1775,3 +1775,89 @@ export interface RawMaterialIntakeRequest {
   manufacturingDate?: string;
   notes?: string;
 }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Dealer Portal Types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** Dealer portal dashboard summary */
+ export interface DealerPortalDashboard {
+   totalOrders?: number;
+   outstandingBalance?: number;
+   lastPaymentDate?: string;
+   availableCredit?: number;
+   pendingRequests?: number;
+   creditLimit?: number;
+   creditStatus?: string;
+ }
+
+ /** Dealer portal order (read-only) */
+ export interface DealerPortalOrder {
+   id?: number;
+   orderNumber?: string;
+   createdAt?: string;
+   status?: string;
+   totalAmount?: number;
+   paymentStatus?: string;
+ }
+
+ /** Dealer portal invoice */
+ export interface DealerPortalInvoice {
+   id?: number;
+   invoiceNumber?: string;
+   issueDate?: string;
+   subtotal?: number;
+   taxTotal?: number;
+   totalAmount?: number;
+   status?: string;
+   outstandingAmount?: number;
+   dueDate?: string;
+ }
+
+ /** Dealer portal ledger entry */
+ export interface DealerPortalLedgerEntry {
+   date?: string;
+   reference?: string;
+   description?: string;
+   type?: string;
+   debit?: number;
+   credit?: number;
+   balance?: number;
+ }
+
+ /** Dealer portal aging report */
+ export interface DealerPortalAging {
+   totalOutstanding?: number;
+   current?: number;
+   days1to30?: number;
+   days31to60?: number;
+   days61to90?: number;
+   over90?: number;
+   lineItems?: AgingLineItem[];
+ }
+
+ /** Request to create a credit request from the dealer portal */
+ export interface DealerPortalCreditRequestCreate {
+   amountRequested: number;
+   reason?: string;
+ }
+
+ /** Support ticket from dealer portal */
+ export interface DealerSupportTicket {
+   id?: number;
+   publicId?: string;
+   subject?: string;
+   category?: string;
+   description?: string;
+   status?: string;
+   requesterEmail?: string;
+   createdAt?: string;
+   updatedAt?: string;
+ }
+
+ /** Request to create a support ticket */
+ export interface DealerSupportTicketCreateRequest {
+   subject: string;
+   category: string;
+   description: string;
+ }
