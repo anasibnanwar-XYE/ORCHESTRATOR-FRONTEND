@@ -315,6 +315,19 @@ const PayrollPage = lazy(() =>
    }))
  );
 
+/** Admin portal — Dashboard */
+const AdminDashboardPage = lazy(() =>
+  import('@/pages/admin/AdminDashboardPage').then((m) => ({
+    default: m.AdminDashboardPage,
+  }))
+);
+/** Admin portal — Users */
+const AdminUsersPage = lazy(() =>
+  import('@/pages/admin/UsersPage').then((m) => ({
+    default: m.UsersPage,
+  }))
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -547,8 +560,9 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Admin" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Admin" />} />
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 
           {/* ── Accounting portal ──────────────────────────────────── */}
