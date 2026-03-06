@@ -1,3 +1,190 @@
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Factory Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Factory dashboard DTO from GET /api/v1/factory/dashboard */
+export interface FactoryDashboardDto {
+  productionEfficiency: number;
+  completedPlans: number;
+  batchesLogged: number;
+  alerts: string[];
+}
+
+/** Production plan status lifecycle */
+export type ProductionPlanStatus = 'DRAFT' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+/** Production plan DTO */
+export interface ProductionPlanDto {
+  id: number;
+  publicId?: string;
+  planNumber: string;
+  productName: string;
+  quantity: number;
+  plannedDate: string;
+  status: ProductionPlanStatus;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Request to create or update a production plan */
+export interface ProductionPlanRequest {
+  planNumber: string;
+  productName: string;
+  quantity: number;
+  plannedDate: string;
+  notes?: string;
+}
+
+/** Production plan status update request */
+export interface ProductionPlanStatusRequest {
+  status: ProductionPlanStatus;
+}
+
+/** Production batch DTO (legacy path) */
+export interface ProductionBatchDto {
+  id: number;
+  publicId?: string;
+  batchNumber: string;
+  quantityProduced: number;
+  loggedBy?: string;
+  notes?: string;
+  createdAt?: string;
+  planId?: number;
+}
+
+/** Request to create a production batch */
+export interface ProductionBatchRequest {
+  batchNumber: string;
+  quantityProduced: number;
+  loggedBy?: string;
+  notes?: string;
+}
+
+/** Production brand (catalog read-model) */
+export interface ProductionBrandDto {
+  id: number;
+  publicId?: string;
+  name: string;
+  code: string;
+  productCount?: number;
+}
+
+/** Production product (catalog read-model) */
+export interface ProductionProductDto {
+  id: number;
+  publicId?: string;
+  brandId: number;
+  brandName: string;
+  brandCode: string;
+  productName: string;
+  category?: string;
+  defaultColour?: string;
+  sizeLabel?: string;
+  unitOfMeasure?: string;
+  skuCode?: string;
+  active?: boolean;
+}
+
+/** Material usage within a production log */
+export interface MaterialUsageRequest {
+  rawMaterialId: number;
+  quantity: number;
+  unitOfMeasure?: string;
+}
+
+/** Production log request body */
+export interface ProductionLogRequest {
+  brandId: number;
+  productId: number;
+  batchColour?: string;
+  batchSize: number;
+  unitOfMeasure?: string;
+  mixedQuantity: number;
+  producedAt?: string;
+  notes?: string;
+  createdBy?: string;
+  addToFinishedGoods?: boolean;
+  salesOrderId?: number;
+  laborCost?: number;
+  overheadCost?: number;
+  materials: MaterialUsageRequest[];
+}
+
+/** Production log status */
+export type ProductionLogStatus =
+  | 'READY_TO_PACK'
+  | 'PARTIAL_PACKED'
+  | 'FULLY_PACKED';
+
+/** Production log list item DTO */
+export interface ProductionLogDto {
+  id: number;
+  publicId?: string;
+  productionCode?: string;
+  brandId?: number;
+  brandName?: string;
+  productId?: number;
+  productName?: string;
+  batchColour?: string;
+  batchSize?: number;
+  unitOfMeasure?: string;
+  mixedQuantity?: number;
+  packedQuantity?: number;
+  wastageQuantity?: number;
+  status?: ProductionLogStatus;
+  laborCost?: number;
+  overheadCost?: number;
+  producedAt?: string;
+  createdAt?: string;
+}
+
+/** Material usage in production log detail */
+export interface ProductionLogMaterialDto {
+  id?: number;
+  rawMaterialId?: number;
+  materialName?: string;
+  quantity?: number;
+  unitOfMeasure?: string;
+  unitCost?: number;
+  totalCost?: number;
+}
+
+/** Production log packing record */
+export interface ProductionLogPackingRecordDto {
+  id?: number;
+  packingRecordId?: number;
+  finishedGoodId?: number;
+  finishedGoodBatchId?: number;
+  packagingSize?: string;
+  quantityLiters?: number;
+  piecesCount?: number;
+  boxesCount?: number;
+  sizeVariantLabel?: string;
+  packedAt?: string;
+}
+
+/** Full production log detail DTO */
+export interface ProductionLogDetailDto extends ProductionLogDto {
+  notes?: string;
+  materials?: ProductionLogMaterialDto[];
+  packingRecords?: ProductionLogPackingRecordDto[];
+}
+
+/** Raw material DTO */
+export interface RawMaterialDto {
+  id: number;
+  publicId?: string;
+  name: string;
+  sku?: string;
+  unitType?: string;
+  reorderLevel?: number;
+  minStock?: number;
+  maxStock?: number;
+  currentStock?: number;
+  status?: string;
+}
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Sales Types

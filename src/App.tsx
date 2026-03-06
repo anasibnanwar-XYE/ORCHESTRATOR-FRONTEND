@@ -519,6 +519,30 @@ const SalesReturnsPage = lazy(() =>
     default: m.SalesReturnsPage,
   }))
 );
+/** Factory portal — Dashboard */
+const FactoryDashboardPage = lazy(() =>
+  import('@/pages/factory/FactoryDashboardPage').then((m) => ({
+    default: m.FactoryDashboardPage,
+  }))
+);
+/** Factory portal — Production Plans */
+const ProductionPlansPage = lazy(() =>
+  import('@/pages/factory/ProductionPlansPage').then((m) => ({
+    default: m.ProductionPlansPage,
+  }))
+);
+/** Factory portal — Production Logs */
+const ProductionLogsPage = lazy(() =>
+  import('@/pages/factory/ProductionLogsPage').then((m) => ({
+    default: m.ProductionLogsPage,
+  }))
+);
+/** Factory portal — Production Batches */
+const ProductionBatchesPage = lazy(() =>
+  import('@/pages/factory/ProductionBatchesPage').then((m) => ({
+    default: m.ProductionBatchesPage,
+  }))
+);
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -850,8 +874,11 @@ function AppRouter() {
               </RequirePortal>
             }
           >
-            <Route index element={<PortalPlaceholder portal="Factory" />} />
-            <Route path="*" element={<PortalPlaceholder portal="Factory" />} />
+            <Route index element={<FactoryDashboardPage />} />
+            <Route path="production/plans" element={<ProductionPlansPage />} />
+            <Route path="production/logs" element={<ProductionLogsPage />} />
+            <Route path="production/batches" element={<ProductionBatchesPage />} />
+            <Route path="*" element={<FactoryDashboardPage />} />
           </Route>
 
           {/* ── Dealer portal ───────────────────────────────────────── */}
