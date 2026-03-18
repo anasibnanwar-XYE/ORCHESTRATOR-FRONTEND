@@ -430,7 +430,7 @@
        {/* Back */}
        <button
          type="button"
-         onClick={() => navigate('/sales/orders')}
+         onClick={() => navigate(-1)}
          className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
        >
          <ArrowLeft size={14} />
@@ -608,7 +608,7 @@
  
        {/* ── Actions ──────────────────────────────────────────────── */}
        {(canConfirm || canCancel) && (
-         <div className="flex items-center gap-2 flex-wrap">
+         <div className="sticky bottom-0 sm:static sm:bottom-auto -mx-0 bg-[var(--color-surface-primary)] sm:bg-transparent border-t sm:border-t-0 border-[var(--color-border-subtle)] px-4 py-3 sm:px-0 sm:py-0 flex items-center gap-2 flex-wrap">
            {canConfirm && (
              <button
                type="button"

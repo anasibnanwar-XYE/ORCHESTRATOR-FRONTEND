@@ -67,7 +67,10 @@
    const [query, setQuery] = useState('');
    const [results, setResults] = useState<DealerLookupResponse[]>([]);
    const [isSearching, setIsSearching] = useState(false);
+   // Fixed-position rect for the dropdown so it is never clipped by overflow-y-auto parents.
+   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
    const containerRef = useRef<HTMLDivElement>(null);
+   const buttonRef = useRef<HTMLButtonElement>(null);
    const searchRef = useRef<HTMLInputElement>(null);
    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
  
@@ -80,6 +83,23 @@
      document.addEventListener('mousedown', handleClick);
      return () => document.removeEventListener('mousedown', handleClick);
    }, []);
+ 
+   // Reposition dropdown if window resizes or scrolls while open.
+   useEffect(() => {
+     if (!isOpen) return;
+     const reposition = () => {
+       if (buttonRef.current) {
+         const rect = buttonRef.current.getBoundingClientRect();
+         setDropdownRect({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+       }
+     };
+     window.addEventListener('resize', reposition);
+     window.addEventListener('scroll', reposition, true);
+     return () => {
+       window.removeEventListener('resize', reposition);
+       window.removeEventListener('scroll', reposition, true);
+     };
+   }, [isOpen]);
  
    const doSearch = useCallback(async (q: string) => {
      setIsSearching(true);
@@ -94,7 +114,15 @@
        setIsSearching(false);
      }
    }, []);
-
+ 
+   const openCombobox = useCallback(() => {
+     if (buttonRef.current) {
+       const rect = buttonRef.current.getBoundingClientRect();
+       setDropdownRect({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+     }
+     setIsOpen(true);
+   }, []);
+ 
    useEffect(() => {
      if (isOpen) {
        setTimeout(() => searchRef.current?.focus(), 50);
@@ -102,7 +130,7 @@
        doSearch('');
      }
    }, [isOpen, doSearch]);
-
+ 
    const handleQueryChange = useCallback((q: string) => {
      setQuery(q);
      if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -116,8 +144,9 @@
        </label>
  
        <button
+         ref={buttonRef}
          type="button"
-         onClick={() => setIsOpen(!isOpen)}
+         onClick={() => isOpen ? setIsOpen(false) : openCombobox()}
          className={clsx(
            'w-full h-9 flex items-center gap-2.5 px-3 text-left',
            'bg-[var(--color-surface-primary)] border rounded-lg transition-all duration-150',
@@ -161,8 +190,20 @@
  
        {error && <p className="mt-1 text-[11px] text-[var(--color-error)]">{error}</p>}
  
-       {isOpen && (
-         <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg shadow-lg z-[var(--z-dropdown)] overflow-hidden">
+       {/* Dropdown is rendered with fixed positioning so it is never clipped by
+           the Drawer's overflow-y-auto scrollable content area. This is critical
+           on phone where the entire drawer is a scroll container. */}
+       {isOpen && dropdownRect && (
+         <div
+           style={{
+             position: 'fixed',
+             top: dropdownRect.top,
+             left: dropdownRect.left,
+             width: dropdownRect.width,
+             zIndex: 400,
+           }}
+           className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg shadow-lg overflow-hidden"
+         >
            <div className="p-2 border-b border-[var(--color-border-subtle)]">
              <div className="relative">
                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none" />

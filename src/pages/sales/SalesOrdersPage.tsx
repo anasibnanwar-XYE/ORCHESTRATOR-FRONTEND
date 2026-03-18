@@ -14,7 +14,7 @@
   */
  
  import { useCallback, useEffect, useState } from 'react';
- import { useNavigate } from 'react-router-dom';
+ import { useNavigate, useSearchParams } from 'react-router-dom';
  import {
    Plus,
    AlertCircle,
@@ -285,13 +285,20 @@
    const navigate = useNavigate();
   const { success, error: toastError } = useToast();
  
-   // Filters state
-   const [searchQuery, setSearchQuery] = useState('');
-   const [statusFilter, setStatusFilter] = useState('');
-   const [fromDate, setFromDate] = useState('');
-   const [toDate, setToDate] = useState('');
-   const [page, setPage] = useState(0);
+   // Filters state — synced to URL search params so back-navigation restores them
+   const [searchParams, setSearchParams] = useSearchParams();
+   const searchQuery = searchParams.get('q') ?? '';
+   const statusFilter = searchParams.get('status') ?? '';
+   const fromDate = searchParams.get('from') ?? '';
+   const toDate = searchParams.get('to') ?? '';
+   const page = parseInt(searchParams.get('page') ?? '0', 10);
    const pageSize = 20;
+
+   const setSearchQuery = (v: string) => setSearchParams((p) => { const n = new URLSearchParams(p); if (v) n.set('q', v); else n.delete('q'); n.delete('page'); return n; }, { replace: true });
+   const setStatusFilter = (v: string) => setSearchParams((p) => { const n = new URLSearchParams(p); if (v) n.set('status', v); else n.delete('status'); n.delete('page'); return n; }, { replace: true });
+   const setFromDate = (v: string) => setSearchParams((p) => { const n = new URLSearchParams(p); if (v) n.set('from', v); else n.delete('from'); n.delete('page'); return n; }, { replace: true });
+   const setToDate = (v: string) => setSearchParams((p) => { const n = new URLSearchParams(p); if (v) n.set('to', v); else n.delete('to'); n.delete('page'); return n; }, { replace: true });
+   const setPage = (v: number | ((prev: number) => number)) => setSearchParams((p) => { const n = new URLSearchParams(p); const next = typeof v === 'function' ? v(parseInt(p.get('page') ?? '0', 10)) : v; if (next > 0) n.set('page', String(next)); else n.delete('page'); return n; }, { replace: true });
  
    // Data state
    const [result, setResult] = useState<PageResponse<SalesOrderDto> | null>(null);
@@ -377,11 +384,7 @@
    const totalElements = result?.totalElements ?? 0;
  
    const clearFilters = () => {
-     setSearchQuery('');
-     setStatusFilter('');
-     setFromDate('');
-     setToDate('');
-     setPage(0);
+     setSearchParams({}, { replace: true });
    };
    const hasFilters = searchQuery || statusFilter || fromDate || toDate;
  

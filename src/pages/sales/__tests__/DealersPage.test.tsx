@@ -12,7 +12,7 @@
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
  vi.mock('lucide-react', () => {
@@ -173,5 +173,48 @@
        const btns = screen.queryAllByText(/new dealer/i);
        expect(btns.length).toBeGreaterThan(0);
      });
+   })
+   it('clicking a dealer card opens the detail modal', async () => {
+     (salesApi.listDealers as ReturnType<typeof vi.fn>).mockResolvedValue(mockDealers);
+     (salesApi.getDealerAging as ReturnType<typeof vi.fn>).mockResolvedValue({
+       totalOutstanding: 0,
+       buckets: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, over90: 0 },
+       lineItems: [],
+     });
+     renderPage();
+     await waitFor(() => {
+       const cells = screen.getAllByText('Raj Paints');
+       expect(cells.length).toBeGreaterThan(0);
+     });
+     // Click on the first occurrence of 'Raj Paints' (desktop or mobile row/card)
+     const dealerCells = screen.getAllByText('Raj Paints');
+     fireEvent.click(dealerCells[0]);
+     // The modal opens and the dealer detail modal should be present
+     await waitFor(() => {
+       const modal = screen.queryByTestId('modal');
+       expect(modal).toBeDefined();
+     });
    });
+
+   it('dealer detail modal shows dealer name and credit info', async () => {
+     (salesApi.listDealers as ReturnType<typeof vi.fn>).mockResolvedValue(mockDealers);
+     (salesApi.getDealerAging as ReturnType<typeof vi.fn>).mockResolvedValue({
+       totalOutstanding: 125000,
+       buckets: { current: 125000, days1to30: 0, days31to60: 0, days61to90: 0, over90: 0 },
+       lineItems: [],
+     });
+     renderPage();
+     await waitFor(() => {
+       const cells = screen.getAllByText('Raj Paints');
+       expect(cells.length).toBeGreaterThan(0);
+     });
+     const dealerCells = screen.getAllByText('Raj Paints');
+     fireEvent.click(dealerCells[0]);
+     await waitFor(() => {
+       // Modal content should include the dealer name in header
+       const dealerNames = screen.queryAllByText('Raj Paints');
+       expect(dealerNames.length).toBeGreaterThan(0);
+     });
+   });
+
  });

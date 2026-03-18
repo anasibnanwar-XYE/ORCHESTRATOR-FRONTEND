@@ -576,7 +576,7 @@
    return (
      <div className="space-y-5">
        {/* Dealer summary */}
-       <div className="flex items-start justify-between gap-4">
+       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
          <div>
            <div className="flex items-center gap-2 flex-wrap">
              <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">{dealer.name}</h2>
@@ -591,7 +591,7 @@
            type="button"
            onClick={() => onDunningToggle(dealer)}
            className={clsx(
-             'flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors',
+             'flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium transition-colors self-start',
              isOnHold
                ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)]'
                : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)]',
@@ -621,7 +621,7 @@
  
        {/* Tabs */}
        <div className="border-b border-[var(--color-border-default)]">
-         <div className="flex gap-1">
+         <div className="flex gap-1 overflow-x-auto no-scrollbar">
            {tabs.map((tab) => (
              <button
                key={tab.id}
