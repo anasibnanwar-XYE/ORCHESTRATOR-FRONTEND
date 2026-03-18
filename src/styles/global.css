@@ -179,6 +179,27 @@
   to { stroke-dashoffset: 0; }
 }
 
+/* Mobile overlay animations */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideDown {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sheetSlideDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
 /* Shake animation for form errors */
 @keyframes o-shake {
   0%, 100% { transform: translateX(0); }
