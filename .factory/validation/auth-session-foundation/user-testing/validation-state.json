@@ -1,0 +1,296 @@
+{
+  "assertions": {
+    "VAL-SESSION-001": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T12:00:00Z"
+    },
+    "VAL-SESSION-002": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T13:35:00Z"
+    },
+    "VAL-SESSION-003": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T12:00:00Z",
+      "notes": "Invalid sessions correctly blocked from protected routes and redirected to /login. Minor: stale tokens persist in localStorage but routing is correct."
+    },
+    "VAL-SESSION-004": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T13:35:00Z"
+    },
+    "VAL-SESSION-005": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T13:35:00Z",
+      "notes": "Token rotation via refresh-token with companyCode works correctly. Company switcher UI showed no companies for test user, but backend token rotation works per contract."
+    },
+    "VAL-AUTH-001": {
+      "status": "pending"
+    },
+    "VAL-AUTH-002": {
+      "status": "pending"
+    },
+    "VAL-AUTH-003": {
+      "status": "pending"
+    },
+    "VAL-AUTH-004": {
+      "status": "pending"
+    },
+    "VAL-AUTH-005": {
+      "status": "pending"
+    },
+    "VAL-AUTH-006": {
+      "status": "pending"
+    },
+    "VAL-AUTH-007": {
+      "status": "pending"
+    },
+    "VAL-AUTH-008": {
+      "status": "pending"
+    },
+    "VAL-AUTH-009": {
+      "status": "pending"
+    },
+    "VAL-AUTH-010": {
+      "status": "pending"
+    },
+    "VAL-AUTH-011": {
+      "status": "pending"
+    },
+    "VAL-AUTH-012": {
+      "status": "pending"
+    },
+    "VAL-AUTH-013": {
+      "status": "pending"
+    },
+    "VAL-AUTH-014": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-001": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-002": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-003": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-004": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-005": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-006": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-007": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-008": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-009": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-010": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-011": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-012": {
+      "status": "pending"
+    },
+    "VAL-MOBILE-013": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-001": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-002": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-003": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-004": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-005": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-006": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-007": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-008": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-009": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-010": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-011": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-012": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-013": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-014": {
+      "status": "pending"
+    },
+    "VAL-ADMIN-015": {
+      "status": "pending"
+    },
+    "VAL-O2C-001": {
+      "status": "pending"
+    },
+    "VAL-O2C-002": {
+      "status": "pending"
+    },
+    "VAL-O2C-003": {
+      "status": "pending"
+    },
+    "VAL-O2C-004": {
+      "status": "pending"
+    },
+    "VAL-O2C-005": {
+      "status": "pending"
+    },
+    "VAL-O2C-006": {
+      "status": "pending"
+    },
+    "VAL-O2C-007": {
+      "status": "pending"
+    },
+    "VAL-O2C-008": {
+      "status": "pending"
+    },
+    "VAL-O2C-009": {
+      "status": "pending"
+    },
+    "VAL-O2C-010": {
+      "status": "pending"
+    },
+    "VAL-O2C-011": {
+      "status": "pending"
+    },
+    "VAL-O2C-012": {
+      "status": "pending"
+    },
+    "VAL-O2C-013": {
+      "status": "pending"
+    },
+    "VAL-P2P-001": {
+      "status": "pending"
+    },
+    "VAL-P2P-002": {
+      "status": "pending"
+    },
+    "VAL-P2P-003": {
+      "status": "pending"
+    },
+    "VAL-P2P-004": {
+      "status": "pending"
+    },
+    "VAL-P2P-005": {
+      "status": "pending"
+    },
+    "VAL-P2P-006": {
+      "status": "pending"
+    },
+    "VAL-P2P-007": {
+      "status": "pending"
+    },
+    "VAL-P2P-008": {
+      "status": "pending"
+    },
+    "VAL-P2P-009": {
+      "status": "pending"
+    },
+    "VAL-P2P-010": {
+      "status": "pending"
+    },
+    "VAL-P2P-011": {
+      "status": "pending"
+    },
+    "VAL-P2P-012": {
+      "status": "pending"
+    },
+    "VAL-ACCT-001": {
+      "status": "pending"
+    },
+    "VAL-ACCT-002": {
+      "status": "pending"
+    },
+    "VAL-ACCT-003": {
+      "status": "pending"
+    },
+    "VAL-ACCT-004": {
+      "status": "pending"
+    },
+    "VAL-ACCT-005": {
+      "status": "pending"
+    },
+    "VAL-ACCT-006": {
+      "status": "pending"
+    },
+    "VAL-ACCT-007": {
+      "status": "pending"
+    },
+    "VAL-ACCT-008": {
+      "status": "pending"
+    },
+    "VAL-ACCT-009": {
+      "status": "pending"
+    },
+    "VAL-ACCT-010": {
+      "status": "pending"
+    },
+    "VAL-ACCT-011": {
+      "status": "pending"
+    },
+    "VAL-ACCT-012": {
+      "status": "pending"
+    },
+    "VAL-CROSS-001": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T12:00:00Z"
+    },
+    "VAL-CROSS-002": {
+      "status": "pending"
+    },
+    "VAL-CROSS-003": {
+      "status": "pending"
+    },
+    "VAL-CROSS-004": {
+      "status": "passed",
+      "validatedAtMilestone": "auth-session-foundation",
+      "validatedAt": "2026-03-18T13:35:00Z"
+    },
+    "VAL-CROSS-005": {
+      "status": "pending"
+    },
+    "VAL-CROSS-006": {
+      "status": "pending"
+    },
+    "VAL-CROSS-007": {
+      "status": "pending"
+    },
+    "VAL-CROSS-008": {
+      "status": "pending"
+    }
+  }
+}

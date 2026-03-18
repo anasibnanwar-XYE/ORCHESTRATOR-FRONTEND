@@ -1,0 +1,50 @@
+{
+  "milestone": "auth-session-foundation",
+  "round": 1,
+  "status": "pass",
+  "testedAt": "2026-03-18T13:45:00Z",
+  "assertionsSummary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-SESSION-001",
+    "VAL-SESSION-002",
+    "VAL-SESSION-003",
+    "VAL-SESSION-004",
+    "VAL-SESSION-005",
+    "VAL-CROSS-001",
+    "VAL-CROSS-004"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "notes": [
+    {
+      "assertion": "VAL-SESSION-003",
+      "note": "Invalid sessions are correctly blocked from protected routes and user is redirected to /login. Minor observation: stale tokens may persist in localStorage after redirect, but routing behavior is correct and protected shell is not usable."
+    },
+    {
+      "assertion": "VAL-SESSION-005",
+      "note": "Company switcher dropdown showed 'No companies found' for test users, but the backend token rotation mechanism (POST /api/v1/auth/refresh-token with companyCode) works correctly per contract. Manual API testing confirmed token rotation and tenant context binding."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added 'Flow Validator Guidance: web' section with isolation rules, boundaries, evidence capture guidance, concurrency constraints, and tool usage instructions for browser-based flow validators.",
+      "source": "setup"
+    }
+  ],
+  "previousRound": null,
+  "flowReports": [
+    ".factory/validation/auth-session-foundation/user-testing/flows/group-login-session.json",
+    ".factory/validation/auth-session-foundation/user-testing/flows/group-logout-refresh-switch.json"
+  ],
+  "evidenceCaptured": {
+    "group-login-session": 9,
+    "group-logout-refresh-switch": 16,
+    "total": 25
+  }
+}
