@@ -12,6 +12,9 @@
  *  - Discard button calls onClose
  *  - Submit is disabled when no dealer is selected
  *  - Dealer combobox clear action does NOT render a nested button inside the trigger button
+ *  - Dealer combobox clear action has tabIndex 0 (keyboard-focusable)
+ *  - Dealer combobox clear action responds to Enter key (keyboard-activatable, focus-visible treatment)
+ *  - Dealer combobox clear action responds to Space key (keyboard-activatable, focus-visible treatment)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -227,5 +230,107 @@ describe('CreateOrderDrawer', () => {
     clearButtons.forEach((el) => {
       expect(el.tagName.toLowerCase()).not.toBe('button');
     });
+  });
+
+  it('dealer combobox clear action has tabIndex 0 making it keyboard-focusable', () => {
+    // Verifies the span[role=button] is reachable via Tab key navigation,
+    // which is required for focus-visible treatment to be meaningful.
+    const editOrder = {
+      id: 3,
+      orderNumber: 'SO-003',
+      status: 'DRAFT',
+      totalAmount: 1000,
+      dealerId: 99,
+      dealerName: 'Acme Corp',
+      createdAt: '2026-01-01T00:00:00Z',
+      items: [
+        { productCode: 'P001', description: '', quantity: 1, unitPrice: 100, gstRate: 18 },
+      ],
+    };
+    render(
+      <MemoryRouter>
+        <CreateOrderDrawer
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          editOrder={editOrder as unknown as Parameters<typeof CreateOrderDrawer>[0]['editOrder']}
+        />
+      </MemoryRouter>
+    );
+    const clearEl = screen.queryByRole('button', { name: /clear dealer selection/i });
+    expect(clearEl).not.toBeNull();
+    expect(clearEl?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('dealer combobox clear action responds to Enter key and clears the dealer selection', async () => {
+    // Verifies the span[role=button] keyboard handler: Enter key should clear
+    // the dealer, matching the click behavior so keyboard users have parity.
+    const editOrder = {
+      id: 4,
+      orderNumber: 'SO-004',
+      status: 'DRAFT',
+      totalAmount: 1000,
+      dealerId: 99,
+      dealerName: 'Acme Corp',
+      createdAt: '2026-01-01T00:00:00Z',
+      items: [
+        { productCode: 'P001', description: '', quantity: 1, unitPrice: 100, gstRate: 18 },
+      ],
+    };
+    render(
+      <MemoryRouter>
+        <CreateOrderDrawer
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          editOrder={editOrder as unknown as Parameters<typeof CreateOrderDrawer>[0]['editOrder']}
+        />
+      </MemoryRouter>
+    );
+    // Dealer name must be visible before clearing
+    expect(screen.queryByText('Acme Corp')).not.toBeNull();
+    const clearEl = screen.queryByRole('button', { name: /clear dealer selection/i });
+    expect(clearEl).not.toBeNull();
+    fireEvent.keyDown(clearEl!, { key: 'Enter' });
+    await waitFor(() => {
+      expect(screen.queryByText('Acme Corp')).toBeNull();
+    });
+    expect(screen.queryByText('Search dealer...')).not.toBeNull();
+  });
+
+  it('dealer combobox clear action responds to Space key and clears the dealer selection', async () => {
+    // Verifies the span[role=button] keyboard handler: Space key should clear
+    // the dealer, matching the standard button interaction model for Space.
+    const editOrder = {
+      id: 5,
+      orderNumber: 'SO-005',
+      status: 'DRAFT',
+      totalAmount: 1000,
+      dealerId: 99,
+      dealerName: 'Acme Corp',
+      createdAt: '2026-01-01T00:00:00Z',
+      items: [
+        { productCode: 'P001', description: '', quantity: 1, unitPrice: 100, gstRate: 18 },
+      ],
+    };
+    render(
+      <MemoryRouter>
+        <CreateOrderDrawer
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          editOrder={editOrder as unknown as Parameters<typeof CreateOrderDrawer>[0]['editOrder']}
+        />
+      </MemoryRouter>
+    );
+    // Dealer name must be visible before clearing
+    expect(screen.queryByText('Acme Corp')).not.toBeNull();
+    const clearEl = screen.queryByRole('button', { name: /clear dealer selection/i });
+    expect(clearEl).not.toBeNull();
+    fireEvent.keyDown(clearEl!, { key: ' ' });
+    await waitFor(() => {
+      expect(screen.queryByText('Acme Corp')).toBeNull();
+    });
+    expect(screen.queryByText('Search dealer...')).not.toBeNull();
   });
 });

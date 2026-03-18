@@ -33,6 +33,14 @@
     min-height: 40px;
   }
 
+  /* Focus-visible ring for non-native interactive elements (e.g. span[role=button]
+     used to avoid invalid nested-button DOM structures). Keeps keyboard focus
+     consistent with the .btn ring pattern so all keyboard-activatable elements
+     share the same indicator regardless of their underlying element type. */
+  [role="button"] {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--color-neutral-300)];
+  }
+
   .btn-primary {
     @apply btn bg-[var(--color-neutral-900)] text-white;
     @apply hover:bg-[var(--color-neutral-800)] active:scale-[0.98];

@@ -166,7 +166,8 @@
              <span className="text-[11px] font-mono text-[var(--color-text-tertiary)] shrink-0">
                {value.code}
              </span>
-             {/* Use span[role=button] instead of <button> to avoid invalid nested-button DOM structure */}
+             {/* Use span[role=button] instead of <button> to avoid invalid nested-button DOM structure.
+                 rounded-sm ensures the global [role=button]:focus-visible ring follows the element shape. */}
              <span
                role="button"
                tabIndex={0}
@@ -182,7 +183,7 @@
                    onChange(null);
                  }
                }}
-               className="shrink-0 cursor-pointer text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+               className="shrink-0 cursor-pointer rounded-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
              >
                <X size={12} />
              </span>
