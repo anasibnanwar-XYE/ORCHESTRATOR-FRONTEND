@@ -1,0 +1,26 @@
+{
+  "featureId": "auth-recovery-corridor-reauth",
+  "reviewedAt": "2026-03-18T16:45:00.000Z",
+  "commitId": "af96fd9a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly aligns forgot-password, reset-password, and must-change-password corridor behavior with the backend contract. Key changes include: (1) ForgotPasswordPage properly distinguishes controlled persistence failures from masked errors, showing retryable state only for genuine server failures while maintaining email enumeration prevention for all other cases. (2) ResetPasswordPage distinguishes token errors (invalid/expired/used/superseded) from password-policy errors, showing an inline recovery banner with /forgot-password link for the former and toast for the latter. (3) FirstPasswordChangePage correctly calls signOut() followed by navigate('/login') after successful password change to handle token revocation. (4) authApi.forgotPassword throws a tagged ForgotPasswordPersistenceError when the backend returns success=false. Test coverage is comprehensive with 11 new test cases covering all specified behaviors.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The frontend-contract-worker skill procedure could mention that for corridor/revocation flows, the signOut() behavior in AuthContext must handle already-revoked sessions gracefully (it does via try/catch with finally block for storage clearing). Workers implementing similar revocation flows should be aware of this pattern.",
+      "evidence": "Worker's skillFeedback.suggestedChanges in handoff: 'The skill procedure could mention that for corridor/revocation flows, it's important to verify the signOut behavior in AuthContext handles already-revoked sessions gracefully (it does via try/catch with finally block for storage clearing).'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The error discrimination pattern used in ResetPasswordPage (checking if error message contains 'password' or 'policy' to determine toast vs inline banner) could be documented in library/api.md as a pattern for distinguishing recoverable user-input errors from token/link errors.",
+      "evidence": "ResetPasswordPage.tsx lines 72-82: `const isPasswordPolicyError = message.toLowerCase().includes('password') || message.toLowerCase().includes('policy');` — this pattern might be useful for other flow error handling where the recovery path differs based on error type."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The implementation correctly handles all auth recovery corridor behaviors: (1) forgot-password uses only canonical path with proper persistence failure detection, (2) reset-password distinguishes token errors from password-policy errors with appropriate UX, (3) must-change-password corridor forces fresh login after password change via signOut+navigate. Test coverage is comprehensive with 11 new tests verifying all VAL-AUTH-011 through VAL-AUTH-014 requirements and VAL-CROSS-003. The retired superadmin alias is confirmed absent from shipped code (only exists in comments). No blocking issues found. Two minor shared state observations noted for skill and knowledge documentation."
+}

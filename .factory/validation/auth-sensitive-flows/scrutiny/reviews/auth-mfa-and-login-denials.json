@@ -1,0 +1,55 @@
+{
+  "featureId": "auth-mfa-and-login-denials",
+  "reviewedAt": "2026-03-18T16:15:00.000Z",
+  "commitId": "8a90f787",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly aligns MFA verification with the canonical backend contract (re-submitting POST /auth/login with original credentials plus mfaCode/recoveryCode). Login denial states are properly separated into distinct UX: credential failures show toast + shake, lockout shows inline banner with disabled retry, and runtime denials (TENANT_ON_HOLD, TENANT_BLOCKED, TENANT_REQUEST_RATE_EXCEEDED) show stable non-credential banners. MFA setup includes QR code rendering, manual secret, recovery codes with required acknowledgement, and disable supports both TOTP and recovery code paths. Test coverage is comprehensive across MfaPage, LoginPage, AuthContext, and error-resolver.",
+    "issues": [
+      {
+        "file": "src/pages/auth/MfaPage.tsx",
+        "line": 68,
+        "severity": "non_blocking",
+        "description": "Minor: The eslint-disable comment for react-hooks/exhaustive-deps on the auto-submit effect could be avoided by including 'handleVerify' in a ref or restructuring, but the current approach is acceptable given the intentional behavior."
+      },
+      {
+        "file": "src/pages/auth/ProfilePage.tsx",
+        "line": 121,
+        "severity": "non_blocking",
+        "description": "Minor: The MFA disable dialog uses inline styles for animation rather than Tailwind classes. This is consistent with other modal patterns in the codebase but could be refactored to use CSS classes for consistency."
+      },
+      {
+        "file": "src/context/AuthContext.tsx",
+        "line": 93,
+        "severity": "suggestion",
+        "description": "The verifyMfa function correctly delegates to authApi.login() per contract. The code is clean and maintainable. The sessionStorage.removeItem(MFA_SESSION_KEY) call on success ensures credentials are cleared after MFA completion."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The qrcode.react library was added as a dependency for rendering MFA QR codes. This is a new pattern in the codebase for QR code rendering.",
+      "evidence": "package.json now includes 'qrcode.react', ProfilePage.tsx imports { QRCodeSVG } from 'qrcode.react'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The MFA verification flow uses sessionStorage to preserve original login credentials (email, password, companyCode) for mobile app-switch resilience during the MFA challenge. This is a key architectural decision that should be documented in api.md for future workers.",
+      "evidence": "AuthContext.tsx exports MFA_SESSION_KEY = 'bbp-orchestrator-mfa-pending', MfaPage.tsx reads from sessionStorage, LoginPage.tsx writes to sessionStorage on MFA redirect. The api.md already has the pinned note about MFA verification reusing POST /auth/login."
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-contract-worker skill procedure was followed correctly. Worker read mission docs, implemented tests first, kept API wiring maintainable, and ran all required validators (lint, typecheck, test, build). The skillFeedback.suggestedChanges about mocking authApi.verifyMfa vs authApi.login is valid but minor.",
+      "evidence": "Handoff shows followedProcedure: true, all verification commands passed with exitCode 0"
+    },
+    {
+      "area": "conventions",
+      "observation": "The error-resolver now returns typed variants (lockout, runtime_denial) in addition to message and mfa_redirect. This pattern of discriminated union error types is clean and should be maintained for future error handling.",
+      "evidence": "src/lib/error-resolver.ts defines ResolvedError type with four variants, isLockoutError() and isRuntimeDenialError() helper functions added"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The auth-mfa-and-login-denials feature is well-implemented and aligns with the backend contract. MFA verification correctly re-submits POST /auth/login with original credentials, login denial states are properly differentiated into distinct UX patterns, and MFA setup/disable flows are complete with QR code rendering, recovery code acknowledgement, and both TOTP and recovery code paths. Test coverage is comprehensive (77 targeted tests, all 1017 repo tests pass). Code is maintainable with clear separation of concerns. No blocking issues found."
+}

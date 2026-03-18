@@ -1,0 +1,60 @@
+{
+  "milestone": "auth-sensitive-flows",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "bun run test", "exitCode": 0, "details": "1024 tests passed across 108 test files" },
+    "typecheck": { "passed": true, "command": "bun run typecheck", "exitCode": 0 },
+    "lint": { "passed": true, "command": "bun run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "frontend-contract-worker skill",
+      "suggestion": "Add note: For corridor/revocation flows (password change, password reset, etc.), workers should be aware that signOut() in AuthContext handles already-revoked sessions gracefully via try/catch with finally block for storage clearing. This pattern ensures clean state even when backend has already revoked the session.",
+      "evidence": "auth-recovery-corridor-reauth handoff noted: 'The skill procedure could mention that for corridor/revocation flows, it's important to verify the signOut behavior in AuthContext handles already-revoked sessions gracefully (it does via try/catch with finally block for storage clearing).'",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "qrcode.react library added as a new dependency for QR code rendering",
+      "reason": "Informational only - dependency additions are captured in package.json and don't need library documentation"
+    },
+    {
+      "observation": "Discriminated union error types (lockout, runtime_denial) in error-resolver.ts",
+      "reason": "Internal implementation detail - the pattern is self-documenting in code and not a cross-cutting convention needing library documentation"
+    },
+    {
+      "observation": "Error discrimination pattern in ResetPasswordPage (checking for 'password'/'policy' in message)",
+      "reason": "Page-specific implementation detail - not a reusable pattern that needs to be propagated to library"
+    }
+  ],
+  "previousRound": null,
+  "reviewDetails": [
+    {
+      "featureId": "auth-mfa-and-login-denials",
+      "status": "pass",
+      "commitId": "8a90f787",
+      "summary": "MFA verification correctly re-submits POST /auth/login with original credentials, login denial states are properly differentiated (credential failures, lockout, runtime denials), MFA setup/disable flows complete with QR code, recovery codes, and both TOTP and recovery code paths. 77 targeted tests, all passing.",
+      "issues": [
+        { "severity": "non_blocking", "description": "Minor eslint-disable comment for react-hooks/exhaustive-deps on auto-submit effect" },
+        { "severity": "non_blocking", "description": "MFA disable dialog uses inline styles for animation rather than Tailwind" }
+      ]
+    },
+    {
+      "featureId": "auth-recovery-corridor-reauth",
+      "status": "pass",
+      "commitId": "af96fd9a",
+      "summary": "Forgot-password uses only canonical path with proper persistence failure detection, reset-password distinguishes token errors from password-policy errors, must-change-password corridor forces fresh login after password change. 11 new tests covering VAL-AUTH-011 through VAL-AUTH-014 and VAL-CROSS-003.",
+      "issues": []
+    }
+  ]
+}
