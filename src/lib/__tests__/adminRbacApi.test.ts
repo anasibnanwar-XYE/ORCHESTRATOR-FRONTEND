@@ -52,18 +52,81 @@ describe('admin/superadmin RBAC stub APIs', () => {
     });
   });
 
-  it('stubs superadmin policy reads and updates without network calls', async () => {
+  it('stubs superadmin deprecated policy reads without network calls', async () => {
     const policy = await superadminRuntimeApi.getPolicy();
-    const updated = await superadminRuntimeApi.updatePolicy({ passwordMinLength: 14 });
-
     expect(policy.passwordMinLength).toBe(10);
-    expect(updated.passwordMinLength).toBe(10);
     expect(apiRequestMocks.get).not.toHaveBeenCalled();
+  });
+
+  it('stubs superadmin deprecated policy updates without network calls', async () => {
+    const updated = await superadminRuntimeApi.updatePolicy({ passwordMinLength: 14 });
+    expect(updated.passwordMinLength).toBe(10);
     expect(apiRequestMocks.put).not.toHaveBeenCalled();
     expect(mockShowToast).toHaveBeenCalledWith({
       title: 'Policy updates require backend configuration',
       type: 'info',
     });
+  });
+
+  it('superadmin getRuntimeMetrics uses canonical GET /admin/tenant-runtime/metrics path', async () => {
+    apiRequestMocks.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          apiCalls: 100,
+          storageUsedMb: 50,
+          activeSessions: 5,
+          apiCallsLimit: 1000,
+          storageLimit: 500,
+          totalUsers: 10,
+          enabledUsers: 8,
+          maxActiveUsers: 20,
+          requestsThisMinute: 30,
+          maxRequestsPerMinute: 100,
+          inFlightRequests: 2,
+          maxConcurrentRequests: 10,
+          blockedThisMinute: 0,
+        },
+        message: '',
+        timestamp: '',
+      },
+    });
+
+    const metrics = await superadminRuntimeApi.getRuntimeMetrics();
+    expect(apiRequestMocks.get).toHaveBeenCalledWith('/admin/tenant-runtime/metrics');
+    expect(metrics.apiCalls).toBe(100);
+  });
+
+  it('superadmin updateRuntimePolicy uses canonical PUT /companies/{id}/tenant-runtime/policy path', async () => {
+    const updatedMetrics = {
+      apiCalls: 100,
+      storageUsedMb: 50,
+      activeSessions: 5,
+      apiCallsLimit: 1000,
+      storageLimit: 500,
+      totalUsers: 10,
+      enabledUsers: 8,
+      maxActiveUsers: 25,
+      requestsThisMinute: 30,
+      maxRequestsPerMinute: 200,
+      inFlightRequests: 2,
+      maxConcurrentRequests: 15,
+      blockedThisMinute: 0,
+    };
+    apiRequestMocks.put.mockResolvedValueOnce({
+      data: { success: true, data: updatedMetrics, message: '', timestamp: '' },
+    });
+
+    const result = await superadminRuntimeApi.updateRuntimePolicy(42, {
+      maxActiveUsers: 25,
+      maxRequestsPerMinute: 200,
+    });
+
+    expect(apiRequestMocks.put).toHaveBeenCalledWith(
+      '/companies/42/tenant-runtime/policy',
+      { maxActiveUsers: 25, maxRequestsPerMinute: 200 }
+    );
+    expect(result.maxActiveUsers).toBe(25);
   });
 
   it('stubs operations status and action endpoints without touching the missing operations controller', async () => {

@@ -1,32 +1,30 @@
  /**
-  * RolesPage — Role Management for the Admin portal
+  * RolesPage — Role Management for the Admin portal (read-only)
+  *
+  * Roles are viewable by tenant admins. Role creation requires ROLE_SUPER_ADMIN
+  * per the backend contract (POST /api/v1/admin/roles). Tenant admins can only
+  * read and inspect existing roles.
   *
   * Features:
   *  - DataTable listing roles with key, name, permissions count, system badge
-  *  - Create role form with name, key, description, permissions checklist (tags)
   *  - Role detail drawer showing full permissions list
   */
  
  import { useEffect, useState, useCallback } from 'react';
  import {
-   Plus,
    AlertCircle,
    RefreshCcw,
    Lock,
    ChevronRight,
    X,
-   Check,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
- import { Input } from '@/components/ui/Input';
- import { Modal } from '@/components/ui/Modal';
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
  import { Skeleton } from '@/components/ui/Skeleton';
- import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
- import type { Role, CreateRoleRequest } from '@/types';
+ import type { Role } from '@/types';
  
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -54,111 +52,7 @@ function permKey(perm: unknown, index: number): string {
   return str || String(index);
 }
 
- // ─────────────────────────────────────────────────────────────────────────────
- // Helpers
- // ─────────────────────────────────────────────────────────────────────────────
- 
- const COMMON_PERMISSIONS = [
-   'USERS_READ', 'USERS_WRITE',
-   'COMPANIES_READ', 'COMPANIES_WRITE',
-   'ROLES_READ', 'ROLES_WRITE',
-   'SETTINGS_READ', 'SETTINGS_WRITE',
-   'ACCOUNTING_READ', 'ACCOUNTING_WRITE',
-   'APPROVALS_READ', 'APPROVALS_WRITE',
-   'REPORTS_READ',
- ];
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Permission Checklist component
- // ─────────────────────────────────────────────────────────────────────────────
- 
- interface PermissionsChecklistProps {
-   selected: string[];
-   onChange: (selected: string[]) => void;
-   customInput: string;
-   onCustomInputChange: (val: string) => void;
-   onAddCustom: () => void;
- }
- 
- function PermissionsChecklist({
-   selected,
-   onChange,
-   customInput,
-   onCustomInputChange,
-   onAddCustom,
- }: PermissionsChecklistProps) {
-   const toggle = (perm: string) => {
-     if (selected.includes(perm)) {
-       onChange(selected.filter((p) => p !== perm));
-     } else {
-       onChange([...selected, perm]);
-     }
-   };
- 
-   const allPerms = [...new Set([...COMMON_PERMISSIONS, ...selected])];
- 
-   return (
-     <div className="space-y-2">
-       <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-         Permissions
-       </label>
-       <div className="border border-[var(--color-border-default)] rounded-lg overflow-hidden">
-         <div className="max-h-44 overflow-y-auto divide-y divide-[var(--color-border-subtle)]">
-           {allPerms.map((perm) => {
-             const isChecked = selected.includes(perm);
-             return (
-               <button
-                 key={perm}
-                 type="button"
-                 onClick={() => toggle(perm)}
-                 className={clsx(
-                   'w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors',
-                   'hover:bg-[var(--color-surface-secondary)]',
-                 )}
-               >
-                 <span
-                   className={clsx(
-                     'h-4 w-4 rounded flex items-center justify-center shrink-0 transition-colors border',
-                     isChecked
-                       ? 'bg-[var(--color-neutral-900)] border-[var(--color-neutral-900)]'
-                       : 'border-[var(--color-border-default)]',
-                   )}
-                 >
-                   {isChecked && <Check size={10} className="text-white" />}
-                 </span>
-                 <span className="text-[12px] font-mono text-[var(--color-text-primary)]">
-                   {perm}
-                 </span>
-               </button>
-             );
-           })}
-         </div>
-       </div>
-       {/* Custom permission input */}
-       <div className="flex gap-2">
-         <input
-           type="text"
-           value={customInput}
-           onChange={(e) => onCustomInputChange(e.target.value.toUpperCase())}
-           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAddCustom(); } }}
-           placeholder="Custom permission (e.g. REPORTS_EXPORT)"
-           className={clsx(
-             'flex-1 h-9 rounded-lg border border-[var(--color-border-default)] px-3',
-             'text-[12px] font-mono text-[var(--color-text-primary)]',
-             'bg-[var(--color-surface-primary)] placeholder:text-[var(--color-text-tertiary)]',
-             'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-           )}
-         />
-         <Button size="sm" variant="secondary" type="button" onClick={onAddCustom} className="h-9">
-           Add
-         </Button>
-       </div>
-       <p className="text-[11px] text-[var(--color-text-tertiary)]">
-         {selected.length} permission{selected.length !== 1 ? 's' : ''} selected
-       </p>
-     </div>
-   );
- }
+ // (No write helpers needed: role creation is superadmin-only per backend contract)
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Role Detail Drawer (side panel)
@@ -266,25 +160,10 @@ function permKey(perm: unknown, index: number): string {
  // RolesPage
  // ─────────────────────────────────────────────────────────────────────────────
  
- const initialForm: CreateRoleRequest = {
-   key: '',
-   name: '',
-   description: '',
-   permissions: [],
- };
- 
  export function RolesPage() {
-  const { success, error: toastError } = useToast();
    const [roles, setRoles] = useState<Role[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
- 
-   // Create modal
-   const [showCreate, setShowCreate] = useState(false);
-   const [form, setForm] = useState<CreateRoleRequest>({ ...initialForm });
-   const [customPermInput, setCustomPermInput] = useState('');
-   const [isSubmitting, setIsSubmitting] = useState(false);
-   const [formError, setFormError] = useState<string | null>(null);
  
    // Detail panel
    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -303,42 +182,6 @@ function permKey(perm: unknown, index: number): string {
    }, []);
  
    useEffect(() => { load(); }, [load]);
- 
-   const handleAddCustomPerm = () => {
-     const trimmed = customPermInput.trim();
-     if (!trimmed) return;
-     if (!form.permissions.includes(trimmed)) {
-       setForm((f) => ({ ...f, permissions: [...f.permissions, trimmed] }));
-     }
-     setCustomPermInput('');
-   };
- 
-   const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault();
-     if (!form.name.trim() || !form.key.trim()) return;
-     setIsSubmitting(true);
-     setFormError(null);
-     try {
-       await adminApi.createRole(form);
-      success('Role created', `"${form.name}" has been added.`);
-       setShowCreate(false);
-       setForm({ ...initialForm });
-       load();
-     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to create role';
-      setFormError(msg);
-      toastError('Failed to create role', msg);
-     } finally {
-       setIsSubmitting(false);
-     }
-   };
- 
-   const closeCreate = () => {
-     setShowCreate(false);
-     setForm({ ...initialForm });
-     setCustomPermInput('');
-     setFormError(null);
-   };
  
    const columns: Column<Role>[] = [
      {
@@ -431,9 +274,12 @@ function permKey(perm: unknown, index: number): string {
              {roles.length} role{roles.length !== 1 ? 's' : ''} configured
            </p>
          </div>
-         <Button onClick={() => { setFormError(null); setShowCreate(true); }}>
-           <Plus size={15} className="mr-1.5" /> New Role
-         </Button>
+       </div>
+
+       {/* Read-only notice */}
+       <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] text-[13px] text-[var(--color-text-secondary)]">
+         <Lock size={14} className="shrink-0 text-[var(--color-text-tertiary)]" />
+         <span>Role creation is managed by platform administrators. Contact your platform team to add new roles.</span>
        </div>
  
        {/* DataTable */}
@@ -459,76 +305,6 @@ function permKey(perm: unknown, index: number): string {
            </button>
          )}
        />
- 
-       {/* Create Role Modal */}
-       <Modal
-         isOpen={showCreate}
-         onClose={closeCreate}
-         title="Create Role"
-         description="Define a new role with a set of permissions."
-         size="md"
-         footer={
-           <>
-             <Button variant="secondary" onClick={closeCreate} disabled={isSubmitting}>
-               Cancel
-             </Button>
-             <Button
-               type="submit"
-               form="create-role-form"
-               disabled={isSubmitting || !form.name.trim() || !form.key.trim()}
-             >
-               {isSubmitting ? 'Creating...' : 'Create Role'}
-             </Button>
-           </>
-         }
-       >
-         <form id="create-role-form" onSubmit={handleSubmit} className="space-y-4">
-           <Input
-             label="Role Name"
-             required
-             value={form.name}
-             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-             placeholder="e.g. Accounts Manager"
-           />
-           <Input
-             label="Role Key"
-             required
-             value={form.key}
-             onChange={(e) => setForm((f) => ({ ...f, key: e.target.value.toUpperCase().replace(/\s+/g, '_') }))}
-             placeholder="e.g. ROLE_ACCOUNTS_MANAGER"
-           />
-           <div className="space-y-1.5">
-             <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-               Description
-             </label>
-             <textarea
-               value={form.description ?? ''}
-               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-               placeholder="Briefly describe this role's responsibilities..."
-               rows={2}
-               className={clsx(
-                 'w-full rounded-lg border border-[var(--color-border-default)] px-3 py-2',
-                 'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
-                 'placeholder:text-[var(--color-text-tertiary)] resize-none',
-                 'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-               )}
-             />
-           </div>
-           <PermissionsChecklist
-             selected={form.permissions}
-             onChange={(perms) => setForm((f) => ({ ...f, permissions: perms }))}
-             customInput={customPermInput}
-             onCustomInputChange={setCustomPermInput}
-             onAddCustom={handleAddCustomPerm}
-           />
-           {formError && (
-             <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)]">
-               <AlertCircle size={14} />
-               <p className="text-[12px]">{formError}</p>
-             </div>
-           )}
-         </form>
-       </Modal>
  
        {/* Role Detail Panel */}
        {selectedRole && (

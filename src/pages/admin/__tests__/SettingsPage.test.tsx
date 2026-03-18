@@ -5,12 +5,13 @@
   *  - Renders settings page heading
   *  - Skeleton loading state
   *  - Error state on API failure
-  *  - Settings form renders loaded values
-  *  - Save button calls updateSettings
+  *  - Settings values are displayed (read-only)
+  *  - Read-only notice is shown (no save button)
+  *  - Global settings mutation is blocked (PUT /api/v1/admin/settings requires ROLE_SUPER_ADMIN)
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+ import { render, screen, waitFor } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
  vi.mock('lucide-react', () => {
@@ -81,16 +82,16 @@
      expect(skeletons.length).toBeGreaterThan(0);
    });
  
-   it('renders loaded settings values', async () => {
+   it('displays loaded settings values as read-only text', async () => {
      (adminApi.getSettings as ReturnType<typeof vi.fn>).mockResolvedValue(mockSettings);
      renderPage();
      await waitFor(() => {
-       // Check company name appears somewhere
-       const matches = screen.queryAllByDisplayValue(/Orchestrator ERP/i);
+       // Check company name appears as text (not in an input)
+       const matches = screen.queryAllByText(/Orchestrator ERP/i);
        expect(matches.length).toBeGreaterThan(0);
      });
    });
- 
+
    it('shows error state on API failure', async () => {
      (adminApi.getSettings as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error'));
      renderPage();
@@ -99,16 +100,23 @@
        expect(msgs.length).toBeGreaterThan(0);
      });
    });
- 
-   it('calls updateSettings on save', async () => {
-     (adminApi.getSettings as ReturnType<typeof vi.fn>).mockResolvedValue(mockSettings);
-     (adminApi.updateSettings as ReturnType<typeof vi.fn>).mockResolvedValue(mockSettings);
-     renderPage();
-     await waitFor(() => expect(screen.getByText('System Settings')).toBeDefined());
-     const saveBtn = screen.getByText(/save settings/i);
-     fireEvent.click(saveBtn);
-     await waitFor(() => {
-       expect(adminApi.updateSettings).toHaveBeenCalled();
-     });
-   });
+
+  it('shows read-only notice — no save settings button', async () => {
+    (adminApi.getSettings as ReturnType<typeof vi.fn>).mockResolvedValue(mockSettings);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('System Settings')).toBeDefined());
+    // No save button should be present (settings mutation is superadmin-only)
+    expect(screen.queryByText(/save settings/i)).toBeNull();
+    // A read-only notice should be visible
+    const notices = screen.queryAllByText(/platform administrators|managed by/i);
+    expect(notices.length).toBeGreaterThan(0);
+  });
+
+  it('never calls updateSettings (settings are read-only)', async () => {
+    (adminApi.getSettings as ReturnType<typeof vi.fn>).mockResolvedValue(mockSettings);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('System Settings')).toBeDefined());
+    // updateSettings should never be called — no save action available
+    expect(adminApi.updateSettings).not.toHaveBeenCalled();
+  });
  });

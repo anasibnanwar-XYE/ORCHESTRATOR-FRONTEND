@@ -11,7 +11,7 @@
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+ import { render, screen, waitFor } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
  vi.mock('lucide-react', () => {
@@ -130,15 +130,17 @@
      });
    });
  
-   it('opens create role modal on button click', async () => {
+   it('shows read-only notice — no create role button', async () => {
      (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
      renderPage();
      await waitFor(() => expect(screen.getByText('Role Management')).toBeDefined());
-     const createBtn = screen.getByText(/new role/i);
-     fireEvent.click(createBtn);
-     await waitFor(() => {
-      expect(screen.getAllByText(/create role/i).length).toBeGreaterThan(0);
-     });
+     // No standalone "New Role" button should be present (role creation is superadmin-only)
+     const buttons = document.querySelectorAll('button');
+     const createBtn = Array.from(buttons).find((b) => /^new role$/i.test(b.textContent ?? ''));
+     expect(createBtn).toBeUndefined();
+     // A read-only notice should be visible
+     const notices = screen.queryAllByText(/platform administrators|managed by/i);
+     expect(notices.length).toBeGreaterThan(0);
    });
  
    it('shows empty state when no roles', async () => {

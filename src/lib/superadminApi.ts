@@ -14,9 +14,8 @@
   *  PATCH  /api/v1/companies/{id}/unsuspend                → unsuspend / activate tenant
   *  POST   /api/v1/companies/{id}/admin-password-reset     → reset admin password
   *  POST   /api/v1/companies/{id}/support-warnings         → send support warning
-  *  GET    /api/v1/admin/settings/runtime                  → tenant runtime metrics
-  *  GET    /api/v1/admin/settings/policy                   → tenant policy
-  *  PUT    /api/v1/admin/settings/policy                   → update policy
+  *  GET    /api/v1/admin/tenant-runtime/metrics             → tenant runtime metrics (canonical)
+  *  PUT    /api/v1/companies/{id}/tenant-runtime/policy    → update company runtime policy (canonical)
   *  GET    /api/v1/admin/roles                             → list platform roles
   *  POST   /api/v1/admin/roles                             → create platform role
   *  GET    /api/v1/audit/business-events                   → audit trail
@@ -39,6 +38,7 @@
    BusinessEvent,
    AuditEventFilters,
    TenantRuntimeMetrics,
+   TenantRuntimePolicyUpdateRequest,
    TenantPolicy,
  } from '@/types';
  import type {
@@ -354,17 +354,40 @@ export const superadminTicketsDetailApi = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const superadminRuntimeApi = {
+  /**
+   * Read tenant runtime metrics.
+   * Uses the canonical admin path GET /api/v1/admin/tenant-runtime/metrics.
+   * Accessible to both ROLE_ADMIN and ROLE_SUPER_ADMIN.
+   */
   async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
     const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
-      '/admin/settings/runtime'
+      '/admin/tenant-runtime/metrics'
     );
     return response.data.data;
   },
 
+  /**
+   * Update runtime rate-limit / concurrency policy for a specific company.
+   * Uses the canonical company-scoped path PUT /api/v1/companies/{id}/tenant-runtime/policy.
+   * Requires ROLE_SUPER_ADMIN.
+   */
+  async updateRuntimePolicy(
+    companyId: number,
+    data: TenantRuntimePolicyUpdateRequest
+  ): Promise<TenantRuntimeMetrics> {
+    const response = await apiRequest.put<ApiResponse<TenantRuntimeMetrics>>(
+      `/companies/${companyId}/tenant-runtime/policy`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /** @deprecated Stub kept for backward compatibility — policy reads return defaults */
   async getPolicy(): Promise<TenantPolicy> {
     return cloneTenantPolicy();
   },
 
+  /** @deprecated Stub kept for backward compatibility — no longer wired to a real endpoint */
   async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
     void data;
     showToast({

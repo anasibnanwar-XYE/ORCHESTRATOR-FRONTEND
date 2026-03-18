@@ -113,13 +113,25 @@
      });
    });
  
-   it('shows save policy button', async () => {
+   it('policy section is read-only — no save button', async () => {
      renderPage();
      await waitFor(() => {
-       const allMatches = screen.getAllByText(/Save|Update/i);
+       // Policy section should be visible
+       const allMatches = screen.getAllByText(/Security Policy|Session Timeout|Password/i);
        expect(allMatches.length).toBeGreaterThan(0);
      });
+     // No save button should be present in policy section
+     const saveMatches = screen.queryAllByText(/Save Policy/i);
+     expect(saveMatches.length).toBe(0);
    });
+
+  it('policy section shows read-only notice', async () => {
+    renderPage();
+    await waitFor(() => {
+      const notices = screen.queryAllByText(/managed by platform administrators/i);
+      expect(notices.length).toBeGreaterThan(0);
+    });
+  });
  
    it('shows error state on API failure', async () => {
      vi.mocked(tenantApi.getRuntimeMetrics).mockRejectedValue(new Error('API error'));

@@ -1,5 +1,10 @@
  /**
-  * SettingsPage — System Settings for the Admin portal
+  * SettingsPage — System Settings for the Admin portal (read-only)
+  *
+  * Displays global settings for informational purposes.
+  * PUT /api/v1/admin/settings requires ROLE_SUPER_ADMIN per the backend contract
+  * (global-security-settings-authorization). Tenant admins cannot persist mutations
+  * through this surface.
   *
   * Sections:
   *  1. General — company name, timezone, date format, currency
@@ -12,30 +17,16 @@
  import {
    AlertCircle,
    RefreshCcw,
-   Save,
-   Check,
+   Lock,
  } from 'lucide-react';
- import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
- import { Input } from '@/components/ui/Input';
- import { Switch } from '@/components/ui/Switch';
  import { Skeleton } from '@/components/ui/Skeleton';
- import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
  import type { ExtendedAdminSettings } from '@/types';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
  // ─────────────────────────────────────────────────────────────────────────────
- 
- const TIMEZONES = [
-   'Asia/Kolkata', 'UTC', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Tokyo',
-   'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Los_Angeles',
-   'Australia/Sydney', 'Africa/Johannesburg',
- ];
- 
- const DATE_FORMATS = ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY'];
- const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD'];
  
  interface SettingsSectionProps {
    title: string;
@@ -57,89 +48,22 @@
    );
  }
  
- interface SelectFieldProps {
-   label: string;
-   value: string;
-   options: string[];
-   onChange: (val: string) => void;
- }
- 
- function SelectField({ label, value, options, onChange }: SelectFieldProps) {
-   return (
-     <div className="space-y-1.5">
-       <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-         {label}
-       </label>
-       <select
-         value={value}
-         onChange={(e) => onChange(e.target.value)}
-         className={clsx(
-           'w-full h-9 rounded-lg border border-[var(--color-border-default)] px-3',
-           'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
-           'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-         )}
-       >
-         {options.map((opt) => (
-           <option key={opt} value={opt}>{opt}</option>
-         ))}
-       </select>
-     </div>
-   );
- }
  
  // ─────────────────────────────────────────────────────────────────────────────
  // SettingsPage
  // ─────────────────────────────────────────────────────────────────────────────
  
  export function SettingsPage() {
-  const { success, error: toastError } = useToast();
    const [settings, setSettings] = useState<ExtendedAdminSettings | null>(null);
    const [isLoading, setIsLoading] = useState(true);
-   const [isSaving, setIsSaving] = useState(false);
    const [error, setError] = useState<string | null>(null);
-   const [savedPulse, setSavedPulse] = useState(false);
- 
-   // Local form state (mirrors settings)
-   const [form, setForm] = useState<ExtendedAdminSettings>({
-     companyName: '',
-     timezone: 'Asia/Kolkata',
-     dateFormat: 'DD/MM/YYYY',
-     currency: 'INR',
-     emailNotifications: true,
-     autoApproveThreshold: undefined,
-     periodLockEnabled: false,
-     exportApprovalRequired: false,
-     corsAllowedOrigins: '',
-     smtpHost: '',
-     smtpPort: 587,
-     smtpUsername: '',
-     smtpFromEmail: '',
-     smtpFromName: '',
-   });
  
    const load = useCallback(async () => {
      setIsLoading(true);
      setError(null);
      try {
        const data = await adminApi.getSettings();
-       const ext = data as ExtendedAdminSettings;
-       setSettings(ext);
-       setForm({
-         companyName: ext.companyName ?? '',
-         timezone: ext.timezone ?? 'Asia/Kolkata',
-         dateFormat: ext.dateFormat ?? 'DD/MM/YYYY',
-         currency: ext.currency ?? 'INR',
-         emailNotifications: ext.emailNotifications ?? true,
-         autoApproveThreshold: ext.autoApproveThreshold,
-         periodLockEnabled: ext.periodLockEnabled ?? false,
-         exportApprovalRequired: ext.exportApprovalRequired ?? false,
-         corsAllowedOrigins: ext.corsAllowedOrigins ?? '',
-         smtpHost: ext.smtpHost ?? '',
-         smtpPort: ext.smtpPort ?? 587,
-         smtpUsername: ext.smtpUsername ?? '',
-         smtpFromEmail: ext.smtpFromEmail ?? '',
-         smtpFromName: ext.smtpFromName ?? '',
-       });
+       setSettings(data as ExtendedAdminSettings);
      } catch {
        setError("Couldn't load settings. Please try again.");
      } finally {
@@ -148,21 +72,6 @@
    }, []);
  
    useEffect(() => { load(); }, [load]);
- 
-   const handleSave = async () => {
-     setIsSaving(true);
-     try {
-       const updated = await adminApi.updateSettings(form);
-       setSettings(updated as ExtendedAdminSettings);
-       setSavedPulse(true);
-       setTimeout(() => setSavedPulse(false), 2000);
-      success('Settings saved', 'Your changes have been saved.');
-     } catch (err) {
-      toastError('Failed to save', err instanceof Error ? err.message : 'Failed to save settings');
-     } finally {
-       setIsSaving(false);
-     }
-   };
  
    if (isLoading) {
      return (
@@ -201,161 +110,121 @@
      );
    }
  
+   // Read-only display helper
+   const s = settings;
+
    return (
      <div className="space-y-5">
        {/* Header */}
-       <div className="flex items-center justify-between gap-4">
-         <div>
-           <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-             System Settings
-           </h1>
-           <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-             Configure system-wide behaviour and integrations
-           </p>
-         </div>
-         <Button onClick={handleSave} disabled={isSaving}>
-           {savedPulse ? (
-             <>
-               <Check size={14} className="mr-1.5" /> Saved
-             </>
-           ) : (
-             <>
-               <Save size={14} className="mr-1.5" />
-               {isSaving ? 'Saving...' : 'Save Settings'}
-             </>
-           )}
-         </Button>
+       <div>
+         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
+           System Settings
+         </h1>
+         <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
+           System-wide configuration for this organisation
+         </p>
+       </div>
+
+       {/* Read-only notice */}
+       <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] text-[13px] text-[var(--color-text-secondary)]">
+         <Lock size={14} className="shrink-0 text-[var(--color-text-tertiary)]" />
+         <span>Global settings are managed by platform administrators. Contact your platform team to change these values.</span>
        </div>
  
        {/* General */}
        <SettingsSection title="General" description="Basic company and locale settings">
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-           <Input
-             label="Company Name"
-             value={form.companyName}
-             onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
-             placeholder="Orchestrator ERP"
-           />
-           <SelectField
-             label="Currency"
-             value={form.currency}
-             options={CURRENCIES}
-             onChange={(v) => setForm((f) => ({ ...f, currency: v }))}
-           />
-           <SelectField
-             label="Timezone"
-             value={form.timezone}
-             options={TIMEZONES}
-             onChange={(v) => setForm((f) => ({ ...f, timezone: v }))}
-           />
-           <SelectField
-             label="Date Format"
-             value={form.dateFormat}
-             options={DATE_FORMATS}
-             onChange={(v) => setForm((f) => ({ ...f, dateFormat: v }))}
-           />
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Company Name</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.companyName ?? '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Currency</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.currency ?? '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Timezone</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.timezone ?? '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Date Format</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.dateFormat ?? '—'}</p>
+           </div>
          </div>
        </SettingsSection>
  
        {/* Approvals */}
-       <SettingsSection title="Approvals" description="Control approval workflows and period locking">
+       <SettingsSection title="Approvals" description="Approval workflows and period locking">
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-           <Input
-             label="Auto-Approval Threshold (INR)"
-             type="number"
-             value={form.autoApproveThreshold !== undefined ? String(form.autoApproveThreshold) : ''}
-             onChange={(e) =>
-               setForm((f) => ({
-                 ...f,
-                 autoApproveThreshold: e.target.value ? Number(e.target.value) : undefined,
-               }))
-             }
-             placeholder="e.g. 50000"
-           />
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Auto-Approval Threshold</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">
+               {s?.autoApproveThreshold !== undefined ? `INR ${s.autoApproveThreshold}` : '—'}
+             </p>
+           </div>
          </div>
          <div className="space-y-3 pt-1">
-           <Switch
-             checked={form.periodLockEnabled ?? false}
-             onChange={(v) => setForm((f) => ({ ...f, periodLockEnabled: v }))}
-             label="Period Lock"
-             description="Prevent posting to closed accounting periods"
-           />
-           <Switch
-             checked={form.exportApprovalRequired ?? false}
-             onChange={(v) => setForm((f) => ({ ...f, exportApprovalRequired: v }))}
-             label="Export Approval Required"
-             description="Require admin approval before data exports are generated"
-           />
+           <div className="flex items-center justify-between">
+             <div>
+               <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Period Lock</p>
+               <p className="text-[12px] text-[var(--color-text-tertiary)]">Prevent posting to closed accounting periods</p>
+             </div>
+             <span className={`text-[12px] font-medium ${s?.periodLockEnabled ? 'text-[var(--color-success)]' : 'text-[var(--color-text-tertiary)]'}`}>
+               {s?.periodLockEnabled ? 'Enabled' : 'Disabled'}
+             </span>
+           </div>
+           <div className="flex items-center justify-between">
+             <div>
+               <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Export Approval Required</p>
+               <p className="text-[12px] text-[var(--color-text-tertiary)]">Require admin approval before data exports are generated</p>
+             </div>
+             <span className={`text-[12px] font-medium ${s?.exportApprovalRequired ? 'text-[var(--color-success)]' : 'text-[var(--color-text-tertiary)]'}`}>
+               {s?.exportApprovalRequired ? 'Enabled' : 'Disabled'}
+             </span>
+           </div>
          </div>
        </SettingsSection>
  
        {/* Email / SMTP */}
-       <SettingsSection title="Email" description="Configure outbound mail server (SMTP)">
+       <SettingsSection title="Email" description="Outbound mail server configuration">
          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-           <Input
-             label="SMTP Host"
-             value={form.smtpHost ?? ''}
-             onChange={(e) => setForm((f) => ({ ...f, smtpHost: e.target.value }))}
-             placeholder="smtp.example.com"
-           />
-           <Input
-             label="SMTP Port"
-             type="number"
-             value={form.smtpPort !== undefined ? String(form.smtpPort) : ''}
-             onChange={(e) =>
-               setForm((f) => ({ ...f, smtpPort: e.target.value ? Number(e.target.value) : undefined }))
-             }
-             placeholder="587"
-           />
-           <Input
-             label="SMTP Username"
-             value={form.smtpUsername ?? ''}
-             onChange={(e) => setForm((f) => ({ ...f, smtpUsername: e.target.value }))}
-             placeholder="notifications@example.com"
-           />
-           <Input
-             label="From Email"
-             type="email"
-             value={form.smtpFromEmail ?? ''}
-             onChange={(e) => setForm((f) => ({ ...f, smtpFromEmail: e.target.value }))}
-             placeholder="noreply@example.com"
-           />
-           <Input
-             label="From Name"
-             value={form.smtpFromName ?? ''}
-             onChange={(e) => setForm((f) => ({ ...f, smtpFromName: e.target.value }))}
-             placeholder="Orchestrator ERP"
-           />
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">SMTP Host</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.smtpHost || '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">SMTP Port</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.smtpPort ?? '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">From Email</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.smtpFromEmail || '—'}</p>
+           </div>
+           <div className="space-y-1.5">
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">From Name</p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{s?.smtpFromName || '—'}</p>
+           </div>
          </div>
-         <div className="pt-1">
-           <Switch
-             checked={form.emailNotifications}
-             onChange={(v) => setForm((f) => ({ ...f, emailNotifications: v }))}
-             label="Email Notifications"
-             description="Send transactional and alert emails to users"
-           />
+         <div className="flex items-center justify-between pt-1">
+           <div>
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Email Notifications</p>
+             <p className="text-[12px] text-[var(--color-text-tertiary)]">Transactional and alert emails to users</p>
+           </div>
+           <span className={`text-[12px] font-medium ${s?.emailNotifications ? 'text-[var(--color-success)]' : 'text-[var(--color-text-tertiary)]'}`}>
+             {s?.emailNotifications ? 'Enabled' : 'Disabled'}
+           </span>
          </div>
        </SettingsSection>
  
        {/* Advanced */}
        <SettingsSection title="Advanced" description="CORS and integration settings">
-         <Input
-           label="CORS Allowed Origins"
-           value={form.corsAllowedOrigins ?? ''}
-           onChange={(e) => setForm((f) => ({ ...f, corsAllowedOrigins: e.target.value }))}
-           placeholder="https://app.example.com, https://portal.example.com"
-         />
-         <p className="text-[11px] text-[var(--color-text-tertiary)]">
-           Comma-separated list of origins allowed to access the API.
-         </p>
+         <div className="space-y-1.5">
+           <p className="text-[13px] font-medium text-[var(--color-text-primary)]">CORS Allowed Origins</p>
+           <p className="text-[13px] text-[var(--color-text-secondary)] break-all">
+             {s?.corsAllowedOrigins || '—'}
+           </p>
+         </div>
        </SettingsSection>
- 
-       {/* Last saved note */}
-       {settings && (
-         <p className="text-[11px] text-[var(--color-text-tertiary)] text-right">
-           Last updated: {new Date(settings.companyName ? Date.now() : Date.now()).toLocaleDateString('en-IN')}
-         </p>
-       )}
      </div>
    );
  }

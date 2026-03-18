@@ -87,6 +87,33 @@ vi.mock('@/pages/superadmin/SuperadminDashboardPage', () => ({
   SuperadminDashboardPage: () => <div>Superadmin dashboard page</div>,
 }));
 
+vi.mock('@/pages/admin/RolesPage', () => ({
+  RolesPage: () => (
+    <div>
+      <span>Role Management</span>
+      <span>Role creation is managed by platform administrators</span>
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/SettingsPage', () => ({
+  SettingsPage: () => (
+    <div>
+      <span>System Settings</span>
+      <span>Global settings are managed by platform administrators</span>
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/admin/TenantRuntimePage', () => ({
+  TenantRuntimePage: () => (
+    <div>
+      <span>Tenant Runtime</span>
+      <span>Security policy is managed by platform administrators</span>
+    </div>
+  ),
+}));
+
 import App from '@/App';
 
 describe('App route RBAC moves', () => {
@@ -128,5 +155,47 @@ describe('App route RBAC moves', () => {
     window.history.pushState({}, '', '/superadmin/operations-control');
     render(<App />);
     expect(await screen.findByText('Operations control page')).toBeInTheDocument();
+  });
+
+  it('admin roles page shows read-only notice — no role creation', async () => {
+    mockAuth = {
+      ...mockAuth,
+      user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] },
+      session: { user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] } },
+    };
+
+    window.history.pushState({}, '', '/admin/roles');
+    render(<App />);
+
+    expect(await screen.findByText('Role Management')).toBeInTheDocument();
+    expect(await screen.findByText(/Role creation is managed by platform administrators/i)).toBeInTheDocument();
+  });
+
+  it('admin settings page shows read-only notice — no save button', async () => {
+    mockAuth = {
+      ...mockAuth,
+      user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] },
+      session: { user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] } },
+    };
+
+    window.history.pushState({}, '', '/admin/settings');
+    render(<App />);
+
+    expect(await screen.findByText('System Settings')).toBeInTheDocument();
+    expect(await screen.findByText(/Global settings are managed by platform administrators/i)).toBeInTheDocument();
+  });
+
+  it('superadmin is blocked from /admin/* and redirected to /superadmin', async () => {
+    mockAuth = {
+      ...mockAuth,
+      user: { ...mockAuth.user, roles: ['ROLE_SUPER_ADMIN'] },
+      session: { user: { ...mockAuth.user, roles: ['ROLE_SUPER_ADMIN'] } },
+    };
+
+    window.history.pushState({}, '', '/admin/settings');
+    render(<App />);
+
+    expect(await screen.findByText('Superadmin dashboard page')).toBeInTheDocument();
+    expect(screen.queryByText('System Settings')).not.toBeInTheDocument();
   });
 });
