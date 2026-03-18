@@ -1,0 +1,36 @@
+{
+  "milestone": "mobile-foundation",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "foundationVerification": {
+    "feature": "mobile-design-system-foundation",
+    "hasFulfillsAssertions": false,
+    "note": "mobile-design-system-foundation is a foundation feature with no validation-contract assertions. It creates reusable mobile primitives (BottomSheet, ActionSheet, BottomNav, MobileAppShell, FAB, SwipeableCard, ResponsiveContainer, ResponsiveGrid, Stack) that will be used by the dealer-sales-mobile-rollout milestone to satisfy VAL-MOBILE-* assertions.",
+    "testsPassed": true,
+    "testsCount": 37,
+    "buildPassed": true,
+    "componentsExported": [
+      "BottomSheet",
+      "ActionSheet",
+      "BottomNav",
+      "MobileAppShell",
+      "FAB",
+      "SwipeableCard",
+      "PullToRefresh",
+      "ResponsiveContainer",
+      "ResponsiveGrid",
+      "Stack"
+    ]
+  },
+  "appliedUpdates": [],
+  "previousRound": null
+}
