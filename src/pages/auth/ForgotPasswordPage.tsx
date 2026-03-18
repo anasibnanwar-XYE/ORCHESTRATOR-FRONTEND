@@ -11,6 +11,7 @@ import { type FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft } from 'lucide-react';
 import { authApi } from '@/lib/authApi';
+import { isApiError } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
@@ -19,20 +20,35 @@ export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  /** True when the backend returned a controlled persistence failure (not an account-existence signal). */
+  const [retryableFailure, setRetryableFailure] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading || !email.trim()) return;
 
     setIsLoading(true);
+    setRetryableFailure(false);
     try {
       await authApi.forgotPassword({ email: email.trim() });
-    } catch {
-      // Intentionally silenced — always show the same vague confirmation
-      // to prevent email enumeration attacks
+      setSubmitted(true);
+    } catch (error) {
+      // Distinguish controlled server-side persistence failures from all other errors:
+      //   - Persistence failure (backend could not store/send the reset link): show retryable state.
+      //   - Any other error (network, masked account-not-found, 4xx): show the same confirmation
+      //     to prevent email enumeration attacks.
+      const isPersistenceFailure =
+        (error instanceof Error && error.name === 'ForgotPasswordPersistenceError') ||
+        (isApiError(error) && (error.response?.status ?? 0) >= 500);
+
+      if (isPersistenceFailure) {
+        setRetryableFailure(true);
+      } else {
+        // Intentionally show same confirmation for any other error (enum prevention)
+        setSubmitted(true);
+      }
     } finally {
       setIsLoading(false);
-      setSubmitted(true);
     }
   };
 
@@ -65,6 +81,38 @@ export function ForgotPasswordPage() {
                   className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   <ArrowLeft size={13} />
+                  Back to sign in
+                </Link>
+              </div>
+            </div>
+          ) : retryableFailure ? (
+            /* ── Retryable failure state ── */
+            /* Shown when the backend reported a controlled persistence failure (reset link not stored/sent).
+               This is NOT the same as the normal confirmation — we must prompt the user to retry
+               rather than implying an email was sent when it wasn't. */
+            <div className="text-center">
+              <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-2">
+                Something went wrong
+              </h1>
+              <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-6">
+                We were unable to send the reset link right now. Please try again in a moment.
+              </p>
+              <Button
+                type="button"
+                fullWidth
+                size="lg"
+                onClick={() => {
+                  setRetryableFailure(false);
+                }}
+              >
+                Try again
+              </Button>
+              <div className="mt-4">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  <ArrowLeft size={12} />
                   Back to sign in
                 </Link>
               </div>

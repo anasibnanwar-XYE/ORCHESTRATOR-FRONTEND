@@ -127,7 +127,16 @@ export const authApi = {
   // ─────────────────────────────────────────────────────────────────────────
 
   async forgotPassword(data: ForgotPasswordRequest): Promise<void> {
-    await apiRequest.post<ApiResponse<void>>('/auth/password/forgot', data);
+    const response = await apiRequest.post<ApiResponse<void>>('/auth/password/forgot', data);
+    // Detect controlled persistence failure: backend returned a non-success ApiResponse
+    // instead of the normal masked-success response used for email enumeration safety.
+    // When this happens, the reset link was NOT stored or sent, so the UI must show a
+    // safe retryable failure state rather than the normal "check your email" confirmation.
+    if (response.data?.success === false) {
+      const err = new Error(response.data.message ?? 'Temporary failure sending reset link');
+      err.name = 'ForgotPasswordPersistenceError';
+      throw err;
+    }
   },
   // forgotPasswordSuperadmin was removed: the backend alias
   // POST /api/v1/auth/password/forgot/superadmin is retired (returns 410 Gone).

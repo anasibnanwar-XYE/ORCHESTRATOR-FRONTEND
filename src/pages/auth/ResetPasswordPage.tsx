@@ -29,6 +29,12 @@ export function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  /**
+   * Non-null when the reset token itself is invalid, expired, already-used, or superseded.
+   * Shown as an inline recovery banner (with a link to /forgot-password) rather than a toast,
+   * so the user understands they need to request a new link.
+   */
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -46,6 +52,7 @@ export function ResetPasswordPage() {
     if (!canSubmit) return;
 
     setIsLoading(true);
+    setTokenError(null);
     try {
       await authApi.resetPassword({ token, newPassword, confirmPassword });
 
@@ -56,9 +63,25 @@ export function ResetPasswordPage() {
       navigate('/login', { replace: true });
     } catch (error) {
       const resolved = resolveError(error);
-      toast.error(
-        resolved.type === 'message' ? resolved.message : 'Failed to reset password'
-      );
+      const message =
+        resolved.type === 'message' ? resolved.message : 'Failed to reset password';
+
+      // Distinguish between token-related errors (invalid/expired/used/superseded link)
+      // and password-policy errors (user needs to fix their password input).
+      // Token errors show as an inline recovery banner so the user knows to request a new link.
+      // Password-policy errors (contain "password" or "policy") show as a toast for correction.
+      const isPasswordPolicyError =
+        message.toLowerCase().includes('password') ||
+        message.toLowerCase().includes('policy');
+
+      if (isPasswordPolicyError) {
+        toast.error(message);
+      } else {
+        // Token is invalid, expired, already-used, or superseded — show inline recovery banner.
+        setTokenError(
+          'This reset link is no longer valid. Please request a new one.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +99,36 @@ export function ResetPasswordPage() {
 
         {/* Card */}
         <div className="bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] p-8">
+          {tokenError ? (
+            /* ── Token error state ── */
+            /* Shown when the reset link is invalid, expired, already-used, or superseded.
+               The user must request a new link rather than trying to reuse this one. */
+            <div className="text-center">
+              <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)] mb-2">
+                Reset link invalid
+              </h1>
+              <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-6">
+                {tokenError}
+              </p>
+              <Link
+                to="/forgot-password"
+                className="inline-flex items-center justify-center w-full h-10 px-4 text-[13px] font-medium bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-lg transition-colors"
+                data-testid="request-new-link"
+              >
+                Request a new reset link
+              </Link>
+              <div className="mt-4">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  <ArrowLeft size={12} />
+                  Back to sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="mb-6">
             <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)]">
               Create a new password
@@ -197,6 +250,8 @@ export function ResetPasswordPage() {
               Back to sign in
             </Link>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

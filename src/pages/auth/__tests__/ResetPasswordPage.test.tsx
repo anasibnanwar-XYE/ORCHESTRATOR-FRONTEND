@@ -209,7 +209,9 @@ describe('ResetPasswordPage — submission', () => {
     });
   });
 
-  it('shows error toast on failure', async () => {
+  it('shows inline token error for invalid/expired/used/superseded token — not a toast', async () => {
+    // Token-related errors (not password-policy errors) must show as inline recovery
+    // banner so users understand they need to request a new link.
     vi.mocked(authApi.resetPassword).mockRejectedValue(new Error('Token expired'));
 
     renderPage();
@@ -223,6 +225,53 @@ describe('ResetPasswordPage — submission', () => {
       fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
     });
 
-    await waitFor(() => expect(toastMock.error).toHaveBeenCalled());
+    await waitFor(() => {
+      // Toast should NOT be called for token errors (inline banner is shown instead)
+      expect(toastMock.error).not.toHaveBeenCalled();
+      // Inline token error state should be shown
+      expect(screen.getByText(/reset link.*no longer valid|invalid.*reset link/i)).toBeInTheDocument();
+    });
+  });
+
+  it('token error state shows a link to /forgot-password — VAL-AUTH-013', async () => {
+    // The recovery path for invalid/expired/superseded tokens must point to /forgot-password.
+    vi.mocked(authApi.resetPassword).mockRejectedValue(new Error('Token expired'));
+
+    renderPage();
+    fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: 'Abcdefgh1!' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Abcdefgh1!' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
+    });
+
+    await waitFor(() => {
+      const requestNewLink = screen.getByTestId('request-new-link');
+      expect(requestNewLink).toBeInTheDocument();
+      // The link must go to /forgot-password for self-service recovery
+      expect(requestNewLink).toHaveAttribute('href', '/forgot-password');
+    });
+  });
+
+  it('shows error toast for password-policy failure', async () => {
+    // Password policy errors (message contains "password") still use a toast
+    // because the user can correct their input without requesting a new link.
+    vi.mocked(authApi.resetPassword).mockRejectedValue(
+      new Error('Password does not meet policy: must have special character')
+    );
+
+    renderPage();
+    fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: 'Abcdefgh1!' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Abcdefgh1!' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
+    });
+
+    await waitFor(() => {
+      expect(toastMock.error).toHaveBeenCalled();
+      // Should NOT show inline token error for password-policy failures
+      expect(screen.queryByTestId('request-new-link')).not.toBeInTheDocument();
+    });
   });
 });

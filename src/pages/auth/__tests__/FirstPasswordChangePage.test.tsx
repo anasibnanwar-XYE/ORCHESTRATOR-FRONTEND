@@ -33,11 +33,12 @@ vi.mock('react-router-dom', async () => {
 
 // Auth context mock — session is controlled via mockSession variable
 let mockSession: Record<string, unknown> | null = { user: {} };
+const mockSignOut = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     get session() { return mockSession; },
     updateUser: vi.fn(),
-    signOut: vi.fn(),
+    signOut: mockSignOut,
   }),
   MFA_SESSION_KEY: 'bbp-orchestrator-mfa-pending',
 }));
@@ -100,6 +101,8 @@ beforeEach(() => {
   // Reset stable toast mock
   toastMock.success.mockReset();
   toastMock.error.mockReset();
+  // Ensure signOut returns a resolved promise (since we await it)
+  mockSignOut.mockResolvedValue(undefined);
   mockSession = { user: mockUser };
 });
 
@@ -239,9 +242,10 @@ describe('FirstPasswordChangePage — submission', () => {
     );
   });
 
-  it('navigates to /hub on successful password change', async () => {
+  it('signs out and navigates to /login after successful password change', async () => {
+    // Per backend contract (auth-session-revocation-hardening): password change revokes all
+    // previously issued tokens. The UI must clear the local session and force fresh login.
     vi.mocked(authApi.changePassword).mockResolvedValue(undefined);
-    vi.mocked(authApi.me).mockResolvedValue({ ...mockUser, mustChangePassword: false });
 
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
@@ -254,9 +258,10 @@ describe('FirstPasswordChangePage — submission', () => {
       fireEvent.click(screen.getByRole('button', { name: /set password/i }));
     });
 
-    await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith('/hub', { replace: true })
-    );
+    await waitFor(() => {
+      expect(mockSignOut).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+    });
   });
 
   it('shows error toast on API failure', async () => {

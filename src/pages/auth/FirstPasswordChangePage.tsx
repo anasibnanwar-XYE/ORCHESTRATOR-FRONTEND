@@ -22,7 +22,7 @@ import { PASSWORD_RULES, checkPasswordRules, isPasswordValid } from '@/utils/pas
 
 export function FirstPasswordChangePage() {
   const navigate = useNavigate();
-  const { session, updateUser, signOut } = useAuth();
+  const { session, signOut } = useAuth();
   const toast = useToast();
 
   const [newPassword, setNewPassword] = useState('');
@@ -53,13 +53,12 @@ export function FirstPasswordChangePage() {
         confirmPassword,
       });
 
-      toast.success('Password updated', 'You can now access your portal.');
-
-      // Refresh user data to clear mustChangePassword flag
-      const user = await authApi.me();
-      updateUser(user);
-
-      navigate('/hub', { replace: true });
+      // Per backend contract (auth-session-revocation-hardening): password change revokes all
+      // previously issued access and refresh tokens. Clear local session and force fresh login
+      // so the user authenticates with the new password and receives new valid tokens.
+      toast.success('Password updated', 'Please sign in with your new password.');
+      await signOut();
+      navigate('/login', { replace: true });
     } catch (error) {
       const resolved = resolveError(error);
       toast.error(
