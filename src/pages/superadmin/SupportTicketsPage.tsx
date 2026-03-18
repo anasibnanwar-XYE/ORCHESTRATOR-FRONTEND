@@ -18,6 +18,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
@@ -229,12 +230,24 @@ export function SupportTicketsPage() {
                     onClick={() => navigate(`/superadmin/tickets/${ticket.publicId}`)}
                   >
                     <td className="px-4 py-3">
-                      <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate max-w-[240px]">
-                        {ticket.subject}
-                      </p>
-                      <p className="text-[11px] text-[var(--color-text-tertiary)] font-mono mt-0.5">
-                        {ticket.publicId}
-                      </p>
+                      <div className="flex items-start gap-1.5">
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate max-w-[240px]">
+                            {ticket.subject}
+                          </p>
+                          <p className="text-[11px] text-[var(--color-text-tertiary)] font-mono mt-0.5">
+                            {ticket.publicId}
+                          </p>
+                        </div>
+                        {ticket.githubLastError && (
+                          <span
+                            title={`GitHub linkage error: ${ticket.githubLastError}`}
+                            className="shrink-0 mt-0.5"
+                          >
+                            <AlertTriangle size={12} className="text-[var(--color-warning)]" />
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-[12px] text-[var(--color-text-secondary)]">
@@ -277,13 +290,23 @@ export function SupportTicketsPage() {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/superadmin/tickets/${ticket.publicId}`); }}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
-                      {ticket.subject}
-                    </p>
-                    <p className="text-[11px] font-mono text-[var(--color-text-tertiary)] mt-0.5">
-                      {ticket.publicId}
-                    </p>
+                  <div className="min-w-0 flex items-start gap-1.5">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
+                        {ticket.subject}
+                      </p>
+                      <p className="text-[11px] font-mono text-[var(--color-text-tertiary)] mt-0.5">
+                        {ticket.publicId}
+                      </p>
+                    </div>
+                    {ticket.githubLastError && (
+                      <span
+                        title={`GitHub linkage error: ${ticket.githubLastError}`}
+                        className="shrink-0 mt-0.5"
+                      >
+                        <AlertTriangle size={12} className="text-[var(--color-warning)]" />
+                      </span>
+                    )}
                   </div>
                   <Badge variant={priorityVariant(ticket.priority)}>{ticket.priority ?? '—'}</Badge>
                 </div>

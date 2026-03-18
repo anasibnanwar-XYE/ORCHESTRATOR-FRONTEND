@@ -10,7 +10,7 @@ vi.mock('lucide-react', () => {
   const M = () => null;
   return {
     ArrowLeft: M, AlertCircle: M, RefreshCw: M, User: M, Clock: M,
-    Paperclip: M, MessageSquare: M, Lock: M, Send: M,
+    Paperclip: M, MessageSquare: M, Lock: M, Send: M, Github: M, ExternalLink: M, AlertTriangle: M,
   };
 });
 
@@ -209,6 +209,63 @@ describe('TicketDetailPage', () => {
     renderPage('TKT-001');
     await waitFor(() => {
       expect(superadminTicketsDetailApi.getTicket).toHaveBeenCalledWith('TKT-001');
+    });
+  });
+
+  it('shows GitHub linkage error when githubLastError is present (VAL-CROSS-005)', async () => {
+    const ticketWithLinkageError = {
+      ...mockTicket,
+      githubLastError: 'GitHub API rate limit exceeded',
+      githubIssueNumber: null,
+    };
+    (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(ticketWithLinkageError);
+    renderPage('TKT-001');
+    await waitFor(() => {
+      const errorTexts = screen.queryAllByText(/linkage error|GitHub API rate limit exceeded|still active/i);
+      expect(errorTexts.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows GitHub issue link when githubIssueNumber is present (VAL-CROSS-005)', async () => {
+    const ticketWithGitHub = {
+      ...mockTicket,
+      githubIssueNumber: 42,
+      githubIssueUrl: 'https://github.com/org/repo/issues/42',
+      githubIssueState: 'open',
+      githubLastError: null,
+    };
+    (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(ticketWithGitHub);
+    renderPage('TKT-001');
+    await waitFor(() => {
+      const links = document.querySelectorAll('a[href*="github.com"]');
+      const issueNumbers = screen.queryAllByText(/#42/i);
+      expect(links.length > 0 || issueNumbers.length > 0).toBe(true);
+    });
+  });
+
+  it('shows ticket with matching publicId as superadmin sees it (VAL-CROSS-005 cross-surface)', async () => {
+    // Dealer creates ticket with publicId TKT-001; superadmin should see the same identifier
+    (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(mockTicket);
+    renderPage('TKT-001');
+    await waitFor(() => {
+      // publicId must be visible in the detail view for cross-surface tracing
+      const idEls = screen.queryAllByText('TKT-001');
+      expect(idEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('local ticket stays visible even when GitHub linkage fails (VAL-CROSS-005)', async () => {
+    const ticketWithLinkageError = {
+      ...mockTicket,
+      githubLastError: 'Connection refused',
+      githubIssueNumber: null,
+    };
+    (superadminTicketsDetailApi.getTicket as ReturnType<typeof vi.fn>).mockResolvedValue(ticketWithLinkageError);
+    renderPage('TKT-001');
+    await waitFor(() => {
+      // Ticket subject and publicId are still visible despite linkage error
+      expect(screen.getByText('Cannot access payroll module')).toBeDefined();
+      expect(screen.queryAllByText('TKT-001').length).toBeGreaterThan(0);
     });
   });
 });

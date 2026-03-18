@@ -10,7 +10,7 @@ vi.mock('lucide-react', () => {
   const M = () => null;
   return {
     LifeBuoy: M, Search: M, RefreshCw: M, AlertCircle: M,
-    ChevronLeft: M, ChevronRight: M,
+    ChevronLeft: M, ChevronRight: M, AlertTriangle: M,
   };
 });
 
@@ -183,6 +183,42 @@ describe('SupportTicketsPage', () => {
     await waitFor(() => {
       const ticketIdElements = screen.queryAllByText('TKT-001');
       expect(ticketIdElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows same ticket publicId as dealer would see (VAL-CROSS-005 cross-surface)', async () => {
+    // When a dealer creates ticket TKT-001, superadmin must see TKT-001 in list
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
+    renderPage();
+    await waitFor(() => {
+      // Both dealer-facing and superadmin-facing views use publicId as the reference
+      expect(screen.queryAllByText('TKT-001').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('TKT-002').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('renders ticket with company context (VAL-CROSS-005)', async () => {
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
+    renderPage();
+    await waitFor(() => {
+      // Company code must be visible so superadmin can identify the originating tenant
+      expect(screen.queryAllByText('ACME').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('ticket with githubLastError still appears in the list (VAL-CROSS-005)', async () => {
+    const ticketsWithError = [
+      {
+        ...mockTickets[0],
+        githubLastError: 'GitHub API rate limit exceeded',
+        githubIssueNumber: null,
+      },
+    ];
+    (superadminTicketsApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(ticketsWithError);
+    renderPage();
+    await waitFor(() => {
+      // Ticket subject remains visible despite linkage error
+      expect(screen.queryAllByText('Cannot access payroll module').length).toBeGreaterThan(0);
     });
   });
 });

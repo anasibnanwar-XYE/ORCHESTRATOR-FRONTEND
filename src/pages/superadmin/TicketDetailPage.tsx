@@ -29,6 +29,8 @@ import {
   MessageSquare,
   Lock,
   Send,
+  Github,
+  ExternalLink,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
@@ -566,6 +568,55 @@ export function TicketDetailPage() {
               )}
             </dl>
           </div>
+
+          {/* GitHub linkage */}
+          {(ticket.githubIssueNumber || ticket.githubLastError) && (
+            <div className="p-4 rounded-xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] space-y-3">
+              <div className="flex items-center gap-1.5">
+                <Github size={12} className="text-[var(--color-text-tertiary)]" />
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                  GitHub
+                </p>
+              </div>
+              {ticket.githubIssueNumber && ticket.githubIssueUrl && (
+                <div>
+                  <dt className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wide mb-0.5">Issue</dt>
+                  <dd className="text-[12px] text-[var(--color-text-primary)]">
+                    <a
+                      href={ticket.githubIssueUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2"
+                    >
+                      #{ticket.githubIssueNumber}
+                      <ExternalLink size={10} />
+                    </a>
+                    {ticket.githubIssueState && (
+                      <span className="ml-2 text-[10px] font-mono bg-[var(--color-surface-tertiary)] px-1 py-0.5 rounded text-[var(--color-text-tertiary)]">
+                        {ticket.githubIssueState}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              )}
+              {ticket.githubLastError && (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning)] border-opacity-20">
+                  <AlertCircle size={12} className="mt-0.5 shrink-0 text-[var(--color-warning)]" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold text-[var(--color-warning)] mb-0.5">
+                      Linkage error
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] break-words">
+                      {ticket.githubLastError}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                      The local ticket is still active and visible.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Status history */}
         </div>

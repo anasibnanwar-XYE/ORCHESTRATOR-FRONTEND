@@ -246,9 +246,18 @@ import { CreditCard, CheckCircle } from 'lucide-react';
                        {req.reason}
                      </p>
                    )}
-                   <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                     {fmtDate(req.createdAt)}
-                   </p>
+                   <div className="flex items-center gap-2 flex-wrap">
+                     {(req.publicId || req.id) && (
+                       <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                         Ref: <span className="font-medium text-[var(--color-text-secondary)]">
+                           {req.publicId ?? `#${req.id}`}
+                         </span>
+                       </span>
+                     )}
+                     <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                       {fmtDate(req.createdAt)}
+                     </span>
+                   </div>
                  </div>
                ))}
              </div>

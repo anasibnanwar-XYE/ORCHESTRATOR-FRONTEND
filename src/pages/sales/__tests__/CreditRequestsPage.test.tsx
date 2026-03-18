@@ -162,4 +162,44 @@
        expect(badges.length).toBeGreaterThan(0);
      });
    });
+
+  it('shows reason below dealer name when present (VAL-CROSS-006)', async () => {
+    const requestsWithReason = [
+      {
+        id: 1,
+        publicId: 'CR-001',
+        dealerName: 'Raj Paints',
+        amountRequested: 500000,
+        status: 'PENDING',
+        reason: 'Seasonal inventory expansion',
+        createdAt: '2026-01-10T10:00:00Z',
+      },
+    ];
+    (salesApi.listCreditRequests as ReturnType<typeof vi.fn>).mockResolvedValue(requestsWithReason);
+    renderPage();
+    await waitFor(() => {
+      const reasonEls = screen.queryAllByText(/Seasonal inventory expansion/i);
+      expect(reasonEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows matching publicId as dealer submitted (VAL-CROSS-006 cross-surface)', async () => {
+    (salesApi.listCreditRequests as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequests);
+    renderPage();
+    await waitFor(() => {
+      // The publicId shown in the Sales view must match what the dealer sees
+      const idEls = screen.queryAllByText(/CR-001/i);
+      expect(idEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('status is consistent with dealer submitted status (VAL-CROSS-006)', async () => {
+    (salesApi.listCreditRequests as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequests);
+    renderPage();
+    await waitFor(() => {
+      // PENDING status badge must appear for dealer-submitted request
+      const pendingEls = screen.queryAllByText(/PENDING/i);
+      expect(pendingEls.length).toBeGreaterThan(0);
+    });
+  });
  });

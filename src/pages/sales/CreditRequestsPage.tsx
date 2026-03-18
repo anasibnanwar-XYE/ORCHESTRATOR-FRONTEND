@@ -446,8 +446,15 @@
                      <td className="px-4 py-3 font-mono text-[11px] text-[var(--color-text-secondary)]">
                        {req.publicId ?? `#${req.id}`}
                      </td>
-                     <td className="px-4 py-3 font-medium text-[var(--color-text-primary)]">
-                       {req.dealerName ?? '—'}
+                     <td className="px-4 py-3">
+                       <p className="font-medium text-[var(--color-text-primary)] text-[13px]">
+                         {req.dealerName ?? '—'}
+                       </p>
+                       {req.reason && (
+                         <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">
+                           {req.reason}
+                         </p>
+                       )}
                      </td>
                      <td className="px-4 py-3 text-right tabular-nums font-medium text-[var(--color-text-primary)]">
                        {fmtCurrency(req.amountRequested)}
@@ -500,8 +507,11 @@
              return (
                <div key={req.id} className="p-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
                  <div className="flex items-start justify-between gap-2">
-                   <div>
+                   <div className="min-w-0">
                      <p className="font-medium text-[var(--color-text-primary)] text-[13px]">{req.dealerName ?? '—'}</p>
+                     {req.reason && (
+                       <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">{req.reason}</p>
+                     )}
                      <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">{fmtDate(req.createdAt)}</p>
                    </div>
                    <CreditStatusBadge status={req.status} />

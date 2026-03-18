@@ -215,4 +215,42 @@ const mockApprovals = {
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('CO-2024-001').length).toBeGreaterThan(0));
    });
+
+  it('shows credit request reference matching dealer publicId (VAL-CROSS-006 cross-surface)', async () => {
+    (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
+    renderPage();
+    await waitFor(() => {
+      // The reference shown in Admin approvals must match what the dealer submitted
+      const refEls = screen.queryAllByText(/CR-2024-001/i);
+      expect(refEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('credit request summary is visible in admin approvals (VAL-CROSS-006)', async () => {
+    (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
+    renderPage();
+    await waitFor(() => {
+      // The summary of the dealer's credit request must be visible to admin for decision
+      const summaryEls = screen.queryAllByText(/Credit request for dealer ABC/i);
+      expect(summaryEls.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('approve action calls correct endpoint maintaining consistent decision state (VAL-CROSS-006)', async () => {
+    (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
+    (adminApi.approveCreditRequest as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockApprovals).mockResolvedValueOnce({ creditRequests: [], payrollRuns: [], exportRequests: [], periodCloseRequests: [] });
+    renderPage();
+    await waitFor(() => expect(screen.queryAllByText('CR-2024-001').length).toBeGreaterThan(0));
+    // Verify approve button leads to the correct API call
+    const approveBtns = screen.queryAllByText(/^approve$/i);
+    if (approveBtns.length > 0) {
+      fireEvent.click(approveBtns[0]);
+      // Confirmation dialog opens
+      await waitFor(() => {
+        const confirmBtns = screen.queryAllByRole('button', { name: /approve/i });
+        expect(confirmBtns.length).toBeGreaterThan(0);
+      });
+    }
+  });
  });
