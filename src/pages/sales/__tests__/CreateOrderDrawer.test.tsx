@@ -11,6 +11,7 @@
  *  - Order summary totals section is rendered
  *  - Discard button calls onClose
  *  - Submit is disabled when no dealer is selected
+ *  - Dealer combobox clear action does NOT render a nested button inside the trigger button
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -183,6 +184,48 @@ describe('CreateOrderDrawer', () => {
     renderDrawer(true);
     await waitFor(() => {
       expect(screen.getByText('Grand Total')).toBeDefined();
+    });
+  });
+
+  it('dealer combobox clear action is not a nested button inside the trigger button', () => {
+    // The editOrder fixture sets a dealer so the clear-action element is rendered inside the trigger.
+    const editOrder = {
+      id: 2,
+      orderNumber: 'SO-002',
+      status: 'DRAFT',
+      totalAmount: 1000,
+      dealerId: 99,
+      dealerName: 'Acme Corp',
+      createdAt: '2026-01-01T00:00:00Z',
+      items: [
+        { productCode: 'P001', description: '', quantity: 1, unitPrice: 100, gstRate: 18 },
+      ],
+    };
+    render(
+      <MemoryRouter>
+        <CreateOrderDrawer
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          editOrder={editOrder as unknown as Parameters<typeof CreateOrderDrawer>[0]['editOrder']}
+        />
+      </MemoryRouter>
+    );
+    // The clear element should be present (span[role=button] with aria-label)
+    const clearEl = screen.queryByRole('button', { name: /clear dealer selection/i });
+    expect(clearEl).toBeDefined();
+    // It must NOT be a <button> element — check tagName
+    if (clearEl) {
+      expect(clearEl.tagName.toLowerCase()).not.toBe('button');
+    }
+    // The outer trigger should still be a <button>
+    const triggerButtons = screen.getAllByRole('button');
+    const clearButtons = triggerButtons.filter(
+      (btn) => btn.getAttribute('aria-label') === 'Clear dealer selection',
+    );
+    // The clear action element must not be a native button
+    clearButtons.forEach((el) => {
+      expect(el.tagName.toLowerCase()).not.toBe('button');
     });
   });
 });

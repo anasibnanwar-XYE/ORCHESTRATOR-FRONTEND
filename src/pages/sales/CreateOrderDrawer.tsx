@@ -166,16 +166,26 @@
              <span className="text-[11px] font-mono text-[var(--color-text-tertiary)] shrink-0">
                {value.code}
              </span>
-             <button
-               type="button"
+             {/* Use span[role=button] instead of <button> to avoid invalid nested-button DOM structure */}
+             <span
+               role="button"
+               tabIndex={0}
+               aria-label="Clear dealer selection"
                onClick={(e) => {
                  e.stopPropagation();
                  onChange(null);
                }}
-               className="shrink-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+               onKeyDown={(e) => {
+                 if (e.key === 'Enter' || e.key === ' ') {
+                   e.preventDefault();
+                   e.stopPropagation();
+                   onChange(null);
+                 }
+               }}
+               className="shrink-0 cursor-pointer text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
              >
                <X size={12} />
-             </button>
+             </span>
            </>
          ) : (
            <>
