@@ -22,6 +22,7 @@ import { resolveError } from '@/lib/error-resolver';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
+import { resolvePortalAccess, resolvePostLoginDestination } from '@/lib/portal-routing';
 
 export function MfaPage() {
   const navigate = useNavigate();
@@ -111,7 +112,12 @@ export function MfaPage() {
         return;
       }
 
-      navigate('/hub', { replace: true });
+      // Restore the intended destination when accessible, otherwise fall back
+      // to role-based post-login routing. intendedDestination was preserved by
+      // LoginPage through the login-to-MFA corridor.
+      const access = resolvePortalAccess(result.user);
+      const destination = resolvePostLoginDestination(access, pendingState.intendedDestination);
+      navigate(destination, { replace: true });
     } catch (error) {
       const resolved = resolveError(error);
       const msg = resolved.type === 'message' ? resolved.message : 'Verification failed. Please try again.';

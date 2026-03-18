@@ -64,11 +64,16 @@ export interface AuthSession {
  *
  * Security note: password is kept in sessionStorage only for the duration of the
  * MFA challenge — it is removed on success, cancellation, or session expiry.
+ *
+ * intendedDestination is the originally requested protected route, preserved
+ * through the login-to-MFA corridor so MfaPage can restore it after success.
  */
 export interface MfaPendingState {
   email: string;
   password: string;
   companyCode: string;
+  /** The originally requested protected destination (e.g. '/accounting/journals'). */
+  intendedDestination?: string;
 }
 
 interface AuthContextValue {

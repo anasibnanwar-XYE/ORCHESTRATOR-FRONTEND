@@ -12,21 +12,29 @@
  */
 
 import { type FormEvent, useCallback, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useAuth, MFA_SESSION_KEY } from '@/context/AuthContext';
+import { useAuth, MFA_SESSION_KEY, type MfaPendingState } from '@/context/AuthContext';
 import { resolveError } from '@/lib/error-resolver';
 import { isApiError } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
+import { resolvePortalAccess, resolvePostLoginDestination } from '@/lib/portal-routing';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
   const toast = useToast();
+
+  /**
+   * Intended destination: the protected deep link the user was trying to reach
+   * before being redirected to /login. Restored after successful login or MFA.
+   */
+  const from = (location.state as { from?: string } | null)?.from ?? null;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,7 +79,14 @@ export function LoginPage() {
         // Per backend contract, MFA verification re-submits POST /auth/login with
         // original credentials + mfaCode or recoveryCode. Store credentials in
         // sessionStorage for mobile-resilient state (app switch to authenticator).
-        const pendingState = { email, password, companyCode };
+        // intendedDestination preserves the original protected deep link through
+        // the MFA corridor so MfaPage can restore it after successful verification.
+        const pendingState: MfaPendingState = {
+          email,
+          password,
+          companyCode,
+          ...(from ? { intendedDestination: from } : {}),
+        };
         try {
           sessionStorage.setItem(MFA_SESSION_KEY, JSON.stringify(pendingState));
         } catch {
@@ -86,16 +101,26 @@ export function LoginPage() {
         return;
       }
 
-      // Successful login — navigate to portal or hub
-      navigate('/hub', { replace: true });
+      // Successful login — restore the intended destination when accessible,
+      // otherwise fall back to role-based post-login routing.
+      const access = resolvePortalAccess(result.user);
+      const destination = resolvePostLoginDestination(access, from);
+      navigate(destination, { replace: true });
     } catch (error) {
       // Primary MFA detection: HTTP 428 status code (not relying on AUTH_007 code alone)
       const is428 = isApiError(error) && error.response?.status === 428;
       const resolved = is428 ? { type: 'mfa_redirect' as const } : resolveError(error);
 
       if (resolved.type === 'mfa_redirect') {
-        // Store original credentials for the canonical re-login MFA verification
-        const pendingState = { email, password, companyCode };
+        // Store original credentials for the canonical re-login MFA verification.
+        // intendedDestination preserves the original protected deep link through
+        // the MFA corridor so MfaPage can restore it after successful verification.
+        const pendingState: MfaPendingState = {
+          email,
+          password,
+          companyCode,
+          ...(from ? { intendedDestination: from } : {}),
+        };
         try {
           sessionStorage.setItem(MFA_SESSION_KEY, JSON.stringify(pendingState));
         } catch {

@@ -7,12 +7,15 @@
  *  - Input only accepts digits
  *  - Calls verifyMfa with full LoginRequest (email, password, companyCode, mfaCode)
  *  - Recovery code mode: can toggle, uses recoveryCode field
- *  - Navigates to /hub on success
+ *  - Navigates to /hub on success (role-based default when no intendedDestination)
  *  - Navigates to /change-password when mustChangePassword is true
  *  - Shows error toast on failure
  *  - Clears input and re-focuses on error
  *  - Auto-submits when 6 TOTP digits entered
  *  - Pending state survives sessionStorage (mobile app switch resilience)
+ *  - Restores intendedDestination after MFA when accessible — VAL-CROSS-002
+ *  - Falls back to role-based default when intendedDestination is inaccessible
+ *  - intendedDestination survives sessionStorage reload (full MFA handoff resilience)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -382,5 +385,130 @@ describe('MfaPage — sessionStorage state preservation — VAL-AUTH-005', () =>
     );
     renderMfaPage();
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Intended destination restoration — VAL-CROSS-002
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('MfaPage — intended destination restoration (VAL-CROSS-002)', () => {
+  it('navigates to intendedDestination from location.state after MFA success', async () => {
+    mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
+      // ROLE_ADMIN can access /accounting
+      user: mockUser,
+    });
+
+    // Pending state includes intendedDestination
+    mockLocationState = { ...validPendingState, intendedDestination: '/accounting/journals' };
+    renderMfaPage();
+
+    const input = screen.getByLabelText(/6-digit verification code/i);
+    fireEvent.change(input, { target: { value: '123456' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    });
+
+    // Should restore the original protected destination instead of /hub
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/accounting/journals', { replace: true })
+    );
+  });
+
+  it('navigates to intendedDestination recovered from sessionStorage after reload — VAL-CROSS-002', async () => {
+    mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
+      user: mockUser,
+    });
+
+    // Simulate reload: no location.state, but sessionStorage has the full pending state
+    mockLocationState = {};
+    sessionStorageMock.setItem(
+      'bbp-orchestrator-mfa-pending',
+      JSON.stringify({ ...validPendingState, intendedDestination: '/accounting/journals' })
+    );
+    renderMfaPage();
+
+    const input = screen.getByLabelText(/6-digit verification code/i);
+    fireEvent.change(input, { target: { value: '123456' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    });
+
+    // intendedDestination persisted through sessionStorage reload — still restored
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/accounting/journals', { replace: true })
+    );
+  });
+
+  it('falls back to role-based default when intendedDestination is not accessible', async () => {
+    mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
+      // ROLE_ADMIN cannot access /superadmin
+      user: mockUser,
+    });
+
+    // intendedDestination points to superadmin which ROLE_ADMIN cannot access
+    mockLocationState = { ...validPendingState, intendedDestination: '/superadmin/tenants' };
+    renderMfaPage();
+
+    const input = screen.getByLabelText(/6-digit verification code/i);
+    fireEvent.change(input, { target: { value: '123456' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    });
+
+    // Falls back to /hub (ROLE_ADMIN default) since /superadmin is off-limits
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/hub', { replace: true })
+    );
+  });
+
+  it('uses role-based default when no intendedDestination is set', async () => {
+    mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
+      // ROLE_ADMIN → /hub
+      user: mockUser,
+    });
+
+    // Standard pending state with no intendedDestination
+    mockLocationState = validPendingState;
+    renderMfaPage();
+
+    const input = screen.getByLabelText(/6-digit verification code/i);
+    fireEvent.change(input, { target: { value: '123456' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    });
+
+    // No intended destination → role-based default (/hub for ROLE_ADMIN)
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/hub', { replace: true })
+    );
   });
 });

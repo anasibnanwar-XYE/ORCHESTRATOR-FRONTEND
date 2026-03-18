@@ -265,3 +265,64 @@ export function canAccessPortal(access: PortalAccessState, pathPrefix: string): 
       return false;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Post-login destination resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Canonical portal path prefixes in precedence order. */
+const KNOWN_PORTAL_PREFIXES = [
+  '/superadmin',
+  '/admin',
+  '/accounting',
+  '/factory',
+  '/sales',
+  '/dealer',
+] as const;
+
+/**
+ * Extracts the portal path prefix for a given path, or returns null
+ * if the path does not belong to any known portal.
+ *
+ * e.g. '/accounting/journals' → '/accounting'
+ *      '/superadmin/tenants'  → '/superadmin'
+ *      '/hub'                 → null
+ *      '/login'               → null
+ */
+function getPortalPrefixForPath(path: string): string | null {
+  for (const prefix of KNOWN_PORTAL_PREFIXES) {
+    if (path === prefix || path.startsWith(prefix + '/')) {
+      return prefix;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolves the destination to navigate to after a successful login or MFA verification.
+ *
+ * When an intendedPath is given and the authenticated user can access it,
+ * returns that path directly (deep-link restoration). Otherwise returns the
+ * role-based default destination (/hub for multi-portal users, their portal
+ * root for single-portal users, /superadmin for superadmins).
+ *
+ * Used by LoginPage and MfaPage to restore deep-link destinations through the
+ * login-to-MFA corridor.
+ */
+export function resolvePostLoginDestination(
+  access: PortalAccessState,
+  intendedPath?: string | null
+): string {
+  const defaultDest = shouldShowHub(access) ? '/hub' : getDefaultPortalPath(access);
+
+  if (!intendedPath) return defaultDest;
+
+  const portalPrefix = getPortalPrefixForPath(intendedPath);
+  if (!portalPrefix) return defaultDest;
+
+  if (canAccessPortal(access, portalPrefix)) {
+    return intendedPath;
+  }
+
+  return defaultDest;
+}

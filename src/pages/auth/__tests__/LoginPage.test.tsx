@@ -14,6 +14,9 @@
  *  - Shows distinct lockout banner on lockout (AUTH_005) — VAL-AUTH-002
  *  - Shows runtime denial banner on TENANT_ON_HOLD/TENANT_BLOCKED — VAL-AUTH-003
  *  - Handles MFA redirect via 428 error — passes credentials to /mfa
+ *  - Restores intended destination after login when accessible — VAL-CROSS-002
+ *  - Falls back to role-based default when intended destination is inaccessible
+ *  - Passes intendedDestination to MFA pending state for corridor preservation
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -520,6 +523,205 @@ describe('LoginPage — MFA redirect via 428 error', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/mfa', expect.anything());
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Intended destination restoration — VAL-CROSS-002
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Render LoginPage with a router state that simulates being redirected from
+ * a protected deep link (e.g. RequirePortal sets state.from before redirect).
+ */
+function renderLoginPageWithFrom(from: string) {
+  return render(
+    <MemoryRouter initialEntries={[{ pathname: '/login', state: { from } }]}>
+      <LoginPage />
+    </MemoryRouter>
+  );
+}
+
+describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () => {
+  it('navigates to the intended destination after successful login when accessible', async () => {
+    mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'MOCK',
+      displayName: 'Admin User',
+      // ROLE_ADMIN can access /accounting
+      user: mockUser,
+    });
+
+    renderLoginPageWithFrom('/accounting/journals');
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'admin@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+    fireEvent.change(screen.getByLabelText(/company code/i), {
+      target: { value: 'MOCK' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    // Should navigate to the originally intended deep link, not /hub
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/accounting/journals', { replace: true })
+    );
+  });
+
+  it('falls back to role-based default when intended destination is inaccessible', async () => {
+    mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'MOCK',
+      displayName: 'Admin User',
+      // ROLE_ADMIN cannot access /superadmin
+      user: mockUser,
+    });
+
+    // Admin tries to access a superadmin path (e.g. stale bookmark)
+    renderLoginPageWithFrom('/superadmin/tenants');
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'admin@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    // Falls back to /hub (ROLE_ADMIN default) since /superadmin is off-limits
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('/hub', { replace: true })
+    );
+  });
+
+  it('includes intendedDestination in MFA pending state when from is set — VAL-CROSS-002', async () => {
+    mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'MOCK',
+      displayName: 'Admin User',
+      requiresMfa: true,
+      user: mockUser,
+    });
+
+    renderLoginPageWithFrom('/accounting/journals');
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'admin@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+    fireEvent.change(screen.getByLabelText(/company code/i), {
+      target: { value: 'MOCK' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    // The MFA pending state must include intendedDestination so MfaPage can restore it
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/mfa',
+        expect.objectContaining({
+          state: expect.objectContaining({
+            email: 'admin@bbp.com',
+            password: 'Password1!',
+            companyCode: 'MOCK',
+            intendedDestination: '/accounting/journals',
+          }),
+        })
+      );
+    });
+  });
+
+  it('does NOT include intendedDestination when there is no from state', async () => {
+    mockSignIn.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'MOCK',
+      displayName: 'Admin User',
+      requiresMfa: true,
+      user: mockUser,
+    });
+
+    // Normal render without any from state
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'admin@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/mfa',
+        expect.objectContaining({
+          state: expect.not.objectContaining({ intendedDestination: expect.anything() }),
+        })
+      );
+    });
+  });
+
+  it('includes intendedDestination in MFA pending state via 428 error path', async () => {
+    const error = Object.assign(new Error('MFA required'), {
+      isAxiosError: true,
+      response: { status: 428, data: { code: 'AUTH_007', message: 'MFA required' } },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPageWithFrom('/dealer/invoices');
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'dealer@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'Password1!' },
+    });
+    fireEvent.change(screen.getByLabelText(/company code/i), {
+      target: { value: 'MOCK' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/mfa',
+        expect.objectContaining({
+          state: expect.objectContaining({
+            intendedDestination: '/dealer/invoices',
+          }),
+        })
+      );
     });
   });
 });

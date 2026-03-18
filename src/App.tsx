@@ -675,13 +675,22 @@ function AuthGate({ children }: { children: ReactNode }) {
 // Route guards
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Redirects unauthenticated users to /login. */
+/** Redirects unauthenticated users to /login, preserving the attempted path as `from` state. */
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, mustChangePassword, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) return null;
   if (mustChangePassword) return <Navigate to="/change-password" replace />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
+  }
 
   return <>{children}</>;
 }
@@ -738,7 +747,7 @@ function RequireMustChange({ children }: { children: ReactNode }) {
 
 /**
  * Guards a portal section.
- * - Redirects unauthenticated users to /login.
+ * - Redirects unauthenticated users to /login, preserving the attempted path as `from` state.
  * - Superadmins are blocked from non-superadmin portals (redirected to /superadmin).
  * - Non-superadmin roles are blocked from /superadmin/* (redirected to /hub or their portal).
  */
@@ -750,10 +759,19 @@ function RequirePortal({
   pathPrefix: string;
 }) {
   const { isAuthenticated, mustChangePassword, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) return null;
   if (mustChangePassword) return <Navigate to="/change-password" replace />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
+  }
 
   const access = resolvePortalAccess(user);
 

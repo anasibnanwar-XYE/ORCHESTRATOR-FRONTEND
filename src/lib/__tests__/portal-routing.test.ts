@@ -12,6 +12,7 @@ import {
   getDefaultPortalPath,
   getAccessiblePortals,
   canAccessPortal,
+  resolvePostLoginDestination,
   isModuleEnabled,
   getModuleForPath,
   MODULE_KEYS,
@@ -422,5 +423,140 @@ describe('MODULE_KEYS', () => {
     expect(MODULE_KEYS.PAYROLL).toBe('payroll');
     expect(MODULE_KEYS.PRODUCTION).toBe('production');
     expect(MODULE_KEYS.PACKING).toBe('packing');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resolvePostLoginDestination — VAL-CROSS-002
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('resolvePostLoginDestination', () => {
+  describe('no intended path — falls back to role-based default', () => {
+    it('ROLE_ADMIN with no intended path → /hub', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, null)).toBe('/hub');
+    });
+
+    it('ROLE_ACCOUNTING with no intended path → /accounting', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+      expect(resolvePostLoginDestination(access, null)).toBe('/accounting');
+    });
+
+    it('ROLE_DEALER with no intended path → /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, null)).toBe('/dealer');
+    });
+
+    it('ROLE_SUPER_ADMIN with no intended path → /superadmin', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+      expect(resolvePostLoginDestination(access, null)).toBe('/superadmin');
+    });
+
+    it('ROLE_ADMIN with undefined intended path → /hub', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, undefined)).toBe('/hub');
+    });
+  });
+
+  describe('intended path is accessible — restores it', () => {
+    it('ROLE_ADMIN → restores /accounting/journals (deep link)', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/accounting/journals')).toBe('/accounting/journals');
+    });
+
+    it('ROLE_ADMIN → restores /admin/users', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/admin/users')).toBe('/admin/users');
+    });
+
+    it('ROLE_ACCOUNTING → restores /accounting/journals', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+      expect(resolvePostLoginDestination(access, '/accounting/journals')).toBe('/accounting/journals');
+    });
+
+    it('ROLE_DEALER → restores /dealer/invoices', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/invoices')).toBe('/dealer/invoices');
+    });
+
+    it('ROLE_SUPER_ADMIN → restores /superadmin/tenants', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+      expect(resolvePostLoginDestination(access, '/superadmin/tenants')).toBe('/superadmin/tenants');
+    });
+
+    it('ROLE_SALES → restores /sales/orders', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/orders')).toBe('/sales/orders');
+    });
+
+    it('ROLE_FACTORY → restores /factory/production/plans', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.FACTORY));
+      expect(resolvePostLoginDestination(access, '/factory/production/plans')).toBe('/factory/production/plans');
+    });
+
+    it('ROLE_ACCOUNTING → restores exact portal root /accounting', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+      expect(resolvePostLoginDestination(access, '/accounting')).toBe('/accounting');
+    });
+  });
+
+  describe('intended path is NOT accessible — falls back to role-based default', () => {
+    it('ROLE_ACCOUNTING cannot access /admin/users → /accounting', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+      expect(resolvePostLoginDestination(access, '/admin/users')).toBe('/accounting');
+    });
+
+    it('ROLE_DEALER cannot access /accounting/journals → /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/accounting/journals')).toBe('/dealer');
+    });
+
+    it('ROLE_ADMIN cannot access /superadmin/tenants → /hub', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/superadmin/tenants')).toBe('/hub');
+    });
+
+    it('ROLE_SUPER_ADMIN cannot access /admin/users → /superadmin', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SUPERADMIN));
+      expect(resolvePostLoginDestination(access, '/admin/users')).toBe('/superadmin');
+    });
+
+    it('ROLE_DEALER cannot access /dealer/../accounting → /dealer (path traversal safety)', () => {
+      // Non-portal paths are rejected
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/hub')).toBe('/dealer');
+    });
+  });
+
+  describe('intended path is not a portal path — falls back to role-based default', () => {
+    it('/login is not a portal path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/login')).toBe('/hub');
+    });
+
+    it('/hub is not a portal path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ACCOUNTING));
+      expect(resolvePostLoginDestination(access, '/hub')).toBe('/accounting');
+    });
+
+    it('/change-password is not a portal path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/change-password')).toBe('/hub');
+    });
+
+    it('/profile is not a portal path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/profile')).toBe('/sales');
+    });
+
+    it('/unknown-path is not a portal path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '/unknown-path')).toBe('/hub');
+    });
+
+    it('empty string is not a valid intended path → falls back', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.ADMIN));
+      expect(resolvePostLoginDestination(access, '')).toBe('/hub');
+    });
   });
 });

@@ -11,11 +11,12 @@
  *  - switchCompany updates session
  *  - updateUser updates user in session
  *  - isAuthenticated is false when mustChangePassword is true
+ *  - MfaPendingState type supports intendedDestination field — VAL-CROSS-002
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
-import { AuthProvider, useAuth } from '../AuthContext';
+import { AuthProvider, useAuth, type MfaPendingState } from '../AuthContext';
 import { STORAGE_KEYS } from '@/lib/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -521,5 +522,63 @@ describe('switchCompany — VAL-SESSION-005', () => {
     await waitFor(() => {
       expect(capturedCtx!.session?.companyCode).toBe('ACM');
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MfaPendingState — intendedDestination field — VAL-CROSS-002
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('MfaPendingState — intendedDestination field (VAL-CROSS-002)', () => {
+  it('accepts intendedDestination as an optional string field', () => {
+    // Type-level test: verify the exported MfaPendingState type supports
+    // intendedDestination for the login-to-MFA corridor deep-link preservation.
+    const withDestination: MfaPendingState = {
+      email: 'user@example.com',
+      password: 'Secret1!',
+      companyCode: 'MOCK',
+      intendedDestination: '/accounting/journals',
+    };
+    expect(withDestination.intendedDestination).toBe('/accounting/journals');
+
+    const withoutDestination: MfaPendingState = {
+      email: 'user@example.com',
+      password: 'Secret1!',
+      companyCode: 'MOCK',
+    };
+    expect(withoutDestination.intendedDestination).toBeUndefined();
+  });
+
+  it('verifyMfa clears sessionStorage MFA key on success', async () => {
+    (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    (authApi.verifyMfa as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
+
+    // Seed sessionStorage with a pending state that includes intendedDestination
+    sessionStorageMock.setItem(
+      'bbp-orchestrator-mfa-pending',
+      JSON.stringify({
+        email: 'test@bbp.com',
+        password: 'Password1!',
+        companyCode: 'ORCH',
+        intendedDestination: '/accounting/journals',
+      })
+    );
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await act(async () => {
+      await capturedCtx!.verifyMfa({
+        email: 'test@bbp.com',
+        password: 'Password1!',
+        companyCode: 'ORCH',
+        mfaCode: '123456',
+      });
+    });
+
+    await waitFor(() => expect(capturedCtx!.session).not.toBeNull());
+
+    // sessionStorage must be cleared after successful MFA — security clean-up
+    expect(sessionStorageMock.getItem('bbp-orchestrator-mfa-pending')).toBeNull();
   });
 });
