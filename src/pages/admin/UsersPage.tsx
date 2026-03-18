@@ -8,7 +8,9 @@
   *  - View/detail modal (read-only) shown on row click or View action
   *  - Delete with ConfirmDialog danger variant
   *  - Suspend/unsuspend toggle with confirmation
+  *  - Force-reset password action with confirmation
   *  - Force-disable MFA action with confirmation
+  *  - Foreign-target and missing-target failures remain masked (backend returns "User not found" for both)
   */
  
  import { useEffect, useState, useCallback, useReducer } from 'react';
@@ -443,7 +445,7 @@
  // Dialog state reducer
  // ─────────────────────────────────────────────────────────────────────────────
  
- type DialogType = 'delete' | 'suspend' | 'unsuspend' | 'disable-mfa' | null;
+ type DialogType = 'delete' | 'suspend' | 'unsuspend' | 'disable-mfa' | 'force-reset' | null;
  
  interface DialogState {
    type: DialogType;
@@ -478,13 +480,15 @@
    onDelete: (user: AdminUser) => void;
    onSuspend: (user: AdminUser) => void;
    onDisableMfa: (user: AdminUser) => void;
+   onForceReset: (user: AdminUser) => void;
  }
  
- function RowActions({ user, onView, onEdit, onDelete, onSuspend, onDisableMfa }: RowActionsProps) {
+ function RowActions({ user, onView, onEdit, onDelete, onSuspend, onDisableMfa, onForceReset }: RowActionsProps) {
    const items: { label: string; value: string; destructive?: boolean }[] = [
      { label: 'View', value: 'view' },
      { label: 'Edit', value: 'edit' },
      { label: user.enabled ? 'Suspend' : 'Unsuspend', value: 'suspend' },
+     { label: 'Force reset password', value: 'force-reset' },
      ...(user.mfaEnabled ? [{ label: 'Disable MFA', value: 'disable-mfa' }] : []),
      { label: 'Delete', value: 'delete', destructive: true },
    ];
@@ -494,6 +498,7 @@
      else if (value === 'edit') onEdit(user);
      else if (value === 'suspend') onSuspend(user);
      else if (value === 'disable-mfa') onDisableMfa(user);
+     else if (value === 'force-reset') onForceReset(user);
      else if (value === 'delete') onDelete(user);
    };
  
@@ -653,6 +658,24 @@
        dispatchDialog({ type: 'setLoading', isLoading: false });
      }
    };
+
+   // ─── Force Reset Password ─────────────────────────────────────────────────
+
+   const handleConfirmForceReset = async () => {
+     if (!dialog.user) return;
+     dispatchDialog({ type: 'setLoading', isLoading: true });
+     try {
+       await adminApi.forceResetPassword(dialog.user.id);
+       success('Password reset sent', `A reset link has been sent to ${dialog.user.email}.`);
+       dispatchDialog({ type: 'close' });
+       await loadData();
+     } catch (err) {
+       // Both foreign-target and missing-target return the same masked "User not found" response.
+       // We show the error message as-is without enriching it to preserve the masking intent.
+       toastError('Reset failed', err instanceof Error ? err.message : 'Please try again.');
+       dispatchDialog({ type: 'setLoading', isLoading: false });
+     }
+   };
  
    // ─── Table columns ────────────────────────────────────────────────────────
  
@@ -760,6 +783,13 @@
        variant: 'warning' as const,
        onConfirm: handleConfirmDisableMfa,
      },
+     'force-reset': {
+       title: 'Force reset password',
+       message: `Send a password reset link to ${dialog.user?.email ?? 'this user'}? They will need to set a new password before they can log in.`,
+       confirmLabel: 'Send reset link',
+       variant: 'default' as const,
+       onConfirm: handleConfirmForceReset,
+     },
    } as const;
  
    const activeDialog = dialog.type ? dialogConfig[dialog.type] : null;
@@ -829,6 +859,9 @@
                }
                onDisableMfa={(u) =>
                  dispatchDialog({ type: 'open', dialogType: 'disable-mfa', user: u })
+               }
+               onForceReset={(u) =>
+                 dispatchDialog({ type: 'open', dialogType: 'force-reset', user: u })
                }
              />
            )}

@@ -53,6 +53,8 @@ import type {
   TenantOnboardingRequest,
   TenantOnboardingResponse,
   CoATemplateDto,
+  TenantModulesUpdateRequest,
+  CompanyEnabledModulesDto,
   SupportTicketResponse,
   SupportTicketListResponse,
 } from '@/types';
@@ -157,6 +159,22 @@ export const superadminTenantsApi = {
       data
     );
     if (!response.data.success) throw new Error(response.data.message);
+  },
+
+  /**
+   * Update enabled modules for a tenant.
+   * PUT /api/v1/superadmin/tenants/{id}/modules
+   *
+   * Only gatable modules should be sent: MANUFACTURING, HR_PAYROLL, PURCHASING, PORTAL, REPORTS_ADVANCED.
+   * Core modules (AUTH, ACCOUNTING, SALES, INVENTORY) are always enabled and should not be listed.
+   * Returns CompanyEnabledModulesDto with the resulting enabled modules list.
+   */
+  async updateTenantModules(id: number, data: TenantModulesUpdateRequest): Promise<CompanyEnabledModulesDto> {
+    const response = await apiRequest.put<ApiResponse<CompanyEnabledModulesDto>>(
+      `/superadmin/tenants/${id}/modules`,
+      data
+    );
+    return response.data.data;
   },
 };
 

@@ -1585,6 +1585,24 @@ export interface ApiErrorBody {
    adminTemporaryPassword: string;
  }
 
+ /**
+  * Request body for updating enabled modules on a tenant.
+  * PUT /api/v1/superadmin/tenants/{id}/modules
+  *
+  * Gatable modules: MANUFACTURING, HR_PAYROLL, PURCHASING, PORTAL, REPORTS_ADVANCED
+  * Core modules (always enabled, not listed here): AUTH, ACCOUNTING, SALES, INVENTORY
+  */
+ export interface TenantModulesUpdateRequest {
+   enabledModules: string[];
+ }
+
+ /** Response from PUT /api/v1/superadmin/tenants/{id}/modules */
+ export interface CompanyEnabledModulesDto {
+   companyId: number;
+   companyCode: string;
+   enabledModules: string[];
+ }
+
  /** Request body for updating tenant details */
  /** Request body for updating tenant details */
  export interface TenantUpdateRequest {

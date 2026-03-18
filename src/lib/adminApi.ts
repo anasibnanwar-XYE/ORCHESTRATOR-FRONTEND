@@ -196,6 +196,21 @@ export const adminApi = {
     }
   },
 
+  /**
+   * Force-reset the password for a target user.
+   * POST /api/v1/admin/users/{id}/force-reset-password
+   * Returns ApiResponse<String> ("OK") on success.
+   * Foreign-target and missing-target both return masked 400 "User not found".
+   */
+  async forceResetPassword(id: number): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<string>>(
+      `/admin/users/${id}/force-reset-password`
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
   // ─────────────────────────────────────────────────────────────────────────
   // Roles
   // ─────────────────────────────────────────────────────────────────────────

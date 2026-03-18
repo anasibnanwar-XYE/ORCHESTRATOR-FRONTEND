@@ -3,13 +3,14 @@
   *
   * Full tenant management for superadmin:
   *  - Paginated DataTable with search by name/code
-  *  - Status filter dropdown (all / active / suspended / deactivated)
+  *  - Status filter dropdown (all / active / suspended / hold / deactivated / blocked)
   *  - Onboard new tenant: 2-step form (company details + admin user)
   *  - Update tenant: pre-populated form
   *  - Lifecycle actions with confirmation dialogs:
   *      Activate (from deactivated/new), Suspend (warning), Deactivate (danger)
   *  - Admin password reset form
   *  - Support warning form (severity + message)
+  *  - Module configuration: checkboxes for gatable modules (VAL-ADMIN-013)
   */
  
  import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -41,13 +42,26 @@ import type {
   SuperAdminTenantDto,
   TenantOnboardingRequest,
   CoATemplateDto,
+  TenantModulesUpdateRequest,
 } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'NEW';
+/**
+ * Display vocabulary for tenant status.
+ *
+ * List endpoints return: ACTIVE | SUSPENDED | DEACTIVATED
+ * Lifecycle mutation responses return: ACTIVE | HOLD | BLOCKED
+ *
+ * HOLD ↔ SUSPENDED (same runtime behavior — read-only access)
+ * BLOCKED ↔ DEACTIVATED (same runtime behavior — fully blocked)
+ *
+ * Both vocabularies are accepted here so lifecycle mutation responses
+ * can be shown coherently alongside list data (VAL-ADMIN-007).
+ */
+type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' | 'NEW' | 'HOLD' | 'BLOCKED';
 
 /**
  * Normalize SuperAdminTenantDto (from /api/v1/superadmin/tenants) to the
@@ -67,7 +81,10 @@ function normalizeTenant(dto: SuperAdminTenantDto): Tenant {
 }
 
 function getStatus(tenant: Tenant): TenantStatus {
-  if (tenant.status) return tenant.status;
+  if (tenant.status) {
+    // Accept both list vocabulary (SUSPENDED/DEACTIVATED) and lifecycle-mutation vocabulary (HOLD/BLOCKED)
+    return tenant.status as TenantStatus;
+  }
   if (!tenant.isActive) return 'SUSPENDED';
   return 'ACTIVE';
 }
@@ -94,8 +111,18 @@ function getStatus(tenant: Tenant): TenantStatus {
        label: 'Suspended',
        className: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]',
      },
+     // HOLD is the lifecycle-mutation vocabulary for SUSPENDED (same runtime behavior)
+     HOLD: {
+       label: 'On Hold',
+       className: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]',
+     },
      DEACTIVATED: {
        label: 'Deactivated',
+       className: 'text-[var(--color-error)] bg-[var(--color-error-bg)]',
+     },
+     // BLOCKED is the lifecycle-mutation vocabulary for DEACTIVATED (same runtime behavior)
+     BLOCKED: {
+       label: 'Blocked',
        className: 'text-[var(--color-error)] bg-[var(--color-error-bg)]',
      },
      NEW: {
@@ -810,6 +837,124 @@ const emptyCompanyForm: CompanyDetailsFormData = {
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
+ // Module Configuration Modal (VAL-ADMIN-013)
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** Gatable modules per backend contract. Core modules are always enabled and are not shown here. */
+ const GATABLE_MODULES: Array<{ key: string; label: string; description: string }> = [
+   { key: 'MANUFACTURING', label: 'Manufacturing', description: 'Factory, production plans, and batch management' },
+   { key: 'HR_PAYROLL', label: 'HR & Payroll', description: 'Human resources and payroll processing' },
+   { key: 'PURCHASING', label: 'Purchasing', description: 'Purchase orders, suppliers, and GRN intake' },
+   { key: 'PORTAL', label: 'Dealer Portal', description: 'Dealer-facing portal access and dealer management' },
+   { key: 'REPORTS_ADVANCED', label: 'Advanced Reports', description: 'Extended financial and operational reporting' },
+ ];
+
+ interface ModuleConfigModalProps {
+   tenant: Tenant | null;
+   onClose: () => void;
+   onSuccess: () => void;
+ }
+
+ function ModuleConfigModal({ tenant, onClose, onSuccess }: ModuleConfigModalProps) {
+   const { toast } = useToast();
+   const [enabledModules, setEnabledModules] = useState<string[]>([]);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   // Initialise with empty selection when tenant changes.
+   // In a real flow, we'd load current modules via GET /api/v1/superadmin/tenants/{id}/usage or similar;
+   // for now all gatable modules are deselected by default and the admin selects what to enable.
+   useEffect(() => {
+     if (tenant) {
+       setEnabledModules([]);
+     }
+   }, [tenant]);
+
+   const toggleModule = (key: string) => {
+     setEnabledModules((prev) =>
+       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+     );
+   };
+
+   const handleSave = async () => {
+     if (!tenant) return;
+     setIsSubmitting(true);
+     try {
+       const payload: TenantModulesUpdateRequest = { enabledModules };
+       await superadminTenantsApi.updateTenantModules(tenant.id, payload);
+       toast({ title: 'Module configuration saved', type: 'success' });
+       onSuccess();
+       onClose();
+     } catch (err) {
+       toast({
+         title: 'Failed to update modules',
+         description: err instanceof Error ? err.message : 'Please try again',
+         type: 'error',
+       });
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
+
+   return (
+     <Modal
+       isOpen={!!tenant}
+       onClose={onClose}
+       title="Configure Modules"
+       description={tenant ? `${tenant.name} (${tenant.code})` : undefined}
+       size="md"
+       footer={
+         <>
+           <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+           <Button variant="primary" size="sm" onClick={handleSave} isLoading={isSubmitting}>
+             Save Configuration
+           </Button>
+         </>
+       }
+     >
+       <div className="space-y-4">
+         <p className="text-[12px] text-[var(--color-text-tertiary)]">
+           Select which optional modules to enable for this tenant. Core modules (Auth,
+           Accounting, Sales, Inventory) are always enabled.
+           Disabled modules show an unavailable state to users with a clear return path.
+         </p>
+         <div className="rounded-lg border border-[var(--color-border-default)] divide-y divide-[var(--color-border-subtle)]">
+           {GATABLE_MODULES.map((mod) => {
+             const checked = enabledModules.includes(mod.key);
+             return (
+               <label
+                 key={mod.key}
+                 className={clsx(
+                   'flex items-start gap-3 px-4 py-3 cursor-pointer',
+                   'hover:bg-[var(--color-surface-secondary)] transition-colors',
+                 )}
+               >
+                 <input
+                   type="checkbox"
+                   checked={checked}
+                   onChange={() => toggleModule(mod.key)}
+                   className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--color-neutral-900)]"
+                 />
+                 <div className="flex-1 min-w-0">
+                   <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                     {mod.label}
+                   </p>
+                   <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
+                     {mod.description}
+                   </p>
+                 </div>
+               </label>
+             );
+           })}
+         </div>
+         <p className="text-[11px] text-[var(--color-text-tertiary)]">
+           Users accessing a disabled module will see a clear unavailable notice instead of a broken route.
+         </p>
+       </div>
+     </Modal>
+   );
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
  // Main TenantsPage
  // ─────────────────────────────────────────────────────────────────────────────
  
@@ -829,6 +974,7 @@ const emptyCompanyForm: CompanyDetailsFormData = {
    const [editTenant, setEditTenant] = useState<Tenant | null>(null);
    const [resetPasswordTenant, setResetPasswordTenant] = useState<Tenant | null>(null);
    const [warningTenant, setWarningTenant] = useState<Tenant | null>(null);
+   const [moduleConfigTenant, setModuleConfigTenant] = useState<Tenant | null>(null);
  
    // Lifecycle confirm states
    const [activateTarget, setActivateTarget] = useState<Tenant | null>(null);
@@ -870,7 +1016,19 @@ const emptyCompanyForm: CompanyDetailsFormData = {
        );
      }
      if (statusFilter) {
-       list = list.filter((t) => getStatus(t) === statusFilter);
+       // Normalize dual-vocabulary filter comparison:
+       // HOLD and SUSPENDED represent the same read-only state;
+       // BLOCKED and DEACTIVATED represent the same fully-blocked state.
+       const normalizeStatus = (s: string): string => {
+         if (s === 'HOLD') return 'SUSPENDED';
+         if (s === 'BLOCKED') return 'DEACTIVATED';
+         return s;
+       };
+       const filterNorm = normalizeStatus(statusFilter);
+       list = list.filter((t) => {
+         const tenantStatus = normalizeStatus(getStatus(t));
+         return tenantStatus === filterNorm || getStatus(t) === statusFilter;
+       });
      }
      return list;
    }, [tenants, search, statusFilter]);
@@ -955,6 +1113,7 @@ const emptyCompanyForm: CompanyDetailsFormData = {
       items.push({ label: 'Deactivate', value: 'deactivate', destructive: true });
      }
  
+    items.push({ label: 'Configure modules', value: 'configure-modules' });
     items.push({ label: 'Reset admin password', value: 'reset-password' });
     items.push({ label: 'Send support warning', value: 'send-warning' });
  
@@ -966,6 +1125,7 @@ const emptyCompanyForm: CompanyDetailsFormData = {
     else if (value === 'activate') setActivateTarget(tenant);
     else if (value === 'suspend') setSuspendTarget(tenant);
     else if (value === 'deactivate') setDeactivateTarget(tenant);
+    else if (value === 'configure-modules') setModuleConfigTenant(tenant);
     else if (value === 'reset-password') setResetPasswordTenant(tenant);
     else if (value === 'send-warning') setWarningTenant(tenant);
    }
@@ -1030,7 +1190,9 @@ const emptyCompanyForm: CompanyDetailsFormData = {
              { value: '', label: 'All statuses' },
              { value: 'ACTIVE', label: 'Active' },
              { value: 'SUSPENDED', label: 'Suspended' },
+             { value: 'HOLD', label: 'On Hold' },
              { value: 'DEACTIVATED', label: 'Deactivated' },
+             { value: 'BLOCKED', label: 'Blocked' },
              { value: 'NEW', label: 'New' },
            ]}
          />
@@ -1295,6 +1457,12 @@ const emptyCompanyForm: CompanyDetailsFormData = {
        <SupportWarningModal
          tenant={warningTenant}
          onClose={() => setWarningTenant(null)}
+       />
+
+       <ModuleConfigModal
+         tenant={moduleConfigTenant}
+         onClose={() => setModuleConfigTenant(null)}
+         onSuccess={() => void loadTenants()}
        />
  
        {/* ── Lifecycle Confirm Dialogs ─────────────────────────────── */}
