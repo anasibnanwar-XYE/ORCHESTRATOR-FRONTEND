@@ -55,3 +55,17 @@ This section provides guidance for browser-based flow validators testing the web
 ### Tool Usage
 - Invoke the `agent-browser` skill via the Skill tool for full usage documentation.
 - Use `--session` flag with your assigned session ID for all browser operations.
+
+### MFA Testing Requirements
+- MFA-enabled test accounts require seeded TOTP secrets and recovery codes for testing MFA disable and recovery-code verification flows.
+- If no seeded MFA secrets are available, MFA disable assertions (VAL-AUTH-010) will be blocked.
+- MFA setup can be tested with non-MFA accounts by triggering setup from profile page.
+
+### Account State Seeding Requirements
+The following test states require backend seeding and cannot be triggered from the UI:
+- **Lockout state (VAL-AUTH-002)**: Backend lockout threshold unknown; 9+ failed attempts did not trigger lockout. Consider seeding a pre-locked test account.
+- **Tenant denial states (VAL-AUTH-003)**: TENANT_ON_HOLD, TENANT_BLOCKED require backend admin action to change tenant state.
+- **Must-change-password (VAL-AUTH-014)**: Requires seeded account with mustChangePassword flag set.
+
+### Known Frontend Issues (auth-sensitive-flows)
+- **VAL-CROSS-002**: Protected deep link destination is NOT restored after MFA success. Users always land at /hub regardless of original deep link. The pending MFA state stores {email, password, companyCode} but not the intended destination URL.

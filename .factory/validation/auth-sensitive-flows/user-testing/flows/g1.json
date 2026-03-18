@@ -1,0 +1,101 @@
+{
+  "groupId": "g1",
+  "testedAt": "2026-03-18T14:30:00Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "browserSessionId": "bc441458ad86__g1",
+    "testAccounts": [
+      "validation.superadmin@example.com (company SKE)",
+      "validation.admin@example.com (company MOCK)"
+    ],
+    "credentials": "see mission AGENTS.md"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "title": "Invalid credentials stay simple and retryable",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /login", "expected": "Login form displayed", "observed": "Login form displayed with email, password, and company code fields" },
+        { "action": "Fill invalid credentials (invalid@example.com / WrongPassword123! / SKE)", "expected": "Fields populated", "observed": "Fields populated correctly" },
+        { "action": "Click Sign in", "expected": "Error shown, form stays editable", "observed": "Alert shows 'Invalid credentials', form remains editable, URL stays at /login" },
+        { "action": "Verify form fields are enabled after error", "expected": "All fields enabled", "observed": "All fields enabled and editable" },
+        { "action": "Modify email field content", "expected": "Field accepts new input", "observed": "Field accepted new content successfully" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g1/VAL-AUTH-001-01-login-form.png",
+          "g1/VAL-AUTH-001-02-invalid-credentials-error.png",
+          "g1/VAL-AUTH-001-03-form-editable-after-error.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/login -> 401 with AUTH_001 error code"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "title": "Lockout shows lockout-specific feedback",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /login", "expected": "Login form displayed", "observed": "Login form displayed" },
+        { "action": "Attempt multiple failed logins with validation.admin@example.com / MOCK", "expected": "Eventually trigger lockout (AUTH_005)", "observed": "Made 9+ failed login attempts, all returned AUTH_001 invalid credentials error" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g1/VAL-AUTH-002-01-multiple-failed-attempts.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Multiple POST /api/v1/auth/login -> 401 with AUTH_001 (not AUTH_005)"
+      },
+      "issues": "Cannot trigger lockout state - backend lockout threshold appears to be higher than 9 attempts, or the test account has special lockout settings. Frontend code review confirms lockout UI is implemented (lockout banner, disabled submit button) but backend did not return AUTH_005 during testing."
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "title": "Login-time tenant runtime denials show stable non-credential messaging",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /login", "expected": "Login form displayed", "observed": "Login form displayed" }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "none",
+        "network": null
+      },
+      "issues": "Cannot test tenant runtime denials (TENANT_ON_HOLD, TENANT_BLOCKED, TENANT_REQUEST_RATE_EXCEEDED) without backend state changes. These require the tenant to be put on hold, blocked, or rate-limited by an administrator - not something that can be triggered from the login UI. Frontend code review confirms runtime denial handling is implemented with distinct messaging."
+    },
+    {
+      "id": "VAL-AUTH-004",
+      "title": "MFA-required login moves into challenge state from the canonical login contract",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /login", "expected": "Login form displayed", "observed": "Login form displayed" },
+        { "action": "Fill MFA-enabled account credentials (validation.superadmin@example.com / [REDACTED] / SKE)", "expected": "Fields populated", "observed": "Fields populated correctly" },
+        { "action": "Click Sign in", "expected": "Redirect to /mfa with challenge UI", "observed": "Successfully redirected to /mfa showing 'Two-factor verification' page with 6-digit code input" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g1/VAL-AUTH-004-01-mfa-challenge-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/login -> 428 with AUTH_007 (MFA required), followed by redirect to /mfa"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "VAL-AUTH-002 (lockout): Could not trigger lockout state after 9+ failed login attempts. Backend lockout threshold is unknown and may be configured higher than our test attempts, or the validation test accounts may have special lockout policies.",
+      "affectedAssertions": ["VAL-AUTH-002"],
+      "quickFixAttempted": "Made additional failed login attempts but never received AUTH_005 response"
+    },
+    {
+      "description": "VAL-AUTH-003 (tenant runtime denials): Cannot test without backend administrator action to put tenant in HOLD, BLOCKED, or rate-limited state.",
+      "affectedAssertions": ["VAL-AUTH-003"],
+      "quickFixAttempted": "None - requires backend state change outside test scope"
+    }
+  ],
+  "summary": "Tested 4 assertions: 2 passed (VAL-AUTH-001, VAL-AUTH-004), 2 blocked (VAL-AUTH-002, VAL-AUTH-003). Invalid credentials correctly show retryable message and keep form editable. MFA-enabled account correctly redirects to challenge state. Lockout and tenant denial states could not be triggered through the UI alone."
+}

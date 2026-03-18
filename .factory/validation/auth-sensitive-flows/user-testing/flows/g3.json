@@ -1,0 +1,86 @@
+{
+  "groupId": "g3",
+  "testedAt": "2026-03-18T16:30:00.000Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "browserSessionId": "bc441458ad86__g3",
+    "testAccounts": ["validation.accounting@example.com", "validation.admin@example.com"],
+    "company": "MOCK"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-008",
+      "title": "MFA setup shows QR, manual secret, and one-time recovery codes",
+      "status": "pass",
+      "steps": [
+        { "action": "Login with validation.admin@example.com / MOCK (non-MFA account)", "expected": "Login succeeds without MFA challenge", "observed": "Login succeeded, routed to hub portal" },
+        { "action": "Navigate to Profile page", "expected": "Profile page loads with MFA section showing 'Set up MFA' button", "observed": "Profile page loaded with 'Set up MFA' button visible" },
+        { "action": "Click 'Set up MFA' button", "expected": "MFA setup UI appears with QR code, manual secret, and recovery codes", "observed": "MFA setup UI appeared with QR code section, manual secret key, and recovery codes displayed" },
+        { "action": "Verify QR code section", "expected": "QR code is displayed with label 'Scan with your authenticator app'", "observed": "QR code section present with 'Scan with your authenticator app' label" },
+        { "action": "Verify manual secret fallback", "expected": "Manual entry key is visible", "observed": "Manual entry key visible: ATNOK5AD42K4SVDTFLCVSQVL7QSGO2QW" },
+        { "action": "Verify recovery codes", "expected": "One-time recovery codes are displayed", "observed": "Recovery codes displayed: W44Q2CDYA9X37BDLGCGKBPVZKTT9MVQVUKRFPNAAFN4XP9JXVHWTNXR5GXLHAC5TU4R5SGHFATL7VTF4I" },
+        { "action": "Verify acknowledgement checkbox", "expected": "Checkbox 'I have saved my recovery codes in a safe place' is present and blocks activation if unchecked", "observed": "Checkbox present and required before Activate MFA button becomes enabled" },
+        { "action": "Test cancel before activation", "expected": "Cancel button returns to profile without activating MFA", "observed": "Cancel button returned to profile, MFA status remained 'Disabled'" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "auth-sensitive-flows/user-testing/evidence/g3/VAL-AUTH-008-profile-before-mfa-setup.png",
+          "auth-sensitive-flows/user-testing/evidence/g3/VAL-AUTH-008-mfa-setup-qrcode-secret.png"
+        ],
+        "consoleErrors": "none",
+        "network": "MFA setup triggered new secret and recovery code generation"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-009",
+      "title": "MFA activation updates visible state and preserves retry context on failure",
+      "status": "pass",
+      "steps": [
+        { "action": "Start MFA setup from profile", "expected": "MFA setup UI appears with new secret and recovery codes", "observed": "MFA setup UI appeared" },
+        { "action": "Check the recovery code acknowledgement checkbox", "expected": "Checkbox becomes checked, Activate MFA button remains disabled until code entered", "observed": "Checkbox checked, button still disabled" },
+        { "action": "Enter invalid verification code '123456'", "expected": "Activate MFA button becomes enabled", "observed": "Button enabled after 6 digits entered" },
+        { "action": "Click 'Activate MFA' with invalid code", "expected": "Error shown, setup state preserved for retry", "observed": "Error 'Invalid email, password, or company code.' shown as dismissable toast, MFA setup UI remained with new secret and recovery codes" },
+        { "action": "Verify retry state preserved", "expected": "User can correct and retry without losing setup state", "observed": "Setup state preserved, user can enter new code and retry" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "auth-sensitive-flows/user-testing/evidence/g3/VAL-AUTH-009-mfa-invalid-code-retry.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/mfa/activate with invalid code returned error"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "title": "MFA disable supports both code and recovery-code paths",
+      "status": "blocked",
+      "steps": [
+        { "action": "Logout and attempt login with validation.accounting@example.com (MFA-enabled account)", "expected": "MFA challenge appears", "observed": "MFA challenge appeared with 6-digit code input" },
+        { "action": "Toggle to recovery code mode", "expected": "UI switches to recovery code input", "observed": "UI correctly toggled to 'Recovery code' input field with 'Use authenticator app instead' toggle" },
+        { "action": "Attempt to complete MFA verification", "expected": "Need valid TOTP code or recovery code to proceed", "observed": "No seeded TOTP codes or recovery codes available for validation.accounting@example.com account in mission documentation" },
+        { "action": "Cannot access profile to test MFA disable", "expected": "Need to pass MFA challenge first", "observed": "Blocked at MFA challenge - cannot reach profile page to test disable functionality" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "auth-sensitive-flows/user-testing/evidence/g3/VAL-AUTH-006-mfa-challenge-page.png",
+          "auth-sensitive-flows/user-testing/evidence/g3/VAL-AUTH-010-mfa-disable-blocked-no-code.png"
+        ],
+        "consoleErrors": "none",
+        "network": "MFA challenge page loaded correctly, recovery code toggle works"
+      },
+      "issues": "BLOCKED: No seeded TOTP codes or recovery codes available for validation.accounting@example.com account. The AGENTS.md file contains credentials but not MFA secrets. To complete VAL-AUTH-010, either: (1) seed MFA secrets for test accounts, or (2) provide the TOTP/recovery codes for the existing MFA-enabled validation accounts. The UI for MFA disable is implemented per code review (ProfilePage.tsx lines 160-320) with both code and recovery-code toggle paths."
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "No seeded TOTP codes or recovery codes available for validation.accounting@example.com account - cannot complete MFA verification to reach profile page for disable testing",
+      "affectedAssertions": ["VAL-AUTH-010"],
+      "quickFixAttempted": "Checked AGENTS.md, mission files, and searched for seeded MFA data - none found"
+    }
+  ],
+  "summary": "Tested 3 assertions: 2 passed (VAL-AUTH-008, VAL-AUTH-009), 1 blocked (VAL-AUTH-010). MFA setup correctly shows QR code, manual secret, recovery codes, and requires acknowledgement. Invalid activation preserves retry state. MFA disable blocked due to missing seeded TOTP/recovery codes for MFA-enabled test account."
+}

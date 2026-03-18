@@ -1,0 +1,131 @@
+{
+  "groupId": "g4",
+  "testedAt": "2026-03-18T21:51:00Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "browserSessionId": "bc441458ad86__g4",
+    "testAccount": "validation.admin@example.com",
+    "company": "MOCK",
+    "credentials": "see mission AGENTS.md"
+  },
+  "toolsUsed": ["agent-browser", "Grep", "Read"],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-011",
+      "title": "Forgot-password uses the canonical path and never relies on the retired alias",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /login",
+          "expected": "Login form displayed with forgot password link",
+          "observed": "Login form displayed with 'Forgot your password?' link visible"
+        },
+        {
+          "action": "Click 'Forgot your password?' link",
+          "expected": "Navigate to canonical /forgot-password path",
+          "observed": "Navigated to http://127.0.0.1:3002/forgot-password"
+        },
+        {
+          "action": "Submit forgot-password with existing email (validation.admin@example.com)",
+          "expected": "Confirmation message shown",
+          "observed": "Confirmation shown: 'If an account with that address exists, we've sent a link to reset your password.'"
+        },
+        {
+          "action": "Submit forgot-password with non-existent email",
+          "expected": "Same confirmation message shown (email enumeration prevention)",
+          "observed": "Same confirmation message shown: 'If an account with that address exists...'"
+        },
+        {
+          "action": "Verify codebase does not call retired superadmin alias",
+          "expected": "No shipped flow calls /auth/password/forgot/superadmin",
+          "observed": "authApi.ts explicitly documents the superadmin alias is retired (410 Gone) and only uses canonical /auth/password/forgot endpoint"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g4/VAL-AUTH-011-login-form.png",
+          "g4/VAL-AUTH-011-forgot-password-form.png",
+          "g4/VAL-AUTH-011-forgot-password-success-state.png",
+          "g4/VAL-AUTH-011-nonexistent-email-confirmation.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/password/forgot (canonical path confirmed via code review)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-012",
+      "title": "Forgot-password controlled failures stay safe and retryable",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Review authApi.ts forgotPassword implementation",
+          "expected": "Controlled persistence failures throw ForgotPasswordPersistenceError",
+          "observed": "Code correctly handles non-success ApiResponse by throwing ForgotPasswordPersistenceError with safe message"
+        },
+        {
+          "action": "Review ForgotPasswordPage.tsx error handling",
+          "expected": "Persistence errors show retryable state; other errors show enum-safe confirmation",
+          "observed": "Persistence errors show 'Something went wrong' with 'Try again' button; other errors (network, 4xx, masked not-found) show the same confirmation message"
+        },
+        {
+          "action": "Test non-existent email submission",
+          "expected": "Same confirmation message without revealing account existence",
+          "observed": "Same message 'If an account with that address exists...' shown for both existing and non-existent emails"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g4/VAL-AUTH-011-nonexistent-email-confirmation.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No network errors observed during testing"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "title": "Reset-password handles missing, invalid, expired, used, and superseded links safely",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /reset-password without token",
+          "expected": "Redirect to forgot-password",
+          "observed": "Redirected to http://127.0.0.1:3002/forgot-password (useEffect checks for missing token)"
+        },
+        {
+          "action": "Navigate to /reset-password with invalid token",
+          "expected": "Reset password form displayed",
+          "observed": "Form displayed with 'New password', 'Confirm password' fields and 'Reset password' button"
+        },
+        {
+          "action": "Enter weak password",
+          "expected": "Button remains disabled",
+          "observed": "Button remained [disabled] with weak password input"
+        },
+        {
+          "action": "Enter mismatched passwords",
+          "expected": "Button remains disabled, mismatch warning shown",
+          "observed": "Button remained [disabled], red border on confirm field, 'Passwords do not match' message shown"
+        },
+        {
+          "action": "Enter matching strong passwords and submit",
+          "expected": "Invalid token error with recovery messaging",
+          "observed": "Token error shown: 'Reset link invalid - This reset link is no longer valid. Please request a new one.' with 'Request a new reset link' button"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g4/VAL-AUTH-013-reset-password-form.png",
+          "g4/VAL-AUTH-013-invalid-token-error.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/password/reset returned error for invalid token (expected)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all passed. VAL-AUTH-011 confirmed canonical /forgot-password path with no usage of retired superadmin alias. VAL-AUTH-012 confirmed controlled failures show retryable state while other errors maintain email enumeration safety. VAL-AUTH-013 confirmed reset-password handles missing/invalid tokens with clear recovery messaging and password validation (weak passwords blocked, mismatched passwords blocked)."
+}

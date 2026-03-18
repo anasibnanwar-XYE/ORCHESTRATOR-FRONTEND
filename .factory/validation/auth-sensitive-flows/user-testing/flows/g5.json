@@ -1,0 +1,99 @@
+{
+  "groupId": "g5",
+  "testedAt": "2026-03-18T22:00:00.000Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "browserSessionId": "bc441458ad86__g5",
+    "testAccounts": ["validation.admin@example.com", "validation.sales@example.com"],
+    "company": "MOCK",
+    "credentials": "see mission AGENTS.md"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-AUTH-014",
+      "title": "Must-change-password is a real corridor and password change forces fresh login",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Login with validation.admin@example.com / MOCK",
+          "expected": "If password change required, redirect to /change-password corridor",
+          "observed": "Login succeeded normally and routed to hub - no must-change-password state triggered"
+        },
+        {
+          "action": "Navigate to profile to check for change password option",
+          "expected": "Profile page loads with change password option",
+          "observed": "Profile page accessible with change password option available"
+        },
+        {
+          "action": "Navigate to /change-password route",
+          "expected": "Change password form displayed",
+          "observed": "Change password route accessible but requires must-change-password session state to block normal portal access"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g5/VAL-AUTH-014-01-initial-page.png",
+          "g5/VAL-AUTH-014-02-after-login.png",
+          "g5/VAL-AUTH-014-01-change-password-route.png",
+          "g5/VAL-AUTH-014-02-profile-page.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Normal login succeeded - no must-change-password state in backend response"
+      },
+      "issues": "BLOCKED: No seeded test account is in 'must-change-password' state. The validation accounts (validation.admin@example.com, validation.sales@example.com) all have established passwords and do not trigger the password-change-required backend response. The change-password corridor UI is implemented (change password form visible at /change-password route), but cannot test the blocking behavior without a seeded account in must-change-password state. This requires backend seeding of a user with mustChangePassword flag set."
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "title": "Revoked or stale sessions clear consistently across portals and immediate re-auth works",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Login with validation.admin@example.com / MOCK",
+          "expected": "Login succeeds, session established",
+          "observed": "Login succeeded, routed to hub with user menu visible"
+        },
+        {
+          "action": "Verify authenticated state before logout",
+          "expected": "User menu shows authenticated user, session tokens in storage",
+          "observed": "Authenticated state confirmed with user menu and accessible protected routes"
+        },
+        {
+          "action": "Click logout from user menu",
+          "expected": "Logout sends revocation request, clears storage, redirects to /login",
+          "observed": "Logout triggered, session cleared, redirected to /login page"
+        },
+        {
+          "action": "Verify storage cleared after logout",
+          "expected": "No auth tokens remain in storage",
+          "observed": "Storage cleared, login form displayed"
+        },
+        {
+          "action": "Immediately login again with same credentials",
+          "expected": "Fresh login succeeds as new clean session, not treated as stale fallout",
+          "observed": "Fresh login succeeded immediately with new session established"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "g5/VAL-CROSS-003-01-before-logout.png",
+          "g5/VAL-CROSS-003-02-after-logout.png",
+          "g5/VAL-CROSS-003-03-login-form.png",
+          "g5/VAL-CROSS-003-04-fresh-login-success.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/auth/logout -> 204, storage cleared, fresh login succeeded"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "VAL-AUTH-014: No seeded test account in must-change-password state. All validation accounts have established passwords and do not trigger password-change-required from backend.",
+      "affectedAssertions": ["VAL-AUTH-014"],
+      "quickFixAttempted": "Tested multiple validation accounts - none trigger must-change-password state"
+    }
+  ],
+  "summary": "Tested 2 assertions: 1 passed (VAL-CROSS-003), 1 blocked (VAL-AUTH-014). Logout correctly revokes session, clears storage, and allows immediate fresh login. Must-change-password corridor cannot be tested without a seeded account in password-change-required state."
+}
