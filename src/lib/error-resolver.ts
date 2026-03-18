@@ -22,6 +22,9 @@ import { isApiError, getErrorCode, getRawErrorMessage } from './api';
 export const MFA_REDIRECT = '__MFA_REDIRECT__' as const;
 export type MfaRedirectSentinel = typeof MFA_REDIRECT;
 
+/** Sentinel value in error map for lockout state (distinct from credential failure). */
+const LOCKOUT_SENTINEL = '__LOCKOUT__' as const;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Error code → message map
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,14 +37,22 @@ const ERROR_CODE_MAP: Record<string, string | MfaRedirectSentinel> = {
   AUTH_003: 'Session expired, please sign in again',
   /** Insufficient permissions for the requested resource */
   AUTH_004: 'You do not have access to this resource',
-  /** Account locked due to too many failed attempts */
-  AUTH_005: 'Account locked, please contact your administrator',
+  /** Account locked due to too many failed attempts — distinct from credential failure */
+  AUTH_005: '__LOCKOUT__',
   /** Account deactivated by an administrator */
   AUTH_006: 'Account has been deactivated',
   /** MFA challenge required — trigger redirect to /mfa */
   AUTH_007: MFA_REDIRECT,
   /** Incorrect TOTP/OTP code submitted */
   AUTH_008: 'Invalid verification code',
+
+  // ── Tenant runtime denials ───────────────────────────────────────────────────
+  /** Tenant is on hold — login and authenticated requests temporarily blocked */
+  TENANT_ON_HOLD: 'Access temporarily unavailable. Please contact support.',
+  /** Tenant is blocked — login and authenticated requests blocked */
+  TENANT_BLOCKED: 'Account access is blocked. Please contact support.',
+  /** Request rate quota exceeded for this tenant */
+  TENANT_REQUEST_RATE_EXCEEDED: 'Too many requests. Please wait a moment before trying again.',
 
   // ── Validation ──────────────────────────────────────────────────────────────
   /** Required field is missing */
@@ -110,7 +121,9 @@ const ERROR_CODE_MAP: Record<string, string | MfaRedirectSentinel> = {
 
 export type ResolvedError =
   | { type: 'message'; message: string }
-  | { type: 'mfa_redirect' };
+  | { type: 'mfa_redirect' }
+  | { type: 'lockout'; message: string }
+  | { type: 'runtime_denial'; message: string };
 
 /**
  * Resolve an unknown error to a structured result.
@@ -132,6 +145,13 @@ export type ResolvedError =
  *   }
  * }
  */
+/** Runtime denial error codes — these map to distinct non-credential messaging. */
+const RUNTIME_DENIAL_CODES = new Set([
+  'TENANT_ON_HOLD',
+  'TENANT_BLOCKED',
+  'TENANT_REQUEST_RATE_EXCEEDED',
+]);
+
 export function resolveError(error: unknown): ResolvedError {
   const code = getErrorCode(error);
 
@@ -139,6 +159,13 @@ export function resolveError(error: unknown): ResolvedError {
     const mapped = ERROR_CODE_MAP[code];
     if (mapped === MFA_REDIRECT) {
       return { type: 'mfa_redirect' };
+    }
+    if (mapped === LOCKOUT_SENTINEL) {
+      return { type: 'lockout', message: 'Your account has been temporarily locked due to too many failed attempts. Please contact your administrator.' };
+    }
+    if (RUNTIME_DENIAL_CODES.has(code)) {
+      const msg = typeof mapped === 'string' ? mapped : 'Access temporarily unavailable. Please contact support.';
+      return { type: 'runtime_denial', message: msg };
     }
     if (mapped) {
       return { type: 'message', message: mapped };
@@ -160,7 +187,7 @@ export function resolveError(error: unknown): ResolvedError {
       return { type: 'message', message: 'Access denied.' };
     }
     if (status === 429) {
-      return { type: 'message', message: 'Too many attempts. Please wait a moment.' };
+      return { type: 'message', message: 'Too many requests. Please wait a moment.' };
     }
     if (status !== undefined && status >= 500) {
       return { type: 'message', message: 'Something went wrong. Please try again.' };
@@ -195,6 +222,24 @@ export function getErrorMessage(error: unknown): string | null {
   const resolved = resolveError(error);
   if (resolved.type === 'mfa_redirect') return null;
   return resolved.message;
+}
+
+/**
+ * Check if an error represents an account lockout (AUTH_005).
+ * Use this to render a distinct lockout state instead of a normal credential failure.
+ */
+export function isLockoutError(error: unknown): boolean {
+  const resolved = resolveError(error);
+  return resolved.type === 'lockout';
+}
+
+/**
+ * Check if an error represents a tenant runtime denial.
+ * Use this to render stable non-credential messaging.
+ */
+export function isRuntimeDenialError(error: unknown): boolean {
+  const resolved = resolveError(error);
+  return resolved.type === 'runtime_denial';
 }
 
 /**

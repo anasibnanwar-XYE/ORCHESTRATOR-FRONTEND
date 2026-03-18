@@ -2,14 +2,17 @@
  * Tests for MfaPage
  *
  * Covers:
- *  - Redirects to /login when no tempToken in state or sessionStorage
- *  - Renders 6-digit input
+ *  - Redirects to /login when no valid pending state in location.state or sessionStorage
+ *  - Renders 6-digit TOTP input by default
  *  - Input only accepts digits
- *  - Calls verifyMfa with code and tempToken on submit
+ *  - Calls verifyMfa with full LoginRequest (email, password, companyCode, mfaCode)
+ *  - Recovery code mode: can toggle, uses recoveryCode field
  *  - Navigates to /hub on success
+ *  - Navigates to /change-password when mustChangePassword is true
  *  - Shows error toast on failure
  *  - Clears input and re-focuses on error
- *  - Auto-submits when 6 digits entered
+ *  - Auto-submits when 6 TOTP digits entered
+ *  - Pending state survives sessionStorage (mobile app switch resilience)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -78,6 +81,13 @@ const sessionStorageMock = {
   clear: () => { Object.keys(ssStore).forEach((k) => delete ssStore[k]); },
 };
 
+/** MfaPendingState now uses original credentials (no tempToken) */
+const validPendingState = {
+  email: 'admin@bbp.com',
+  password: 'Password1!',
+  companyCode: 'ORCH',
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockLocationState = {};
@@ -97,22 +107,29 @@ function renderMfaPage() {
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('MfaPage — redirect when no state', () => {
-  it('redirects to /login when no tempToken', () => {
+describe('MfaPage — redirect when no valid pending state', () => {
+  it('redirects to /login when location.state is empty', () => {
     renderMfaPage();
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
-  it('uses tempToken from location.state', () => {
-    mockLocationState = { tempToken: 'placeholder-loc-tok', email: 'test@bbp.com', companyCode: 'ORCH' };
+  it('redirects to /login when pending state is missing password', () => {
+    // Old tempToken-based state — must be rejected
+    mockLocationState = { tempToken: 'old-tok', email: 'test@bbp.com', companyCode: 'ORCH' };
+    renderMfaPage();
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+  });
+
+  it('renders when location.state has valid credentials', () => {
+    mockLocationState = validPendingState;
     renderMfaPage();
     expect(mockNavigate).not.toHaveBeenCalledWith('/login', expect.anything());
   });
 
-  it('uses tempToken from sessionStorage when state is empty', () => {
+  it('renders from sessionStorage when location.state is empty', () => {
     sessionStorageMock.setItem(
       'bbp-orchestrator-mfa-pending',
-      JSON.stringify({ tempToken: 'placeholder-ss-tok', email: 'ss@bbp.com', companyCode: 'ORCH' })
+      JSON.stringify(validPendingState)
     );
     renderMfaPage();
     expect(mockNavigate).not.toHaveBeenCalledWith('/login', expect.anything());
@@ -121,7 +138,7 @@ describe('MfaPage — redirect when no state', () => {
 
 describe('MfaPage — rendering', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
+    mockLocationState = validPendingState;
   });
 
   it('renders the verification code input', () => {
@@ -138,18 +155,22 @@ describe('MfaPage — rendering', () => {
     renderMfaPage();
     expect(screen.getByText('admin@bbp.com')).toBeInTheDocument();
   });
+
+  it('shows option to use recovery code', () => {
+    renderMfaPage();
+    expect(screen.getByText(/use a recovery code/i)).toBeInTheDocument();
+  });
 });
 
-describe('MfaPage — input validation', () => {
+describe('MfaPage — TOTP input validation', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
+    mockLocationState = validPendingState;
   });
 
   it('only accepts digits (strips non-numeric chars)', () => {
     renderMfaPage();
     const input = screen.getByLabelText(/6-digit verification code/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: '12abc34' } });
-    // After stripping non-digits: '1234'
     expect(input.value).toBe('1234');
   });
 
@@ -168,12 +189,12 @@ describe('MfaPage — input validation', () => {
   });
 });
 
-describe('MfaPage — verification', () => {
+describe('MfaPage — TOTP verification (canonical login re-submit)', () => {
   beforeEach(() => {
-    mockLocationState = { tempToken: 'placeholder-tok', email: 'admin@bbp.com', companyCode: 'ORCH' };
+    mockLocationState = validPendingState;
   });
 
-  it('calls verifyMfa with code and tempToken', async () => {
+  it('calls verifyMfa with full LoginRequest including mfaCode — VAL-AUTH-006', async () => {
     mockVerifyMfa.mockResolvedValue({
       tokenType: 'Bearer',
       accessToken: 'at',
@@ -192,7 +213,13 @@ describe('MfaPage — verification', () => {
       fireEvent.click(screen.getByRole('button', { name: /verify/i }));
     });
 
-    expect(mockVerifyMfa).toHaveBeenCalledWith('123456', 'placeholder-tok');
+    // Must re-submit POST /auth/login with original credentials + mfaCode
+    expect(mockVerifyMfa).toHaveBeenCalledWith({
+      email: 'admin@bbp.com',
+      password: 'Password1!',
+      companyCode: 'ORCH',
+      mfaCode: '123456',
+    });
   });
 
   it('navigates to /hub on successful verification', async () => {
@@ -256,7 +283,7 @@ describe('MfaPage — verification', () => {
     await waitFor(() => expect(mockToastError).toHaveBeenCalled());
   });
 
-  it('clears input on error', async () => {
+  it('clears TOTP input on error', async () => {
     mockVerifyMfa.mockRejectedValue(new Error('Invalid code'));
 
     renderMfaPage();
@@ -271,21 +298,89 @@ describe('MfaPage — verification', () => {
   });
 });
 
-describe('MfaPage — sessionStorage state preservation', () => {
-  it('stores tempToken in sessionStorage (via location.state is used, not sessionStorage directly)', () => {
-    // When location.state has tempToken, the page should render without redirect
-    mockLocationState = { tempToken: 'placeholder-abc-tok', email: 'user@bbp.com', companyCode: 'ORCH' };
+describe('MfaPage — recovery code path — VAL-AUTH-006', () => {
+  beforeEach(() => {
+    mockLocationState = validPendingState;
+  });
+
+  it('toggles to recovery code mode when clicking the toggle', () => {
     renderMfaPage();
-    // Page renders (no redirect to /login)
+    fireEvent.click(screen.getByText(/use a recovery code/i));
+    expect(screen.getByLabelText(/recovery code/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/6-digit verification code/i)).not.toBeInTheDocument();
+  });
+
+  it('calls verifyMfa with recoveryCode when in recovery mode — VAL-AUTH-006', async () => {
+    mockVerifyMfa.mockResolvedValue({
+      tokenType: 'Bearer',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      expiresIn: 3600,
+      companyCode: 'ORCH',
+      displayName: 'Admin User',
+      user: mockUser,
+    });
+
+    renderMfaPage();
+    // Switch to recovery mode
+    fireEvent.click(screen.getByText(/use a recovery code/i));
+
+    const input = screen.getByLabelText(/recovery code/i);
+    fireEvent.change(input, { target: { value: 'abc1-def2-ghi3' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    });
+
+    // Must re-submit POST /auth/login with original credentials + recoveryCode
+    expect(mockVerifyMfa).toHaveBeenCalledWith({
+      email: 'admin@bbp.com',
+      password: 'Password1!',
+      companyCode: 'ORCH',
+      recoveryCode: 'abc1-def2-ghi3',
+    });
+  });
+
+  it('verify button is disabled when recovery code is empty', () => {
+    renderMfaPage();
+    fireEvent.click(screen.getByText(/use a recovery code/i));
+    expect(screen.getByRole('button', { name: /verify/i })).toBeDisabled();
+  });
+
+  it('can toggle back to authenticator code mode', () => {
+    renderMfaPage();
+    fireEvent.click(screen.getByText(/use a recovery code/i));
+    expect(screen.getByLabelText(/recovery code/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/use authenticator app instead/i));
+    expect(screen.getByLabelText(/6-digit verification code/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/recovery code/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('MfaPage — sessionStorage state preservation — VAL-AUTH-005', () => {
+  it('renders with valid credentials from location.state', () => {
+    mockLocationState = validPendingState;
+    renderMfaPage();
     expect(screen.getByLabelText(/6-digit verification code/i)).toBeInTheDocument();
   });
 
-  it('recovers from sessionStorage when location.state is empty', () => {
+  it('recovers credentials from sessionStorage when location.state is empty', () => {
     sessionStorageMock.setItem(
       'bbp-orchestrator-mfa-pending',
-      JSON.stringify({ tempToken: 'ss-token', email: 'user@bbp.com', companyCode: 'ORCH' })
+      JSON.stringify(validPendingState)
     );
     renderMfaPage();
     expect(screen.getByLabelText(/6-digit verification code/i)).toBeInTheDocument();
+  });
+
+  it('rejects sessionStorage state that is missing password (old tempToken format)', () => {
+    // Old format with tempToken — should reject and redirect to login
+    sessionStorageMock.setItem(
+      'bbp-orchestrator-mfa-pending',
+      JSON.stringify({ tempToken: 'old-tok', email: 'test@bbp.com', companyCode: 'ORCH' })
+    );
+    renderMfaPage();
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 });

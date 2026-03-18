@@ -54,9 +54,20 @@ export interface AuthSession {
   enabledModules: string[];
 }
 
+/**
+ * Short-lived client-only MFA handoff state.
+ *
+ * Stored in sessionStorage to survive mobile app switching during the MFA challenge.
+ * Contains the original login credentials needed to re-submit POST /auth/login
+ * with mfaCode or recoveryCode. Cleared once MFA verification succeeds or the
+ * user cancels.
+ *
+ * Security note: password is kept in sessionStorage only for the duration of the
+ * MFA challenge — it is removed on success, cancellation, or session expiry.
+ */
 export interface MfaPendingState {
-  tempToken: string;
   email: string;
+  password: string;
   companyCode: string;
 }
 
@@ -78,7 +89,14 @@ interface AuthContextValue {
   enabledModules: string[];
   signIn: (credentials: LoginRequest) => Promise<AuthResult>;
   signOut: () => Promise<void>;
-  verifyMfa: (code: string, tempToken: string) => Promise<AuthResult>;
+  /**
+   * Complete an MFA challenge by re-submitting POST /auth/login with the original
+   * credentials plus mfaCode or recoveryCode.
+   *
+   * Per backend contract, MFA verification reuses the login endpoint — no separate
+   * /auth/mfa/verify endpoint exists. Pass the full credentials from the pending state.
+   */
+  verifyMfa: (credentials: LoginRequest) => Promise<AuthResult>;
   switchCompany: (data: SwitchCompanyRequest) => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -268,8 +286,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifyMfa = useCallback(
-    async (code: string, tempToken: string): Promise<AuthResult> => {
-      const result = await authApi.verifyMfa(code, tempToken);
+    async (credentials: LoginRequest): Promise<AuthResult> => {
+      const result = await authApi.verifyMfa(credentials);
       setSession(buildSession(result));
       sessionStorage.removeItem(MFA_SESSION_KEY);
       return result;

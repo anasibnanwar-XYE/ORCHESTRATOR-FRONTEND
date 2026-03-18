@@ -3,14 +3,17 @@
  *
  * Covers:
  *  - Renders email, password, and companyCode fields
- *  - Submit button starts in enabled state (when form has values)
+ *  - Submit button starts in enabled state
  *  - Shows loading state during submission
  *  - Triggers o-shake animation class on error
  *  - Calls signIn with correct credentials
  *  - Navigates to /hub on successful login
- *  - Navigates to /mfa when requiresMfa is true
+ *  - Navigates to /mfa when requiresMfa is true — passes credentials (not tempToken)
  *  - Navigates to /change-password when mustChangePassword is true
- *  - Shows toast error on failure
+ *  - Shows toast error on invalid-credential failure (AUTH_001) — VAL-AUTH-001
+ *  - Shows distinct lockout banner on lockout (AUTH_005) — VAL-AUTH-002
+ *  - Shows runtime denial banner on TENANT_ON_HOLD/TENANT_BLOCKED — VAL-AUTH-003
+ *  - Handles MFA redirect via 428 error — passes credentials to /mfa
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -51,16 +54,12 @@ vi.mock('@/components/ui/Toast', () => ({
   }),
 }));
 
-// Mock sub-components to avoid deep rendering
 vi.mock('@/components/ui/OrchestratorLogo', () => ({
   OrchestratorLogo: () => <div data-testid="logo">Logo</div>,
 }));
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
-// ─────────────────────name──────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mockUser = {
@@ -191,7 +190,7 @@ describe('LoginPage — successful login', () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/hub', { replace: true }));
   });
 
-  it('navigates to /mfa when requiresMfa is true', async () => {
+  it('navigates to /mfa when requiresMfa is true and passes credentials (no tempToken)', async () => {
     mockSignIn.mockResolvedValue({
       tokenType: 'Bearer',
       accessToken: 'at',
@@ -200,7 +199,6 @@ describe('LoginPage — successful login', () => {
       companyCode: 'ORCH',
       displayName: 'Admin User',
       requiresMfa: true,
-      tempToken: 'placeholder-mfa-tok',
       user: mockUser,
     });
 
@@ -212,6 +210,9 @@ describe('LoginPage — successful login', () => {
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
       target: { value: 'Password1!' },
     });
+    fireEvent.change(screen.getByLabelText(/company code/i), {
+      target: { value: 'ORCH' },
+    });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
@@ -221,7 +222,11 @@ describe('LoginPage — successful login', () => {
       expect(mockNavigate).toHaveBeenCalledWith(
         '/mfa',
         expect.objectContaining({
-          state: expect.objectContaining({ tempToken: 'placeholder-mfa-tok' }),
+          state: expect.objectContaining({
+            email: 'mfa@bbp.com',
+            password: 'Password1!',
+            companyCode: 'ORCH',
+          }),
         })
       );
     });
@@ -258,12 +263,12 @@ describe('LoginPage — successful login', () => {
   });
 });
 
-describe('LoginPage — error handling', () => {
-  it('shows toast error on login failure', async () => {
-    const error = new Error('Request failed');
-    (error as unknown as { response?: { data?: { code?: string } } }).response = {
-      data: { code: 'AUTH_001' },
-    };
+describe('LoginPage — error handling — VAL-AUTH-001', () => {
+  it('shows toast error on invalid credentials (AUTH_001)', async () => {
+    const error = Object.assign(new Error('Invalid credentials'), {
+      isAxiosError: true,
+      response: { status: 401, data: { code: 'AUTH_001', message: 'Invalid credentials' } },
+    });
     mockSignIn.mockRejectedValue(error);
 
     renderLoginPage();
@@ -286,12 +291,11 @@ describe('LoginPage — error handling', () => {
     expect(toastMsg.length).toBeGreaterThan(0);
   });
 
-  it('adds o-shake class to form card on error', async () => {
+  it('adds o-shake class to form card on credential error', async () => {
     mockSignIn.mockRejectedValue(new Error('Invalid'));
 
     renderLoginPage();
 
-    // Find the card element — it should get o-shake
     const signInBtn = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(screen.getByLabelText(/work email/i), {
@@ -305,28 +309,160 @@ describe('LoginPage — error handling', () => {
       fireEvent.click(signInBtn);
     });
 
-    // Check that the form card has the shake class
     await waitFor(() => {
       const card = signInBtn.closest('[class*="rounded-2xl"]');
-      // After shake is triggered, the class should be present momentarily
-      // (In testing we just verify the shake mechanism was triggered — actual animation not rendered in jsdom)
       expect(card).toBeTruthy();
     });
   });
 });
 
+describe('LoginPage — lockout state — VAL-AUTH-002', () => {
+  it('shows distinct lockout banner (not toast) on AUTH_005', async () => {
+    const error = Object.assign(new Error('Account locked'), {
+      isAxiosError: true,
+      response: { status: 401, data: { code: 'AUTH_005', message: 'Account locked' } },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'locked@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'wrongpass' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    // Lockout shows banner, not toast
+    await waitFor(() => {
+      expect(screen.getByTestId('lockout-banner')).toBeInTheDocument();
+    });
+    // toast should NOT be called for lockout
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('disables submit button when lockout banner is showing', async () => {
+    const error = Object.assign(new Error('Account locked'), {
+      isAxiosError: true,
+      response: { status: 401, data: { code: 'AUTH_005', message: 'Account locked' } },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), {
+      target: { value: 'locked@bbp.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
+      target: { value: 'wrongpass' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lockout-banner')).toBeInTheDocument();
+    });
+
+    // Submit button should be disabled
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeDisabled();
+  });
+
+  it('lockout message is distinct from invalid-credentials message', async () => {
+    const error = Object.assign(new Error('Account locked'), {
+      isAxiosError: true,
+      response: { status: 401, data: { code: 'AUTH_005', message: 'Account locked' } },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'x@x.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      const banner = screen.getByTestId('lockout-banner');
+      // Lockout banner text must NOT say "Invalid email or password"
+      expect(banner.textContent).not.toContain('Invalid email or password');
+      // Must mention lockout concept
+      expect(banner.textContent?.toLowerCase()).toMatch(/lock/);
+    });
+  });
+});
+
+describe('LoginPage — runtime denial states — VAL-AUTH-003', () => {
+  const runtimeCodes = [
+    { code: 'TENANT_ON_HOLD', expectedPattern: /temporarily unavailable|on hold/i },
+    { code: 'TENANT_BLOCKED', expectedPattern: /blocked|contact support/i },
+    { code: 'TENANT_REQUEST_RATE_EXCEEDED', expectedPattern: /too many requests|wait/i },
+  ];
+
+  runtimeCodes.forEach(({ code, expectedPattern }) => {
+    it(`shows runtime denial banner for ${code} — distinct from credential error`, async () => {
+      const error = Object.assign(new Error('Denied'), {
+        isAxiosError: true,
+        response: { status: 403, data: { code, message: 'Denied' } },
+      });
+      mockSignIn.mockRejectedValue(error);
+
+      renderLoginPage();
+
+      fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'u@x.com' } });
+      fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+      });
+
+      await waitFor(() => {
+        const banner = screen.getByTestId('runtime-denial-banner');
+        expect(banner.textContent).toMatch(expectedPattern);
+      });
+
+      // toast should NOT be called for runtime denial
+      expect(mockToastError).not.toHaveBeenCalled();
+    });
+  });
+
+  it('runtime denial message does not look like invalid credentials', async () => {
+    const error = Object.assign(new Error('Denied'), {
+      isAxiosError: true,
+      response: { status: 403, data: { code: 'TENANT_ON_HOLD', message: 'Denied' } },
+    });
+    mockSignIn.mockRejectedValue(error);
+
+    renderLoginPage();
+
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'u@x.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    });
+
+    await waitFor(() => {
+      const banner = screen.getByTestId('runtime-denial-banner');
+      expect(banner.textContent).not.toContain('Invalid email or password');
+    });
+  });
+});
+
 describe('LoginPage — MFA redirect via 428 error', () => {
-  it('navigates to /mfa with tempToken extracted from 428 error response body', async () => {
-    // Create an Axios-like error with isAxiosError flag so it passes isApiError()
+  it('navigates to /mfa with credentials (email, password, companyCode) extracted from 428', async () => {
     const error = Object.assign(new Error('MFA required'), {
       isAxiosError: true,
       response: {
         status: 428,
-        data: {
-          code: 'AUTH_007',
-          tempToken: 'extracted-temp-token',
-          message: 'MFA verification required',
-        },
+        data: { code: 'AUTH_007', message: 'MFA verification required' },
       },
     });
     mockSignIn.mockRejectedValue(error);
@@ -352,8 +488,8 @@ describe('LoginPage — MFA redirect via 428 error', () => {
         '/mfa',
         expect.objectContaining({
           state: expect.objectContaining({
-            tempToken: 'extracted-temp-token',
             email: 'mfa@bbp.com',
+            password: 'Password1!',
             companyCode: 'ORCH',
           }),
         })
@@ -361,17 +497,11 @@ describe('LoginPage — MFA redirect via 428 error', () => {
     });
   });
 
-  it('navigates to /mfa even when tempToken is missing in 428 error body', async () => {
-    // AUTH_007 without tempToken — still redirects to /mfa (tempToken will be undefined)
+  it('passes credentials to /mfa even when no explicit challenge data in response body', async () => {
+    // 428 with no extra body data — credentials still passed
     const error = Object.assign(new Error('MFA required'), {
       isAxiosError: true,
-      response: {
-        status: 428,
-        data: {
-          code: 'AUTH_007',
-          message: 'MFA verification required',
-        },
-      },
+      response: { status: 428, data: {} },
     });
     mockSignIn.mockRejectedValue(error);
 
@@ -417,7 +547,6 @@ describe('LoginPage — loading state', () => {
       expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument()
     );
 
-    // Resolve to clean up
     resolve({
       tokenType: 'Bearer',
       accessToken: 'at',

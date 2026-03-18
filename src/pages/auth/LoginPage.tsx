@@ -2,12 +2,13 @@
  * LoginPage
  *
  * Features:
- *  - Email / password / companyCode form
+ *  - Email / password / companyCode form bound to backend LoginRequest contract
  *  - Submit button with loading state
- *  - o-shake animation on error
- *  - Toast error notifications with user-friendly messages
- *  - Handles 428 MFA redirect (stores tempToken in sessionStorage)
- *  - Handles mustChangePassword flag
+ *  - Shake animation on error
+ *  - Distinct UX for invalid credentials, lockout, and runtime denial states
+ *  - MFA redirect: stores original credentials (email+password+companyCode) in
+ *    sessionStorage for the canonical re-login approach on MfaPage
+ *  - mustChangePassword redirect
  */
 
 import { type FormEvent, useCallback, useRef, useState } from 'react';
@@ -34,6 +35,18 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [shaking, setShaking] = useState(false);
 
+  /**
+   * lockoutState — set when auth returns AUTH_005.
+   * Shows a distinct lockout banner and disables the submit button.
+   */
+  const [lockoutState, setLockoutState] = useState<string | null>(null);
+
+  /**
+   * runtimeDenialState — set when a tenant runtime denial is returned.
+   * Shows a stable, non-credential message without the shake animation.
+   */
+  const [runtimeDenialState, setRuntimeDenialState] = useState<string | null>(null);
+
   const formRef = useRef<HTMLFormElement>(null);
 
   const triggerShake = useCallback(() => {
@@ -45,32 +58,26 @@ export function LoginPage() {
     e.preventDefault();
     if (isLoading) return;
 
+    // Clear any previous denial states on a new attempt
+    setLockoutState(null);
+    setRuntimeDenialState(null);
+
     setIsLoading(true);
 
     try {
       const result = await signIn({ email, password, companyCode });
 
-      if (result.requiresMfa && result.tempToken) {
-        // Store minimal state in sessionStorage for mobile resilience
+      if (result.requiresMfa) {
+        // Per backend contract, MFA verification re-submits POST /auth/login with
+        // original credentials + mfaCode or recoveryCode. Store credentials in
+        // sessionStorage for mobile-resilient state (app switch to authenticator).
+        const pendingState = { email, password, companyCode };
         try {
-          sessionStorage.setItem(
-            MFA_SESSION_KEY,
-            JSON.stringify({
-              tempToken: result.tempToken,
-              email,
-              companyCode,
-            })
-          );
+          sessionStorage.setItem(MFA_SESSION_KEY, JSON.stringify(pendingState));
         } catch {
-          // sessionStorage unavailable — pass via state
+          // sessionStorage unavailable — pass via navigate state only
         }
-        navigate('/mfa', {
-          state: {
-            tempToken: result.tempToken,
-            email,
-            companyCode,
-          },
-        });
+        navigate('/mfa', { state: pendingState });
         return;
       }
 
@@ -87,34 +94,30 @@ export function LoginPage() {
       const resolved = is428 ? { type: 'mfa_redirect' as const } : resolveError(error);
 
       if (resolved.type === 'mfa_redirect') {
-        // Extract tempToken from the 428 error response body.
-        // The backend may place it at either body.tempToken or body.data.tempToken.
-        let tempToken: string | undefined;
-        if (isApiError(error)) {
-          const body = error.response?.data as Record<string, unknown> | undefined;
-          if (body) {
-            if (typeof body.tempToken === 'string') {
-              tempToken = body.tempToken;
-            } else if (body.data && typeof (body.data as Record<string, unknown>).tempToken === 'string') {
-              tempToken = (body.data as Record<string, unknown>).tempToken as string;
-            }
-          }
+        // Store original credentials for the canonical re-login MFA verification
+        const pendingState = { email, password, companyCode };
+        try {
+          sessionStorage.setItem(MFA_SESSION_KEY, JSON.stringify(pendingState));
+        } catch {
+          // sessionStorage unavailable — pass via navigate state only
         }
-        // Persist to sessionStorage for mobile-resilient state (app switch)
-        if (tempToken) {
-          try {
-            sessionStorage.setItem(
-              MFA_SESSION_KEY,
-              JSON.stringify({ tempToken, email, companyCode })
-            );
-          } catch {
-            // sessionStorage unavailable — rely on navigate state
-          }
-        }
-        navigate('/mfa', { state: { tempToken, email, companyCode } });
+        navigate('/mfa', { state: pendingState });
         return;
       }
 
+      if (resolved.type === 'lockout') {
+        // Distinct lockout state — do NOT shake or show as a credential error
+        setLockoutState(resolved.message);
+        return;
+      }
+
+      if (resolved.type === 'runtime_denial') {
+        // Runtime denial (tenant hold/block/rate limit) — stable non-credential UX
+        setRuntimeDenialState(resolved.message);
+        return;
+      }
+
+      // Generic credential failure — shake and toast
       triggerShake();
       toast.error(resolved.message);
     } finally {
@@ -145,6 +148,29 @@ export function LoginPage() {
             Sign in to your account
           </h1>
 
+          {/* Lockout state — distinct, blocks retry */}
+          {lockoutState && (
+            <div
+              role="alert"
+              className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-[13px] text-amber-800"
+              data-testid="lockout-banner"
+            >
+              <p className="font-medium">Account locked</p>
+              <p className="mt-0.5 text-[12px]">{lockoutState}</p>
+            </div>
+          )}
+
+          {/* Runtime denial state — stable, non-credential */}
+          {runtimeDenialState && (
+            <div
+              role="alert"
+              className="mb-4 p-3 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] text-[13px] text-[var(--color-text-secondary)]"
+              data-testid="runtime-denial-banner"
+            >
+              {runtimeDenialState}
+            </div>
+          )}
+
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
               label="Work email"
@@ -156,7 +182,7 @@ export function LoginPage() {
               autoComplete="email"
               autoFocus
               required
-              disabled={isLoading}
+              disabled={isLoading || !!lockoutState}
             />
 
             <div>
@@ -180,7 +206,7 @@ export function LoginPage() {
                 }
                 autoComplete="current-password"
                 required
-                disabled={isLoading}
+                disabled={isLoading || !!lockoutState}
               />
             </div>
 
@@ -193,7 +219,7 @@ export function LoginPage() {
               leftIcon={<Building2 />}
               autoComplete="organization"
               required
-              disabled={isLoading}
+              disabled={isLoading || !!lockoutState}
               className="uppercase tracking-widest font-mono"
             />
 
@@ -202,6 +228,7 @@ export function LoginPage() {
               fullWidth
               size="lg"
               isLoading={isLoading}
+              disabled={isLoading || !!lockoutState}
               className="mt-2"
             >
               {isLoading ? 'Signing in…' : 'Sign in'}

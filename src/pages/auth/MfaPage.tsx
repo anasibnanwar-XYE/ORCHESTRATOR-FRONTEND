@@ -1,12 +1,17 @@
 /**
  * MfaPage
  *
+ * MFA challenge screen. Re-submits POST /auth/login with the original credentials
+ * plus mfaCode or recoveryCode — per the backend contract, no separate /auth/mfa/verify
+ * endpoint is used.
+ *
  * Features:
- *  - 6-digit code input with auto-focus
- *  - Mobile-resilient state: tempToken stored in sessionStorage so switching to
- *    authenticator app and back preserves state
+ *  - TOTP (6-digit) and recovery code modes
+ *  - Mobile-resilient state: original credentials (email, password, companyCode) stored
+ *    in sessionStorage so switching to authenticator app and back preserves state
  *  - Input cleared and re-focused on invalid code
  *  - Error toast on failure
+ *  - Redirect to /login when no valid pending state
  */
 
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -24,59 +29,82 @@ export function MfaPage() {
   const { verifyMfa } = useAuth();
   const toast = useToast();
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  const recoveryInputRef = useRef<HTMLInputElement>(null);
+
   const [code, setCode] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Recover state: try location.state first, then sessionStorage
+  // Recover pending state: try location.state first, then sessionStorage.
+  // Pending state holds the original login credentials needed for the canonical
+  // re-login approach (email + password + companyCode + mfaCode/recoveryCode).
   const [pendingState] = useState<MfaPendingState | null>(() => {
     const fromState = location.state as MfaPendingState | null;
-    if (fromState?.tempToken) return fromState;
+    // Accept location state when it has the required credential fields
+    if (fromState?.email && fromState?.password && fromState?.companyCode) {
+      return fromState;
+    }
 
     try {
       const raw = sessionStorage.getItem(MFA_SESSION_KEY);
-      if (raw) return JSON.parse(raw) as MfaPendingState;
+      if (raw) {
+        const parsed = JSON.parse(raw) as MfaPendingState;
+        if (parsed?.email && parsed?.password && parsed?.companyCode) {
+          return parsed;
+        }
+      }
     } catch {
       // ignore
     }
     return null;
   });
 
-  // Redirect to login if no pending state
+  // Redirect to login if no valid pending state (direct navigation or state expired)
   useEffect(() => {
-    if (!pendingState?.tempToken) {
+    if (!pendingState?.email || !pendingState?.password || !pendingState?.companyCode) {
       navigate('/login', { replace: true });
     }
   }, [pendingState, navigate]);
 
-  // Auto-focus on mount and whenever the page becomes visible again (mobile app switch)
+  // Auto-focus on mount and when returning from the authenticator app
   useEffect(() => {
-    inputRef.current?.focus();
+    const ref = useRecoveryCode ? recoveryInputRef : codeInputRef;
+    ref.current?.focus();
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        inputRef.current?.focus();
+        const activeRef = useRecoveryCode ? recoveryInputRef : codeInputRef;
+        activeRef.current?.focus();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+  }, [useRecoveryCode]);
 
-  // Auto-submit when 6 digits entered
+  // Auto-submit when 6 TOTP digits entered
   useEffect(() => {
-    if (code.length === 6 && pendingState?.tempToken && !isLoading) {
-      void handleVerify(code);
+    if (!useRecoveryCode && code.length === 6 && pendingState && !isLoading) {
+      void handleVerify();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
-  const handleVerify = async (submittedCode: string) => {
-    if (!pendingState?.tempToken || isLoading) return;
+  const handleVerify = async () => {
+    if (!pendingState || isLoading) return;
+    if (!useRecoveryCode && code.length < 6) return;
+    if (useRecoveryCode && !recoveryCode.trim()) return;
+
     setIsLoading(true);
 
     try {
-      const result = await verifyMfa(submittedCode, pendingState.tempToken);
+      const credentials = useRecoveryCode
+        ? { email: pendingState.email, password: pendingState.password, companyCode: pendingState.companyCode, recoveryCode: recoveryCode.trim() }
+        : { email: pendingState.email, password: pendingState.password, companyCode: pendingState.companyCode, mfaCode: code };
+
+      const result = await verifyMfa(credentials);
 
       if (result.mustChangePassword) {
         navigate('/change-password', { replace: true });
@@ -86,22 +114,33 @@ export function MfaPage() {
       navigate('/hub', { replace: true });
     } catch (error) {
       const resolved = resolveError(error);
-      toast.error(resolved.type === 'message' ? resolved.message : 'Verification failed');
+      const msg = resolved.type === 'message' ? resolved.message : 'Verification failed. Please try again.';
+      toast.error(msg);
 
-      // Clear input and re-focus for retry
+      // Clear the code fields and re-focus for retry
       setCode('');
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setRecoveryCode('');
+      setTimeout(() => {
+        const ref = useRecoveryCode ? recoveryInputRef : codeInputRef;
+        ref.current?.focus();
+      }, 100);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 6);
     setCode(val);
   };
 
-  if (!pendingState?.tempToken) {
+  const handleToggleMode = () => {
+    setCode('');
+    setRecoveryCode('');
+    setUseRecoveryCode((v) => !v);
+  };
+
+  if (!pendingState?.email) {
     return null; // redirect in effect
   }
 
@@ -123,7 +162,9 @@ export function MfaPage() {
               Two-factor verification
             </h1>
             <p className="mt-1.5 text-[13px] text-[var(--color-text-secondary)] text-center">
-              Enter the 6-digit code from your authenticator app
+              {useRecoveryCode
+                ? 'Enter one of your recovery codes'
+                : 'Enter the 6-digit code from your authenticator app'}
             </p>
             {pendingState.email && (
               <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
@@ -132,47 +173,91 @@ export function MfaPage() {
             )}
           </div>
 
-          {/* 6-digit input */}
-          <div className="mb-6">
-            <label
-              htmlFor="mfa-code"
-              className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5 text-center"
-            >
-              Verification code
-            </label>
-            <input
-              ref={inputRef}
-              id="mfa-code"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={code}
-              onChange={handleChange}
-              disabled={isLoading}
-              placeholder="000000"
-              className="w-full h-14 text-center text-[24px] font-mono tracking-[0.4em] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
-              aria-label="6-digit verification code"
-            />
-            <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)] text-center">
-              Open your authenticator app to find the 6-digit code
-            </p>
-          </div>
+          {/* TOTP mode */}
+          {!useRecoveryCode && (
+            <div className="mb-6">
+              <label
+                htmlFor="mfa-code"
+                className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5 text-center"
+              >
+                Verification code
+              </label>
+              <input
+                ref={codeInputRef}
+                id="mfa-code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={code}
+                onChange={handleCodeChange}
+                disabled={isLoading}
+                placeholder="000000"
+                className="w-full h-14 text-center text-[24px] font-mono tracking-[0.4em] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                aria-label="6-digit verification code"
+              />
+              <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)] text-center">
+                Open your authenticator app to find the 6-digit code
+              </p>
+            </div>
+          )}
+
+          {/* Recovery code mode */}
+          {useRecoveryCode && (
+            <div className="mb-6">
+              <label
+                htmlFor="mfa-recovery-code"
+                className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5 text-center"
+              >
+                Recovery code
+              </label>
+              <input
+                ref={recoveryInputRef}
+                id="mfa-recovery-code"
+                type="text"
+                autoComplete="off"
+                value={recoveryCode}
+                onChange={(e) => setRecoveryCode(e.target.value)}
+                disabled={isLoading}
+                placeholder="xxxx-xxxx-xxxx"
+                className="w-full h-11 text-center text-[15px] font-mono tracking-wider bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                aria-label="Recovery code"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && recoveryCode.trim() && !isLoading) {
+                    void handleVerify();
+                  }
+                }}
+              />
+              <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)] text-center">
+                Each recovery code can only be used once
+              </p>
+            </div>
+          )}
 
           <Button
             fullWidth
             size="lg"
             isLoading={isLoading}
-            disabled={code.length < 6}
-            onClick={() => handleVerify(code)}
+            disabled={useRecoveryCode ? !recoveryCode.trim() : code.length < 6}
+            onClick={() => { void handleVerify(); }}
           >
             {isLoading ? 'Verifying…' : 'Verify'}
           </Button>
 
+          {/* Toggle between TOTP and recovery code */}
+          <button
+            type="button"
+            onClick={handleToggleMode}
+            className="mt-3 w-full text-center text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+            disabled={isLoading}
+          >
+            {useRecoveryCode ? 'Use authenticator app instead' : 'Use a recovery code instead'}
+          </button>
+
           <button
             type="button"
             onClick={() => navigate('/login', { replace: true })}
-            className="mt-4 w-full text-center text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+            className="mt-2 w-full text-center text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
           >
             Back to sign in
           </button>

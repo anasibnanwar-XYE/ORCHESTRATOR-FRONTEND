@@ -315,7 +315,37 @@ describe('isAuthenticated', () => {
 });
 
 describe('verifyMfa', () => {
-  it('sets session after successful MFA verification', async () => {
+  it('sets session after successful MFA verification via canonical login re-submit', async () => {
+    (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    // authApi.verifyMfa delegates to authApi.login; mock verifyMfa to return the expected response
+    (authApi.verifyMfa as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await act(async () => {
+      await capturedCtx!.verifyMfa({
+        email: 'test@bbp.com',
+        password: 'Password1!',
+        companyCode: 'ORCH',
+        mfaCode: '123456',
+      });
+    });
+
+    await waitFor(() => expect(capturedCtx!.session).not.toBeNull());
+
+    expect(capturedCtx!.user?.email).toBe(mockUser.email);
+    expect(capturedCtx!.isAuthenticated).toBe(true);
+    // Verify verifyMfa was called with the full credentials + mfaCode
+    expect(authApi.verifyMfa).toHaveBeenCalledWith({
+      email: 'test@bbp.com',
+      password: 'Password1!',
+      companyCode: 'ORCH',
+      mfaCode: '123456',
+    });
+  });
+
+  it('sets session when using recoveryCode path', async () => {
     (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (authApi.verifyMfa as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
 
@@ -323,13 +353,22 @@ describe('verifyMfa', () => {
     renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
 
     await act(async () => {
-      await capturedCtx!.verifyMfa('123456', 'placeholder-tok');
+      await capturedCtx!.verifyMfa({
+        email: 'test@bbp.com',
+        password: 'Password1!',
+        companyCode: 'ORCH',
+        recoveryCode: 'xxxx-yyyy-zzzz',
+      });
     });
 
     await waitFor(() => expect(capturedCtx!.session).not.toBeNull());
-
-    expect(capturedCtx!.user?.email).toBe(mockUser.email);
     expect(capturedCtx!.isAuthenticated).toBe(true);
+    expect(authApi.verifyMfa).toHaveBeenCalledWith({
+      email: 'test@bbp.com',
+      password: 'Password1!',
+      companyCode: 'ORCH',
+      recoveryCode: 'xxxx-yyyy-zzzz',
+    });
   });
 });
 

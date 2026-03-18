@@ -1159,9 +1159,30 @@ export interface LoginResponse {
  */
 export type AuthResult = LoginResponse & { user: User };
 
+/** @deprecated Use LoginRequest with mfaCode/recoveryCode instead */
 export interface MfaVerifyRequest {
   code: string;
   tempToken: string;
+}
+
+/**
+ * Response from POST /auth/mfa/setup.
+ * The qrUri is an otpauth:// URI suitable for QR code rendering.
+ * recoveryCodes are one-time use backup codes; shown once at setup.
+ */
+export interface MfaSetupResponse {
+  secret: string;
+  qrUri: string;
+  recoveryCodes: string[];
+}
+
+/**
+ * Request body for POST /auth/mfa/disable.
+ * At least one of code or recoveryCode must be present.
+ */
+export interface MfaDisableRequest {
+  code?: string;
+  recoveryCode?: string;
 }
 
 export interface RefreshTokenRequest {

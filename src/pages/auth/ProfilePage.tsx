@@ -3,13 +3,16 @@
  *
  * Features:
  *  - View and update profile fields (displayName, preferredName, jobTitle, email)
- *  - MFA setup: generate QR code, display secret, activate with code
- *  - MFA disable: confirmation dialog before disabling
+ *  - MFA setup: shows QR code (from qrUri), manual secret, and one-time recovery codes
+ *    with required acknowledgement before the setup flow can be dismissed
+ *  - MFA activate: enters TOTP code to confirm enrollment
+ *  - MFA disable: supports both TOTP code and recovery code paths
  */
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import { Camera, ShieldCheck, ShieldOff, User as UserIcon, KeyRound } from 'lucide-react';
+import { Camera, ShieldCheck, ShieldOff, User as UserIcon, KeyRound, Copy, Check } from 'lucide-react';
 import { clsx } from 'clsx';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/context/AuthContext';
 import { authApi } from '@/lib/authApi';
 import { resolveError } from '@/lib/error-resolver';
@@ -18,7 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
-import type { Profile } from '@/types';
+import type { MfaSetupResponse, Profile } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MFA setup sub-section
@@ -32,28 +35,41 @@ interface MfaSetupSectionProps {
 function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
   const toast = useToast();
 
-  const [setupData, setSetupData] = useState<{ qrCode: string; secret: string } | null>(null);
+  // Setup flow state
+  const [setupData, setSetupData] = useState<MfaSetupResponse | null>(null);
   const [activationCode, setActivationCode] = useState('');
-  const [disableCode, setDisableCode] = useState('');
   const [isSetupLoading, setIsSetupLoading] = useState(false);
   const [isActivateLoading, setIsActivateLoading] = useState(false);
-  const [isDisableLoading, setIsDisableLoading] = useState(false);
-  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  // Tracks whether user has acknowledged seeing the recovery codes
+  const [recoveryCodesAcknowledged, setRecoveryCodesAcknowledged] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   const activationInputRef = useRef<HTMLInputElement>(null);
-  const disableCodeInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus the disable code input when dialog opens
+  // Disable flow state
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [disableCode, setDisableCode] = useState('');
+  const [disableRecoveryCode, setDisableRecoveryCode] = useState('');
+  const [useDisableRecovery, setUseDisableRecovery] = useState(false);
+  const [isDisableLoading, setIsDisableLoading] = useState(false);
+  const disableCodeInputRef = useRef<HTMLInputElement>(null);
+  const disableRecoveryInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the active disable input when dialog opens
   useEffect(() => {
-    if (showDisableConfirm) {
-      setTimeout(() => disableCodeInputRef.current?.focus(), 50);
+    if (showDisableDialog) {
+      setTimeout(() => {
+        const ref = useDisableRecovery ? disableRecoveryInputRef : disableCodeInputRef;
+        ref.current?.focus();
+      }, 50);
     }
-  }, [showDisableConfirm]);
+  }, [showDisableDialog, useDisableRecovery]);
 
   const handleGenerateQr = async () => {
     setIsSetupLoading(true);
     try {
       const data = await authApi.setupMfa();
       setSetupData(data);
+      setRecoveryCodesAcknowledged(false);
       setTimeout(() => activationInputRef.current?.focus(), 100);
     } catch (error) {
       const resolved = resolveError(error);
@@ -66,6 +82,11 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
   const handleActivate = async (e: FormEvent) => {
     e.preventDefault();
     if (!activationCode || isActivateLoading) return;
+    // Recovery codes must be acknowledged before activation can proceed
+    if (!recoveryCodesAcknowledged) {
+      toast.error('Please save your recovery codes before activating MFA');
+      return;
+    }
 
     setIsActivateLoading(true);
     try {
@@ -73,29 +94,53 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
       toast.success('MFA enabled', 'Two-factor authentication is now active.');
       setSetupData(null);
       setActivationCode('');
+      setRecoveryCodesAcknowledged(false);
       onMfaToggled();
     } catch (error) {
       const resolved = resolveError(error);
-      toast.error(resolved.type === 'message' ? resolved.message : 'Invalid code');
+      toast.error(resolved.type === 'message' ? resolved.message : 'Invalid code — check your authenticator and try again');
     } finally {
       setIsActivateLoading(false);
     }
   };
 
+  const handleCopySecret = () => {
+    if (!setupData?.secret) return;
+    navigator.clipboard.writeText(setupData.secret).then(() => {
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    }).catch(() => {
+      // Clipboard unavailable — user can select and copy manually
+    });
+  };
+
   const handleDisable = async () => {
     setIsDisableLoading(true);
     try {
-      await authApi.disableMfa(disableCode);
+      const request = useDisableRecovery
+        ? { recoveryCode: disableRecoveryCode.trim() }
+        : { code: disableCode };
+      await authApi.disableMfa(request);
       toast.success('MFA disabled', 'Two-factor authentication has been turned off.');
-      setShowDisableConfirm(false);
+      setShowDisableDialog(false);
       setDisableCode('');
+      setDisableRecoveryCode('');
+      setUseDisableRecovery(false);
       onMfaToggled();
     } catch (error) {
       const resolved = resolveError(error);
-      toast.error(resolved.type === 'message' ? resolved.message : 'Failed to disable MFA');
+      toast.error(resolved.type === 'message' ? resolved.message : 'Failed to disable MFA — check your code and try again');
     } finally {
       setIsDisableLoading(false);
     }
+  };
+
+  const handleCloseDisableDialog = () => {
+    if (isDisableLoading) return;
+    setShowDisableDialog(false);
+    setDisableCode('');
+    setDisableRecoveryCode('');
+    setUseDisableRecovery(false);
   };
 
   if (mfaEnabled) {
@@ -120,22 +165,17 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
           variant="secondary"
           size="sm"
           leftIcon={<ShieldOff />}
-          onClick={() => setShowDisableConfirm(true)}
+          onClick={() => setShowDisableDialog(true)}
         >
           Disable MFA
         </Button>
 
-        {/* MFA disable dialog — requires verification code input */}
-        {showDisableConfirm && (
+        {/* MFA disable dialog — code or recovery code */}
+        {showDisableDialog && (
           <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
             <div
               className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
-              onClick={() => {
-                if (!isDisableLoading) {
-                  setShowDisableConfirm(false);
-                  setDisableCode('');
-                }
-              }}
+              onClick={handleCloseDisableDialog}
               style={{ animation: 'fadeIn 200ms ease-out forwards' }}
             />
             <div
@@ -149,57 +189,111 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
                 Disable two-factor authentication
               </h3>
               <p className="mt-2 text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
-                Turning off MFA reduces your account security. Enter your current authenticator code to confirm.
+                Turning off MFA reduces your account security. Enter your current code to confirm.
               </p>
 
-              {/* Verification code input */}
-              <div className="mt-4">
-                <label
-                  htmlFor="mfa-disable-code"
-                  className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5"
-                >
-                  Verification code
-                </label>
-                <input
-                  ref={disableCodeInputRef}
-                  id="mfa-disable-code"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  value={disableCode}
-                  onChange={(e) =>
-                    setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))
-                  }
-                  disabled={isDisableLoading}
-                  placeholder="000000"
-                  className={clsx(
-                    'w-full h-11 text-center text-[18px] font-mono tracking-[0.3em]',
-                    'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
-                    'rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)]',
-                    'transition-all text-[var(--color-text-primary)]',
-                    'placeholder:text-[var(--color-text-tertiary)]',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                  data-testid="mfa-disable-code-input"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && disableCode.length === 6 && !isDisableLoading) {
-                      void handleDisable();
-                    }
+              {/* Toggle between TOTP and recovery code */}
+              <div className="mt-4 space-y-3">
+                {!useDisableRecovery ? (
+                  <div>
+                    <label
+                      htmlFor="mfa-disable-code"
+                      className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5"
+                    >
+                      Authenticator code
+                    </label>
+                    <input
+                      ref={disableCodeInputRef}
+                      id="mfa-disable-code"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={disableCode}
+                      onChange={(e) =>
+                        setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                      }
+                      disabled={isDisableLoading}
+                      placeholder="000000"
+                      className={clsx(
+                        'w-full h-11 text-center text-[18px] font-mono tracking-[0.3em]',
+                        'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
+                        'rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)]',
+                        'transition-all text-[var(--color-text-primary)]',
+                        'placeholder:text-[var(--color-text-tertiary)]',
+                        'disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                      data-testid="mfa-disable-code-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && disableCode.length === 6 && !isDisableLoading) {
+                          void handleDisable();
+                        }
+                      }}
+                    />
+                    <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
+                      Open your authenticator app and enter the current 6-digit code
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label
+                      htmlFor="mfa-disable-recovery"
+                      className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5"
+                    >
+                      Recovery code
+                    </label>
+                    <input
+                      ref={disableRecoveryInputRef}
+                      id="mfa-disable-recovery"
+                      type="text"
+                      autoComplete="off"
+                      value={disableRecoveryCode}
+                      onChange={(e) => setDisableRecoveryCode(e.target.value)}
+                      disabled={isDisableLoading}
+                      placeholder="xxxx-xxxx-xxxx"
+                      className={clsx(
+                        'w-full h-11 text-center text-[14px] font-mono tracking-wider',
+                        'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
+                        'rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)]',
+                        'transition-all text-[var(--color-text-primary)]',
+                        'placeholder:text-[var(--color-text-tertiary)]',
+                        'disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                      data-testid="mfa-disable-recovery-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && disableRecoveryCode.trim() && !isDisableLoading) {
+                          void handleDisable();
+                        }
+                      }}
+                    />
+                    <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
+                      Each recovery code can only be used once
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseDisableRecovery((v) => !v);
+                    setDisableCode('');
+                    setDisableRecoveryCode('');
+                    setTimeout(() => {
+                      const ref = !useDisableRecovery ? disableRecoveryInputRef : disableCodeInputRef;
+                      ref.current?.focus();
+                    }, 50);
                   }}
-                />
-                <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
-                  Open your authenticator app and enter the current 6-digit code
-                </p>
+                  disabled={isDisableLoading}
+                  className="text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors disabled:opacity-50"
+                >
+                  {useDisableRecovery ? 'Use authenticator code instead' : 'Use a recovery code instead'}
+                </button>
               </div>
 
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowDisableConfirm(false);
-                    setDisableCode('');
-                  }}
+                  onClick={handleCloseDisableDialog}
                   disabled={isDisableLoading}
                   className="btn-secondary h-9 px-4 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -208,12 +302,16 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
                 <button
                   type="button"
                   onClick={() => { void handleDisable(); }}
-                  disabled={disableCode.length < 6 || isDisableLoading}
+                  disabled={
+                    (useDisableRecovery ? !disableRecoveryCode.trim() : disableCode.length < 6) ||
+                    isDisableLoading
+                  }
                   className={clsx(
                     'h-9 px-4 rounded-lg text-[13px] font-medium transition-all duration-150',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
                     'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-300 active:scale-[0.98]',
-                    (disableCode.length < 6 || isDisableLoading) && 'opacity-60 pointer-events-none'
+                    ((useDisableRecovery ? !disableRecoveryCode.trim() : disableCode.length < 6) || isDisableLoading) &&
+                      'opacity-60 pointer-events-none'
                   )}
                 >
                   {isDisableLoading ? 'Disabling…' : 'Disable MFA'}
@@ -259,22 +357,16 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
             Scan with your authenticator app
           </p>
 
-          {/* QR code */}
+          {/* QR code rendered from otpauth:// URI */}
           <div className="flex justify-center">
             <div
               className="p-3 bg-white rounded-lg border border-[var(--color-border-default)] shadow-sm"
               data-testid="mfa-qr-code"
             >
-              <img
-                src={
-                  setupData.qrCode.startsWith('data:')
-                    ? setupData.qrCode
-                    : `data:image/png;base64,${setupData.qrCode}`
-                }
-                alt="MFA QR code — scan with your authenticator app"
-                width={160}
-                height={160}
-                className="block"
+              <QRCodeSVG
+                value={setupData.qrUri}
+                size={160}
+                level="M"
               />
             </div>
           </div>
@@ -284,12 +376,56 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
             <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
               Manual entry key
             </p>
-            <p
-              className="font-mono text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded px-3 py-2 tracking-widest select-all"
-              data-testid="mfa-secret"
-            >
-              {setupData.secret}
+            <div className="flex items-center gap-2">
+              <p
+                className="flex-1 font-mono text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded px-3 py-2 tracking-widest select-all min-w-0 break-all"
+                data-testid="mfa-secret"
+              >
+                {setupData.secret}
+              </p>
+              <button
+                type="button"
+                onClick={handleCopySecret}
+                className="shrink-0 h-9 w-9 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+                aria-label="Copy secret"
+              >
+                {secretCopied ? <Check size={14} className="text-[#10b981]" /> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Recovery codes — must acknowledge before activation */}
+          <div>
+            <p className="text-[12px] font-medium text-[var(--color-text-primary)] mb-1.5">
+              Recovery codes
             </p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] mb-2">
+              Save these backup codes somewhere safe. Each can only be used once.
+            </p>
+            <div
+              className="grid grid-cols-2 gap-1 p-3 rounded-lg bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]"
+              data-testid="mfa-recovery-codes"
+            >
+              {setupData.recoveryCodes.map((c) => (
+                <p key={c} className="font-mono text-[12px] text-[var(--color-text-primary)] tracking-wider">
+                  {c}
+                </p>
+              ))}
+            </div>
+
+            {/* Required acknowledgement before activation */}
+            <label className="mt-3 flex items-start gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={recoveryCodesAcknowledged}
+                onChange={(e) => setRecoveryCodesAcknowledged(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-[var(--color-border-default)] accent-[var(--color-neutral-600)]"
+                data-testid="mfa-recovery-ack-checkbox"
+              />
+              <span className="text-[12px] text-[var(--color-text-secondary)]">
+                I have saved my recovery codes in a safe place
+              </span>
+            </label>
           </div>
 
           {/* Activation form */}
@@ -322,7 +458,8 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
                 type="submit"
                 size="sm"
                 isLoading={isActivateLoading}
-                disabled={activationCode.length < 6}
+                disabled={activationCode.length < 6 || !recoveryCodesAcknowledged}
+                title={!recoveryCodesAcknowledged ? 'Save your recovery codes first' : undefined}
               >
                 Activate MFA
               </Button>
@@ -333,6 +470,7 @@ function MfaSetupSection({ mfaEnabled, onMfaToggled }: MfaSetupSectionProps) {
                 onClick={() => {
                   setSetupData(null);
                   setActivationCode('');
+                  setRecoveryCodesAcknowledged(false);
                 }}
               >
                 Cancel

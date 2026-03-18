@@ -15,6 +15,8 @@ import type {
   ChangePasswordRequest,
   User,
   SwitchCompanyRequest,
+  MfaSetupResponse,
+  MfaDisableRequest,
 } from '@/types';
 import type { Profile, UpdateProfileRequest } from '@/types';
 
@@ -82,50 +84,26 @@ export const authApi = {
   // MFA
   // ─────────────────────────────────────────────────────────────────────────
 
-  async verifyMfa(code: string, tempToken: string): Promise<AuthResult> {
-    // /auth/mfa/verify returns a flat AuthResponse DTO (no envelope wrapper, no nested user)
-    const response = await apiRequest.post<LoginResponse>(
-      '/auth/mfa/verify',
-      { code, tempToken }
-    );
-
-    const dto = response.data;
-
-    // Store tokens and company context
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
-    if (dto.companyCode) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, dto.companyCode);
-    }
-
-    // Hydrate the full User object via GET /auth/me
-    const userResponse = await apiRequest.get<ApiResponse<User>>('/auth/me');
-    const user = userResponse.data.data;
-
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    if (user.companyId) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_ID, user.companyId);
-    }
-
-    return { ...dto, user };
+  /**
+   * Complete an MFA challenge by re-submitting POST /auth/login with the original
+   * credentials plus either mfaCode or recoveryCode.
+   *
+   * Per backend contract, MFA verification MUST use POST /auth/login — there is no
+   * separate /auth/mfa/verify endpoint in the supported contract.
+   */
+  async verifyMfa(credentials: LoginRequest): Promise<AuthResult> {
+    return authApi.login(credentials);
   },
 
-  async getMfaStatus(): Promise<{ mfaEnabled: boolean }> {
-    const response = await apiRequest.get<ApiResponse<{ mfaEnabled: boolean }>>(
-      '/auth/mfa/status'
-    );
-    return response.data.data;
-  },
-
-  async setupMfa(): Promise<{ qrCode: string; secret: string }> {
-    const response = await apiRequest.post<ApiResponse<{ qrCode: string; secret: string }>>(
+  async setupMfa(): Promise<MfaSetupResponse> {
+    const response = await apiRequest.post<ApiResponse<MfaSetupResponse>>(
       '/auth/mfa/setup'
     );
     return response.data.data;
   },
 
   async activateMfa(code: string): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>(
+    const response = await apiRequest.post<ApiResponse<{ enabled: boolean }>>(
       '/auth/mfa/activate',
       { code }
     );
@@ -134,10 +112,10 @@ export const authApi = {
     }
   },
 
-  async disableMfa(code: string): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>(
+  async disableMfa(request: MfaDisableRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<{ enabled: boolean }>>(
       '/auth/mfa/disable',
-      { code }
+      request
     );
     if (!response.data.success) {
       throw new Error(response.data.message);
