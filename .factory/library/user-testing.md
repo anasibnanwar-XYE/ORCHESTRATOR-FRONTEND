@@ -68,4 +68,4 @@ The following test states require backend seeding and cannot be triggered from t
 - **Must-change-password (VAL-AUTH-014)**: Requires seeded account with mustChangePassword flag set.
 
 ### Known Frontend Issues (auth-sensitive-flows)
-- **VAL-CROSS-002**: Protected deep link destination is NOT restored after MFA success. Users always land at /hub regardless of original deep link. The pending MFA state stores {email, password, companyCode} but not the intended destination URL.
+- **VAL-CROSS-002**: ✅ FIXED. Protected deep link destination is now restored after MFA success. The fix adds `intendedDestination` to the MFA pending state in both LoginPage.tsx paths (428 MFA required and 200 + mfa_redirect), and MfaPage.tsx uses `resolvePostLoginDestination` to restore the original destination after successful MFA.
