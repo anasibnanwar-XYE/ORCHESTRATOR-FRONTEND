@@ -406,8 +406,8 @@
        </div>
  
        {/* ── Filters ─────────────────────────────────────────────────── */}
-       <div className="flex flex-wrap items-center gap-2">
-         {/* Search */}
+       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+         {/* Search — full-width on mobile, fixed on sm+ */}
          <div className="relative">
            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] pointer-events-none" />
            <input
@@ -415,9 +415,12 @@
              value={searchQuery}
              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
              placeholder="Search order or dealer..."
-             className="h-8 pl-8 pr-3 w-52 text-[13px] bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-lg placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-300)] transition-all"
+             className="h-8 pl-8 pr-3 w-full sm:w-52 text-[13px] bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)] rounded-lg placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-300)] transition-all"
            />
          </div>
+
+         {/* Status, date range, and actions — wrap as a flex row */}
+         <div className="flex items-center flex-wrap gap-2">
  
          {/* Status filter */}
          <select
@@ -468,6 +471,7 @@
          >
            <RefreshCcw size={12} />
          </button>
+         </div>
        </div>
  
        {/* ── Error ────────────────────────────────────────────────────── */}

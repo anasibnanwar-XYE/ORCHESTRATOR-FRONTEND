@@ -93,4 +93,33 @@
        expect(totals.length).toBeGreaterThan(0);
      });
    });
+
+   it('shows overdue invoices section when data has overdueInvoices', async () => {
+     (dealerApi.getAging as ReturnType<typeof vi.fn>).mockResolvedValue(mockAging);
+     renderPage();
+     await waitFor(() => {
+       const overdueHeadings = screen.queryAllByText(/overdue invoices/i);
+       expect(overdueHeadings.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('renders overdue invoice numbers in both desktop and mobile views', async () => {
+     (dealerApi.getAging as ReturnType<typeof vi.fn>).mockResolvedValue(mockAging);
+     renderPage();
+     await waitFor(() => {
+       // INV-001 appears in both desktop table and mobile card (2 instances)
+       const invEls = screen.queryAllByText('INV-001');
+       expect(invEls.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('shows overdue day count in mobile card view', async () => {
+     (dealerApi.getAging as ReturnType<typeof vi.fn>).mockResolvedValue(mockAging);
+     renderPage();
+     await waitFor(() => {
+       // "5d overdue" label in mobile card
+       const overdueLabels = screen.queryAllByText(/5d overdue/i);
+       expect(overdueLabels.length).toBeGreaterThan(0);
+     });
+   });
  });

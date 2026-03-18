@@ -170,4 +170,26 @@
        expect(mockNavigate).toHaveBeenCalledWith('/sales/orders/1');
      }
    });
+
+   it('search input is present and accepts text input', async () => {
+     (salesApi.searchOrders as ReturnType<typeof vi.fn>).mockResolvedValue(mockOrdersResult);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('Sales Orders')).toBeDefined();
+     });
+     const searchInput = screen.getByPlaceholderText('Search order or dealer...');
+     expect(searchInput).toBeDefined();
+     fireEvent.change(searchInput, { target: { value: 'SO-2026' } });
+     expect((searchInput as HTMLInputElement).value).toBe('SO-2026');
+   });
+
+   it('renders both desktop table and mobile card list sections', async () => {
+     (salesApi.searchOrders as ReturnType<typeof vi.fn>).mockResolvedValue(mockOrdersResult);
+     renderPage();
+     await waitFor(() => {
+       const els = screen.getAllByText('SO-2026-001');
+       // Both desktop table row and mobile card render the same order number
+       expect(els.length).toBeGreaterThanOrEqual(2);
+     });
+   });
  });

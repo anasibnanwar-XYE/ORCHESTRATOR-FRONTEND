@@ -224,7 +224,9 @@
                <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
                 Overdue invoices
                </p>
-               <div className="overflow-x-auto rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
+
+               {/* Desktop table */}
+               <div className="hidden sm:block overflow-x-auto rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
                  <table className="w-full border-collapse">
                    <thead>
                      <tr className="border-b border-[var(--color-border-default)]">
@@ -266,6 +268,43 @@
                      ))}
                    </tbody>
                  </table>
+               </div>
+
+               {/* Mobile card list */}
+               <div className="sm:hidden space-y-2">
+                 {(aging?.overdueInvoices ?? []).map((item: DealerPortalOverdueInvoice, idx: number) => (
+                   <div
+                     key={`mobile-${item.invoiceNumber ?? ''}-${idx}`}
+                     className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-error)] border-opacity-30 rounded-xl"
+                   >
+                     <div className="flex items-start justify-between gap-2 mb-2">
+                       <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                         {item.invoiceNumber ?? '—'}
+                       </span>
+                       {item.daysOverdue !== undefined && (
+                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--color-error-bg)] text-[var(--color-error)] whitespace-nowrap shrink-0">
+                           {item.daysOverdue}d overdue
+                         </span>
+                       )}
+                     </div>
+                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                       <div>
+                         <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Issue Date</p>
+                         <p className="text-[12px] tabular-nums text-[var(--color-text-secondary)] mt-0.5">{fmtDate(item.issueDate)}</p>
+                       </div>
+                       <div>
+                         <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Due Date</p>
+                         <p className="text-[12px] tabular-nums text-[var(--color-text-secondary)] mt-0.5">{fmtDate(item.dueDate)}</p>
+                       </div>
+                       <div className="col-span-2">
+                         <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Outstanding</p>
+                         <p className="text-[14px] font-semibold tabular-nums text-[var(--color-error)] mt-0.5">
+                           {fmtCurrency(item.outstandingAmount)}
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
                </div>
              </div>
            )}
