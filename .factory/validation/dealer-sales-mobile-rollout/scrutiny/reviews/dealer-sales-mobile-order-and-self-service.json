@@ -1,0 +1,31 @@
+{
+  "featureId": "dealer-sales-mobile-order-and-self-service",
+  "reviewedAt": "2026-03-19T00:45:00.000Z",
+  "commitId": "c5ea588c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Solid mobile UX implementation for order flows, dealer-detail modal, and back-navigation. The fixed-position dropdown solution for DealerCombobox correctly handles clipping in scrollable drawers. URL search params pattern properly preserves filter state. Sticky action bar on OrderDetailPage ensures CTAs remain reachable. Tab bar scrolling on DealerDetailView works correctly. Tests provide good coverage for mobile behaviors (16 new tests). Worker also fixed a pre-existing nested-button DOM issue (button inside button) by using span[role=button] with proper keyboard handlers.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Fixed-position dropdown pattern for avoiding clipping in overflow-y-auto scroll containers is not documented. Worker implemented a reusable solution using getBoundingClientRect() to compute fixed position, with scroll/resize listeners for repositioning. This pattern is valuable for any dropdown that needs to escape scroll container clipping on mobile.",
+      "evidence": "CreateOrderDrawer.tsx:67-100 — DealerCombobox dropdown uses fixed positioning with dynamic rect computation. Comment explains: 'Dropdown is rendered with fixed positioning so it is never clipped by the Drawer's overflow-y-auto scrollable content area. This is critical on phone where the entire drawer is a scroll container.'"
+    },
+    {
+      "area": "conventions",
+      "observation": "URL search params pattern for preserving filter state across navigation is implemented but not documented as a project convention. The pattern keeps filter state in the URL so back-navigation restores context.",
+      "evidence": "SalesOrdersPage.tsx:288-304 — Filters (q, status, from, to, page) are synced to useSearchParams instead of useState. setSearchQuery/setStatusFilter/etc. update URL with replace: true. clearFilters() resets via setSearchParams({}, { replace: true })."
+    },
+    {
+      "area": "conventions",
+      "observation": "Nested interactive element fix pattern: When a clickable element needs to be inside another clickable element, use span[role=button] with tabIndex and onKeyDown handler instead of nested <button> elements, which is invalid HTML.",
+      "evidence": "CreateOrderDrawer.tsx:169-189 — Clear button inside the dealer trigger button was changed from <button> to <span role='button' tabIndex={0}> with onClick and onKeyDown handlers for Enter/Space keys."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Pass. The worker delivered high-quality mobile UX improvements for order creation (fixed dropdown clipping), order detail (sticky actions, back-navigation context), dealer detail modal (scrollable tabs, responsive header), and sales orders (URL-persisted filters). All 1117 tests pass including 16 new mobile-focused tests. The credit-request and support-ticket forms were not modified because they already use responsive layouts (grid-cols-1 lg:grid-cols-2) and simple form structures that work on mobile. The discovered nested-button issue was proactively fixed. Three useful patterns were identified for potential documentation: fixed-position dropdown escape, URL search params for filter persistence, and span[role=button] for nested interactives."
+}

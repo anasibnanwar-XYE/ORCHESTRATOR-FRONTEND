@@ -1,0 +1,33 @@
+{
+  "featureId": "dealer-sales-mobile-dealer-combobox-dom-nesting-fix",
+  "reviewedAt": "2026-03-19T12:30:00.000Z",
+  "commitId": "3daa949e",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix correctly refactors the DealerCombobox clear action by replacing the nested `<button>` inside the outer combobox trigger with a `<span role=\"button\" tabIndex={0}>` element. The implementation properly preserves all click behavior (with e.stopPropagation()), adds keyboard support for Enter/Space keys, and retains visual styling with cursor-pointer. A new test explicitly verifies the clear action element is not a native <button> to prevent regression. All verification steps (lint, typecheck, 1118 tests) passed. The DOM nesting warning is confirmed eliminated.",
+    "issues": [
+      {
+        "file": "src/pages/sales/CreateOrderDrawer.tsx",
+        "line": 171,
+        "severity": "non_blocking",
+        "description": "The `<span role=\"button\">` element lacks focus-visible styling. Native buttons get focus-visible:ring from .btn class in global.css, but custom span[role=button] elements don't have equivalent focus indication. This is a minor accessibility UX gap - the element is keyboard-accessible but doesn't show visible focus ring. Same pattern exists in SupportTicketsPage.tsx:275-277. Consider documenting or adding global CSS for `[role=\"button\"]:focus-visible`."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The pattern of using `<span role=\"button\" tabIndex={0}>` with onKeyDown handler for Enter/Space keys to avoid nested-button DOM warnings is used in at least two places (CreateOrderDrawer.tsx:171-184, SupportTicketsPage.tsx:275-277). This could be documented as a project convention for clickable non-button elements inside buttons.",
+      "evidence": "CreateOrderDrawer.tsx:171-184 implements span[role=button] pattern. SupportTicketsPage.tsx:275-277 uses identical pattern. Both are for avoiding nested-button DOM structure while maintaining accessibility."
+    },
+    {
+      "area": "conventions",
+      "observation": "Global CSS defines focus-visible styles only for .btn class buttons, not for elements with role=\"button\". This creates inconsistency where some interactive elements show focus ring and others don't.",
+      "evidence": "global.css:32 has `focus-visible:ring-2` for .btn class. No matching rule exists for `[role=\"button\"]:focus-visible`. The new span[role=button] in CreateOrderDrawer.tsx:171 doesn't receive focus-visible styling."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The fix correctly resolves the nested-button DOM nesting warning by replacing the inner `<button>` with a `<span role=\"button\">` that maintains full click and keyboard accessibility. All tests pass (1118 total), lint and typecheck pass. Minor non-blocking observation about missing focus-visible styling for role=button elements, which is consistent with an existing pattern in the codebase."
+}

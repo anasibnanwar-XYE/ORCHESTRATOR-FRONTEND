@@ -1,0 +1,52 @@
+{
+  "milestone": "dealer-sales-mobile-rollout",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "bun run test", "exitCode": 0, "testsCount": 1118 },
+    "typecheck": { "passed": true, "command": "bun run typecheck", "exitCode": 0 },
+    "lint": { "passed": true, "command": "bun run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "dealer-sales-mobile-dealer-combobox-dom-nesting-fix",
+      "file": "src/pages/sales/CreateOrderDrawer.tsx",
+      "line": 171,
+      "severity": "non_blocking",
+      "description": "The `<span role=\"button\">` element lacks focus-visible styling. Native buttons get focus-visible:ring from .btn class in global.css, but custom span[role=button] elements don't have equivalent focus indication. This is a minor accessibility UX gap."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "file": ".factory/library/architecture.md",
+      "description": "Added three mobile/convention patterns: (1) Dropdown positioning in scroll containers using fixed positioning with getBoundingClientRect(), (2) Filter persistence via URL search params for back-navigation context, (3) Nested interactive elements using span[role=button] with keyboard handlers.",
+      "sourceFeature": "dealer-sales-mobile-order-and-self-service, dealer-sales-mobile-dealer-combobox-dom-nesting-fix"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "skills",
+      "file": ".factory/skills/frontend-design-worker/SKILL.md",
+      "suggestion": "Update 'Write or update failing tests first' guidance to acknowledge that for additive CSS-only responsive changes (e.g., adding sm:hidden/hidden sm:block classes), there are no failing tests to write first since the change is additive rather than behavioral. Tests should be written alongside implementation in these cases.",
+      "evidence": "dealer-sales-mobile-navigation-and-lists worker noted in skillFeedback: 'The skill says to write or update failing tests first — in practice, for responsive CSS changes (adding sm:hidden/hidden sm:block), there are no failing tests to write first since the change is additive.'",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "file": ".factory/skills/frontend-design-worker/SKILL.md",
+      "suggestion": "Add guidance about checking global.css for focus-visible styles when implementing span[role=button] patterns. Consider adding a global CSS rule for [role=\"button\"]:focus-visible to ensure consistent focus indication across all interactive elements.",
+      "evidence": "dealer-sales-mobile-dealer-combobox-dom-nesting-fix found that global.css has focus-visible:ring-2 for .btn class but not for [role=\"button\"]. The new span[role=button] elements don't receive focus-visible styling, creating inconsistency.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [],
+  "previousRound": null
+}
