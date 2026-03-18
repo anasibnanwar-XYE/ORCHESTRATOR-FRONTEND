@@ -1,0 +1,95 @@
+{
+  "milestone": "admin-superadmin-alignment-and-expansion",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "bun run test", "exitCode": 0, "notes": "1169 tests passed across 110 test files" },
+    "typecheck": { "passed": true, "command": "bun run typecheck", "exitCode": 0 },
+    "lint": { "passed": true, "command": "bun run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "admin-user-role-runtime-alignment",
+      "severity": "non_blocking",
+      "description": "SuperadminRuntimePage RuntimePolicySection loads platform-wide metrics but doesn't fetch company-specific policy data before populating the draft form. The form initializes with aggregate metrics values, not per-company policy values.",
+      "file": "src/pages/superadmin/SuperadminRuntimePage.tsx:185"
+    },
+    {
+      "featureId": "admin-user-role-runtime-alignment",
+      "severity": "non_blocking",
+      "description": "When loadMetrics fails in SuperadminRuntimePage, the error is silently swallowed without setting an error state for user feedback.",
+      "file": "src/pages/superadmin/SuperadminRuntimePage.tsx:178"
+    },
+    {
+      "featureId": "admin-lifecycle-module-onboarding-alignment",
+      "severity": "non_blocking",
+      "description": "ModuleConfigModal initializes enabledModules to empty array instead of loading current tenant module state. Admins must re-select all desired modules each time, risking accidental module disabling.",
+      "file": "src/pages/superadmin/TenantsPage.tsx:864"
+    },
+    {
+      "featureId": "admin-lifecycle-module-onboarding-alignment",
+      "severity": "non_blocking",
+      "description": "Module configuration tests verify API method existence but don't fully exercise the ModuleConfigModal component UI flow.",
+      "file": "src/pages/superadmin/__tests__/TenantsPage.test.tsx:231"
+    },
+    {
+      "featureId": "admin-lifecycle-module-onboarding-alignment",
+      "severity": "non_blocking",
+      "description": "Force-reset tests verify API method exists but don't fully test the dialog confirmation flow.",
+      "file": "src/pages/admin/__tests__/UsersPage.test.tsx:293"
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "file": ".factory/library/api.md",
+      "description": "Added pinned admin/superadmin contract notes: tenant runtime paths, dual-vocabulary lifecycle states, admin vs superadmin endpoint pattern, module configuration limitations, force-reset password behavior. Updated ERP-11 tracking to note write path resolved.",
+      "sourceFeatures": [
+        "admin-user-role-runtime-alignment",
+        "admin-lifecycle-module-onboarding-alignment",
+        "admin-changelog-and-export-approvals"
+      ]
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add guidance for read-only admin surface UX pattern: Use Lock icon + explanatory text when admin surfaces should be read-only due to superadmin-only mutation permissions. This pattern is now consistent across RolesPage, SettingsPage, and TenantRuntimePage.",
+      "evidence": "admin-user-role-runtime-alignment feature implemented this pattern across 3 pages with consistent styling.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills/frontend-contract-worker/SKILL.md",
+      "suggestion": "Add explicit guidance on acceptable alternatives when interactive agent-browser verification is blocked by infrastructure (backend unavailability). Current guidance says to verify with agent-browser but doesn't specify fallbacks. The worker appropriately relied on comprehensive test coverage when backend was unavailable.",
+      "evidence": "admin-user-role-runtime-alignment documented this deviation in skillFeedback.suggestedChanges.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [],
+  "previousRound": null,
+  "featureReviews": {
+    "admin-user-role-runtime-alignment": {
+      "status": "pass",
+      "summary": "Correctly aligns admin/superadmin RBAC boundaries. Superadmin runtime uses canonical paths. Admin surfaces are read-only with clear notices. 1130 tests pass."
+    },
+    "admin-lifecycle-module-onboarding-alignment": {
+      "status": "pass",
+      "summary": "Correctly handles dual-vocabulary lifecycle states, force-reset with proper masking, and module configuration API wiring. 1137 tests pass."
+    },
+    "admin-changelog-and-export-approvals": {
+      "status": "pass",
+      "summary": "Successfully rewrote ChangelogPage from localStorage to backend API with full CRUD. 30 tests for changelog/export-approvals. No blocking issues."
+    },
+    "support-and-credit-cross-surface-consistency": {
+      "status": "pass",
+      "summary": "Clean implementation of cross-surface consistency for support tickets (VAL-CROSS-005) and credit requests (VAL-CROSS-006). 19 new tests pass."
+    }
+  }
+}

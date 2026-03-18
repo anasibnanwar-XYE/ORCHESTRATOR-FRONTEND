@@ -1,0 +1,21 @@
+{
+  "featureId": "admin-changelog-and-export-approvals",
+  "reviewedAt": "2026-03-19T08:15:00.000Z",
+  "commitId": "ae2f99b4",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation successfully rewrote ChangelogPage from localStorage-based storage to backend API integration with full CRUD support (create, edit, delete) and proper loading/error state handling. The changelogApi wrapper in adminApi.ts correctly implements the backend contract with POST/PUT/DELETE /admin/changelog endpoints and GET /changelog for reading. Test coverage is comprehensive with 20 tests covering all CRUD operations, loading/error states, and WhatsNewBanner behavior. ExportApprovalsPage was already correctly wired and its 10 tests remain passing. The code is maintainable, follows project conventions, and aligns with the backend contract.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The changelogApi pattern demonstrates a clean separation between admin write endpoints (/admin/changelog for POST/PUT/DELETE) and public read endpoint (/changelog for GET). This pattern could be documented in api.md for future API wrapper implementations.",
+      "evidence": "src/lib/adminApi.ts:changelogApi — admin endpoints use /admin prefix, public read uses /changelog. Similar pattern used in other admin API wrappers."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The feature correctly implements changelog management with backend API integration, replacing the previous localStorage-only approach. The changelogApi wrapper properly follows the backend contract with correct endpoint paths (/admin/changelog for writes, /changelog for reads). Full CRUD is implemented with proper loading/error states, isHighlighted support, and toast notifications. Test coverage is thorough (30 tests total: 20 changelog + 10 export-approvals). ExportApprovalsPage was already correctly wired and required no changes. No blocking issues found."
+}
