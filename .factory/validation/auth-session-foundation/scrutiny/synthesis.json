@@ -1,0 +1,40 @@
+{
+  "milestone": "auth-session-foundation",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": { "passed": true, "command": "bun run test", "exitCode": 0 },
+    "typecheck": { "passed": true, "command": "bun run typecheck", "exitCode": 0 },
+    "lint": { "passed": true, "command": "bun run lint", "exitCode": 0 }
+  },
+  "reviewsSummary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "description": "MFA verification contract note already documented in api.md: MFA verification must reuse POST /auth/login with original payload plus mfaCode/recoveryCode",
+      "sourceFeature": "auth-session-company-context-alignment"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add a note about the PUBLIC_ROUTES vs SKIP_REFRESH_ROUTES pattern: PUBLIC_ROUTES skip auth header injection, SKIP_REFRESH_ROUTES skip 401 retry-with-refresh logic. This helps future workers understand the distinction when modifying API routing.",
+      "evidence": "The pattern is documented in src/lib/api.ts lines 41-59 but not in AGENTS.md. This is a convention that workers modifying auth/API wiring should understand.",
+      "isSystemic": false
+    },
+    {
+      "target": "skill",
+      "suggestion": "frontend-contract-worker skill should mention checking vite.config.ts proxy config and Origin header handling when backend CORS blocks browser-based validation during manual verification. The worker discovered this issue and added an Origin header override to the vite proxy.",
+      "evidence": "During auth-session-company-context-alignment implementation, the worker found that backend only accepts same-origin requests. The fix was adding headers.Origin override in vite.config.ts lines 86-92. This is a common dev environment issue.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [],
+  "previousRound": null
+}

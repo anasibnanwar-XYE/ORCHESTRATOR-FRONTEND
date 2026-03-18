@@ -1,0 +1,42 @@
+{
+  "featureId": "auth-session-company-context-alignment",
+  "milestone": "auth-session-foundation",
+  "reviewStatus": "pass",
+  "reviewedAt": "2026-03-18T14:30:00.000Z",
+  "commitId": "16edab18",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "issues": [
+    {
+      "severity": "non_blocking",
+      "description": "authApi.verifyMfa() still calls POST /auth/mfa/verify which is not in the backend contract. The backend expects MFA verification via re-submitting POST /auth/login with mfaCode/recoveryCode. This requires storing the original password through MFA challenge state.",
+      "file": "src/lib/authApi.ts",
+      "line": "55-80"
+    },
+    {
+      "severity": "suggestion",
+      "description": "The empty catch block in signOut() could benefit from a debug log in non-production environments to help diagnose logout failures during development.",
+      "file": "src/context/AuthContext.tsx",
+      "line": "263-268"
+    }
+  ],
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The frontend-contract-worker skill procedure should mention checking vite.config.ts proxy config and Origin header handling when backend CORS is blocking browser-based validation. The worker discovered this issue during manual verification (backend only accepts same-origin requests) and added an Origin header override to the vite proxy. This is a common dev environment issue not addressed in the skill.",
+      "evidence": "handoff.skillFeedback.suggestedChanges: 'The skill procedure should mention checking vite.config.ts proxy config when backend CORS is blocking browser-based validation.' Also visible in vite.config.ts lines 86-92 with the added headers.Origin override."
+    },
+    {
+      "area": "conventions",
+      "observation": "The pattern of having separate PUBLIC_ROUTES and SKIP_REFRESH_ROUTES arrays is now documented in code comments but not in AGENTS.md. Future workers may benefit from understanding this distinction: PUBLIC_ROUTES skip auth header injection, SKIP_REFRESH_ROUTES skip the 401 retry-with-refresh logic.",
+      "evidence": "src/lib/api.ts lines 41-59 define both arrays with comments explaining the distinction"
+    },
+    {
+      "area": "library",
+      "observation": "The pinned auth contract note in api.md correctly documents that MFA verification should use POST /auth/login with mfaCode. This is good - the worker correctly identified the discrepancy between authApi.verifyMfa() and the contract, and deferred fixing it to a later milestone rather than implementing incorrectly.",
+      "evidence": ".factory/library/api.md: 'MFA verification must reuse POST /auth/login with the original login payload plus mfaCode or recoveryCode; do not call /auth/mfa/verify.' Handoff notes this is deferred to auth-sensitive-flows milestone."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS: The implementation correctly aligns auth/session/company-switch with the backend contract. LoginRequest.companyCode is now required, silent refresh includes companyCode (VAL-SESSION-004), logout properly revokes server sessions and clears local state regardless of server response (VAL-SESSION-002), invalid stored sessions are cleared before the protected shell mounts (VAL-SESSION-003), and company switching uses the canonical refresh-token endpoint (VAL-SESSION-005). All 1002 tests pass, build succeeds, and browser validation confirmed login, session storage, company switcher, and logout flows. The one known gap (verifyMfa using a non-canonical endpoint) is correctly documented and deferred to the appropriate milestone. Good test coverage with regression tests for all VAL-SESSION behaviors."
+}
