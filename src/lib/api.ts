@@ -38,15 +38,27 @@ export const STORAGE_KEYS = {
   COMPANY_ID: 'bbp-orchestrator-company-id',
 } as const;
 
-/** Routes that must NOT have auth/company headers attached. */
+/**
+ * Routes that must NOT have auth/company headers attached (truly public endpoints).
+ * Note: /auth/logout is intentionally excluded — it requires the Authorization header
+ * so the backend can revoke all tokens for the authenticated user.
+ */
 const PUBLIC_ROUTES = [
   '/auth/login',
-  '/auth/logout',
   '/auth/password/forgot',
-  '/auth/password/forgot/superadmin',
   '/auth/password/reset',
   '/auth/refresh-token',
   '/auth/mfa/verify',
+];
+
+/**
+ * Routes that should NOT trigger a token refresh retry on 401.
+ * Includes all public routes plus logout — we do not want to refresh a token
+ * just to retry a logout call.
+ */
+const SKIP_REFRESH_ROUTES = [
+  ...PUBLIC_ROUTES,
+  '/auth/logout',
 ];
 
 /** HTTP methods that receive an Idempotency-Key header. */
@@ -140,11 +152,11 @@ class ApiClient {
           originalRequest &&
           !originalRequest._retry
         ) {
-         // Skip token refresh for public routes (login, logout, password reset, etc.)
-         const isPublicRequest = PUBLIC_ROUTES.some((route) =>
+         // Skip token refresh for public routes and logout (login, password reset, logout, etc.)
+         const isSkipRefresh = SKIP_REFRESH_ROUTES.some((route) =>
            originalRequest.url?.endsWith(route) || originalRequest.url?.includes(route + '?')
          );
-         if (isPublicRequest) {
+         if (isSkipRefresh) {
            return Promise.reject(error);
          }
 
@@ -190,10 +202,13 @@ class ApiClient {
           throw new Error('No refresh token available');
         }
 
+        // companyCode is required by the backend contract to mint a tenant-scoped token pair
+        const companyCode = localStorage.getItem(STORAGE_KEYS.COMPANY_CODE) ?? '';
+
         // /auth/refresh-token returns a raw DTO (no envelope wrapper)
         const response = await axios.post<{ accessToken: string; refreshToken: string }>(
           `${API_BASE_URL}/auth/refresh-token`,
-          { refreshToken },
+          { refreshToken, companyCode },
           { headers: { 'Content-Type': 'application/json' } }
         );
 

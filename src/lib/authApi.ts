@@ -63,8 +63,15 @@ export const authApi = {
 
 
   async logout(): Promise<void> {
+    // Capture the refresh token before clearing storage so we can pass it as a
+    // fallback revocation hint. The backend uses it if the bearer token cannot be
+    // parsed (e.g. on a client that already cleared state).
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     try {
-      await apiRequest.post<ApiResponse<void>>('/auth/logout');
+      const params = refreshToken ? { refreshToken } : undefined;
+      // POST /auth/logout is an authenticated endpoint — Authorization header is
+      // injected by the request interceptor (logout is NOT in PUBLIC_ROUTES).
+      await apiRequest.post<void>('/auth/logout', null, { params });
     } finally {
       // Always clear session even if the server call fails
       Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
@@ -144,10 +151,10 @@ export const authApi = {
   async forgotPassword(data: ForgotPasswordRequest): Promise<void> {
     await apiRequest.post<ApiResponse<void>>('/auth/password/forgot', data);
   },
-
-  async forgotPasswordSuperadmin(data: ForgotPasswordRequest): Promise<void> {
-    await apiRequest.post<ApiResponse<void>>('/auth/password/forgot/superadmin', data);
-  },
+  // forgotPasswordSuperadmin was removed: the backend alias
+  // POST /api/v1/auth/password/forgot/superadmin is retired (returns 410 Gone).
+  // Use forgotPassword() for self-service recovery or
+  // POST /api/v1/companies/{id}/support/admin-password-reset for root-only support recovery.
 
   async resetPassword(data: ResetPasswordRequest): Promise<void> {
     const response = await apiRequest.post<ApiResponse<void>>(
@@ -194,22 +201,35 @@ export const authApi = {
   // ─────────────────────────────────────────────────────────────────────────
 
   async switchCompany(data: SwitchCompanyRequest): Promise<AuthResult> {
-    // /auth/switch-company returns a flat AuthResponse DTO (no envelope wrapper, no nested user)
-    const response = await apiRequest.post<LoginResponse>(
-      '/auth/switch-company',
-      data
-    );
+    // Canonical company-switch path per backend contract:
+    // 1. Mint a tenant-scoped token pair by refreshing with the selected companyCode.
+    // 2. Store the new tokens atomically before any tenant-scoped request.
+    // 3. Hydrate the user via GET /auth/me under the new tenant context.
+    //
+    // Re-selecting the current company should be guarded by the caller (CompanySwitcher
+    // already returns early when the code matches) — switchCompany itself always performs
+    // the refresh so the token stays fresh even on a same-company call.
 
-    const dto = response.data;
-
-    // Update stored tokens and company context
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
-    if (dto.companyCode) {
-      localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, dto.companyCode);
+    const currentRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (!currentRefreshToken) {
+      throw new Error('No refresh token available for company switch');
     }
 
-    // Hydrate the full User object via GET /auth/me
+    // POST /auth/refresh-token is in PUBLIC_ROUTES so no Authorization header is injected;
+    // companyCode selects the target tenant scope for the new token pair.
+    const refreshResponse = await apiRequest.post<LoginResponse>(
+      '/auth/refresh-token',
+      { refreshToken: currentRefreshToken, companyCode: data.companyCode }
+    );
+
+    const dto = refreshResponse.data;
+
+    // Atomically update stored tokens and company context
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, dto.accessToken);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, dto.refreshToken);
+    localStorage.setItem(STORAGE_KEYS.COMPANY_CODE, data.companyCode);
+
+    // Hydrate the full User object via GET /auth/me under the new tenant context
     const userResponse = await apiRequest.get<ApiResponse<User>>('/auth/me');
     const user = userResponse.data.data;
 

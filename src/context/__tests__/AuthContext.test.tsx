@@ -254,7 +254,8 @@ describe('signIn', () => {
 
     await expect(
       act(async () => {
-        await capturedCtx!.signIn({ email: 'bad@bbp.com', password: 'wrong' });
+        // companyCode is required per backend contract
+        await capturedCtx!.signIn({ email: 'bad@bbp.com', password: 'wrong', companyCode: 'ORCH' });
       })
     ).rejects.toThrow();
 
@@ -368,5 +369,118 @@ describe('STORAGE_KEYS', () => {
     expect(STORAGE_KEYS.USER).toBe('bbp-orchestrator-user');
     expect(STORAGE_KEYS.COMPANY_CODE).toBe('bbp-orchestrator-company-code');
     expect(STORAGE_KEYS.COMPANY_ID).toBe('bbp-orchestrator-company-id');
+  });
+});
+
+describe('invalid stored session — VAL-SESSION-003', () => {
+  it('clears all storage keys when me() fails on mount', async () => {
+    // Seed stale/invalid stored session
+    localStorageMock.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'stale-access-token');
+    localStorageMock.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'stale-refresh-token');
+    localStorageMock.setItem(STORAGE_KEYS.COMPANY_CODE, 'MOCK');
+    localStorageMock.setItem(STORAGE_KEYS.COMPANY_ID, '5');
+    localStorageMock.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
+
+    // me() fails → session is invalid
+    (authApi.me as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Unauthorized'));
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await waitFor(() => {
+      expect(capturedCtx!.isLoading).toBe(false);
+    });
+
+    // Session must be null — protected shell cannot be shown
+    expect(capturedCtx!.session).toBeNull();
+    expect(capturedCtx!.isAuthenticated).toBe(false);
+
+    // All storage keys must be cleared
+    expect(localStorageMock.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+    expect(localStorageMock.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+    expect(localStorageMock.getItem(STORAGE_KEYS.COMPANY_CODE)).toBeNull();
+    expect(localStorageMock.getItem(STORAGE_KEYS.COMPANY_ID)).toBeNull();
+    expect(localStorageMock.getItem(STORAGE_KEYS.USER)).toBeNull();
+  });
+});
+
+describe('signOut — VAL-SESSION-002', () => {
+  it('calls server logout before clearing local state', async () => {
+    (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    (authApi.login as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
+    (authApi.logout as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await act(async () => {
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
+    });
+
+    await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));
+
+    await act(async () => {
+      await capturedCtx!.signOut();
+    });
+
+    // Server logout was called
+    expect(authApi.logout).toHaveBeenCalledOnce();
+    // Session is cleared
+    expect(capturedCtx!.session).toBeNull();
+    expect(capturedCtx!.isAuthenticated).toBe(false);
+  });
+
+  it('still clears local state even when server logout fails — VAL-SESSION-002', async () => {
+    (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    (authApi.login as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
+    (authApi.logout as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await act(async () => {
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
+    });
+
+    await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));
+
+    // signOut should not throw even if server call fails
+    await act(async () => {
+      await capturedCtx!.signOut();
+    });
+
+    expect(capturedCtx!.session).toBeNull();
+    expect(capturedCtx!.isAuthenticated).toBe(false);
+  });
+});
+
+describe('switchCompany — VAL-SESSION-005', () => {
+  it('calls switchCompany with selected companyCode and updates session', async () => {
+    (authApi.me as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    (authApi.login as ReturnType<typeof vi.fn>).mockResolvedValue(mockLoginResponse);
+    const switchedResponse = {
+      ...mockLoginResponse,
+      companyCode: 'ACM',
+      user: { ...mockUser },
+    };
+    (authApi.switchCompany as ReturnType<typeof vi.fn>).mockResolvedValue(switchedResponse);
+
+    let capturedCtx: ReturnType<typeof useAuth> | null = null;
+    renderWithAuth(<AuthProbe onRender={(ctx) => { capturedCtx = ctx; }} />);
+
+    await act(async () => {
+      await capturedCtx!.signIn({ email: 'test@bbp.com', password: 'pass', companyCode: 'ORCH' });
+    });
+
+    await waitFor(() => expect(capturedCtx!.isAuthenticated).toBe(true));
+
+    await act(async () => {
+      await capturedCtx!.switchCompany({ companyCode: 'ACM' });
+    });
+
+    expect(authApi.switchCompany).toHaveBeenCalledWith({ companyCode: 'ACM' });
+    await waitFor(() => {
+      expect(capturedCtx!.session?.companyCode).toBe('ACM');
+    });
   });
 });

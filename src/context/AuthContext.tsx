@@ -257,6 +257,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async (): Promise<void> => {
     try {
       await authApi.logout();
+    } catch {
+      // Logout server call failed (e.g. network error or already-revoked session).
+      // Local state is always cleared (authApi.logout clears storage in its finally
+      // block), so we swallow the error here to ensure the user is always signed out
+      // from the frontend regardless of server-side outcome.
     } finally {
       setSession(null);
     }

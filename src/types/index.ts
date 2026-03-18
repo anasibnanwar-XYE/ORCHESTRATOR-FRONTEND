@@ -1126,7 +1126,12 @@ export interface PageResponse<T> {
 export interface LoginRequest {
   email: string;
   password: string;
-  companyCode?: string;
+  /** Required: tenant scope for the login request. */
+  companyCode: string;
+  /** TOTP code (6 digits) when responding to an MFA challenge via re-login. */
+  mfaCode?: string;
+  /** Recovery code alternative to mfaCode when responding to an MFA challenge via re-login. */
+  recoveryCode?: string;
 }
 
 /**
@@ -1161,6 +1166,11 @@ export interface MfaVerifyRequest {
 
 export interface RefreshTokenRequest {
   refreshToken: string;
+  /**
+   * Required: company code used to mint a tenant-scoped access token.
+   * Must be passed on every refresh call including during company switching.
+   */
+  companyCode: string;
 }
 
 export interface ForgotPasswordRequest {
