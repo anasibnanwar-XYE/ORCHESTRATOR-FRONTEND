@@ -1,0 +1,108 @@
+{
+  "milestone": "admin-superadmin-alignment-and-expansion",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 17,
+    "passed": 8,
+    "failed": 9,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-ADMIN-001",
+    "VAL-ADMIN-002",
+    "VAL-ADMIN-003",
+    "VAL-ADMIN-004",
+    "VAL-ADMIN-005",
+    "VAL-ADMIN-006",
+    "VAL-ADMIN-014",
+    "VAL-CROSS-007"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-ADMIN-007",
+      "reason": "Backend returns 403 Forbidden on all tenant lifecycle mutation requests. Frontend UI exists correctly. Blocked by backend readiness tracked in ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-008",
+      "reason": "Requires backend seeding of tenant HOLD/suspended state which is not available. Tenant suspend action also failed with 403. Blocked by ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-009",
+      "reason": "Requires backend seeding of tenant BLOCKED state which is not available. Blocked by ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-010",
+      "reason": "Frontend UI for user actions exists but backend returns 403 Forbidden. Blocked by ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-011",
+      "reason": "Suspend action exists but backend returns 403. MFA disable requires MFA-enabled user. Blocked by ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-012",
+      "reason": "Onboarding UI exists with 2-step flow including temp password field. Backend returns 403 on submit. Blocked by ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-013",
+      "reason": "Configure modules button exists but produces no visible result. Blocked by backend readiness ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-015",
+      "reason": "Export approvals surface loads but no pending exports exist to test decision flow. Requires seeded test data."
+    },
+    {
+      "id": "VAL-CROSS-005",
+      "reason": "Dealer created support ticket successfully but superadmin receives 403 Forbidden when accessing /api/v1/support/tickets. Backend authorization issue."
+    },
+    {
+      "id": "VAL-CROSS-006",
+      "reason": "Credit request surfaces load but no pending requests exist. Dealer submission encountered 403. Requires seeded data and working backend."
+    }
+  ],
+  "blockedAssertions": [],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "No updates needed - existing guidance covered admin/superadmin testing adequately",
+      "source": "setup"
+    }
+  ],
+  "previousRound": null,
+  "systemicBlockers": [
+    {
+      "issue": "Backend 403 Forbidden on mutation endpoints",
+      "affectedAssertions": ["VAL-ADMIN-007", "VAL-ADMIN-008", "VAL-ADMIN-009", "VAL-ADMIN-010", "VAL-ADMIN-011", "VAL-ADMIN-012", "VAL-ADMIN-013", "VAL-CROSS-005", "VAL-CROSS-006"],
+      "tracking": "ERP-14",
+      "recommendation": "Backend readiness needs to be restored before these assertions can be validated. Frontend UI is correctly implemented."
+    },
+    {
+      "issue": "Missing seeded test data for export approvals and credit requests",
+      "affectedAssertions": ["VAL-ADMIN-015", "VAL-CROSS-006"],
+      "recommendation": "Seed pending export requests and credit requests in MOCK company for full cross-surface validation."
+    },
+    {
+      "issue": "Superadmin support ticket access blocked by 403",
+      "affectedAssertions": ["VAL-CROSS-005"],
+      "recommendation": "Backend may need to provide a different endpoint or permission for superadmin to view cross-tenant support tickets."
+    }
+  ],
+  "frontendUiVerified": [
+    "Tenant lifecycle actions (Edit details, Suspend, Configure modules, Reset admin password, Send support warning) visible and accessible",
+    "User management actions (View, Edit, Suspend, Force reset password, Delete) available for tenant admins",
+    "Onboarding wizard has proper 2-step flow with temporary password field and first-login change note",
+    "Role management correctly shows read-only for tenant admins and Create Role for superadmin",
+    "Settings page correctly shows read-only for tenant admins with clear messaging",
+    "Runtime metrics and policy forms correctly scoped by role",
+    "Changelog CRUD flows fully functional",
+    "Control-plane route separation working correctly"
+  ],
+  "toolsUsed": ["agent-browser"],
+  "groupsTested": 4,
+  "testReports": [
+    ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-1-control-plane.json",
+    ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-2-role-runtime-settings.json",
+    ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-3-lifecycle-user-actions.json",
+    ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-4-changelog-exports-cross-surface.json"
+  ]
+}

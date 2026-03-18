@@ -1,0 +1,172 @@
+{
+  "groupId": "group-3-lifecycle-user-actions",
+  "testedAt": "2026-03-19T15:30:00Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "browserSessionId": "f69c8fc3f294__g3",
+    "accountsUsed": {
+      "superadmin": "validation.superadmin@example.com (company SKE)",
+      "admin": "validation.admin@example.com (company MOCK)"
+    }
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-007",
+      "title": "Lifecycle mutation responses, list badges, and filters stay coherent across both vocabularies",
+      "status": "blocked",
+      "steps": [
+        { "action": "Login as Superadmin (SKE company)", "expected": "Access to superadmin dashboard", "observed": "Successfully logged in and accessed /superadmin dashboard" },
+        { "action": "Navigate to Tenants page", "expected": "Tenant list with status badges and filter dropdown", "observed": "Tenants page loaded with 3 tenants showing Active status badges. Filter dropdown shows: All statuses, Active, Suspended, On Hold, Deactivated, Blocked, New" },
+        { "action": "Click tenant action menu for MOCK tenant", "expected": "Dropdown with Suspend and other lifecycle actions", "observed": "Dropdown showed: Edit details, Suspend, Configure modules, Reset admin password, Send support warning" },
+        { "action": "Click Suspend action", "expected": "Tenant status updates and list refreshes with new badge", "observed": "Action triggered but no visible state change. List still showed same 3 tenants with Active status. No toast or confirmation appeared." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "group-3/VAL-ADMIN-007-login-filled.png",
+          "group-3/VAL-ADMIN-007-superadmin-dashboard.png",
+          "group-3/VAL-ADMIN-007-tenants-page.png",
+          "group-3/VAL-ADMIN-007-mock-actions-menu.png",
+          "group-3/VAL-ADMIN-007-before-suspend.png",
+          "group-3/VAL-ADMIN-007-tenants-reloaded.png"
+        ],
+        "consoleErrors": "none (only React Router future flag warnings)",
+        "network": "Backend requests failing with 403 Forbidden errors on tenant mutation endpoints"
+      },
+      "issues": "Backend returning 403 Forbidden on all API requests. The frontend UI for lifecycle mutations exists and is accessible, but the backend is not responding correctly. This requires backend readiness as tracked in ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-008",
+      "title": "Suspended or HOLD tenants remain signed in as read-only",
+      "status": "blocked",
+      "steps": [
+        { "action": "Attempt to test HOLD tenant read-only access", "expected": "User stays in shell with read-only experience for safe read flows", "observed": "Cannot test - requires backend seeding of tenant into HOLD/suspended state which is not available. The tenant suspend action also failed due to 403 errors." }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "none",
+        "network": "N/A"
+      },
+      "issues": "This assertion requires backend seeding of tenant HOLD/suspended state. As noted in validation contract: 'This requires backend seeding of HOLD/suspended state which may not be available'. Backend readiness issue tracked in ERP-14 prevents both seeding and lifecycle mutation."
+    },
+    {
+      "id": "VAL-ADMIN-009",
+      "title": "Deactivated or BLOCKED tenants are fully blocked from the normal workspace",
+      "status": "blocked",
+      "steps": [
+        { "action": "Attempt to test BLOCKED tenant access", "expected": "Normal protected access is blocked, user no longer sees normal working portal state", "observed": "Cannot test - requires backend seeding of tenant into BLOCKED state which is not available." }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "none",
+        "network": "N/A"
+      },
+      "issues": "This assertion requires backend seeding of tenant BLOCKED state. As noted in validation contract: 'This requires backend seeding of BLOCKED state which may not be available'. Backend readiness issue tracked in ERP-14 prevents testing."
+    },
+    {
+      "id": "VAL-ADMIN-010",
+      "title": "User enable, disable, and force-reset actions refresh visible state and keep masking rules",
+      "status": "blocked",
+      "steps": [
+        { "action": "Login as tenant admin (MOCK company)", "expected": "Access to admin portal", "observed": "Successfully logged in as validation.admin@example.com and accessed /hub portal selection page" },
+        { "action": "Navigate to Admin portal -> Users page", "expected": "User management list with action buttons", "observed": "Users page loaded with 6 users. Each user row has an action button (three dots)" },
+        { "action": "Click user action menu", "expected": "Dropdown with enable/disable/force-reset actions", "observed": "Dropdown showed: View, Edit, Suspend, Force reset password, Delete" },
+        { "action": "Click Force reset password", "expected": "User state visibly refreshes after success", "observed": "Action triggered but backend returned 403 Forbidden. No visible state change occurred." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "group-3/VAL-ADMIN-010-hub-page.png",
+          "group-3/VAL-ADMIN-010-admin-dashboard.png",
+          "group-3/VAL-ADMIN-010-users-page.png",
+          "group-3/VAL-ADMIN-010-user-actions-menu.png",
+          "group-3/VAL-ADMIN-010-before-force-reset.png",
+          "group-3/VAL-ADMIN-010-after-force-reset.png"
+        ],
+        "consoleErrors": "403 Forbidden on multiple API requests (8 occurrences in console)",
+        "network": "All tenant-scoped API requests returning 403 Forbidden"
+      },
+      "issues": "Frontend UI for user enable/disable/force-reset actions exists and is accessible. The action menu shows the expected options (Suspend, Force reset password, Delete). However, backend is returning 403 Forbidden on all requests, preventing validation of state refresh and masking rules. Backend readiness tracked in ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-011",
+      "title": "User suspend, unsuspend, and MFA disable actions refresh visible state and keep masking rules",
+      "status": "blocked",
+      "steps": [
+        { "action": "Attempt to test user suspend action from same UI", "expected": "User state refreshes after suspend/unsuspend", "observed": "Suspend button exists in action menu, but clicking triggers 403 Forbidden from backend. No state change visible." },
+        { "action": "Check for MFA disable action", "expected": "MFA disable action available in user detail or action menu", "observed": "User details dialog shows 'MFA Status: Not enabled' for users, but no MFA disable action was visible in the action menu for users without MFA." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "group-3/VAL-ADMIN-010-user-actions-menu.png"
+        ],
+        "consoleErrors": "403 Forbidden errors on API requests",
+        "network": "All tenant-scoped API requests returning 403 Forbidden"
+      },
+      "issues": "Suspend action exists in UI but backend returns 403 Forbidden. MFA disable action may require a user with MFA enabled to appear. Cannot validate state refresh or masking rules without working backend. Backend readiness tracked in ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-012",
+      "title": "Onboarding shows the one-time temporary password and forces the new admin through first-login password change",
+      "status": "blocked",
+      "steps": [
+        { "action": "Login as Superadmin (SKE company)", "expected": "Access to superadmin dashboard", "observed": "Successfully logged in" },
+        { "action": "Navigate to Tenants page and click Onboard Tenant", "expected": "Onboarding wizard opens", "observed": "Onboarding wizard opened with Step 1 of 2 for tenant details" },
+        { "action": "Fill tenant details and continue", "expected": "Step 2 shows admin user form with temporary password field", "observed": "Step 2 showed: Admin Email, Display Name, Temporary Password fields. Note states: 'Admin will be prompted to change this on first login.'" },
+        { "action": "Fill admin details and submit onboarding", "expected": "Success shows temp password with explicit acknowledgement", "observed": "Backend returned 403 Forbidden with error 'Onboarding failed: Request failed with status code 403'" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "group-3/VAL-ADMIN-012-superadmin-dashboard.png",
+          "group-3/VAL-ADMIN-012-tenants-page.png",
+          "group-3/VAL-ADMIN-012-onboarding-step1.png",
+          "group-3/VAL-ADMIN-012-onboarding-step2.png",
+          "group-3/VAL-ADMIN-012-onboarding-failed.png"
+        ],
+        "consoleErrors": "none (only onboarding 403 toast error)",
+        "network": "POST to onboarding endpoint returned 403 Forbidden"
+      },
+      "issues": "Onboarding UI exists with proper 2-step flow: (1) Tenant details with name, code, GSTIN, contact, phone, address, and template selection; (2) Admin user details with email, display name, and temporary password. The temporary password field and note about first-login password change exist as expected. However, backend returns 403 Forbidden preventing completion. Cannot validate temp password acknowledgement state or first-login password-change corridor. Backend readiness tracked in ERP-14."
+    },
+    {
+      "id": "VAL-ADMIN-013",
+      "title": "Module configuration persists and disabled modules show a clear unavailable state",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to tenant action menu", "expected": "Configure modules option available", "observed": "Configure modules button appeared in tenant action menu" },
+        { "action": "Click Configure modules", "expected": "Module configuration UI opens", "observed": "Clicking the button resulted in no visible dialog or page change. The action may require backend data that is not available due to 403 errors." },
+        { "action": "Navigate to Operations Control page", "expected": "Page shows module/operations controls", "observed": "Operations Control page loaded with 'Purge Cache' button and a switch toggle. This appears to be a different control surface than tenant-specific module configuration." }
+      ],
+      "evidence": {
+        "screenshots": [
+          "group-3/VAL-ADMIN-013-tenant-actions-menu.png",
+          "group-3/VAL-ADMIN-013-before-configure-modules.png",
+          "group-3/VAL-ADMIN-013-operations-control.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Configure modules click did not trigger visible network request or dialog"
+      },
+      "issues": "Configure modules button exists in tenant action menu but clicking it produces no visible result. This may require backend data that is unavailable due to 403 errors. Cannot validate module configuration persistence or disabled module unavailable state without working backend. Backend readiness tracked in ERP-14."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "All backend API requests returning 403 Forbidden across both superadmin and tenant admin sessions",
+      "resolved": false,
+      "resolution": "Unable to resolve - backend readiness issue",
+      "affectedAssertions": ["VAL-ADMIN-007", "VAL-ADMIN-008", "VAL-ADMIN-009", "VAL-ADMIN-010", "VAL-ADMIN-011", "VAL-ADMIN-012", "VAL-ADMIN-013"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Backend returning 403 Forbidden on all API mutation requests. Console shows 'Failed to load resource: the server responded with a status of 403 (Forbidden)' for all tenant-scoped and superadmin API endpoints.",
+      "affectedAssertions": ["VAL-ADMIN-007", "VAL-ADMIN-008", "VAL-ADMIN-009", "VAL-ADMIN-010", "VAL-ADMIN-011", "VAL-ADMIN-012", "VAL-ADMIN-013"],
+      "quickFixAttempted": "Tried refreshing, navigating between pages, and re-authenticating. Issue persists across all sessions and accounts."
+    },
+    {
+      "description": "VAL-ADMIN-008 and VAL-ADMIN-009 require backend seeding of tenant HOLD/BLOCKED states which are not available",
+      "affectedAssertions": ["VAL-ADMIN-008", "VAL-ADMIN-009"],
+      "quickFixAttempted": "Attempted to use Suspend action to change tenant state, but that also failed with 403"
+    }
+  ],
+  "summary": "All 7 assertions are BLOCKED due to backend unavailability. The frontend UI for all tested features exists and is accessible: (1) Tenant lifecycle actions (Suspend, Configure modules, Reset admin password, Send support warning) are visible in the tenant action menu; (2) User management actions (View, Edit, Suspend, Force reset password, Delete) are available for tenant admins; (3) Onboarding wizard has proper 2-step flow with temporary password field and first-login change note; (4) Module configuration button exists in tenant action menu. However, all backend API requests return 403 Forbidden, preventing validation of actual functionality. Additionally, VAL-ADMIN-008 and VAL-ADMIN-009 require backend-seeded tenant states (HOLD/BLOCKED) that are not available. Backend readiness should be verified before re-testing these assertions. Reference: ERP-14 for backend validation-window availability."
+}
