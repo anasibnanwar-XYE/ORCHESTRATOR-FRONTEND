@@ -858,15 +858,27 @@ const emptyCompanyForm: CompanyDetailsFormData = {
  function ModuleConfigModal({ tenant, onClose, onSuccess }: ModuleConfigModalProps) {
    const { toast } = useToast();
    const [enabledModules, setEnabledModules] = useState<string[]>([]);
+   const [isLoadingModules, setIsLoadingModules] = useState(false);
    const [isSubmitting, setIsSubmitting] = useState(false);
 
-   // Initialise with empty selection when tenant changes.
-   // In a real flow, we'd load current modules via GET /api/v1/superadmin/tenants/{id}/usage or similar;
-   // for now all gatable modules are deselected by default and the admin selects what to enable.
+   // Load the tenant's current enabled modules from GET /api/v1/superadmin/tenants/{id}/modules
+   // so the checkboxes are pre-populated with the current state.
    useEffect(() => {
-     if (tenant) {
-       setEnabledModules([]);
-     }
+     if (!tenant) return;
+     setIsLoadingModules(true);
+     superadminTenantsApi.getTenantModules(tenant.id)
+       .then((result) => {
+         // Only show gatable modules in the checkboxes; filter out always-enabled core modules.
+         const gatableKeys = GATABLE_MODULES.map((m) => m.key);
+         setEnabledModules(result.enabledModules.filter((m) => gatableKeys.includes(m)));
+       })
+       .catch(() => {
+         // Non-blocking: if the load fails, start with empty selection.
+         setEnabledModules([]);
+       })
+       .finally(() => {
+         setIsLoadingModules(false);
+       });
    }, [tenant]);
 
    const toggleModule = (key: string) => {
@@ -918,7 +930,17 @@ const emptyCompanyForm: CompanyDetailsFormData = {
            Disabled modules show an unavailable state to users with a clear return path.
          </p>
          <div className="rounded-lg border border-[var(--color-border-default)] divide-y divide-[var(--color-border-subtle)]">
-           {GATABLE_MODULES.map((mod) => {
+           {isLoadingModules ? (
+             <div className="p-4 space-y-3 animate-pulse">
+               {Array.from({ length: 3 }).map((_, i) => (
+                 <div key={i} className="flex items-center gap-3">
+                   <div className="h-3.5 w-3.5 rounded bg-[var(--color-surface-tertiary)]" />
+                   <div className="flex-1 h-4 rounded bg-[var(--color-surface-tertiary)]" />
+                 </div>
+               ))}
+             </div>
+           ) : null}
+           {!isLoadingModules && GATABLE_MODULES.map((mod) => {
              const checked = enabledModules.includes(mod.key);
              return (
                <label

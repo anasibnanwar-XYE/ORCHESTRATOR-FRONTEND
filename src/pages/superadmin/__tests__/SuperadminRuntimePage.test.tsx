@@ -26,6 +26,7 @@
  vi.mock('@/lib/superadminApi', () => ({
    superadminRuntimeApi: {
      getRuntimeMetrics: vi.fn(),
+     getCompanyRuntimePolicy: vi.fn(),
      updateRuntimePolicy: vi.fn(),
    },
    superadminTenantsApi: {
@@ -91,6 +92,7 @@ const mockTenants = [
    beforeEach(() => {
      vi.clearAllMocks();
      vi.mocked(superadminRuntimeApi.getRuntimeMetrics).mockResolvedValue(mockMetrics);
+     vi.mocked(superadminRuntimeApi.getCompanyRuntimePolicy).mockResolvedValue(mockMetrics);
      vi.mocked(superadminTenantsApi.listTenants).mockResolvedValue(mockTenants);
      vi.mocked(superadminRuntimeApi.updateRuntimePolicy).mockResolvedValue(mockMetrics);
    });
@@ -162,5 +164,28 @@ const mockTenants = [
      // Verify the mock was called at least once
      // (called by MetricsSection and RuntimePolicySection independently)
      expect(vi.mocked(superadminRuntimeApi.getRuntimeMetrics).mock.calls.length).toBeGreaterThanOrEqual(1);
+   });
+
+   it('loads company-specific policy via getCompanyRuntimePolicy instead of aggregate metrics — VAL-ADMIN-006', async () => {
+     renderPage();
+     await waitFor(() => {
+       // The company policy editor should call the company-specific endpoint, not the aggregate one.
+       expect(superadminRuntimeApi.getCompanyRuntimePolicy).toHaveBeenCalled();
+     });
+     // The first call should pass the selected company's ID (first tenant = companyId 1)
+     const calls = vi.mocked(superadminRuntimeApi.getCompanyRuntimePolicy).mock.calls;
+     expect(calls.length).toBeGreaterThan(0);
+     expect(calls[0][0]).toBe(mockTenants[0].companyId);
+   });
+
+   it('shows visible error feedback when company policy load fails — VAL-ADMIN-006', async () => {
+     vi.mocked(superadminRuntimeApi.getCompanyRuntimePolicy).mockRejectedValue(
+       new Error('Policy load error')
+     );
+     renderPage();
+     await waitFor(() => {
+       const errors = screen.queryAllByText(/failed to load policy|failed|error/i);
+       expect(errors.length).toBeGreaterThan(0);
+     });
    });
  });

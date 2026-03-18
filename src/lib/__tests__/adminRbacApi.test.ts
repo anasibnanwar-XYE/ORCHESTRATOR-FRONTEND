@@ -20,7 +20,7 @@ vi.mock('@/components/ui/toast-bridge', () => ({
 }));
 
 import { operationsControlApi, tenantApi } from '@/lib/adminApi';
-import { superadminRuntimeApi } from '@/lib/superadminApi';
+import { superadminRuntimeApi, superadminTenantsApi } from '@/lib/superadminApi';
 
 describe('admin/superadmin RBAC stub APIs', () => {
   beforeEach(() => {
@@ -127,6 +127,58 @@ describe('admin/superadmin RBAC stub APIs', () => {
       { maxActiveUsers: 25, maxRequestsPerMinute: 200 }
     );
     expect(result.maxActiveUsers).toBe(25);
+  });
+
+  it('superadmin getCompanyRuntimePolicy uses canonical GET /companies/{id}/tenant-runtime/policy path', async () => {
+    const policyMetrics = {
+      apiCalls: 50,
+      storageUsedMb: 20,
+      activeSessions: 2,
+      apiCallsLimit: 500,
+      storageLimit: 200,
+      totalUsers: 5,
+      enabledUsers: 4,
+      maxActiveUsers: 30,
+      requestsThisMinute: 10,
+      maxRequestsPerMinute: 200,
+      inFlightRequests: 1,
+      maxConcurrentRequests: 20,
+      blockedThisMinute: 0,
+    };
+    apiRequestMocks.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: policyMetrics,
+        message: '',
+        timestamp: '',
+      },
+    });
+
+    const result = await superadminRuntimeApi.getCompanyRuntimePolicy(7);
+    expect(apiRequestMocks.get).toHaveBeenCalledWith('/companies/7/tenant-runtime/policy');
+    expect(result.maxActiveUsers).toBe(30);
+    expect(result.maxRequestsPerMinute).toBe(200);
+  });
+
+  it('superadmin getTenantModules uses canonical GET /superadmin/tenants/{id}/modules path', async () => {
+    const modulesResponse = {
+      companyId: 3,
+      companyCode: 'TEST',
+      enabledModules: ['MANUFACTURING', 'PURCHASING'],
+    };
+    apiRequestMocks.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: modulesResponse,
+        message: '',
+        timestamp: '',
+      },
+    });
+
+    const result = await superadminTenantsApi.getTenantModules(3);
+    expect(apiRequestMocks.get).toHaveBeenCalledWith('/superadmin/tenants/3/modules');
+    expect(result.enabledModules).toEqual(['MANUFACTURING', 'PURCHASING']);
+    expect(result.companyId).toBe(3);
   });
 
   it('stubs operations status and action endpoints without touching the missing operations controller', async () => {

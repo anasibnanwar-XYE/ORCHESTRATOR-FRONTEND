@@ -162,6 +162,20 @@ export const superadminTenantsApi = {
   },
 
   /**
+   * Get enabled modules for a tenant.
+   * GET /api/v1/superadmin/tenants/{id}/modules
+   *
+   * Returns the current CompanyEnabledModulesDto for the tenant, including the list of
+   * currently-enabled optional modules. Used to pre-populate the module configuration modal.
+   */
+  async getTenantModules(id: number): Promise<CompanyEnabledModulesDto> {
+    const response = await apiRequest.get<ApiResponse<CompanyEnabledModulesDto>>(
+      `/superadmin/tenants/${id}/modules`
+    );
+    return response.data.data;
+  },
+
+  /**
    * Update enabled modules for a tenant.
    * PUT /api/v1/superadmin/tenants/{id}/modules
    *
@@ -380,6 +394,19 @@ export const superadminRuntimeApi = {
   async getRuntimeMetrics(): Promise<TenantRuntimeMetrics> {
     const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
       '/admin/tenant-runtime/metrics'
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Read the current runtime policy for a specific company.
+   * Uses GET /api/v1/companies/{id}/tenant-runtime/policy.
+   * Returns the company-specific policy values (maxActiveUsers, maxRequestsPerMinute,
+   * maxConcurrentRequests) that should seed the runtime policy editor form.
+   */
+  async getCompanyRuntimePolicy(companyId: number): Promise<TenantRuntimeMetrics> {
+    const response = await apiRequest.get<ApiResponse<TenantRuntimeMetrics>>(
+      `/companies/${companyId}/tenant-runtime/policy`
     );
     return response.data.data;
   },

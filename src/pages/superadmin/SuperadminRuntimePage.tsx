@@ -196,9 +196,10 @@ function RuntimePolicySection() {
   const [companiesLoading, setCompaniesLoading] = useState(true);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
 
-  // Metrics for selected company
+  // Policy for selected company
   const [metrics, setMetrics] = useState<TenantRuntimeMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
 
   // Draft policy form
   const [draft, setDraft] = useState<TenantRuntimePolicyUpdateRequest>({});
@@ -223,12 +224,14 @@ function RuntimePolicySection() {
 
   useEffect(() => { void loadCompanies(); }, [loadCompanies]);
 
-  // Load metrics when selected company changes
+  // Load company-specific policy when selected company changes
   const loadMetrics = useCallback(async () => {
     if (!selectedCompanyId) return;
     setMetricsLoading(true);
+    setMetricsError(null);
     try {
-      const result = await superadminRuntimeApi.getRuntimeMetrics();
+      // Company-specific read: GET /api/v1/companies/{id}/tenant-runtime/policy
+      const result = await superadminRuntimeApi.getCompanyRuntimePolicy(selectedCompanyId);
       setMetrics(result);
       setDraft({
         maxActiveUsers: result.maxActiveUsers,
@@ -237,6 +240,7 @@ function RuntimePolicySection() {
       });
     } catch {
       setMetrics(null);
+      setMetricsError('Failed to load policy for this company.');
     } finally {
       setMetricsLoading(false);
     }
@@ -312,6 +316,18 @@ function RuntimePolicySection() {
                 <Skeleton width={80} height={36} className="rounded-lg" />
               </div>
             ))}
+          </div>
+        ) : metricsError ? (
+          <div className="flex items-center gap-3 p-4 bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
+            <AlertCircle size={14} className="shrink-0" />
+            <span className="flex-1">{metricsError}</span>
+            <button
+              type="button"
+              onClick={() => void loadMetrics()}
+              className="flex items-center gap-1 text-[12px] hover:opacity-80"
+            >
+              <RefreshCcw size={12} /> Retry
+            </button>
           </div>
         ) : (
           <>
