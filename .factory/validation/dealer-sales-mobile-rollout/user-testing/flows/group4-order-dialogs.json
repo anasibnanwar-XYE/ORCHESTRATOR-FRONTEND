@@ -1,0 +1,145 @@
+{
+  "groupId": "group4-order-dialogs",
+  "testedAt": "2026-03-19T02:43:00.000Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3002",
+    "credentials": "validation.sales@example.com / SeedPass123! / company MOCK",
+    "browserSessionId": "468dca868583__g4",
+    "viewport": "375x667 (phone)"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-MOBILE-002",
+      "title": "Mobile headers and filter bars stay usable without overflow",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to Sales Orders page on phone viewport",
+          "expected": "Header, search, filters, and primary actions visible and usable",
+          "observed": "Header with 'New Order' button, search input, status filter dropdown all visible and usable without horizontal scrolling"
+        },
+        {
+          "action": "Navigate to Dealers page on phone viewport",
+          "expected": "Header, search, and primary actions visible and usable",
+          "observed": "Header with 'New dealer' button and search input visible and usable"
+        },
+        {
+          "action": "Select status filter on Orders page",
+          "expected": "Filter dropdown opens and selection works",
+          "observed": "Dropdown opened, selected 'Draft' status filter successfully"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-002-sales-orders-header.png",
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-002-dealers-header.png",
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-002-active-filter-state.png"
+        ],
+        "consoleErrors": "none",
+        "network": "N/A - read-only layout testing"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-MOBILE-005",
+      "title": "Phone dialogs use bottom-sheet or full-height patterns with locked background scroll",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Open create-order drawer from Sales Orders page",
+          "expected": "Drawer opens as phone-appropriate overlay",
+          "observed": "Drawer opened from right side with close button, dealer selection, line items, discard and create buttons - appears phone-appropriate"
+        },
+        {
+          "action": "Attempt to access confirm dialogs (order cancel, dispatch confirm, return dialog)",
+          "expected": "Confirm dialogs render as phone-appropriate overlays",
+          "observed": "Unable to test - backend unavailable prevented loading any existing orders to test cancel/dispatch/return dialogs"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-005-create-order-dialog.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Backend unavailable - orders could not be loaded"
+      },
+      "issues": "Backend unavailability blocked testing of confirm dialogs (order cancel, dispatch confirm, return dialog). Video evidence of open-scroll-close behavior could not be captured."
+    },
+    {
+      "id": "VAL-MOBILE-006",
+      "title": "Create-order flow is fully usable on phone",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Open create-order drawer",
+          "expected": "Drawer opens with dealer selection, line editing fields",
+          "observed": "Drawer opened successfully with dealer search button, product code, description, quantity, rate, discount fields stacked appropriately"
+        },
+        {
+          "action": "Click dealer search",
+          "expected": "Dealer selection dropdown opens",
+          "observed": "Dealer search dropdown opened with list of dealers (Fixture Dealer FIX-DEALER, Mock GST Dealer GST-DEALER)"
+        },
+        {
+          "action": "Select a dealer",
+          "expected": "Dealer selected and displayed",
+          "observed": "Selected 'Fixture Dealer FIX-DEALER', dealer displayed with clear selection button"
+        },
+        {
+          "action": "Fill line item fields",
+          "expected": "Fields populate correctly",
+          "observed": "Product code, quantity, and rate fields accepted input"
+        },
+        {
+          "action": "Attempt to submit order",
+          "expected": "Order created successfully",
+          "observed": "Unable to verify - backend unavailable prevented order creation"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-006-create-order-panel.png",
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-006-dealer-selection.png",
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-006-line-item-layout.png",
+          "dealer-sales-mobile-rollout/group4/VAL-MOBILE-006-create-order-full.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Backend unavailable - orders API returned error"
+      },
+      "issues": "Backend unavailability prevented testing full create-order submission and verifying live totals update. Video evidence of complete flow could not be captured."
+    },
+    {
+      "id": "VAL-MOBILE-007",
+      "title": "Sales order detail stays readable and action-safe on phone",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to Sales Orders page",
+          "expected": "Orders list loads",
+          "observed": "Page showed 'Couldn't load orders. Please try again.' - backend unavailable"
+        },
+        {
+          "action": "Attempt to view order detail",
+          "expected": "Order detail page renders with phone-appropriate layout",
+          "observed": "Unable to test - no orders available due to backend unavailability"
+        }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "none",
+        "network": "Backend unavailable - orders API returned error"
+      },
+      "issues": "Backend unavailability prevented any order detail testing. Could not verify status progression, line-item layout, totals layout, or action affordances."
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "Backend at 100.109.241.47:8081 was unavailable during testing. The Sales Orders page displayed 'Couldn't load orders. Please try again.' which prevented testing of order-related functionality including order detail views, confirm dialogs, and complete create-order submission.",
+      "affectedAssertions": ["VAL-MOBILE-005", "VAL-MOBILE-006", "VAL-MOBILE-007"],
+      "quickFixAttempted": "Reloaded page, attempted to create new order, checked network requests - backend remained unavailable"
+    }
+  ],
+  "summary": "Tested 4 assertions: 1 passed (VAL-MOBILE-002), 3 blocked (VAL-MOBILE-005, VAL-MOBILE-006, VAL-MOBILE-007) due to backend unavailability. VAL-MOBILE-002 confirmed mobile headers and filter bars are usable without overflow on phone viewport. Backend unavailability prevented testing of dialog patterns, complete create-order flow, and order detail views."
+}

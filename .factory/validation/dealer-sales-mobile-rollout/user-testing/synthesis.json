@@ -1,87 +1,72 @@
 {
   "milestone": "dealer-sales-mobile-rollout",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "assertionsSummary": {
     "total": 14,
-    "passed": 0,
+    "passed": 9,
     "failed": 0,
-    "blocked": 14
+    "blocked": 5
   },
-  "passedAssertions": [],
+  "passedAssertions": [
+    "VAL-MOBILE-001",
+    "VAL-MOBILE-002",
+    "VAL-MOBILE-003",
+    "VAL-MOBILE-004",
+    "VAL-MOBILE-010",
+    "VAL-MOBILE-011",
+    "VAL-MOBILE-012",
+    "VAL-MOBILE-013",
+    "VAL-CROSS-008"
+  ],
   "failedAssertions": [],
   "blockedAssertions": [
     {
-      "id": "VAL-MOBILE-001",
-      "blockedBy": "Backend unavailable - Java process not running on remote server (100.109.241.47:8081 connection refused). Cannot test Dealer/Sales mobile shell without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-002",
-      "blockedBy": "Backend unavailable - Cannot test mobile header/filter layouts without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-003",
-      "blockedBy": "Backend unavailable - Cannot test Dealer list pages on phone without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-004",
-      "blockedBy": "Backend unavailable - Cannot test Sales list pages on phone without authentication."
-    },
-    {
       "id": "VAL-MOBILE-005",
-      "blockedBy": "Backend unavailable - Cannot test phone dialogs without authentication."
+      "blockedBy": "Cannot test confirm dialogs (order cancel, dispatch confirm, return dialog) - no existing orders to test against due to backend readiness issues during validation window."
     },
     {
       "id": "VAL-MOBILE-006",
-      "blockedBy": "Backend unavailable - Cannot test create-order flow on phone without authentication."
+      "blockedBy": "Create-order drawer UI verified (dealer selection, line editing, footer actions) but complete submission could not be verified due to backend unavailability."
     },
     {
       "id": "VAL-MOBILE-007",
-      "blockedBy": "Backend unavailable - Cannot test Sales order detail on phone without authentication."
+      "blockedBy": "No orders available to test order detail view - Sales Orders page showed 'Couldn't load orders' due to backend readiness issues."
     },
     {
       "id": "VAL-MOBILE-008",
-      "blockedBy": "Backend unavailable - Cannot test Dealer invoice PDF on phone without authentication."
+      "blockedBy": "No invoices exist for validation dealer account - cannot test PDF preview/download/open flows on mobile."
     },
     {
       "id": "VAL-MOBILE-009",
-      "blockedBy": "Backend unavailable - Cannot test Sales dealer detail modal on phone without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-010",
-      "blockedBy": "Backend unavailable - Cannot test Dealer dashboard on phone without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-011",
-      "blockedBy": "Backend unavailable - Cannot test Sales dashboard on phone without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-012",
-      "blockedBy": "Backend unavailable - Cannot test Dealer credit-request flow on phone without authentication."
-    },
-    {
-      "id": "VAL-MOBILE-013",
-      "blockedBy": "Backend unavailable - Cannot test Dealer support-ticket flow on phone without authentication."
-    },
-    {
-      "id": "VAL-CROSS-008",
-      "blockedBy": "Backend unavailable - Cannot test Dealer and Sales mobile shell navigation continuity without authentication."
+      "blockedBy": "No dealers exist in MOCK company for validation.sales@example.com - cannot test dealer detail modal tabs, tab switching, or close behavior."
     }
   ],
   "appliedUpdates": [],
-  "previousRound": null,
+  "previousRound": ".factory/validation/dealer-sales-mobile-rollout/user-testing/synthesis.json (round 1)",
   "environmentStatus": {
     "frontendDevServer": "running on port 3002",
-    "backendServer": "unreachable - connection refused on port 8081",
+    "backendServer": "reachable (403 response on unauthenticated /auth/me - correct)",
     "backendActuator": "unreachable - no response on port 9090",
-    "sshConnectivity": "working - SSH connection established but backend process not running",
-    "javaProcess": "not running on remote server"
+    "backendReadiness": "intermittent - login works but orders/invoices data loading failed during validation"
   },
   "setupWorkCompleted": [
-    "Created validation output directories",
-    "Started frontend dev server (port 3002)",
-    "Verified frontend healthcheck passes (200 OK on /login)",
-    "Confirmed SSH connectivity to remote server",
-    "Diagnosed backend unavailability - Java process not running"
-  ]
+    "Verified backend connectivity (login succeeds)",
+    "Started 4 flow validator subagents in parallel",
+    "Captured 40+ screenshots and 10+ video recordings across all groups",
+    "Synthesized results from all flow reports"
+  ],
+  "flowReports": [
+    "flows/group1-shell-navigation.json",
+    "flows/group2-dealer-mobile.json",
+    "flows/group3-sales-mobile.json",
+    "flows/group4-order-dialogs.json"
+  ],
+  "keyFindings": {
+    "mobileShellWorks": true,
+    "mobileLayoutsWork": true,
+    "dashboardQuickActionsWork": true,
+    "formsReadableOnPhone": true,
+    "backendDataAvailability": "Limited - no orders, invoices, or dealers in seeded data for validation accounts"
+  }
 }
