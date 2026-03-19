@@ -71,5 +71,21 @@ The following test states require backend seeding and cannot be triggered from t
 - Live UAT for `VAL-O2C-001`, `VAL-O2C-002`, and `VAL-O2C-003` requires a writable validation account in `MOCK` that can create products and generate bulk variants on `/accounting/catalog`.
 - As of the `catalog-and-sku-management` handoff, `validation.accounting@example.com` can load the catalog but valid create/generate submissions appear to be backend-denied. Track backend support in `ERP-26` before trying to seal those assertions with browser/network evidence.
 
+### O2C Order-Fulfillment Validation Requirements
+- Live UAT for `VAL-O2C-004` and `VAL-O2C-007` through `VAL-O2C-013` requires a confirmable MOCK order plus deterministic downstream dispatch, invoice, return-eligible invoice, and dealer transaction data.
+- If order creation succeeds but `POST /sales/orders/{id}/confirm` fails with a stock-reservation message, stop and treat it as the backend blocker tracked in `ERP-27` rather than a frontend regression.
+
+### Accounting Period Lifecycle Validation Requirements
+- `VAL-ACCT-005` must use the backend's canonical period lifecycle. If direct close is disabled, validators should confirm whether the correct flow is `request-close` plus approval before failing the frontend.
+- Reopen testing must use the role the backend expects for reopen permissions. Track unresolved period lifecycle validation blockers in `ERP-20`.
+
+### P2P Document-Chain Validation Requirements
+- Live UAT for `VAL-P2P-004`, `VAL-P2P-005`, `VAL-P2P-007`, `VAL-P2P-008`, `VAL-P2P-009`, and `VAL-P2P-010` requires a deterministic MOCK chain of canonical PO create -> approved PO -> GRN -> purchase invoice -> return-eligible purchase invoice.
+- If PO creation fails because the backend expects a different canonical payload or if the downstream seed chain is missing, stop and track the blocker in `ERP-28` rather than forcing frontend fallbacks.
+
+### Raw-Material Intake Verification Notes
+- After `/raw-materials/intake`, compare the canonical post-intake stock result across the Accounting stock view and the Factory raw-materials view before calling `VAL-P2P-012` passed.
+- If intake succeeds but the visible stock state does not update deterministically, track the blocker in `ERP-29` until the canonical persistence/read path is clarified.
+
 ### Known Frontend Issues (auth-sensitive-flows)
 - **VAL-CROSS-002**: ✅ FIXED. Protected deep link destination is now restored after MFA success. The fix adds `intendedDestination` to the MFA pending state in both LoginPage.tsx paths (428 MFA required and 200 + mfa_redirect), and MfaPage.tsx uses `resolvePostLoginDestination` to restore the original destination after successful MFA.

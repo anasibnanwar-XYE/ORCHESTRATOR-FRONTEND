@@ -140,5 +140,38 @@
     ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/p2p-supplier-po.json",
     ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/p2p-receiving-payables.json",
     ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/accounting-monthend-recon.json"
-  ]
+  ],
+  "orchestratorDeferral": {
+    "deferredAssertions": [
+      "VAL-O2C-004",
+      "VAL-O2C-007",
+      "VAL-O2C-008",
+      "VAL-O2C-009",
+      "VAL-O2C-010",
+      "VAL-O2C-011",
+      "VAL-O2C-012",
+      "VAL-O2C-013",
+      "VAL-ACCT-005",
+      "VAL-P2P-004",
+      "VAL-P2P-005",
+      "VAL-P2P-007",
+      "VAL-P2P-008",
+      "VAL-P2P-009",
+      "VAL-P2P-010",
+      "VAL-P2P-012"
+    ],
+    "followupFeatures": [
+      "o2c-order-fulfillment-validation-followup",
+      "accounting-period-lifecycle-validation-followup",
+      "p2p-po-to-payables-validation-followup",
+      "raw-material-intake-stock-sync-followup"
+    ],
+    "relatedBackendIssues": [
+      "ERP-20",
+      "ERP-27",
+      "ERP-28",
+      "ERP-29"
+    ],
+    "justification": "Round-2 accounting workflow user testing confirmed the implemented frontend behavior where the backend contract and seed data were available. The remaining 16 assertions were deferred because they are blocked by backend stock-reservation behavior, maker-checker or reopen-role requirements, canonical PO/GRN seed-chain availability, and raw-material intake readback ambiguity rather than unfinished frontend workflow UI."
+  }
 }
