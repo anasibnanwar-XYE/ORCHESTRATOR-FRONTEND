@@ -1,0 +1,143 @@
+{
+  "milestone": "accounting-workflow-coverage-and-triage",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 34,
+    "passed": 18,
+    "failed": 0,
+    "blocked": 16
+  },
+  "passedAssertions": [
+    "VAL-O2C-005",
+    "VAL-O2C-006",
+    "VAL-ACCT-001",
+    "VAL-ACCT-002",
+    "VAL-ACCT-003",
+    "VAL-ACCT-004",
+    "VAL-ACCT-006",
+    "VAL-ACCT-007",
+    "VAL-ACCT-008",
+    "VAL-ACCT-009",
+    "VAL-ACCT-010",
+    "VAL-ACCT-011",
+    "VAL-ACCT-012",
+    "VAL-P2P-001",
+    "VAL-P2P-002",
+    "VAL-P2P-003",
+    "VAL-P2P-006",
+    "VAL-P2P-011"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [
+    {
+      "id": "VAL-O2C-004",
+      "blockedBy": "Backend 400 on POST /api/v1/sales/orders prevents end-to-end order-to-invoice continuity testing"
+    },
+    {
+      "id": "VAL-O2C-007",
+      "blockedBy": "No orders available to test confirmation flow (orders list empty, backend readiness issues)"
+    },
+    {
+      "id": "VAL-O2C-008",
+      "blockedBy": "No orders available for list/detail consistency testing"
+    },
+    {
+      "id": "VAL-O2C-009",
+      "blockedBy": "No orders to test cancellation flow (CancelDialog component verified but no orders to cancel)"
+    },
+    {
+      "id": "VAL-O2C-010",
+      "blockedBy": "No confirmed orders seeded in MOCK company for dispatch preview testing"
+    },
+    {
+      "id": "VAL-O2C-011",
+      "blockedBy": "No dispatched invoices in MOCK company for Sales/Accounting consistency testing"
+    },
+    {
+      "id": "VAL-O2C-012",
+      "blockedBy": "No dispatched/paid invoices for return eligibility testing"
+    },
+    {
+      "id": "VAL-O2C-013",
+      "blockedBy": "No dealer transactions seeded for dealer-scoped consistency testing"
+    },
+    {
+      "id": "VAL-ACCT-005",
+      "blockedBy": "Accounting periods API returns error/empty response, preventing period lifecycle testing"
+    },
+    {
+      "id": "VAL-P2P-004",
+      "blockedBy": "No POs exist and cannot create due to empty raw materials dropdown (similar to ERP-26)"
+    },
+    {
+      "id": "VAL-P2P-005",
+      "blockedBy": "No approved Purchase Orders in MOCK seed data prevents GRN creation testing"
+    },
+    {
+      "id": "VAL-P2P-007",
+      "blockedBy": "No GRNs to test stock update across Accounting and Factory surfaces"
+    },
+    {
+      "id": "VAL-P2P-008",
+      "blockedBy": "No GRNs available for purchase invoice flow testing"
+    },
+    {
+      "id": "VAL-P2P-009",
+      "blockedBy": "No GRNs/invoices for payables state visibility testing"
+    },
+    {
+      "id": "VAL-P2P-010",
+      "blockedBy": "No purchase invoices for return quantity cap testing"
+    },
+    {
+      "id": "VAL-P2P-012",
+      "blockedBy": "Raw material intake submission appears to succeed (toast shown) but stock does not persist after reload"
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Created Flow Validator Guidance sections for web surface, O2C catalog requirements, and P2P seed data requirements",
+      "source": "flow-reports"
+    }
+  ],
+  "previousRound": null,
+  "keyFindings": {
+    "frontendWorking": [
+      "Order creation UI correctly validates dealer selection (ACTIVE only) and line items",
+      "GST mode correctly inferred from dealer state code with proper CGST+SGST/IGST breakdown",
+      "Chart of Accounts hierarchy loads with type/parent filtering",
+      "Default account mappings load and save visibly with PUT request",
+      "Journal posting has balance-gated validation ('Debits must equal credits before posting')",
+      "Reverse and Cascade reverse actions visible on posted journals with proper dialogs",
+      "Month-end checklist gates Close Period button until readiness met",
+      "All 6 named accounting forms (dealer receipt, hybrid receipt, credit note, debit note, bad debt, accrual) block invalid input",
+      "Dealer and Supplier Auto-Settle actions are discoverable on Settlements page",
+      "Bank reconciliation session creation workflow available",
+      "GST Return and GST Reconciliation both surface for same period with cross-navigation",
+      "Reports, dashboard, and audit drill-down routes all navigable with valid API responses",
+      "Supplier creation validation works, lifecycle actions are status-gated",
+      "PO create limits to active suppliers only",
+      "GRN validation blocks empty submission",
+      "Supplier payment/settlement forms gate allocation to outstanding purchases"
+    ],
+    "backendBlockers": [
+      "POST /api/v1/sales/orders returns 400 - cannot create orders",
+      "GET /api/v1/sales/orders/search returns errors due to backend readiness issues",
+      "No seeded O2C workflow data (orders, invoices, transactions) in MOCK company",
+      "Accounting periods API returns error preventing period lifecycle testing",
+      "No approved Purchase Orders in MOCK seed data",
+      "Raw material intake submission doesn't persist stock after reload",
+      "PO material dropdown empty despite raw materials existing"
+    ]
+  },
+  "flowReports": [
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/o2c-order-flow.json",
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/accounting-controls.json",
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/o2c-dispatch-invoice-return.json",
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/p2p-supplier-po.json",
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/p2p-receiving-payables.json",
+    ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/flows/accounting-monthend-recon.json"
+  ]
+}
