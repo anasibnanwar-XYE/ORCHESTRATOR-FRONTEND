@@ -69,6 +69,11 @@
      vi.mocked(monthEndApi.getChecklist).mockResolvedValue(mockChecklist);
      renderPage();
      expect(screen.getByText('Month-End Checklist')).toBeInTheDocument();
+     // Wait for the async period and checklist load to settle so React does not
+     // emit "not wrapped in act()" warnings from state updates after the test ends.
+     await waitFor(() => {
+       expect(screen.getAllByText('March 2025').length).toBeGreaterThan(0);
+     });
    });
 
    it('shows period selector after loading', async () => {

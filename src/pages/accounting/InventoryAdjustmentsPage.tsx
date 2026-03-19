@@ -15,6 +15,7 @@
   */
  
  import { useEffect, useState, useCallback } from 'react';
+ import { v4 as uuidv4 } from 'uuid';
  import {
    AlertCircle,
    RefreshCcw,
@@ -60,7 +61,7 @@
  }
  
  function generateIdempotencyKey(): string {
-   return `adj-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+   return uuidv4();
  }
  
  const ADJUSTMENT_TYPES: { value: AdjustmentType; label: string; variant: 'danger' | 'warning' | 'default' | 'success' | 'info' }[] = [

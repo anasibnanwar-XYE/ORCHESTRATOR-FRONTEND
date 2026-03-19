@@ -262,10 +262,20 @@ describe('VAL-O2C-013: Dealer portal O2C consistency', () => {
     expect(bannerLabel).toBeDefined();
   });
 
-  it('aging bucket sum is consistent with totalOutstanding (50000+35000+25000+10000+5000=125000)', () => {
-    const buckets = mockAging.agingBuckets;
-    const sum = Object.values(buckets).reduce((acc, v) => acc + v, 0);
-    expect(sum).toBe(mockAging.totalOutstanding);
+  it('aging page renders total outstanding that matches the sum of aging bucket data', async () => {
+    // The bucket values (50000+35000+25000+10000+5000 = 125000) equal totalOutstanding.
+    // Verify the aging page renders the "Total Outstanding" label and the correct formatted
+    // value in the UI after the async getAging() call resolves.
+    // DealerAgingPage uses toLocaleString('en-IN') so 125000 renders as '₹1,25,000'.
+    renderAging();
+    await waitFor(() => {
+      // Wait for the formatted total outstanding value to appear (it starts as a Skeleton
+      // during loading and only renders after getAging() resolves).
+      const totalEl = screen.queryAllByText(/1,25,000/);
+      expect(totalEl.length).toBeGreaterThan(0);
+    });
+    // Also confirm the label is still present alongside the value.
+    expect(screen.getByText('Total Outstanding')).toBeDefined();
   });
 
   it('ledger final balance matches totalOutstanding value', async () => {
@@ -317,11 +327,18 @@ describe('VAL-O2C-013: Dealer portal O2C consistency', () => {
     });
   });
 
-  it('dashboard pendingInvoices count matches the number of invoices with outstanding amounts', () => {
-    // Dashboard reports pendingInvoices: 2 (from mockDashboard)
-    // mockInvoices has 2 invoices with outstandingAmount > 0 (INV-2026-001 and INV-2026-002)
-    const invoicesWithOutstanding = mockInvoices.filter(inv => (inv.outstandingAmount ?? 0) > 0);
-    expect(invoicesWithOutstanding.length).toBe(mockDashboard.pendingInvoices);
+  it('dashboard renders pendingInvoices count (2) in the Pending Invoices KPI card', async () => {
+    // Dashboard receives pendingInvoices: 2, which corresponds to the 2 invoices with
+    // outstandingAmount > 0 in mockInvoices (INV-2026-001 and INV-2026-002).
+    // Verify the dashboard actually renders this count value in the UI rather than
+    // only checking fixture data consistency.
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText('Pending Invoices')).toBeDefined();
+    });
+    // The KpiCard value for pendingInvoices = 2 is rendered directly as the card value.
+    const countEls = screen.queryAllByText('2');
+    expect(countEls.length).toBeGreaterThan(0);
   });
 
   // ── Order count alignment with dashboard pendingOrderCount ──────────────────
@@ -335,13 +352,18 @@ describe('VAL-O2C-013: Dealer portal O2C consistency', () => {
     });
   });
 
-  it('dashboard pendingOrderCount aligns with active (non-closed/non-cancelled) orders', () => {
-    // Dashboard reports pendingOrderCount: 3
-    // mockOrders has 3 orders all in active states (CONFIRMED, PROCESSING, RESERVED)
-    const activeOrders = mockOrders.filter(
-      o => !['CANCELLED', 'CLOSED', 'SETTLED', 'INVOICED'].includes(o.status)
-    );
-    expect(activeOrders.length).toBe(mockDashboard.pendingOrderCount);
+  it('dashboard renders pendingOrderCount (3) in the Pending Orders KPI card', async () => {
+    // Dashboard receives pendingOrderCount: 3, which corresponds to the 3 active orders in
+    // mockOrders (CONFIRMED, PROCESSING, RESERVED — none are CANCELLED/CLOSED/SETTLED/INVOICED).
+    // Verify the dashboard actually renders this count value in the UI rather than
+    // only checking fixture data consistency.
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText('Pending Orders')).toBeDefined();
+    });
+    // The KpiCard value for pendingOrderCount = 3 is rendered directly as the card value.
+    const countEls = screen.queryAllByText('3');
+    expect(countEls.length).toBeGreaterThan(0);
   });
 
   // ── Credit utilization consistency across dashboard and aging ────────────────
@@ -354,10 +376,19 @@ describe('VAL-O2C-013: Dealer portal O2C consistency', () => {
     });
   });
 
-  it('aging and dashboard report the same creditLimit and availableCredit values', () => {
-    expect(mockAging.creditLimit).toBe(mockDashboard.creditLimit);
-    expect(mockAging.availableCredit).toBe(mockDashboard.availableCredit);
-    expect(mockAging.creditUsed).toBe(mockDashboard.creditUsed);
+  it('dashboard credit utilization section renders creditUsed and creditLimit values from mock data', async () => {
+    // The aging and dashboard data share the same creditLimit (200000) and creditUsed (125000).
+    // Verify the dashboard renders these values in the Credit Utilization section so
+    // a user can see the same financial context without needing to navigate to the aging page.
+    renderDashboard();
+    await waitFor(() => {
+      const utilization = screen.queryAllByText(/Credit Utilization/i);
+      expect(utilization.length).toBeGreaterThan(0);
+    });
+    // fmtCurrency(125000) = '₹1.25L used', fmtCurrency(200000) = '₹2.00L limit'
+    // Use regex to match across varying text-node structures.
+    expect(screen.queryAllByText(/1\.25L used/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/2\.00L limit/).length).toBeGreaterThan(0);
   });
 
   // ── Overdue invoices consistency between aging and invoices pages ─────────────

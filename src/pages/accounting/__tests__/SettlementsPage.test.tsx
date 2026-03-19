@@ -139,6 +139,71 @@ describe('SettlementsPage', () => {
     });
   });
 
+  // ── Hybrid Receipt tab smoke test ──────────────────────────────────────────
+
+  it('switches to Hybrid Receipt tab and shows the form', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Hybrid Receipt' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hybrid Receipt' }));
+    await waitFor(() => {
+      // The Hybrid Receipt form description text is unique to this tab
+      expect(
+        screen.getByText('Split a dealer payment across multiple cash and bank accounts.')
+      ).toBeInTheDocument();
+      // The submit button is rendered
+      expect(screen.getByRole('button', { name: /record hybrid receipt/i })).toBeInTheDocument();
+    });
+  });
+
+  it('hybrid receipt tab shows Add payment line button', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Hybrid Receipt' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hybrid Receipt' }));
+    await waitFor(() => {
+      expect(screen.getByText('Add payment line')).toBeInTheDocument();
+    });
+  });
+
+  // ── Dealer Settlement tab smoke test ──────────────────────────────────────
+
+  it('switches to Dealer Settlement tab and shows the form', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Dealer Settlement' })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Dealer Settlement' }));
+    await waitFor(() => {
+      // The Dealer Settlement form description text is unique to this tab
+      expect(
+        screen.getByText('Net unsettled invoices and receipts into a settlement document with journal posting.')
+      ).toBeInTheDocument();
+      // The submit button is rendered
+      expect(screen.getByRole('button', { name: /create dealer settlement/i })).toBeInTheDocument();
+    });
+  });
+
+  it('dealer settlement blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Dealer Settlement' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dealer Settlement' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /create dealer settlement/i })).toBeInTheDocument()
+    );
+
+    // Attempt submit with empty fields
+    fireEvent.click(screen.getByRole('button', { name: /create dealer settlement/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a dealer/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.createDealerSettlement).not.toHaveBeenCalled();
+  });
+
   it('does not call recordDealerReceipt when form fields empty', async () => {
     renderPage();
     await waitFor(() => {

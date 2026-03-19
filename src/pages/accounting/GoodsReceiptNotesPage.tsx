@@ -13,6 +13,7 @@
   */
  
  import { useEffect, useState, useCallback } from 'react';
+ import { v4 as uuidv4 } from 'uuid';
  import { AlertCircle, Plus } from 'lucide-react';
  import { format, parseISO } from 'date-fns';
   import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -54,7 +55,7 @@
  }
  
  function generateIdempotencyKey(): string {
-   return 'grn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+   return uuidv4();
  }
  
  const GRN_STATUS_MAP: Record<GoodsReceiptStatus, { variant: 'success' | 'warning' | 'default' | 'info'; label: string }> = {
