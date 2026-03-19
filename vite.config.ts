@@ -97,6 +97,14 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
     passWithNoTests: true,
+    // Exclude Playwright E2E specs so Vitest does not try to run them in jsdom.
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress}.config.*',
+      'tests/e2e/**',
+    ],
     poolOptions: {
       forks: {
         execArgv: ['--max-old-space-size=4096'],
