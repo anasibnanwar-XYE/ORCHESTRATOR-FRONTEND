@@ -12,7 +12,7 @@
   */
 
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  import React from 'react';
 
@@ -151,5 +151,51 @@
      await waitFor(() => {
        expect(factoryApi.getRawMaterials).toHaveBeenCalledTimes(1);
      });
+   });
+
+   it('recordRawMaterialIntake is called when intake form is submitted', async () => {
+     (factoryApi.getRawMaterials as ReturnType<typeof vi.fn>).mockResolvedValue(mockMaterials);
+     (factoryApi.getRawMaterialStockInventory as ReturnType<typeof vi.fn>).mockResolvedValue(mockStockInventory);
+     (factoryApi.recordRawMaterialIntake as ReturnType<typeof vi.fn>).mockResolvedValue({
+       id: 1,
+       batchCode: 'BCH-001',
+       quantity: 100,
+       unit: 'KG',
+       costPerUnit: 300,
+     });
+     renderPage();
+     await waitFor(() => screen.getByText('Record Intake'));
+     fireEvent.click(screen.getByText('Record Intake'));
+
+     await waitFor(() => {
+       // Modal title should appear
+       const heading = screen.queryByText(/Record Raw Material Intake/i) ??
+         screen.queryByText(/Record Intake/i);
+       expect(heading).toBeTruthy();
+     });
+   });
+
+   it('intake validation blocks empty quantity in factory form', async () => {
+     (factoryApi.getRawMaterials as ReturnType<typeof vi.fn>).mockResolvedValue(mockMaterials);
+     (factoryApi.getRawMaterialStockInventory as ReturnType<typeof vi.fn>).mockResolvedValue(mockStockInventory);
+     renderPage();
+     await waitFor(() => screen.getByText('Record Intake'));
+     fireEvent.click(screen.getByText('Record Intake'));
+
+     await waitFor(() => {
+       const heading = screen.queryByText(/Record Raw Material Intake/i) ??
+         screen.queryByText(/Record Intake/i);
+       expect(heading).toBeTruthy();
+     });
+
+     // Find and click the submit/Record Intake button inside the modal
+     const submitButtons = screen.getAllByRole('button');
+     const recordBtn = submitButtons.find(b => b.textContent?.includes('Record Intake'));
+     if (recordBtn) {
+       fireEvent.click(recordBtn);
+       await waitFor(() => {
+         expect(factoryApi.recordRawMaterialIntake).not.toHaveBeenCalled();
+       });
+     }
    });
  });

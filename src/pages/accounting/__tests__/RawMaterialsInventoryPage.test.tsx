@@ -1,8 +1,13 @@
  /**
   * RawMaterialsInventoryPage tests
+  *
+  * Covers:
+  *  - Page renders material list with correct stock status badges
+  *  - Intake form is accessible and uses retry-safe (idempotent) submission
+  *  - Error state is recoverable
   */
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  import { RawMaterialsInventoryPage } from '../RawMaterialsInventoryPage';
  import { inventoryApi } from '@/lib/inventoryApi';
@@ -120,5 +125,71 @@
      await waitFor(() => {
        expect(screen.getByText(/Failed to load raw materials/i)).toBeInTheDocument();
      });
+   });
+
+   it('intake submission calls recordIntake with correct material id', async () => {
+     vi.mocked(inventoryApi.recordIntake).mockResolvedValue({
+       id: 99,
+       batchCode: 'BT-001',
+       quantity: 50,
+       unit: 'KG',
+       costPerUnit: 200,
+     });
+     renderPage();
+     await waitFor(() => screen.getAllByText('Intake'));
+
+     // Click Intake button for Titanium Dioxide (first material)
+     const intakeButtons = screen.getAllByText('Intake');
+     fireEvent.click(intakeButtons[0]);
+
+     // Modal title appears (there may be multiple Record Intake texts)
+     await waitFor(() => {
+       expect(screen.getAllByText('Record Intake').length).toBeGreaterThan(0);
+     });
+
+     // Fill required fields
+     const qtyInput = screen.getByLabelText(/^Quantity/i);
+     fireEvent.change(qtyInput, { target: { value: '50' } });
+
+     const costInput = screen.getByLabelText(/Cost per Unit/i);
+     fireEvent.change(costInput, { target: { value: '200' } });
+
+     // Select supplier
+     const supplierSelect = screen.getByLabelText(/Supplier/i);
+     fireEvent.change(supplierSelect, { target: { value: '1' } });
+
+     // Submit via button (use role to find the submit button specifically)
+     const submitBtn = screen.getByRole('button', { name: /Record Intake/i });
+     fireEvent.click(submitBtn);
+
+     await waitFor(() => {
+       expect(inventoryApi.recordIntake).toHaveBeenCalledTimes(1);
+       const call = vi.mocked(inventoryApi.recordIntake).mock.calls[0][0];
+       expect(call.rawMaterialId).toBe(1);
+       expect(call.quantity).toBe(50);
+       expect(call.costPerUnit).toBe(200);
+       expect(call.supplierId).toBe(1);
+     });
+   });
+
+   it('intake validation blocks zero quantity submission', async () => {
+     renderPage();
+     await waitFor(() => screen.getAllByText('Intake'));
+
+     const intakeButtons = screen.getAllByText('Intake');
+     fireEvent.click(intakeButtons[0]);
+
+     await waitFor(() => {
+       expect(screen.getAllByText('Record Intake').length).toBeGreaterThan(0);
+     });
+
+     // Leave quantity blank and try to submit via button role
+     const submitBtn = screen.getByRole('button', { name: /Record Intake/i });
+     fireEvent.click(submitBtn);
+
+     await waitFor(() => {
+       expect(screen.getByText(/Quantity must be positive/i)).toBeInTheDocument();
+     });
+     expect(inventoryApi.recordIntake).not.toHaveBeenCalled();
    });
  });

@@ -426,11 +426,13 @@ export const factoryApi = {
     return apiData<FactoryRawMaterialBatchDto[]>(`/raw-material-batches/${rawMaterialId}`);
   },
 
-  /** POST /api/v1/raw-materials/intake */
+  /** POST /api/v1/raw-materials/intake — sends Idempotency-Key for retry safety */
   async recordRawMaterialIntake(request: RawMaterialIntakeRequest): Promise<FactoryRawMaterialBatchDto> {
+    const idempotencyKey = `factory-intake-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const response = await apiRequest.post<ApiResponse<FactoryRawMaterialBatchDto>>(
       '/raw-materials/intake',
       request,
+      { headers: { 'Idempotency-Key': idempotencyKey } },
     );
     return response.data.data;
   },

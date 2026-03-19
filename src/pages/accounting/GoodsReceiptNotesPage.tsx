@@ -77,6 +77,7 @@
    rawMaterialName: string;
    batchCode: string;
    quantity: string;
+   orderedQty: number;
    unit: string;
    costPerUnit: string;
    manufacturingDate: string;
@@ -103,14 +104,15 @@
    function handlePOSelect(id: string) {
      setPoId(id);
      const po = approvedPOs.find((p) => String(p.id) === id) ?? null;
-      if (po) {
-       // Pre-fill lines from PO
+     if (po) {
+       // Pre-fill lines from PO; capture orderedQty for over-receipt validation
        setLines(
          po.lines.map((l) => ({
            rawMaterialId: String(l.rawMaterialId),
            rawMaterialName: l.rawMaterialName,
            batchCode: '',
            quantity: String(l.quantity),
+           orderedQty: l.quantity,
            unit: l.unit ?? '',
            costPerUnit: String(l.costPerUnit),
            manufacturingDate: '',
@@ -134,7 +136,12 @@
      if (!receiptDate) errs.receiptDate = 'Receipt date is required';
      if (lines.length === 0) errs.lines = 'No lines to receive';
      lines.forEach((line, i) => {
-       if (!line.quantity || parseFloat(line.quantity) <= 0) errs[`line_${i}_qty`] = 'Qty must be > 0';
+       const qty = parseFloat(line.quantity);
+       if (!line.quantity || qty <= 0) {
+         errs[`line_${i}_qty`] = 'Qty must be > 0';
+       } else if (line.orderedQty > 0 && qty > line.orderedQty) {
+         errs[`line_${i}_qty`] = `Cannot exceed ordered quantity (${line.orderedQty})`;
+       }
        if (!line.costPerUnit || parseFloat(line.costPerUnit) <= 0) errs[`line_${i}_cost`] = 'Cost must be > 0';
      });
      setErrors(errs);
@@ -244,13 +251,21 @@
                    key={i}
                    className="p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] space-y-2"
                  >
-                   <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{line.rawMaterialName}</p>
+                   <div className="flex items-center justify-between gap-2">
+                     <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{line.rawMaterialName}</p>
+                     {line.orderedQty > 0 && (
+                       <p className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums">
+                         Max: {line.orderedQty}
+                       </p>
+                     )}
+                   </div>
                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                      <Input
                        label="Qty *"
                        type="number"
                        min="0.001"
                        step="0.001"
+                       max={line.orderedQty > 0 ? line.orderedQty : undefined}
                        value={line.quantity}
                        onChange={(e) => updateLine(i, 'quantity', e.target.value)}
                        error={errors[`line_${i}_qty`]}
