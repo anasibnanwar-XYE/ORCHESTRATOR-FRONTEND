@@ -20,7 +20,7 @@
    const M = () => null;
    return {
      ArrowLeft: M, RotateCcw: M, ChevronsRight: M, AlertCircle: M, RefreshCcw: M,
-     X: M, Plus: M,
+     X: M, Plus: M, Loader2: M,
    };
  });
 
@@ -172,6 +172,71 @@
      renderPage();
      await waitFor(() => {
        expect(screen.getByText('Journal Lines')).toBeTruthy();
+     });
+   });
+
+   it('shows Cascade Reverse button for POSTED journal', async () => {
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('Cascade Reverse')).toBeTruthy();
+     });
+   });
+
+   it('does not show Reverse or Cascade Reverse buttons for REVERSED journal', async () => {
+     vi.mocked(accountingApi.getJournalEntryById).mockResolvedValue({
+       ...mockEntry,
+       status: 'REVERSED',
+     });
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('JE-2026-042')).toBeTruthy();
+     });
+     expect(screen.queryByText('Reverse')).toBeNull();
+     expect(screen.queryByText('Cascade Reverse')).toBeNull();
+   });
+
+   it('does not show Reverse or Cascade Reverse buttons for VOID journal', async () => {
+     vi.mocked(accountingApi.getJournalEntryById).mockResolvedValue({
+       ...mockEntry,
+       status: 'VOID',
+     });
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('JE-2026-042')).toBeTruthy();
+     });
+     expect(screen.queryByText('Reverse')).toBeNull();
+     expect(screen.queryByText('Cascade Reverse')).toBeNull();
+   });
+
+   it('reloads entry after successful reverse to refresh status', async () => {
+     vi.mocked(accountingApi.reverseJournal).mockResolvedValue({
+       ...mockEntry,
+       id: 99,
+       referenceNumber: 'JE-2026-043',
+       status: 'POSTED',
+     });
+     renderPage();
+     await waitFor(() => screen.getByText('Reverse'));
+
+     fireEvent.click(screen.getByText('Reverse'));
+     await waitFor(() => screen.getByText('Reverse Journal'));
+
+     const confirmBtns = screen.getAllByRole('button', { name: /^reverse$/i });
+     const confirmBtn = confirmBtns[confirmBtns.length - 1];
+     fireEvent.click(confirmBtn);
+
+     await waitFor(() => {
+       // getJournalEntryById called once on mount and once after successful reverse
+       expect(accountingApi.getJournalEntryById).toHaveBeenCalledTimes(2);
+     });
+   });
+
+   it('opens cascade reverse confirmation modal on Cascade Reverse click', async () => {
+     renderPage();
+     await waitFor(() => screen.getByText('Cascade Reverse'));
+     fireEvent.click(screen.getByText('Cascade Reverse'));
+     await waitFor(() => {
+       expect(screen.getByText('Cascade Reverse Journal')).toBeTruthy();
      });
    });
  });

@@ -115,7 +115,7 @@ function PeriodRow({ period, onClose, onLock, onReopen }: PeriodRowProps) {
               </button>
             </>
           )}
-          {status === 'CLOSED' && (
+          {(status === 'CLOSED' || status === 'LOCKED') && (
             <button
               type="button"
               onClick={() => onReopen(period)}
@@ -129,7 +129,14 @@ function PeriodRow({ period, onClose, onLock, onReopen }: PeriodRowProps) {
             </button>
           )}
           {status === 'LOCKED' && (
-            <span className="text-[11px] text-[var(--color-text-tertiary)]">Locked</span>
+            <button
+              type="button"
+              onClick={() => onClose(period)}
+              aria-label="Close period"
+              className="h-7 px-2.5 rounded-md text-[12px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors border border-[var(--color-border-default)]"
+            >
+              Close
+            </button>
           )}
         </div>
       </td>
@@ -161,14 +168,16 @@ function ActionDialog({ action, isLoading, onNoteChange, onConfirm, onCancel }: 
     variant: 'danger' | 'warning' | 'default';
     noteLabel?: string;
     notePlaceholder?: string;
+    noteRequired?: boolean;
   }> = {
     close: {
       title: 'Close Period',
       description: `Closing "${periodName}" will prevent new postings. You can reopen it later.`,
       confirmLabel: 'Close Period',
       variant: 'warning',
-      noteLabel: 'Closing note (optional)',
+      noteLabel: 'Closing note',
       notePlaceholder: 'Reason for closing this period...',
+      noteRequired: true,
     },
     lock: {
       title: 'Lock Period',
@@ -185,10 +194,12 @@ function ActionDialog({ action, isLoading, onNoteChange, onConfirm, onCancel }: 
       variant: 'default',
       noteLabel: 'Reopen reason',
       notePlaceholder: 'Reason for reopening...',
+      noteRequired: true,
     },
   };
 
   const c = config[action.type];
+  const isNoteInvalid = !!c.noteRequired && !action.note.trim();
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
@@ -221,7 +232,7 @@ function ActionDialog({ action, isLoading, onNoteChange, onConfirm, onCancel }: 
         {c.noteLabel && (
           <div className="mb-5">
             <Input
-              label={c.noteLabel}
+              label={c.noteRequired ? `${c.noteLabel} *` : c.noteLabel}
               placeholder={c.notePlaceholder}
               value={action.note}
               onChange={(e) => onNoteChange(e.target.value)}
@@ -237,7 +248,7 @@ function ActionDialog({ action, isLoading, onNoteChange, onConfirm, onCancel }: 
           </button>
           <button
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || isNoteInvalid}
             className={clsx(
               'h-9 px-4 rounded-lg text-[13px] font-medium transition-all duration-150',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
@@ -246,7 +257,7 @@ function ActionDialog({ action, isLoading, onNoteChange, onConfirm, onCancel }: 
                 : c.variant === 'warning'
                   ? 'bg-[var(--color-warning)] text-[var(--color-text-inverse)] hover:bg-[var(--color-warning-hover)] focus-visible:ring-[var(--color-warning-ring)]'
                   : 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)] hover:bg-[var(--color-neutral-800)] focus-visible:ring-[var(--color-neutral-300)]',
-              isLoading && 'opacity-60 pointer-events-none',
+              (isLoading || isNoteInvalid) && 'opacity-60 pointer-events-none',
             )}
           >
             {isLoading ? 'Processing...' : c.confirmLabel}
@@ -428,7 +439,7 @@ export function AccountingPeriodsPage() {
                         </button>
                       </>
                     )}
-                    {(period.status as PeriodStatus) === 'CLOSED' && (
+                    {((period.status as PeriodStatus) === 'CLOSED' || (period.status as PeriodStatus) === 'LOCKED') && (
                       <button
                         type="button"
                         onClick={() => setAction({ type: 'reopen', period, note: '' })}
@@ -436,6 +447,16 @@ export function AccountingPeriodsPage() {
                         className="h-8 px-3 rounded-lg text-[12px] font-medium border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
                       >
                         Reopen
+                      </button>
+                    )}
+                    {(period.status as PeriodStatus) === 'LOCKED' && (
+                      <button
+                        type="button"
+                        onClick={() => setAction({ type: 'close', period, note: '' })}
+                        aria-label="Close period"
+                        className="h-8 px-3 rounded-lg text-[12px] font-medium border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
+                      >
+                        Close
                       </button>
                     )}
                   </div>
