@@ -1,6 +1,6 @@
 {
   "milestone": "accounting-workflow-coverage-and-triage",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "assertionsSummary": {
     "total": 34,
@@ -32,77 +32,71 @@
   "blockedAssertions": [
     {
       "id": "VAL-O2C-004",
-      "blockedBy": "Backend 400 on POST /api/v1/sales/orders prevents end-to-end order-to-invoice continuity testing"
+      "blockedBy": "Order confirmation blocked: POST /api/v1/sales/orders/1/confirm returns 'Order cannot be confirmed because no stock is reserved for line items'. Order creation works (created MOCK-2026-00002) but stock reservation workflow is not triggered automatically."
     },
     {
       "id": "VAL-O2C-007",
-      "blockedBy": "No orders available to test confirmation flow (orders list empty, backend readiness issues)"
+      "blockedBy": "Order confirmation blocked by stock reservation. Orders can now be created successfully but cannot be confirmed. Requires backend stock reservation seeding or automatic reservation on order creation."
     },
     {
       "id": "VAL-O2C-008",
-      "blockedBy": "No orders available for list/detail consistency testing"
+      "blockedBy": "No confirmed orders for list/detail consistency testing. Order MOCK-2026-00002 exists but in RESERVED status, cannot confirm due to stock reservation."
     },
     {
       "id": "VAL-O2C-009",
-      "blockedBy": "No orders to test cancellation flow (CancelDialog component verified but no orders to cancel)"
+      "blockedBy": "No confirmed orders to test cancellation flow. CancelDialog component verified but cannot test against actual order."
     },
     {
       "id": "VAL-O2C-010",
-      "blockedBy": "No confirmed orders seeded in MOCK company for dispatch preview testing"
+      "blockedBy": "No confirmed orders for dispatch preview testing. Order confirmation blocked by stock reservation."
     },
     {
       "id": "VAL-O2C-011",
-      "blockedBy": "No dispatched invoices in MOCK company for Sales/Accounting consistency testing"
+      "blockedBy": "No dispatched orders/invoices for Sales/Accounting consistency testing. Entire O2C pipeline blocked at confirmation step."
     },
     {
       "id": "VAL-O2C-012",
-      "blockedBy": "No dispatched/paid invoices for return eligibility testing"
+      "blockedBy": "No dispatched/paid invoices for return eligibility testing. O2C pipeline blocked at confirmation step."
     },
     {
       "id": "VAL-O2C-013",
-      "blockedBy": "No dealer transactions seeded for dealer-scoped consistency testing"
+      "blockedBy": "No dealer transactions for dealer-scoped consistency testing. Order creation works but cannot complete full O2C cycle."
     },
     {
       "id": "VAL-ACCT-005",
-      "blockedBy": "Accounting periods API returns error/empty response, preventing period lifecycle testing"
+      "blockedBy": "Partial improvement: Accounting periods API now works and returns data. Period LOCK succeeds. However, period CLOSE requires maker-checker workflow ('Direct close is disabled; submit /request-close and approve') and period REOPEN returns Access Denied for accounting user. Cannot test full lifecycle without maker-checker seeding or superadmin permissions."
     },
     {
       "id": "VAL-P2P-004",
-      "blockedBy": "No POs exist and cannot create due to empty raw materials dropdown (similar to ERP-26)"
+      "blockedBy": "Raw materials now exist (3 items: RM-RESIN, RM-PIG, RM-CAN with stock), but no Purchase Orders seeded. PO create requires 'lines' field (not 'items'). Backend returns validation errors on PO creation attempts."
     },
     {
       "id": "VAL-P2P-005",
-      "blockedBy": "No approved Purchase Orders in MOCK seed data prevents GRN creation testing"
+      "blockedBy": "No approved Purchase Orders in MOCK seed data. GRN dropdown correctly empty until POs are created and approved."
     },
     {
       "id": "VAL-P2P-007",
-      "blockedBy": "No GRNs to test stock update across Accounting and Factory surfaces"
+      "blockedBy": "No GRNs to test stock update across Accounting and Factory surfaces. Requires seeded PO -> approval -> GRN workflow data."
     },
     {
       "id": "VAL-P2P-008",
-      "blockedBy": "No GRNs available for purchase invoice flow testing"
+      "blockedBy": "No GRNs available for purchase invoice flow testing. GRN endpoint works but returns empty data."
     },
     {
       "id": "VAL-P2P-009",
-      "blockedBy": "No GRNs/invoices for payables state visibility testing"
+      "blockedBy": "No GRNs/invoices for payables state visibility testing. P2P pipeline blocked at PO creation/approval step."
     },
     {
       "id": "VAL-P2P-010",
-      "blockedBy": "No purchase invoices for return quantity cap testing"
+      "blockedBy": "No purchase invoices for return quantity cap testing. P2P pipeline blocked."
     },
     {
       "id": "VAL-P2P-012",
-      "blockedBy": "Raw material intake submission appears to succeed (toast shown) but stock does not persist after reload"
+      "blockedBy": "Raw material intake persists but stock view may require reload or different endpoint. Raw materials endpoint shows stock (RM-RESIN: 500, RM-PIG: 200, RM-CAN: 1000) but intake-to-stock persistence needs verification after intake submission."
     }
   ],
-  "appliedUpdates": [
-    {
-      "target": "user-testing.md",
-      "description": "Created Flow Validator Guidance sections for web surface, O2C catalog requirements, and P2P seed data requirements",
-      "source": "flow-reports"
-    }
-  ],
-  "previousRound": null,
+  "appliedUpdates": [],
+  "previousRound": ".factory/validation/accounting-workflow-coverage-and-triage/user-testing/synthesis.json",
   "keyFindings": {
     "frontendWorking": [
       "Order creation UI correctly validates dealer selection (ACTIVE only) and line items",
@@ -112,24 +106,31 @@
       "Journal posting has balance-gated validation ('Debits must equal credits before posting')",
       "Reverse and Cascade reverse actions visible on posted journals with proper dialogs",
       "Month-end checklist gates Close Period button until readiness met",
-      "All 6 named accounting forms (dealer receipt, hybrid receipt, credit note, debit note, bad debt, accrual) block invalid input",
+      "All 6 named accounting forms block invalid input",
       "Dealer and Supplier Auto-Settle actions are discoverable on Settlements page",
       "Bank reconciliation session creation workflow available",
       "GST Return and GST Reconciliation both surface for same period with cross-navigation",
-      "Reports, dashboard, and audit drill-down routes all navigable with valid API responses",
+      "Reports, dashboard, and audit drill-down routes all navigable",
       "Supplier creation validation works, lifecycle actions are status-gated",
       "PO create limits to active suppliers only",
       "GRN validation blocks empty submission",
       "Supplier payment/settlement forms gate allocation to outstanding purchases"
     ],
+    "round2Improvements": [
+      "Accounting periods API now works - returns periods data successfully",
+      "Period LOCK endpoint works correctly",
+      "Order creation now works - successfully created order MOCK-2026-00002 with dealerId=1, product FG-GST",
+      "Products catalog endpoint returns 4 products (FG-FIXTURE, FG-GST, FG-KIT, FG-LIFO)",
+      "Brands endpoint returns 2 brands (MOCK-BRAND, FIX-BRAND)",
+      "Raw materials endpoint returns 3 items with stock data",
+      "Suppliers endpoint works with 2 seeded suppliers"
+    ],
     "backendBlockers": [
-      "POST /api/v1/sales/orders returns 400 - cannot create orders",
-      "GET /api/v1/sales/orders/search returns errors due to backend readiness issues",
-      "No seeded O2C workflow data (orders, invoices, transactions) in MOCK company",
-      "Accounting periods API returns error preventing period lifecycle testing",
-      "No approved Purchase Orders in MOCK seed data",
-      "Raw material intake submission doesn't persist stock after reload",
-      "PO material dropdown empty despite raw materials existing"
+      "Order confirmation requires stock reservation - no automatic reservation on order creation",
+      "Period CLOSE requires maker-checker workflow (not direct close)",
+      "Period REOPEN returns Access Denied for accounting user",
+      "No seeded PO data in MOCK company",
+      "Stock reservation workflow not automatically triggered"
     ]
   },
   "flowReports": [
