@@ -67,5 +67,9 @@ The following test states require backend seeding and cannot be triggered from t
 - **Tenant denial states (VAL-AUTH-003)**: TENANT_ON_HOLD, TENANT_BLOCKED require backend admin action to change tenant state.
 - **Must-change-password (VAL-AUTH-014)**: Requires seeded account with mustChangePassword flag set.
 
+### O2C Catalog Validation Requirements
+- Live UAT for `VAL-O2C-001`, `VAL-O2C-002`, and `VAL-O2C-003` requires a writable validation account in `MOCK` that can create products and generate bulk variants on `/accounting/catalog`.
+- As of the `catalog-and-sku-management` handoff, `validation.accounting@example.com` can load the catalog but valid create/generate submissions appear to be backend-denied. Track backend support in `ERP-26` before trying to seal those assertions with browser/network evidence.
+
 ### Known Frontend Issues (auth-sensitive-flows)
 - **VAL-CROSS-002**: ✅ FIXED. Protected deep link destination is now restored after MFA success. The fix adds `intendedDestination` to the MFA pending state in both LoginPage.tsx paths (428 MFA required and 200 + mfa_redirect), and MfaPage.tsx uses `resolvePostLoginDestination` to restore the original destination after successful MFA.
