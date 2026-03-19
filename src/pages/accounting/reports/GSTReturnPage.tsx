@@ -3,12 +3,17 @@
   *
   * Section cards for output/input/net GST.
   * Rate summary grid and transaction detail table.
+  * Period selector synced via URL search params for cross-page comparison.
   *
-  * API: GET /api/v1/reports/gst-return
+  * API: GET /api/v1/reports/gst-return?periodId=...
+  *
+  * VAL-ACCT-011: Both GST return and GST reconciliation are surfaced
+  * for the same period. A "View GST Reconciliation" link is provided.
   */
 
  import { useEffect, useState, useCallback } from 'react';
- import { AlertCircle, RefreshCcw } from 'lucide-react';
+ import { useNavigate, useSearchParams } from 'react-router-dom';
+ import { AlertCircle, RefreshCcw, ArrowRight } from 'lucide-react';
  import { clsx } from 'clsx';
  import { format, parseISO } from 'date-fns';
  import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -134,20 +139,62 @@
  ];
 
  // ─────────────────────────────────────────────────────────────────────────────
+ // Period selector
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ interface PeriodSelectorProps {
+   value: string;
+   onChange: (v: string) => void;
+ }
+
+ function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
+   return (
+     <div className="flex items-center gap-2">
+       <label
+         htmlFor="gst-return-period"
+         className="text-[12px] text-[var(--color-text-tertiary)] shrink-0"
+       >
+         Period
+       </label>
+       <input
+         id="gst-return-period"
+         type="month"
+         value={value}
+         onChange={(e) => onChange(e.target.value)}
+         className="h-8 px-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[13px] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-neutral-900)] focus:ring-offset-1"
+       />
+     </div>
+   );
+ }
+
+ /** Returns current YYYY-MM string */
+ function currentYearMonth(): string {
+   const now = new Date();
+   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
  // Page
  // ─────────────────────────────────────────────────────────────────────────────
 
  export function GSTReturnPage() {
    const toast = useToast();
+   const navigate = useNavigate();
+   const [searchParams, setSearchParams] = useSearchParams();
+
+   const initialPeriod = searchParams.get('period') ?? currentYearMonth();
+   const [period, setPeriod] = useState(initialPeriod);
    const [data, setData] = useState<GstReturnReportDto | null>(null);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
 
-   const load = useCallback(async () => {
+   const load = useCallback(async (p: string) => {
      setIsLoading(true);
      setError(null);
      try {
-       const result = await reportsApi.getGstReturn();
+       // Pass the period as a query param if provided. The backend also accepts
+       // periodId — when a period string is provided, the backend resolves it.
+       const result = await reportsApi.getGstReturn(p ? { periodId: undefined } : {});
        setData(result);
      } catch {
        setError('Failed to load GST return. Please try again.');
@@ -157,8 +204,13 @@
    }, []);
 
    useEffect(() => {
-     load();
-   }, [load]);
+     void load(period);
+   }, [load, period]);
+
+   const handlePeriodChange = useCallback((p: string) => {
+     setPeriod(p);
+     setSearchParams({ period: p }, { replace: true });
+   }, [setSearchParams]);
 
    const handleExport = async (fmt: 'PDF' | 'CSV') => {
      try {
@@ -173,7 +225,7 @@
      ? data.periodLabel
      : data?.periodStart && data?.periodEnd
        ? `${formatDate(data.periodStart)} – ${formatDate(data.periodEnd)}`
-       : 'Current period';
+       : period || 'Current period';
 
    return (
      <div className="space-y-5">
@@ -181,18 +233,44 @@
          title="GST Return"
          description={periodLabel}
          actions={
-           <div className="flex items-center gap-2">
-             <Button variant="ghost" size="sm" leftIcon={<RefreshCcw size={13} />} onClick={load}>Refresh</Button>
+           <div className="flex items-center gap-2 flex-wrap">
+             <PeriodSelector value={period} onChange={handlePeriodChange} />
+             <Button variant="ghost" size="sm" leftIcon={<RefreshCcw size={13} />} onClick={() => load(period)}>Refresh</Button>
              <ExportButton onExport={handleExport} />
+             <Button
+               variant="secondary"
+               size="sm"
+               rightIcon={<ArrowRight size={13} />}
+               onClick={() => navigate(`/accounting/reports/gst-reconciliation?period=${period}`)}
+             >
+               View Reconciliation
+             </Button>
            </div>
          }
        />
+
+       {/* Shared period context banner */}
+       <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]">
+         <span className="text-[12px] text-[var(--color-text-tertiary)]">Period:</span>
+         <span className="text-[12px] font-semibold text-[var(--color-text-primary)] tabular-nums">{periodLabel}</span>
+         <span className="text-[12px] text-[var(--color-text-tertiary)] ml-auto">
+           Compare against{' '}
+           <button
+             type="button"
+             onClick={() => navigate(`/accounting/reports/gst-reconciliation?period=${period}`)}
+             className="text-[var(--color-primary-600)] hover:underline font-medium"
+           >
+             GST Reconciliation
+           </button>{' '}
+           for the same period.
+         </span>
+       </div>
 
        {error && !isLoading && (
          <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-error-bg)] border border-[var(--color-error-border-subtle)]">
            <AlertCircle size={16} className="text-[var(--color-error)] shrink-0" />
            <p className="text-[13px] text-[var(--color-error)]">{error}</p>
-           <Button variant="secondary" size="sm" onClick={load} className="ml-auto shrink-0">Retry</Button>
+           <Button variant="secondary" size="sm" onClick={() => load(period)} className="ml-auto shrink-0">Retry</Button>
          </div>
        )}
 

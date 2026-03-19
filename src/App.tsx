@@ -175,6 +175,18 @@ const SettlementsPage = lazy(() =>
      default: m.GSTReturnPage,
    }))
  );
+ /** Accounting portal — GST Reconciliation */
+ const GSTReconciliationPage = lazy(() =>
+   import('@/pages/accounting/reports/GSTReconciliationPage').then((m) => ({
+     default: m.GSTReconciliationPage,
+   }))
+ );
+ /** Accounting portal — Reports Index */
+ const ReportsIndexPage = lazy(() =>
+   import('@/pages/accounting/reports/ReportsIndexPage').then((m) => ({
+     default: m.ReportsIndexPage,
+   }))
+ );
  /** Accounting portal — Inventory Valuation */
  const InventoryValuationPage = lazy(() =>
    import('@/pages/accounting/reports/InventoryValuationPage').then((m) => ({
@@ -928,8 +940,10 @@ function AppRouter() {
             <Route path="reports/cash-flow" element={<CashFlowPage />} />
             <Route path="reports/aged-debtors" element={<AgedDebtorsPage />} />
             <Route path="reports/gst" element={<GSTReturnPage />} />
+            <Route path="reports/gst-reconciliation" element={<GSTReconciliationPage />} />
             <Route path="reports/inventory" element={<InventoryValuationPage />} />
             <Route path="reports/audit" element={<ReconciliationDashboardPage />} />
+            <Route path="reports" element={<ReportsIndexPage />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="leave" element={<LeaveRequestsPage />} />

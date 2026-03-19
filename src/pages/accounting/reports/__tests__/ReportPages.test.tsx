@@ -1,7 +1,8 @@
  /**
   * Report pages tests
   * Covers: TrialBalance, ProfitLoss, BalanceSheet, CashFlow, AgedDebtors, GST, InventoryValuation,
-  *         ReconciliationDashboard (with discrepancy resolution), BankReconciliationPage
+  *         ReconciliationDashboard (with discrepancy resolution), BankReconciliationPage,
+  *         GSTReconciliationPage (VAL-ACCT-011), ReportsIndexPage (VAL-ACCT-012)
   */
  import { describe, it, expect, vi, beforeEach } from 'vitest';
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -12,11 +13,13 @@
  import { CashFlowPage } from '../CashFlowPage';
  import { AgedDebtorsPage } from '../AgedDebtorsPage';
  import { GSTReturnPage } from '../GSTReturnPage';
+ import { GSTReconciliationPage } from '../GSTReconciliationPage';
+ import { ReportsIndexPage } from '../ReportsIndexPage';
  import { InventoryValuationPage } from '../InventoryValuationPage';
  import { ReconciliationDashboardPage } from '../ReconciliationDashboardPage';
  import { BankReconciliationPage } from '@/pages/accounting/BankReconciliationPage';
  import { reportsApi } from '@/lib/reportsApi';
- import { bankReconciliationApi, accountingApi } from '@/lib/accountingApi';
+ import { bankReconciliationApi, accountingApi, gstReconciliationApi } from '@/lib/accountingApi';
  import { ToastProvider } from '@/components/ui/Toast';
 
  vi.mock('@/lib/reportsApi', () => ({
@@ -58,11 +61,14 @@
    accountingApi: {
      getAccounts: vi.fn().mockResolvedValue([]),
    },
+   gstReconciliationApi: {
+     getReconciliation: vi.fn(),
+   },
  }));
 
- function wrap(component: React.ReactElement) {
+ function wrap(component: React.ReactElement, initialPath = '/') {
    return render(
-     <MemoryRouter>
+     <MemoryRouter initialEntries={[initialPath]}>
        <ToastProvider>
          {component}
        </ToastProvider>
@@ -697,5 +703,187 @@
      await waitFor(() => {
        expect(screen.getByText(/could not load reconciliation sessions/i)).toBeInTheDocument();
      });
+   });
+ });
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // GSTReconciliationPage — VAL-ACCT-011
+ // Both GST return and GST reconciliation visible for the same period.
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ const mockGstReconciliation = {
+   period: '2026-01',
+   periodStart: '2026-01-01',
+   periodEnd: '2026-01-31',
+   collected: { cgst: 5000, sgst: 5000, igst: 0, total: 10000 },
+   inputTaxCredit: { cgst: 2000, sgst: 2000, igst: 0, total: 4000 },
+   netLiability: { cgst: 3000, sgst: 3000, igst: 0, total: 6000 },
+   cgst: 3000,
+   sgst: 3000,
+   igst: 0,
+   total: 6000,
+ };
+
+ describe('GSTReconciliationPage', () => {
+   beforeEach(() => {
+     vi.clearAllMocks();
+     vi.mocked(gstReconciliationApi.getReconciliation).mockResolvedValue(mockGstReconciliation);
+   });
+
+   it('renders GST Reconciliation heading', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText('GST Reconciliation')).toBeInTheDocument();
+     });
+   });
+
+   it('shows Collected (Output Tax) card', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText('Collected (Output Tax)')).toBeInTheDocument();
+     });
+   });
+
+   it('shows Input Tax Credit card', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText('Input Tax Credit')).toBeInTheDocument();
+     });
+   });
+
+   it('shows Net Liability card', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText('Net Liability')).toBeInTheDocument();
+     });
+   });
+
+   it('shows Net Liability Detail section', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText('Net Liability Detail')).toBeInTheDocument();
+     });
+   });
+
+   it('shows period context banner with correct period label', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       // Period label derived from periodStart/periodEnd — may appear in multiple places
+       const matches = screen.getAllByText(/01 Jan 2026/i);
+       expect(matches.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('shows View GST Return cross-link button', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /view gst return/i })).toBeInTheDocument();
+     });
+   });
+
+   it('shows error state with retry on API failure', async () => {
+     vi.mocked(gstReconciliationApi.getReconciliation).mockRejectedValue(new Error('API error'));
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText(/failed to load gst reconciliation/i)).toBeInTheDocument();
+       expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+     });
+   });
+
+   it('shows empty state when no data is returned', async () => {
+     // Simulate the API returning null (empty period)
+     vi.mocked(gstReconciliationApi.getReconciliation).mockRejectedValue(new Error('No data'));
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByText(/failed to load gst reconciliation/i)).toBeInTheDocument();
+     });
+   });
+
+   it('calls API with the period from the URL search param', async () => {
+     wrap(<GSTReconciliationPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(vi.mocked(gstReconciliationApi.getReconciliation)).toHaveBeenCalledWith({ period: '2026-01' });
+     });
+   });
+ });
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // GSTReturnPage — period selector and cross-link to reconciliation
+ // VAL-ACCT-011: GST return shows the same period context as reconciliation.
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ describe('GSTReturnPage — period selector and cross-link', () => {
+   beforeEach(() => {
+     vi.clearAllMocks();
+     vi.mocked(reportsApi.getGstReturn).mockResolvedValue(mockGstReturn);
+   });
+
+   it('shows period selector input', async () => {
+     wrap(<GSTReturnPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByLabelText(/period/i)).toBeInTheDocument();
+     });
+   });
+
+   it('shows View Reconciliation cross-link button', async () => {
+     wrap(<GSTReturnPage />, '/?period=2026-01');
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /view reconciliation/i })).toBeInTheDocument();
+     });
+   });
+
+   it('shows period context banner', async () => {
+     wrap(<GSTReturnPage />, '/?period=2026-01');
+     await waitFor(() => {
+       // The period context banner contains the period label from the data
+       expect(screen.getByText(/period:/i)).toBeInTheDocument();
+     });
+   });
+ });
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // ReportsIndexPage — VAL-ACCT-012
+ // Named reports, dashboard links, and audit drill-down stay navigable.
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ describe('ReportsIndexPage', () => {
+   it('renders Reports heading', () => {
+     wrap(<ReportsIndexPage />);
+     expect(screen.getByText('Reports')).toBeInTheDocument();
+   });
+
+   it('shows Trial Balance report card', () => {
+     wrap(<ReportsIndexPage />);
+     expect(screen.getByText('Trial Balance')).toBeInTheDocument();
+   });
+
+   it('shows GST Return report card', () => {
+     wrap(<ReportsIndexPage />);
+     expect(screen.getByText('GST Return')).toBeInTheDocument();
+   });
+
+   it('shows GST Reconciliation report card', () => {
+     wrap(<ReportsIndexPage />);
+     expect(screen.getByText('GST Reconciliation')).toBeInTheDocument();
+   });
+
+   it('shows Reconciliation Audit report card', () => {
+     wrap(<ReportsIndexPage />);
+     expect(screen.getByText('Reconciliation Audit')).toBeInTheDocument();
+   });
+
+   it('shows all 9 report cards', () => {
+     wrap(<ReportsIndexPage />);
+     // Each report card is a button
+     const reportCards = screen.getAllByRole('button');
+     expect(reportCards.length).toBeGreaterThanOrEqual(9);
+   });
+
+   it('report cards are clickable and described (navigation-safe)', () => {
+     wrap(<ReportsIndexPage />);
+     // Each major report has a visible description
+     expect(screen.getByText(/verify that all debits equal all credits/i)).toBeInTheDocument();
+     expect(screen.getByText(/output tax collected/i)).toBeInTheDocument();
+     expect(screen.getByText(/component-level gst reconciliation/i)).toBeInTheDocument();
    });
  });

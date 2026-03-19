@@ -1161,6 +1161,25 @@ export interface PurchaseRef {
      return response.data.data;
    },
  };
+
+ /** GST Reconciliation API */
+ export const gstReconciliationApi = {
+   /**
+    * GET /api/v1/accounting/gst/reconciliation
+    * Accepts optional `period` query param in YYYY-MM format.
+    * Returns collected output tax, input tax credit, and net liability
+    * for the given period.
+    */
+   async getReconciliation(params?: { period?: string }): Promise<GstReconciliationDto> {
+     const search = params?.period
+       ? `?period=${encodeURIComponent(params.period)}`
+       : '';
+     const response = await apiRequest.get<ApiResponse<GstReconciliationDto>>(
+       `/accounting/gst/reconciliation${search}`
+     );
+     return response.data.data;
+   },
+ };
  // ─────────────────────────────────────────────────────────────────────────────
  // Month-End Checklist types
  // ─────────────────────────────────────────────────────────────────────────────
@@ -1324,3 +1343,37 @@ export interface PurchaseRef {
  // ─────────────────────────────────────────────────────────────────────────────
 
  export type DateContextResponse = Record<string, unknown>;
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // GST Reconciliation types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** GstComponentSummary mirrors the type in reportsApi for cross-page comparison */
+ export interface GstReconciliationComponentSummary {
+   cgst: number;
+   sgst: number;
+   igst: number;
+   total: number;
+ }
+
+ /**
+  * GstReconciliationDto
+  * Returned by GET /api/v1/accounting/gst/reconciliation?period=YYYY-MM
+  *
+  * `collected`     — output tax collected from sales/invoices
+  * `inputTaxCredit` — input tax credit from purchases
+  * `netLiability`  — net tax liability (collected - inputTaxCredit)
+  * `cgst`, `sgst`, `igst`, `total` — top-level variance totals (net liability components)
+  */
+ export interface GstReconciliationDto {
+   period: string; // YYYY-MM
+   periodStart: string; // YYYY-MM-DD
+   periodEnd: string; // YYYY-MM-DD
+   collected: GstReconciliationComponentSummary;
+   inputTaxCredit: GstReconciliationComponentSummary;
+   netLiability: GstReconciliationComponentSummary;
+   cgst: number;
+   sgst: number;
+   igst: number;
+   total: number;
+ }
