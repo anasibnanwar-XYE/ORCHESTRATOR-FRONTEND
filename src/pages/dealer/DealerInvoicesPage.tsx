@@ -66,7 +66,7 @@ import { downloadBlob } from '@/utils/mobileUtils';
  function SkeletonRow() {
    return (
      <tr className="border-b border-[var(--color-border-subtle)]">
-       {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+       {[1, 2, 3, 4, 5, 6].map((i) => (
          <td key={i} className="px-4 py-3">
            <Skeleton width={i === 1 ? '80%' : '60%'} />
          </td>
@@ -172,10 +172,13 @@ import { downloadBlob } from '@/utils/mobileUtils';
              <table className="w-full border-collapse">
                <thead>
                  <tr className="border-b border-[var(--color-border-default)]">
-                   {['Invoice', 'Date', 'Subtotal', 'GST', 'Total', 'Status', ''].map((h) => (
+                   {['Invoice', 'Date', 'Total', 'Outstanding', 'Status', ''].map((h) => (
                      <th
                        key={h}
-                       className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]"
+                       className={clsx(
+                         'px-4 py-2.5 text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]',
+                         ['Total', 'Outstanding'].includes(h) ? 'text-right' : 'text-left',
+                       )}
                      >
                        {h}
                      </th>
@@ -188,7 +191,7 @@ import { downloadBlob } from '@/utils/mobileUtils';
                    : pageInvoices.length === 0
                      ? (
                        <tr>
-                         <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[var(--color-text-tertiary)]">
+                         <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[var(--color-text-tertiary)]">
                            No invoices found
                          </td>
                        </tr>
@@ -207,14 +210,14 @@ import { downloadBlob } from '@/utils/mobileUtils';
                          <td className="px-4 py-3 text-[13px] text-[var(--color-text-secondary)] tabular-nums">
                            {fmtDate(inv.issueDate)}
                          </td>
-                         <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                           {fmtCurrency(inv.subtotal)}
-                         </td>
-                         <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                           {fmtCurrency(inv.taxTotal)}
-                         </td>
-                         <td className="px-4 py-3 text-[13px] tabular-nums font-medium text-[var(--color-text-primary)]">
+                         <td className="px-4 py-3 text-[13px] tabular-nums text-right font-medium text-[var(--color-text-primary)]">
                            {fmtCurrency(inv.totalAmount)}
+                         </td>
+                         <td className="px-4 py-3 text-[13px] tabular-nums text-right font-medium">
+                           {(inv.outstandingAmount ?? 0) > 0
+                             ? <span className="text-[var(--color-error)]">{fmtCurrency(inv.outstandingAmount)}</span>
+                             : <span className="text-[var(--color-text-tertiary)]">—</span>
+                           }
                          </td>
                          <td className="px-4 py-3">
                            {invoiceStatusBadge(inv.status)}
@@ -268,11 +271,21 @@ import { downloadBlob } from '@/utils/mobileUtils';
                        {fmtDate(inv.issueDate)}
                      </p>
                      <div className="flex items-center justify-between">
-                       <div>
-                         <p className="text-[11px] text-[var(--color-text-tertiary)]">Total</p>
-                         <p className="text-[13px] font-medium tabular-nums text-[var(--color-text-primary)]">
-                           {fmtCurrency(inv.totalAmount)}
-                         </p>
+                       <div className="flex items-center gap-4">
+                         <div>
+                           <p className="text-[11px] text-[var(--color-text-tertiary)]">Total</p>
+                           <p className="text-[13px] font-medium tabular-nums text-[var(--color-text-primary)]">
+                             {fmtCurrency(inv.totalAmount)}
+                           </p>
+                         </div>
+                         {(inv.outstandingAmount ?? 0) > 0 && (
+                           <div>
+                             <p className="text-[11px] text-[var(--color-text-tertiary)]">Outstanding</p>
+                             <p className="text-[13px] font-medium tabular-nums text-[var(--color-error)]">
+                               {fmtCurrency(inv.outstandingAmount)}
+                             </p>
+                           </div>
+                         )}
                        </div>
                        <button
                          type="button"
