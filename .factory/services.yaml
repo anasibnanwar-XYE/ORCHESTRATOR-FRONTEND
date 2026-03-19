@@ -2,7 +2,7 @@ commands:
   install: bun install
   typecheck: bun run typecheck
   lint: bun run lint
-  test: bun run test -- --maxWorkers=4
+  test: bun run test
   build: bun run build
 
 services:

@@ -68,5 +68,17 @@
     "dashboardQuickActionsWork": true,
     "formsReadableOnPhone": true,
     "backendDataAvailability": "Limited - no orders, invoices, or dealers in seeded data for validation accounts"
+  },
+  "orchestratorDeferral": {
+    "deferredAssertions": [
+      "VAL-MOBILE-005",
+      "VAL-MOBILE-006",
+      "VAL-MOBILE-007",
+      "VAL-MOBILE-008",
+      "VAL-MOBILE-009"
+    ],
+    "followupFeatureId": "dealer-sales-mobile-seeded-data-validation-followup",
+    "relatedBackendIssue": "ERP-15",
+    "justification": "These remaining mobile assertions depend on seeded orders, invoices, dealers, and stable backend readiness rather than unfinished mobile UI implementation. They were moved into a follow-up milestone so the mission can continue while backend validation data is prepared."
   }
 }

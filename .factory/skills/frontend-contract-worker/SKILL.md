@@ -18,7 +18,7 @@ Use this skill for features that change auth/session behavior, admin and superad
 3. Write or update failing tests first for the affected wrapper, context, route, or page behavior. Keep tests small and name the contract behavior they protect.
 4. Implement the minimal code change that makes the contract pass. Keep generated client boundaries intact. Prefer fixing canonical request/response wiring over adding broad fallback logic.
 5. Keep wording simple and consistent. Do not add emojis. Use fewer icons, not more.
-6. Manually verify the changed flow with `agent-browser` using the seeded validation accounts from mission `AGENTS.md`. Capture the exact request path, route outcome, and visible UX result.
+6. Manually verify the changed flow with `agent-browser` using the seeded validation accounts from mission `AGENTS.md`. Capture the exact request path, route outcome, and visible UX result. If browser auth requests fail for same-origin or CORS reasons, inspect `vite.config.ts` proxy and `Origin` handling before assuming backend contract drift. If infrastructure still blocks interactive verification after reasonable checks, fall back to the strongest available automated coverage and document the blocker plus fallback evidence explicitly in the handoff.
 7. Run the targeted tests you added, then `bun run lint`, `bun run typecheck`, and `bun run test`. Run `bun run build` when the feature changes auth/routing/shell behavior or any shared UI entry point.
 8. In the handoff, call out any backend ambiguity, review-only page, or path conflict instead of hiding it in fallback code.
 

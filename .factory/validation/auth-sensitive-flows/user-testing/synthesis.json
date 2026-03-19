@@ -56,5 +56,16 @@
       "Provide backend admin action capability for tenant state changes for VAL-AUTH-003"
     ]
   },
-  "environmentNotes": "Backend unavailable during revalidation (connection refused to 100.109.241.47:8081). Browser validation blocked but unit test verification confirmed the fix works correctly."
+  "environmentNotes": "Backend unavailable during revalidation (connection refused to 100.109.241.47:8081). Browser validation blocked but unit test verification confirmed the fix works correctly.",
+  "orchestratorDeferral": {
+    "deferredAssertions": [
+      "VAL-AUTH-002",
+      "VAL-AUTH-003",
+      "VAL-AUTH-010",
+      "VAL-AUTH-014"
+    ],
+    "followupFeatureId": "auth-seeded-state-validation-followup",
+    "relatedBackendIssue": "ERP-14",
+    "justification": "These assertions depend on backend-controlled seed states or validation-window availability rather than unfinished frontend implementation. They were moved into a future follow-up feature so the mission can continue while backend support is being prepared."
+  }
 }

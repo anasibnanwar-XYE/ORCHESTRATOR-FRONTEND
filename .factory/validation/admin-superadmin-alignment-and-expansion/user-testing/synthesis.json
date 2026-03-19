@@ -21,31 +21,31 @@
   "failedAssertions": [
     {
       "id": "VAL-ADMIN-007",
-      "reason": "Backend returns 403 Forbidden on all tenant lifecycle mutation requests. Frontend UI exists correctly. Blocked by backend readiness tracked in ERP-14."
+      "reason": "Backend returns 403 Forbidden on all tenant lifecycle mutation requests. Frontend UI exists correctly. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-008",
-      "reason": "Requires backend seeding of tenant HOLD/suspended state which is not available. Tenant suspend action also failed with 403. Blocked by ERP-14."
+      "reason": "Requires backend seeding of tenant HOLD/suspended state which is not available. Tenant suspend action also failed with 403. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-009",
-      "reason": "Requires backend seeding of tenant BLOCKED state which is not available. Blocked by ERP-14."
+      "reason": "Requires backend seeding of tenant BLOCKED state which is not available. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-010",
-      "reason": "Frontend UI for user actions exists but backend returns 403 Forbidden. Blocked by ERP-14."
+      "reason": "Frontend UI for user actions exists but backend returns 403 Forbidden. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-011",
-      "reason": "Suspend action exists but backend returns 403. MFA disable requires MFA-enabled user. Blocked by ERP-14."
+      "reason": "Suspend action exists but backend returns 403. MFA disable requires MFA-enabled user. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-012",
-      "reason": "Onboarding UI exists with 2-step flow including temp password field. Backend returns 403 on submit. Blocked by ERP-14."
+      "reason": "Onboarding UI exists with 2-step flow including temp password field. Backend returns 403 on submit. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-013",
-      "reason": "Configure modules button exists but produces no visible result. Blocked by backend readiness ERP-14."
+      "reason": "Configure modules button exists but produces no visible result. Deferred for backend follow-up tracked in ERP-16."
     },
     {
       "id": "VAL-ADMIN-015",
@@ -73,8 +73,8 @@
     {
       "issue": "Backend 403 Forbidden on mutation endpoints",
       "affectedAssertions": ["VAL-ADMIN-007", "VAL-ADMIN-008", "VAL-ADMIN-009", "VAL-ADMIN-010", "VAL-ADMIN-011", "VAL-ADMIN-012", "VAL-ADMIN-013", "VAL-CROSS-005", "VAL-CROSS-006"],
-      "tracking": "ERP-14",
-      "recommendation": "Backend readiness needs to be restored before these assertions can be validated. Frontend UI is correctly implemented."
+      "tracking": "ERP-16",
+      "recommendation": "Backend permissions/readiness and seeded admin validation data need to be restored before these assertions can be validated. Frontend UI is correctly implemented."
     },
     {
       "issue": "Missing seeded test data for export approvals and credit requests",
@@ -104,5 +104,22 @@
     ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-2-role-runtime-settings.json",
     ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-3-lifecycle-user-actions.json",
     ".factory/validation/admin-superadmin-alignment-and-expansion/user-testing/flows/group-4-changelog-exports-cross-surface.json"
-  ]
+  ],
+  "orchestratorDeferral": {
+    "deferredAssertions": [
+      "VAL-ADMIN-007",
+      "VAL-ADMIN-008",
+      "VAL-ADMIN-009",
+      "VAL-ADMIN-010",
+      "VAL-ADMIN-011",
+      "VAL-ADMIN-012",
+      "VAL-ADMIN-013",
+      "VAL-ADMIN-015",
+      "VAL-CROSS-005",
+      "VAL-CROSS-006"
+    ],
+    "followupFeatureId": "admin-mutation-and-seeded-data-validation-followup",
+    "relatedBackendIssue": "ERP-16",
+    "justification": "These remaining admin assertions depend on backend mutation permissions, endpoint access, and seeded validation data rather than unfinished frontend UI work. They were moved into a follow-up milestone so the mission can continue while backend validation support is prepared."
+  }
 }
