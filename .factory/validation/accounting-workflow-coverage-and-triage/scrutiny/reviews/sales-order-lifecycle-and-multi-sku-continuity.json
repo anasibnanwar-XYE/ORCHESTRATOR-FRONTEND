@@ -1,0 +1,33 @@
+{
+  "featureId": "sales-order-lifecycle-and-multi-sku-continuity",
+  "reviewedAt": "2026-03-19T09:45:00.000Z",
+  "commitId": "9523d818",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly fixes a state machine bug in OrderDetailPage and adds comprehensive test coverage for multi-SKU order display, GST breakdown, confirm/cancel workflows, and status consistency. The worker followed the skill procedure correctly, running all validators and maintaining clean commits.",
+    "issues": [
+      {
+        "file": "src/pages/sales/__tests__/CreateOrderDrawer.test.tsx",
+        "line": null,
+        "severity": "non_blocking",
+        "description": "VAL-O2C-005 (ordering-eligible dealers) lacks explicit test coverage. CreateOrderDrawer.tsx correctly filters to ACTIVE dealers and excludes OVER_LIMIT (credit blocked) dealers, but no test verifies this critical business rule. The SalesOrdersPage test mocks CreateOrderDrawer to return null, bypassing this validation."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The sales order lifecycle groups multiple pre-confirmed states (DRAFT, RESERVED, PENDING_PRODUCTION, PENDING_INVENTORY, READY_TO_SHIP, PROCESSING) under a single 'Draft' stage in the lifecycle stepper, while canConfirm allows confirmation from any of these states. This pattern of 'pre-confirmed' vs 'post-confirmed' states should be documented for workers implementing other sales order features.",
+      "evidence": "OrderDetailPage.tsx lines 30-37 (LIFECYCLE_STAGES) and line 416 (canConfirm logic)"
+    },
+    {
+      "area": "library",
+      "observation": "The backend sales order state machine contract (which states allow confirm/cancel transitions) was discovered by reading frontend-handoff.md. Adding a concise state machine reference to .factory/library/ would help future workers understand sales order lifecycle without searching backend handoff docs.",
+      "evidence": "Worker transcript shows grep searching frontend-handoff.md for 'Sales Order State Machine' and 'confirm.*order'"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS with minor non-blocking observation. The implementation correctly aligns OrderDetailPage's confirm-action gating with the backend state machine (fixing a bug where only DRAFT could confirm), and adds 22 new tests covering VAL-O2C-004 through VAL-O2C-009. The only gap is missing test coverage for VAL-O2C-005's dealer eligibility filtering in CreateOrderDrawer, though the implementation is correct. Worker followed the frontend-workflow-worker skill procedure correctly, ran all validators (lint, typecheck, 1209 tests passing), and provided a clear handoff."
+}

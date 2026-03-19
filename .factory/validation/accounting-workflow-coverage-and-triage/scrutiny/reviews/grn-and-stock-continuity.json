@@ -1,0 +1,28 @@
+{
+  "featureId": "grn-and-stock-continuity",
+  "reviewedAt": "2026-03-19T09:51:30.000Z",
+  "commitId": "1e3c988c41d789b7d09109f207872c5c65551f2c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly addresses GRN idempotency, over-receipt validation, and Factory intake retry-safety. Code follows existing patterns and is well-tested with 7 new test cases across 3 files (26 total tests passing).",
+    "issues": [
+      {
+        "file": "src/lib/factoryApi.ts",
+        "line": 428,
+        "severity": "non_blocking",
+        "description": "Inline idempotency key generation uses a different pattern (`factory-intake-${Date.now()}-${random}`) vs the `generateIdempotencyKey()` helper used in purchasingApi and inventoryApi. While functional, this inconsistency could be confusing for future maintainers. Consider extracting to a shared helper."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The worker referenced backend handoff docs at `/Users/anas/Documents/Factory/bigbrightpaints-erp/.factory/library/frontend-handoff.md` to understand idempotency-key requirements. The pattern of sending `Idempotency-Key` (not `X-Idempotency-Key`) on POST requests for GRN, intake, and other mutation endpoints is now established across purchasingApi, inventoryApi, and factoryApi. This should be documented in `.factory/library/api.md` as a project convention.",
+      "evidence": "Transcript shows worker reading frontend-handoff.md from backend repo; factoryApi.ts line 428, purchasingApi.ts line 522, inventoryApi.ts line 440 all use `Idempotency-Key` header"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. Feature correctly implements: (1) GRN idempotent creation with approved-PO gate, (2) client-side over-receipt validation that keeps the form recoverable, (3) Factory intake retry-safety via Idempotency-Key header. All 26 tests pass across GoodsReceiptNotesPage (8), RawMaterialsInventoryPage (9), and RawMaterialsPage (9). Minor non-blocking inconsistency in idempotency key generation patterns across API wrappers. One shared state observation: idempotency-key convention should be documented in the frontend library."
+}

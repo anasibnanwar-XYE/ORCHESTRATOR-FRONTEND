@@ -192,9 +192,9 @@
      setIsLoading(true);
      setError(null);
      try {
-       // Pass the period as a query param if provided. The backend also accepts
-       // periodId — when a period string is provided, the backend resolves it.
-       const result = await reportsApi.getGstReturn(p ? { periodId: undefined } : {});
+       // Pass the period string directly. The backend resolves the period string
+       // (e.g., "2026-03") to the corresponding accounting period and returns data.
+       const result = await reportsApi.getGstReturn({ period: p });
        setData(result);
      } catch {
        setError('Failed to load GST return. Please try again.');

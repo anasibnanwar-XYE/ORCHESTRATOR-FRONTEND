@@ -352,7 +352,7 @@
    },
 
    /** GET /api/v1/reports/gst-return */
-   async getGstReturn(params?: { periodId?: number }): Promise<GstReturnReportDto> {
+   async getGstReturn(params?: { periodId?: number; period?: string }): Promise<GstReturnReportDto> {
      const query = buildQuery(params ?? {});
      const response = await apiRequest.get<ApiResponse<GstReturnReportDto>>(
        `/reports/gst-return${query}`

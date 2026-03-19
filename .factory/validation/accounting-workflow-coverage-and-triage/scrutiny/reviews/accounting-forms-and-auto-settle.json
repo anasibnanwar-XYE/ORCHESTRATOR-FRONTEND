@@ -1,0 +1,44 @@
+{
+  "featureId": "accounting-forms-and-auto-settle",
+  "reviewedAt": "2026-03-19T09:56:00.000Z",
+  "commitId": "e7ab2437",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly adds auto-settle forms for both dealers and suppliers, wires them to the proper backend endpoints via accountingApi.ts, and expands test coverage to validate all named accounting forms (dealer receipt, hybrid receipt, credit note, debit note, bad debt, accrual) plus the new auto-settle flows. All validation blocking and success reference behavior is properly implemented and tested.",
+    "issues": [
+      {
+        "file": "src/pages/accounting/SettlementsPage.tsx",
+        "line": 1574,
+        "severity": "non_blocking",
+        "description": "The renderTab switch statement does not have a default case. While TypeScript exhaustive checking should catch missing TabId cases at compile time, adding an explicit default case returning null or an 'Unknown tab' message would be defensive against future edge cases."
+      },
+      {
+        "file": "src/pages/accounting/SettlementsPage.tsx",
+        "line": 1225,
+        "severity": "suggestion",
+        "description": "In AccrualForm, the same account can be selected for both debit and credit accounts without validation warning. While this may be intentional for certain accounting scenarios, consider adding a hint or warning when debit and credit accounts match."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The auto-settle forms follow the established pattern used by other forms in SettlementsPage.tsx (useState for form state, validate function, handleSubmit, SuccessResult component, idempotencyKey via uuidv4). The code is consistent with existing patterns in the codebase.",
+      "evidence": "DealerAutoSettleForm and SupplierAutoSettleForm follow identical structure to DealerReceiptForm, CreditNoteForm, etc."
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-workflow-worker skill was followed correctly. The worker identified the backend contract from frontend-handoff.md, implemented the API methods, created the UI components, and added comprehensive tests. skillFeedback.followedProcedure is true with no deviations.",
+      "evidence": "Transcript skeleton shows worker read validation-contract.md, AGENTS.md, services.yaml, identified VAL-ACCT-007 and VAL-ACCT-008 requirements, and implemented accordingly."
+    },
+    {
+      "area": "services",
+      "observation": "No new services were started. The implementation used existing API wiring through accountingApi.ts which is already documented in the codebase architecture.",
+      "evidence": "Worker used bun run test, bun run lint, bun run typecheck - all existing commands in services.yaml"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The implementation fully addresses VAL-ACCT-007 (named receipt flows block invalid input and show success references) and VAL-ACCT-008 (dealer/supplier auto-settle discoverable and shows applied results). Test coverage expanded from 12 to 28 tests, all passing. The code follows established patterns in the SettlementsPage.tsx component, properly wires to backend endpoints, and includes appropriate validation with clear success messaging. Two minor non-blocking suggestions noted (missing default case in switch, same debit/credit account selection). All 1319 tests pass with clean lint and typecheck."
+}
