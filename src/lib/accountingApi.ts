@@ -419,6 +419,98 @@ export interface PurchaseRef {
   status: string;
 }
 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Bank Reconciliation types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export interface BankReconciliationSessionCreateRequest {
+   bankAccountId: number;
+   statementDate: string;
+   closingBalance: number;
+   openingBalance?: number;
+   memo?: string;
+ }
+
+ export interface BankReconciliationSessionSummaryDto {
+   sessionId: number;
+   bankAccountId: number;
+   bankAccountName?: string;
+   statementDate: string;
+   closingBalance: number;
+   openingBalance?: number;
+   status: 'DRAFT' | 'COMPLETED';
+   clearedCount?: number;
+   pendingCount?: number;
+   clearedBalance?: number;
+   difference?: number;
+   memo?: string;
+   createdAt: string;
+   completedAt?: string;
+ }
+
+ export interface BankReconciliationItem {
+   transactionId: number;
+   entryDate: string;
+   description: string;
+   debit: number;
+   credit: number;
+   cleared: boolean;
+   referenceNumber?: string;
+   journalEntryId?: number;
+ }
+
+ export interface BankReconciliationSessionDetailDto extends BankReconciliationSessionSummaryDto {
+   items: BankReconciliationItem[];
+   accountingPeriodId?: number | null;
+   accountingPeriodLabel?: string | null;
+ }
+
+ export interface BankReconciliationSessionItemsUpdateRequest {
+   clearedTransactionIds: number[];
+ }
+
+ export interface BankReconciliationSessionCompletionRequest {
+   accountingPeriodId?: number;
+   memo?: string;
+ }
+
+ export interface BankReconciliationSessionPageResponse {
+   content: BankReconciliationSessionSummaryDto[];
+   totalElements: number;
+   totalPages: number;
+   page: number;
+   size: number;
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Reconciliation discrepancy types
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ export type DiscrepancyResolution = 'ACKNOWLEDGED' | 'ADJUSTMENT_JOURNAL' | 'WRITE_OFF';
+
+ export interface ReconciliationDiscrepancyDto {
+   id: number;
+   type: string;
+   status: string;
+   description: string;
+   amount: number;
+   detectedAt: string;
+   resolution?: DiscrepancyResolution;
+   note?: string;
+   adjustmentAccountId?: number | null;
+   resolvedAt?: string | null;
+ }
+
+ export interface ReconciliationDiscrepancyListResponse {
+   items?: ReconciliationDiscrepancyDto[];
+ }
+
+ export interface ReconciliationDiscrepancyResolveRequest {
+   resolution: DiscrepancyResolution;
+   adjustmentAccountId?: number;
+   note?: string;
+ }
+
  export interface ManualJournalRequest {
    narration?: string;
    entryDate: string;
@@ -848,6 +940,117 @@ export interface PurchaseRef {
  // ─────────────────────────────────────────────────────────────────────────────
  // Extended API methods (operations pages)
  // ─────────────────────────────────────────────────────────────────────────────
+
+ /** Bank Reconciliation Session API methods */
+ export const bankReconciliationApi = {
+   /**
+    * POST /api/v1/accounting/reconciliation/bank/sessions
+    * Create a new bank reconciliation session.
+    */
+   async createSession(
+     data: BankReconciliationSessionCreateRequest
+   ): Promise<BankReconciliationSessionSummaryDto> {
+     const response = await apiRequest.post<ApiResponse<BankReconciliationSessionSummaryDto>>(
+       '/accounting/reconciliation/bank/sessions',
+       data
+     );
+     return response.data.data;
+   },
+
+   /**
+    * GET /api/v1/accounting/reconciliation/bank/sessions?page=0&size=20
+    * List existing sessions (paginated).
+    */
+   async listSessions(
+     params?: { page?: number; size?: number }
+   ): Promise<BankReconciliationSessionPageResponse> {
+     const search = new URLSearchParams();
+     if (params?.page !== undefined) search.set('page', String(params.page));
+     if (params?.size !== undefined) search.set('size', String(params.size));
+     const query = search.toString() ? `?${search.toString()}` : '';
+     const response = await apiRequest.get<ApiResponse<BankReconciliationSessionPageResponse>>(
+       `/accounting/reconciliation/bank/sessions${query}`
+     );
+     return response.data.data;
+   },
+
+   /**
+    * GET /api/v1/accounting/reconciliation/bank/sessions/{sessionId}
+    * Get full session detail including line items.
+    */
+   async getSession(sessionId: number): Promise<BankReconciliationSessionDetailDto> {
+     const response = await apiRequest.get<ApiResponse<BankReconciliationSessionDetailDto>>(
+       `/accounting/reconciliation/bank/sessions/${sessionId}`
+     );
+     return response.data.data;
+   },
+
+   /**
+    * PUT /api/v1/accounting/reconciliation/bank/sessions/{sessionId}/items
+    * Update cleared transaction IDs for the session.
+    */
+   async updateSessionItems(
+     sessionId: number,
+     data: BankReconciliationSessionItemsUpdateRequest
+   ): Promise<BankReconciliationSessionDetailDto> {
+     const response = await apiRequest.put<ApiResponse<BankReconciliationSessionDetailDto>>(
+       `/accounting/reconciliation/bank/sessions/${sessionId}/items`,
+       data
+     );
+     return response.data.data;
+   },
+
+   /**
+    * POST /api/v1/accounting/reconciliation/bank/sessions/{sessionId}/complete
+    * Complete (lock) the session.
+    */
+   async completeSession(
+     sessionId: number,
+     data?: BankReconciliationSessionCompletionRequest
+   ): Promise<BankReconciliationSessionDetailDto> {
+     const response = await apiRequest.post<ApiResponse<BankReconciliationSessionDetailDto>>(
+       `/accounting/reconciliation/bank/sessions/${sessionId}/complete`,
+       data ?? {}
+     );
+     return response.data.data;
+   },
+
+   /**
+    * GET /api/v1/accounting/reconciliation/discrepancies
+    * List open (or all) discrepancies.
+    */
+   async listDiscrepancies(
+     params?: { status?: string; type?: string }
+   ): Promise<ReconciliationDiscrepancyDto[]> {
+     const search = new URLSearchParams(
+       Object.fromEntries(
+         Object.entries(params ?? {})
+           .filter(([, v]) => v !== undefined && v !== '')
+           .map(([k, v]) => [k, String(v)])
+       )
+     );
+     const query = search.toString() ? `?${search.toString()}` : '';
+     const response = await apiRequest.get<ApiResponse<ReconciliationDiscrepancyListResponse>>(
+       `/accounting/reconciliation/discrepancies${query}`
+     );
+     return response.data.data?.items ?? [];
+   },
+
+   /**
+    * POST /api/v1/accounting/reconciliation/discrepancies/{id}/resolve
+    * Resolve a discrepancy by acknowledge, adjustment journal, or write-off.
+    */
+   async resolveDiscrepancy(
+     discrepancyId: number,
+     data: ReconciliationDiscrepancyResolveRequest
+   ): Promise<ReconciliationDiscrepancyDto> {
+     const response = await apiRequest.post<ApiResponse<ReconciliationDiscrepancyDto>>(
+       `/accounting/reconciliation/discrepancies/${discrepancyId}/resolve`,
+       data
+     );
+     return response.data.data;
+   },
+ };
 
  /** Month-End Checklist API methods */
  export const monthEndApi = {

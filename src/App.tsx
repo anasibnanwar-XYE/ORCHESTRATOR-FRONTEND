@@ -286,6 +286,12 @@ const PayrollPage = lazy(() =>
      default: m.MonthEndChecklistPage,
    }))
  );
+ /** Accounting portal — Bank Reconciliation */
+ const BankReconciliationPage = lazy(() =>
+   import('@/pages/accounting/BankReconciliationPage').then((m) => ({
+     default: m.BankReconciliationPage,
+   }))
+ );
  /** Accounting portal — Audit Digest */
  const AuditDigestPage = lazy(() =>
    import('@/pages/accounting/AuditDigestPage').then((m) => ({
@@ -929,6 +935,7 @@ function AppRouter() {
             <Route path="leave" element={<LeaveRequestsPage />} />
             <Route path="payroll" element={<PayrollPage />} />
             <Route path="month-end" element={<MonthEndChecklistPage />} />
+            <Route path="bank-reconciliation" element={<BankReconciliationPage />} />
             <Route path="audit-digest" element={<AuditDigestPage />} />
             <Route path="config-health" element={<ConfigHealthPage />} />
             <Route path="transaction-audit" element={<TransactionAuditPage />} />

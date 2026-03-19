@@ -1,15 +1,18 @@
  /**
   * ReconciliationDashboardPage
   *
-  * Bank reconciliation overview and inventory reconciliation status.
-  * Shows balance warnings and reconciliation states.
+  * AR/AP subledger reconciliation status and open discrepancy resolution.
+  * Discrepancies can be acknowledged, adjusted, or written off.
   *
-  * API: GET /api/v1/reports/reconciliation-dashboard?bankAccountId=...
-  *      GET /api/v1/accounting/reconciliation/subledger
+  * API:
+  *  GET  /api/v1/accounting/reconciliation/subledger
+  *  GET  /api/v1/accounting/reconciliation/discrepancies?status=OPEN
+  *  POST /api/v1/accounting/reconciliation/discrepancies/{id}/resolve
+  *  GET  /api/v1/accounting/accounts
   */
 
  import { useEffect, useState, useCallback } from 'react';
- import { AlertCircle, RefreshCcw, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+ import { AlertCircle, RefreshCcw, CheckCircle2, XCircle, AlertTriangle, X } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
  import { Skeleton } from '@/components/ui/Skeleton';
@@ -17,6 +20,13 @@
  import { ExportButton } from '@/components/ui/ExportButton';
  import { apiRequest } from '@/lib/api';
  import { useToast } from '@/components/ui/Toast';
+ import {
+   bankReconciliationApi,
+   accountingApi,
+   type ReconciliationDiscrepancyDto,
+   type DiscrepancyResolution,
+   type AccountDto,
+ } from '@/lib/accountingApi';
  import type { ApiResponse } from '@/types';
 
  // ─────────────────────────────────────────────────────────────────────────────
@@ -34,14 +44,8 @@
    lastUpdated?: string;
  }
 
- interface DiscrepancyItem {
-   id: number;
-   type: string;
-   status: string;
-   description: string;
-   amount: number;
-   detectedAt: string;
- }
+ // Use ReconciliationDiscrepancyDto from accountingApi instead of inline type
+ type DiscrepancyItem = ReconciliationDiscrepancyDto;
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Status card
@@ -106,6 +110,178 @@
  }
 
  // ─────────────────────────────────────────────────────────────────────────────
+ // Discrepancy resolution modal
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ interface ResolveModalProps {
+   discrepancy: DiscrepancyItem;
+   accounts: AccountDto[];
+   onClose: () => void;
+   onResolved: (updated: DiscrepancyItem) => void;
+ }
+
+ function ResolveModal({ discrepancy, accounts, onClose, onResolved }: ResolveModalProps) {
+   const toast = useToast();
+   const [resolution, setResolution] = useState<DiscrepancyResolution>('ACKNOWLEDGED');
+   const [adjustmentAccountId, setAdjustmentAccountId] = useState<string>('');
+   const [note, setNote] = useState<string>('');
+   const [submitting, setSubmitting] = useState(false);
+
+   const requiresAccount = resolution === 'ADJUSTMENT_JOURNAL' || resolution === 'WRITE_OFF';
+
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (requiresAccount && !adjustmentAccountId) return;
+
+     setSubmitting(true);
+     try {
+       const updated = await bankReconciliationApi.resolveDiscrepancy(discrepancy.id, {
+         resolution,
+         adjustmentAccountId: requiresAccount ? Number(adjustmentAccountId) : undefined,
+         note: note.trim() || undefined,
+       });
+       toast.success('Discrepancy resolved', `Item resolved via ${resolution.replace('_', ' ').toLowerCase()}.`);
+       onResolved(updated);
+     } catch {
+       toast.error('Resolution failed', 'Could not resolve the discrepancy. Please try again.');
+     } finally {
+       setSubmitting(false);
+     }
+   };
+
+   return (
+     /* Modal backdrop */
+     <div
+       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+       role="dialog"
+       aria-modal="true"
+       aria-label="Resolve discrepancy"
+     >
+       <div className="bg-[var(--color-surface-primary)] rounded-xl border border-[var(--color-border-default)] shadow-xl w-full max-w-md">
+         {/* Modal header */}
+         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)]">
+           <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+             Resolve Discrepancy
+           </h2>
+           <button
+             type="button"
+             onClick={onClose}
+             className="p-1.5 rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+             aria-label="Close"
+           >
+             <X size={16} />
+           </button>
+         </div>
+
+         {/* Context */}
+         <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]">
+           <p className="text-[13px] text-[var(--color-text-primary)]">{discrepancy.description}</p>
+           <p className="text-[12px] text-[var(--color-text-tertiary)] mt-0.5">
+             Amount: {formatINR(discrepancy.amount ?? 0)} · Type: {discrepancy.type}
+           </p>
+         </div>
+
+         {/* Form */}
+         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+           {/* Resolution type */}
+           <div>
+             <p className="text-[12px] font-medium text-[var(--color-text-secondary)] mb-2">
+               Resolution method <span className="text-[var(--color-error)]">*</span>
+             </p>
+             <div className="space-y-2">
+               {(
+                 [
+                   { value: 'ACKNOWLEDGED', label: 'Acknowledge', desc: 'Mark this discrepancy as known and accepted.' },
+                   { value: 'ADJUSTMENT_JOURNAL', label: 'Adjustment Journal', desc: 'Post an adjustment journal entry to correct the difference.' },
+                   { value: 'WRITE_OFF', label: 'Write Off', desc: 'Write off the amount to an expense or write-off account.' },
+                 ] as { value: DiscrepancyResolution; label: string; desc: string }[]
+               ).map(({ value, label, desc }) => (
+                 <label
+                   key={value}
+                   className={clsx(
+                     'flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors',
+                     resolution === value
+                       ? 'border-[var(--color-primary-600)] bg-[var(--color-primary-50)]'
+                       : 'border-[var(--color-border-default)] hover:border-[var(--color-border-emphasis)]',
+                   )}
+                 >
+                   <input
+                     type="radio"
+                     name="resolution"
+                     value={value}
+                     checked={resolution === value}
+                     onChange={() => setResolution(value)}
+                     className="mt-0.5 accent-[var(--color-primary-600)]"
+                   />
+                   <div>
+                     <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{label}</p>
+                     <p className="text-[11px] text-[var(--color-text-tertiary)]">{desc}</p>
+                   </div>
+                 </label>
+               ))}
+             </div>
+           </div>
+
+           {/* Account (required for adjustment and write-off) */}
+           {requiresAccount && (
+             <div>
+               <label
+                 htmlFor="adjustmentAccountId"
+                 className="block text-[12px] font-medium text-[var(--color-text-secondary)] mb-1"
+               >
+                 {resolution === 'WRITE_OFF' ? 'Write-off Account' : 'Adjustment Account'}
+                 {' '}<span className="text-[var(--color-error)]">*</span>
+               </label>
+               <select
+                 id="adjustmentAccountId"
+                 value={adjustmentAccountId}
+                 onChange={(e) => setAdjustmentAccountId(e.target.value)}
+                 required
+                 className="w-full h-9 px-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[13px] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-600)]"
+               >
+                 <option value="">Select account</option>
+                 {accounts.map((a) => (
+                   <option key={a.id} value={a.id}>
+                     {a.code} — {a.name}
+                   </option>
+                 ))}
+               </select>
+             </div>
+           )}
+
+           {/* Note */}
+           <div>
+             <label
+               htmlFor="note"
+               className="block text-[12px] font-medium text-[var(--color-text-secondary)] mb-1"
+             >
+               Note
+             </label>
+             <textarea
+               id="note"
+               value={note}
+               onChange={(e) => setNote(e.target.value)}
+               placeholder="Optional explanation"
+               rows={2}
+               className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] text-[13px] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-600)] resize-none"
+             />
+           </div>
+
+           <div className="flex items-center gap-2">
+             <Button type="submit" variant="primary" size="sm" disabled={submitting}>
+               {submitting ? 'Resolving...' : 'Resolve'}
+             </Button>
+             <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+               Cancel
+             </Button>
+           </div>
+         </form>
+       </div>
+     </div>
+   );
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
  // Page
  // ─────────────────────────────────────────────────────────────────────────────
 
@@ -115,6 +291,8 @@
    const [discrepancies, setDiscrepancies] = useState<DiscrepancyItem[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
+   const [accounts, setAccounts] = useState<AccountDto[]>([]);
+   const [resolvingItem, setResolvingItem] = useState<DiscrepancyItem | null>(null);
 
    const load = useCallback(async () => {
      setIsLoading(true);
@@ -122,14 +300,14 @@
      try {
        const [subledgerRes, discRes] = await Promise.allSettled([
          apiRequest.get<ApiResponse<SubledgerReconciliationReport>>('/accounting/reconciliation/subledger'),
-         apiRequest.get<ApiResponse<{ items?: DiscrepancyItem[] }>>('/accounting/reconciliation/discrepancies?status=OPEN'),
+         bankReconciliationApi.listDiscrepancies({ status: 'OPEN' }),
        ]);
 
        if (subledgerRes.status === 'fulfilled') {
          setSubledger(subledgerRes.value.data?.data ?? null);
        }
        if (discRes.status === 'fulfilled') {
-         setDiscrepancies(discRes.value.data?.data?.items ?? []);
+         setDiscrepancies(discRes.value ?? []);
        }
      } catch {
        setError('Failed to load reconciliation data. Please try again.');
@@ -138,12 +316,29 @@
      }
    }, []);
 
+   // Load accounts for discrepancy resolution dropdown
+   const loadAccounts = useCallback(async () => {
+     try {
+       const result = await accountingApi.getAccounts();
+       setAccounts(result ?? []);
+     } catch {
+       // non-critical
+     }
+   }, []);
+
    useEffect(() => {
      load();
-   }, [load]);
+     loadAccounts();
+   }, [load, loadAccounts]);
 
    const handleExport = async () => {
      toast.info('Export initiated', 'Reconciliation dashboard export has been requested.');
+   };
+
+   const handleResolved = (updated: DiscrepancyItem) => {
+     // Remove the resolved item from the open list
+     setDiscrepancies((prev) => prev.filter((d) => d.id !== updated.id));
+     setResolvingItem(null);
    };
 
    const arBalanced = subledger ? Math.abs(subledger.arVariance ?? 0) < 0.01 : true;
@@ -228,15 +423,45 @@
                <div key={d.id} className="px-5 py-3 flex items-center justify-between gap-3">
                  <div>
                    <p className="text-[13px] text-[var(--color-text-primary)]">{d.description}</p>
-                   <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5 uppercase tracking-wider">{d.type}</p>
+                   <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5 uppercase tracking-wider">
+                     {d.type}
+                   </p>
                  </div>
-                 <span className="tabular-nums font-medium text-[var(--color-text-primary)] shrink-0">
-                   {formatINR(d.amount ?? 0)}
-                 </span>
+                 <div className="flex items-center gap-3 shrink-0">
+                   <span className="tabular-nums font-medium text-[var(--color-text-primary)]">
+                     {formatINR(d.amount ?? 0)}
+                   </span>
+                   <Button
+                     variant="secondary"
+                     size="sm"
+                     onClick={() => setResolvingItem(d)}
+                   >
+                     Resolve
+                   </Button>
+                 </div>
                </div>
              ))}
            </div>
          </div>
+       )}
+
+       {!isLoading && discrepancies.length === 0 && subledger && (
+         <div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-primary)]">
+           <CheckCircle2 size={15} className="text-[var(--color-success-icon)] shrink-0" />
+           <p className="text-[13px] text-[var(--color-text-secondary)]">
+             No open discrepancies. Reconciliation is up to date.
+           </p>
+         </div>
+       )}
+
+       {/* Resolution modal */}
+       {resolvingItem && (
+         <ResolveModal
+           discrepancy={resolvingItem}
+           accounts={accounts}
+           onClose={() => setResolvingItem(null)}
+           onResolved={handleResolved}
+         />
        )}
      </div>
    );

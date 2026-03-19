@@ -1,9 +1,10 @@
  /**
   * Report pages tests
-  * Covers: TrialBalance, ProfitLoss, BalanceSheet, CashFlow, AgedDebtors, GST, InventoryValuation, ReconciliationDashboard
+  * Covers: TrialBalance, ProfitLoss, BalanceSheet, CashFlow, AgedDebtors, GST, InventoryValuation,
+  *         ReconciliationDashboard (with discrepancy resolution), BankReconciliationPage
   */
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  import { TrialBalancePage } from '../TrialBalancePage';
  import { ProfitLossPage } from '../ProfitLossPage';
@@ -13,7 +14,9 @@
  import { GSTReturnPage } from '../GSTReturnPage';
  import { InventoryValuationPage } from '../InventoryValuationPage';
  import { ReconciliationDashboardPage } from '../ReconciliationDashboardPage';
+ import { BankReconciliationPage } from '@/pages/accounting/BankReconciliationPage';
  import { reportsApi } from '@/lib/reportsApi';
+ import { bankReconciliationApi, accountingApi } from '@/lib/accountingApi';
  import { ToastProvider } from '@/components/ui/Toast';
 
  vi.mock('@/lib/reportsApi', () => ({
@@ -38,6 +41,22 @@
  vi.mock('@/lib/api', () => ({
    apiRequest: {
      get: vi.fn().mockResolvedValue({ data: { data: null } }),
+     post: vi.fn().mockResolvedValue({ data: { data: {} } }),
+   },
+ }));
+
+ vi.mock('@/lib/accountingApi', () => ({
+   bankReconciliationApi: {
+     listSessions: vi.fn(),
+     getSession: vi.fn(),
+     createSession: vi.fn(),
+     updateSessionItems: vi.fn(),
+     completeSession: vi.fn(),
+     listDiscrepancies: vi.fn(),
+     resolveDiscrepancy: vi.fn(),
+   },
+   accountingApi: {
+     getAccounts: vi.fn().mockResolvedValue([]),
    },
  }));
 
@@ -361,6 +380,8 @@
  describe('ReconciliationDashboardPage', () => {
    beforeEach(() => {
      vi.clearAllMocks();
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([]);
+     vi.mocked(accountingApi.getAccounts).mockResolvedValue([]);
    });
 
    it('renders Reconciliation Dashboard heading', async () => {
@@ -374,6 +395,307 @@
      wrap(<ReconciliationDashboardPage />);
      await waitFor(() => {
        expect(screen.getByRole('button', { name: /export/i })).toBeInTheDocument();
+     });
+   });
+
+   it('shows open discrepancies with Resolve button', async () => {
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([
+       {
+         id: 1,
+         type: 'AR',
+         status: 'OPEN',
+         description: 'Missing receipt for invoice INV-001',
+         amount: 5000,
+         detectedAt: '2026-03-01T10:00:00Z',
+       },
+     ]);
+     wrap(<ReconciliationDashboardPage />);
+     await waitFor(() => {
+       expect(screen.getByText('Open Discrepancies (1)')).toBeInTheDocument();
+       expect(screen.getByText('Missing receipt for invoice INV-001')).toBeInTheDocument();
+       expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+     });
+   });
+
+   it('opens resolve modal when Resolve button is clicked', async () => {
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([
+       {
+         id: 2,
+         type: 'AP',
+         status: 'OPEN',
+         description: 'AP subledger mismatch',
+         amount: 1500,
+         detectedAt: '2026-03-02T09:00:00Z',
+       },
+     ]);
+     wrap(<ReconciliationDashboardPage />);
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+     });
+     fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
+     await waitFor(() => {
+       expect(screen.getByRole('dialog', { name: /resolve discrepancy/i })).toBeInTheDocument();
+       expect(screen.getByText('Acknowledge')).toBeInTheDocument();
+       expect(screen.getByText('Adjustment Journal')).toBeInTheDocument();
+       expect(screen.getByText('Write Off')).toBeInTheDocument();
+     });
+   });
+
+   it('resolve modal hides account selector for Acknowledge resolution', async () => {
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([
+       {
+         id: 3,
+         type: 'AR',
+         status: 'OPEN',
+         description: 'Test discrepancy',
+         amount: 100,
+         detectedAt: '2026-03-03T08:00:00Z',
+       },
+     ]);
+     wrap(<ReconciliationDashboardPage />);
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+     });
+     fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
+     await waitFor(() => {
+       expect(screen.getByRole('dialog')).toBeInTheDocument();
+     });
+     // Acknowledge is selected by default — no account selector (select element) should appear
+     expect(screen.queryByRole('combobox', { name: /adjustment account|write-off account/i })).not.toBeInTheDocument();
+   });
+
+   it('resolve modal shows account selector when Adjustment Journal is selected', async () => {
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([
+       {
+         id: 4,
+         type: 'AR',
+         status: 'OPEN',
+         description: 'Test discrepancy',
+         amount: 200,
+         detectedAt: '2026-03-04T08:00:00Z',
+       },
+     ]);
+     vi.mocked(accountingApi.getAccounts).mockResolvedValue([
+       { id: 10, publicId: 'acc-10', code: '5001', name: 'Adjustment Expense', type: 'EXPENSE', balance: 0 },
+     ]);
+     wrap(<ReconciliationDashboardPage />);
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /resolve/i })).toBeInTheDocument();
+     });
+     fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
+     await waitFor(() => {
+       expect(screen.getByRole('dialog')).toBeInTheDocument();
+     });
+     // Select "Adjustment Journal"
+     const adjRadio = screen.getByDisplayValue('ADJUSTMENT_JOURNAL');
+     fireEvent.click(adjRadio);
+     await waitFor(() => {
+       expect(screen.getByLabelText(/adjustment account/i)).toBeInTheDocument();
+     });
+   });
+
+   it('shows no open discrepancies message when list is empty', async () => {
+     vi.mocked(bankReconciliationApi.listDiscrepancies).mockResolvedValue([]);
+     // Provide subledger data to get past the loading state
+     // apiRequest.get returns null data — so "no reconciliation data" shows, but we check discrepancy state
+     wrap(<ReconciliationDashboardPage />);
+     await waitFor(() => {
+       // The page loads — no discrepancy list header means no open items
+       expect(screen.queryByText(/open discrepancies/i)).not.toBeInTheDocument();
+     });
+   });
+ });
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // BankReconciliationPage
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ const mockSessionSummary = {
+   sessionId: 1,
+   bankAccountId: 5,
+   bankAccountName: 'Main Bank Account',
+   statementDate: '2026-03-31',
+   closingBalance: 250000,
+   status: 'DRAFT' as const,
+   createdAt: '2026-03-19T08:00:00Z',
+ };
+
+ const mockCompletedSession = {
+   sessionId: 2,
+   bankAccountId: 5,
+   bankAccountName: 'Main Bank Account',
+   statementDate: '2026-02-28',
+   closingBalance: 180000,
+   status: 'COMPLETED' as const,
+   createdAt: '2026-02-28T08:00:00Z',
+   completedAt: '2026-03-01T10:00:00Z',
+ };
+
+ const mockSessionDetail = {
+   ...mockSessionSummary,
+   items: [
+     {
+       transactionId: 101,
+       entryDate: '2026-03-15',
+       description: 'Customer payment',
+       debit: 0,
+       credit: 50000,
+       cleared: false,
+       referenceNumber: 'REF-001',
+     },
+     {
+       transactionId: 102,
+       entryDate: '2026-03-20',
+       description: 'Supplier payment',
+       debit: 30000,
+       credit: 0,
+       cleared: true,
+       referenceNumber: 'REF-002',
+     },
+   ],
+ };
+
+ describe('BankReconciliationPage', () => {
+   beforeEach(() => {
+     vi.clearAllMocks();
+     vi.mocked(accountingApi.getAccounts).mockResolvedValue([
+       { id: 5, publicId: 'acc-5', code: '1010', name: 'Main Bank Account', type: 'ASSET', balance: 0 },
+     ]);
+   });
+
+   it('renders Bank Reconciliation heading', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [],
+       totalElements: 0,
+       totalPages: 0,
+       page: 0,
+       size: 50,
+     });
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getByText('Bank Reconciliation')).toBeInTheDocument();
+     });
+   });
+
+   it('shows New Session button', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [],
+       totalElements: 0,
+       totalPages: 0,
+       page: 0,
+       size: 50,
+     });
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getByRole('button', { name: /new session/i })).toBeInTheDocument();
+     });
+   });
+
+   it('shows empty state when no sessions exist', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [],
+       totalElements: 0,
+       totalPages: 0,
+       page: 0,
+       size: 50,
+     });
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getByText(/no reconciliation sessions yet/i)).toBeInTheDocument();
+     });
+   });
+
+   it('shows session list with status badges', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [mockSessionSummary, mockCompletedSession],
+       totalElements: 2,
+       totalPages: 1,
+       page: 0,
+       size: 50,
+     });
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getAllByText('Main Bank Account').length).toBeGreaterThan(0);
+       expect(screen.getByText('Draft')).toBeInTheDocument();
+       expect(screen.getByText('Completed')).toBeInTheDocument();
+     });
+   });
+
+   it('shows create session form when New Session is clicked', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [],
+       totalElements: 0,
+       totalPages: 0,
+       page: 0,
+       size: 50,
+     });
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       // Multiple "New Session" buttons may appear (header + empty state)
+       expect(screen.getAllByRole('button', { name: /new session/i }).length).toBeGreaterThan(0);
+     });
+     // Click the first "New Session" button
+     fireEvent.click(screen.getAllByRole('button', { name: /new session/i })[0]);
+     await waitFor(() => {
+       expect(screen.getByText('New Reconciliation Session')).toBeInTheDocument();
+       expect(screen.getByLabelText(/bank account/i)).toBeInTheDocument();
+       expect(screen.getByLabelText(/statement date/i)).toBeInTheDocument();
+       expect(screen.getByLabelText(/statement closing balance/i)).toBeInTheDocument();
+     });
+   });
+
+   it('shows session detail with line items when session is selected', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [mockSessionSummary],
+       totalElements: 1,
+       totalPages: 1,
+       page: 0,
+       size: 50,
+     });
+     vi.mocked(bankReconciliationApi.getSession).mockResolvedValue(mockSessionDetail);
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getAllByText('Main Bank Account').length).toBeGreaterThan(0);
+     });
+     // Click on the session row
+     const sessionRow = screen.getAllByText('Main Bank Account')[0].closest('button');
+     if (sessionRow) fireEvent.click(sessionRow);
+     await waitFor(() => {
+       expect(screen.getByText('Customer payment')).toBeInTheDocument();
+       expect(screen.getByText('Supplier payment')).toBeInTheDocument();
+     });
+   });
+
+   it('shows completed session as read-only', async () => {
+     const completedDetail = {
+       ...mockSessionDetail,
+       ...mockCompletedSession,
+       items: mockSessionDetail.items,
+     };
+     vi.mocked(bankReconciliationApi.listSessions).mockResolvedValue({
+       content: [mockCompletedSession],
+       totalElements: 1,
+       totalPages: 1,
+       page: 0,
+       size: 50,
+     });
+     vi.mocked(bankReconciliationApi.getSession).mockResolvedValue(completedDetail);
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getAllByText('Main Bank Account').length).toBeGreaterThan(0);
+     });
+     const sessionRow = screen.getAllByText('Main Bank Account')[0].closest('button');
+     if (sessionRow) fireEvent.click(sessionRow);
+     await waitFor(() => {
+       expect(screen.getByText(/this reconciliation session is complete/i)).toBeInTheDocument();
+     });
+   });
+
+   it('shows error state on API failure', async () => {
+     vi.mocked(bankReconciliationApi.listSessions).mockRejectedValue(new Error('API error'));
+     wrap(<BankReconciliationPage />);
+     await waitFor(() => {
+       expect(screen.getByText(/could not load reconciliation sessions/i)).toBeInTheDocument();
      });
    });
  });

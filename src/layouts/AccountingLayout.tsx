@@ -61,6 +61,7 @@ import {
 import {
   ListChecks,
   FileBarChart2,
+  Landmark,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
@@ -168,6 +169,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: 'Reconciliation',
+    items: [
+      { label: 'Bank Reconciliation', to: '/accounting/bank-reconciliation', icon: Landmark },
+    ],
+  },
+  {
     title: 'Settings',
     items: [
       { label: 'Config Health', to: '/accounting/config-health', icon: ShieldCheck },
@@ -221,6 +228,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/reports/audit': 'Audit',
   '/accounting/config-health': 'Config Health',
   '/accounting/month-end': 'Month-End',
+  '/accounting/bank-reconciliation': 'Bank Reconciliation',
   '/accounting/audit-digest': 'Audit Digest',
   '/accounting/transaction-audit': 'Transaction Audit',
   new: 'New',
