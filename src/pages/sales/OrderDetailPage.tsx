@@ -410,11 +410,10 @@
    }
  
    const isCancelled = order.status.toUpperCase() === 'CANCELLED';
-  // Action gating: only show actions valid for the current lifecycle stage
-  // Draft: Edit, Delete, Confirm
-  // Confirmed: Cancel (if not dispatched)
-  // Ready to Ship / Dispatched / Invoiced / Settled / Closed: no edit/delete/confirm
-  const canConfirm = order.status.toUpperCase() === 'DRAFT';
+  // Action gating based on backend state machine:
+  // Confirm: DRAFT, RESERVED, PENDING_PRODUCTION, PENDING_INVENTORY, READY_TO_SHIP, PROCESSING -> CONFIRMED
+  // Cancel:  DRAFT, CONFIRMED -> CANCELLED
+  const canConfirm = ['DRAFT', 'RESERVED', 'PENDING_PRODUCTION', 'PENDING_INVENTORY', 'READY_TO_SHIP', 'PROCESSING'].includes(order.status.toUpperCase());
   const canCancel = ['DRAFT', 'CONFIRMED'].includes(order.status.toUpperCase());
  
    // GST breakdown
