@@ -9,17 +9,20 @@
  *   - Shows empty state when no pending dispatches
  *   - Confirm Dispatch button is present
  *   - Reconcile markers button is present
+ *   - Dispatch result shows finalInvoiceId and GST breakdown (VAL-O2C-010)
+ *   - Partial or zero-shipment outcomes are shown clearly (VAL-O2C-010)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('lucide-react', () => {
   const M = () => null;
   return {
     Plus: M, AlertCircle: M, RefreshCcw: M, Check: M, X: M,
-    Truck: M, CheckCircle: M, ChevronDown: M, Eye: M,
+    Truck: M, CheckCircle: M, ChevronDown: M, Eye: M, PackageX: M,
   };
 });
 
@@ -170,6 +173,110 @@ describe('DispatchPage', () => {
     await waitFor(() => {
       const btns = screen.queryAllByText(/reconcile/i);
       expect(btns.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── VAL-O2C-010: dispatch outcomes and GST breakdown ─────────────────────
+
+  it('shows finalInvoiceId reference after successful dispatch confirm', async () => {
+    const user = userEvent.setup();
+    (salesApi.searchOrders as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfirmedOrders);
+    (salesApi.confirmDispatch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      salesOrderId: 101,
+      packingSlipId: 201,
+      dispatched: true,
+      finalInvoiceId: 301,
+      gstBreakdown: null,
+    });
+    renderPage();
+    // Wait for orders to load
+    await waitFor(() => {
+      expect(screen.getAllByText('ORD-2026-0101').length).toBeGreaterThan(0);
+    });
+    // Open dispatch modal by clicking the first button role
+    const confirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(confirmBtns[0]);
+    // Wait for modal form to open - Cancel button becomes visible
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /^cancel$/i }).length).toBeGreaterThan(0);
+    });
+    // Click Confirm Dispatch button inside the modal form (last one)
+    const allConfirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(allConfirmBtns[allConfirmBtns.length - 1]);
+    // Wait for API to be called
+    await waitFor(() => {
+      expect(salesApi.confirmDispatch).toHaveBeenCalled();
+    });
+    // Verify the invoice reference appears in the result
+    await waitFor(() => {
+      const refs = screen.queryAllByText(/invoice.*#?301|#?301.*generated/i);
+      expect(refs.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows GST breakdown in dispatch result when gstBreakdown is present', async () => {
+    const user = userEvent.setup();
+    (salesApi.searchOrders as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfirmedOrders);
+    (salesApi.confirmDispatch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      salesOrderId: 101,
+      packingSlipId: 201,
+      dispatched: true,
+      finalInvoiceId: 301,
+      gstBreakdown: {
+        taxableAmount: 100000,
+        cgst: 9000,
+        sgst: 9000,
+        igst: 0,
+        totalTax: 18000,
+      },
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getAllByText('ORD-2026-0101').length).toBeGreaterThan(0);
+    });
+    const confirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(confirmBtns[0]);
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /^cancel$/i }).length).toBeGreaterThan(0);
+    });
+    const allConfirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(allConfirmBtns[allConfirmBtns.length - 1]);
+    await waitFor(() => {
+      expect(salesApi.confirmDispatch).toHaveBeenCalled();
+    });
+    // GST breakdown section should be visible in the result
+    await waitFor(() => {
+      expect(screen.queryAllByText(/gst breakdown/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows partial or zero-shipment outcome when dispatched is false', async () => {
+    const user = userEvent.setup();
+    (salesApi.searchOrders as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfirmedOrders);
+    (salesApi.confirmDispatch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      salesOrderId: 101,
+      packingSlipId: 201,
+      dispatched: false,
+      finalInvoiceId: null,
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getAllByText('ORD-2026-0101').length).toBeGreaterThan(0);
+    });
+    const confirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(confirmBtns[0]);
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /^cancel$/i }).length).toBeGreaterThan(0);
+    });
+    const allConfirmBtns = screen.getAllByRole('button', { name: /confirm dispatch/i });
+    await user.click(allConfirmBtns[allConfirmBtns.length - 1]);
+    await waitFor(() => {
+      expect(salesApi.confirmDispatch).toHaveBeenCalled();
+    });
+    // Partial/zero-shipment outcome message should appear
+    await waitFor(() => {
+      const partials = screen.queryAllByText(/partial or zero shipment/i);
+      expect(partials.length).toBeGreaterThan(0);
     });
   });
 });

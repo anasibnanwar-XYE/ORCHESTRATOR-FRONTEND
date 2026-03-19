@@ -1,5 +1,8 @@
  /**
   * InvoiceDetailPage tests
+  *
+  * Covers VAL-O2C-011: consistent invoice totals, outstanding balance, and GST
+  * component visibility across the Accounting invoice detail surface.
   */
  import { describe, it, expect, vi, beforeEach } from 'vitest';
  import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -149,6 +152,81 @@
      renderPage();
      await waitFor(() => {
        expect(screen.getByText(/Failed to load invoice/i)).toBeInTheDocument();
+     });
+   });
+
+   // ── VAL-O2C-011: invoice consistency across Sales and Accounting surfaces ──
+
+   it('shows outstanding amount when non-zero', async () => {
+     renderPage();
+     await waitFor(() => {
+       // The mockInvoice has outstandingAmount: 11800 > 0
+       // It should render as "outstanding" somewhere on the page
+       const outstandingEls = screen.queryAllByText(/outstanding/i);
+       expect(outstandingEls.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('shows totals: subtotal, tax, and grand total', async () => {
+     renderPage();
+     await waitFor(() => {
+       const subtotalEls = screen.queryAllByText(/subtotal/i);
+       expect(subtotalEls.length).toBeGreaterThan(0);
+       const taxEls = screen.queryAllByText(/^tax$/i);
+       expect(taxEls.length).toBeGreaterThan(0);
+       const totalEls = screen.queryAllByText(/^total$/i);
+       expect(totalEls.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('shows salesOrderId linkage when salesOrderId is present', async () => {
+     vi.mocked(invoicesApi.getInvoice).mockResolvedValue({
+       ...mockInvoice,
+       salesOrderId: 55,
+     });
+     renderPage();
+     await waitFor(() => {
+       const orderLink = screen.queryByTestId('sales-order-link');
+       expect(orderLink).toBeTruthy();
+       expect(orderLink?.textContent).toContain('55');
+     });
+   });
+
+   it('does not show salesOrderId section when salesOrderId is null', async () => {
+     vi.mocked(invoicesApi.getInvoice).mockResolvedValue({
+       ...mockInvoice,
+       salesOrderId: null,
+     });
+     renderPage();
+     await waitFor(() => {
+       const orderLink = screen.queryByTestId('sales-order-link');
+       expect(orderLink).toBeNull();
+     });
+   });
+
+   it('shows GST tax rate on line items', async () => {
+     renderPage();
+     await waitFor(() => {
+       // mockInvoice has taxRate: 18 on its line
+       const taxRateEls = screen.queryAllByText(/18%/);
+       expect(taxRateEls.length).toBeGreaterThan(0);
+     });
+   });
+
+   it('shows GST component breakdown (CGST/SGST) when amounts are non-zero', async () => {
+     vi.mocked(invoicesApi.getInvoice).mockResolvedValue({
+       ...mockInvoice,
+       lines: [{
+         ...mockInvoice.lines[0],
+         cgstAmount: 900,
+         sgstAmount: 900,
+         igstAmount: 0,
+       }],
+     });
+     renderPage();
+     await waitFor(() => {
+       const gstComponents = screen.queryAllByTestId('gst-components');
+       expect(gstComponents.length).toBeGreaterThan(0);
      });
    });
  });

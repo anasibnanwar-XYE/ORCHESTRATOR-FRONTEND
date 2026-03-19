@@ -353,9 +353,10 @@
   // Sales Returns
   // ─────────────────────────────────────────────────────────────────────────
 
-  /** Process a sales return (POST /api/v1/accounting/sales/returns) */
-  async processSalesReturn(request: SalesReturnRequest): Promise<void> {
-    await apiRequest.post('/accounting/sales/returns', request);
+  /** Process a sales return (POST /api/v1/accounting/sales/returns) — returns the created journal entry */
+  async processSalesReturn(request: SalesReturnRequest): Promise<{ id?: number; referenceNumber?: string; entryDate?: string }> {
+    const response = await apiRequest.post<ApiResponse<{ id?: number; referenceNumber?: string; entryDate?: string }>>('/accounting/sales/returns', request);
+    return response.data?.data ?? {};
   },
 
    // ─────────────────────────────────────────────────────────────────────────

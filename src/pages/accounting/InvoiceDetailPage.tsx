@@ -316,6 +316,14 @@ import { downloadBlob } from '@/utils/mobileUtils';
                {invoice.journalEntryId ? `#${invoice.journalEntryId}` : '—'}
              </p>
            </div>
+           {invoice.salesOrderId && (
+             <div>
+               <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Sales Order</p>
+               <p className="mt-0.5 text-[13px] tabular-nums text-[var(--color-text-primary)]" data-testid="sales-order-link">
+                 #{invoice.salesOrderId}
+               </p>
+             </div>
+           )}
          </div>
        </div>
 
@@ -359,7 +367,14 @@ import { downloadBlob } from '@/utils/mobileUtils';
                        {formatINR(line.unitPrice ?? 0)}
                      </td>
                      <td className="px-4 py-2.5 text-right tabular-nums text-[var(--color-text-secondary)]">
-                       {(line.taxRate ?? 0)}%
+                       <span>{(line.taxRate ?? 0)}%</span>
+                       {((line.cgstAmount ?? 0) > 0 || (line.sgstAmount ?? 0) > 0) && (
+                         <span className="block text-[10px] text-[var(--color-text-tertiary)]" data-testid="gst-components">
+                           {(line.cgstAmount ?? 0) > 0 && `C:${formatINR(line.cgstAmount!)}`}
+                           {(line.sgstAmount ?? 0) > 0 && ` S:${formatINR(line.sgstAmount!)}`}
+                           {(line.igstAmount ?? 0) > 0 && ` I:${formatINR(line.igstAmount!)}`}
+                         </span>
+                       )}
                      </td>
                      <td className="px-4 py-2.5 text-right tabular-nums font-medium text-[var(--color-text-primary)]">
                        {formatINR(line.lineTotal ?? 0)}

@@ -13,7 +13,7 @@ import {
   RefreshCcw,
   Truck,
   CheckCircle,
-
+  PackageX,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
@@ -258,22 +258,92 @@ export function DispatchPage() {
       >
         {dispatchResult ? (
           <div className="space-y-4 p-1">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-success-bg)]">
-              <CheckCircle size={18} className="text-[var(--color-success)] shrink-0" />
-              <div>
-                <p className="text-[13px] font-medium text-[var(--color-success)]">Dispatch successful</p>
-                {dispatchResult.packingSlipId && (
-                  <p className="text-[12px] text-[var(--color-success)] mt-0.5">
-                    Dispatch slip reference: #{dispatchResult.packingSlipId}
+            {/* Outcome: success or partial/zero-shipment */}
+            {dispatchResult.dispatched === false ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-warning-bg)]">
+                <PackageX size={18} className="text-[var(--color-warning)] shrink-0" />
+                <div>
+                  <p className="text-[13px] font-medium text-[var(--color-warning)]">Partial or zero shipment</p>
+                  <p className="text-[12px] text-[var(--color-warning)] mt-0.5">
+                    Some or all items could not be shipped. Check stock availability.
                   </p>
-                )}
-                {dispatchResult.finalInvoiceId && (
-                  <p className="text-[12px] text-[var(--color-success)] mt-0.5">
-                    Invoice #{dispatchResult.finalInvoiceId} generated
-                  </p>
-                )}
+                  {dispatchResult.packingSlipId && (
+                    <p className="text-[12px] text-[var(--color-warning)] mt-0.5">
+                      Slip reference: #{dispatchResult.packingSlipId}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-success-bg)]">
+                <CheckCircle size={18} className="text-[var(--color-success)] shrink-0" />
+                <div>
+                  <p className="text-[13px] font-medium text-[var(--color-success)]">Dispatch successful</p>
+                  {dispatchResult.packingSlipId && (
+                    <p className="text-[12px] text-[var(--color-success)] mt-0.5">
+                      Dispatch slip reference: #{dispatchResult.packingSlipId}
+                    </p>
+                  )}
+                  {dispatchResult.finalInvoiceId && (
+                    <p className="text-[12px] text-[var(--color-success)] mt-0.5">
+                      Invoice #{dispatchResult.finalInvoiceId} generated
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* GST Breakdown */}
+            {dispatchResult.gstBreakdown && (
+              <div className="rounded-xl border border-[var(--color-border-default)] overflow-hidden">
+                <div className="px-3 py-2 bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-subtle)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">GST Breakdown</p>
+                </div>
+                <div className="divide-y divide-[var(--color-border-subtle)] text-[12px]">
+                  {dispatchResult.gstBreakdown.taxableAmount != null && (
+                    <div className="flex justify-between px-3 py-2">
+                      <span className="text-[var(--color-text-secondary)]">Taxable Amount</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        ₹{dispatchResult.gstBreakdown.taxableAmount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {dispatchResult.gstBreakdown.cgst != null && (
+                    <div className="flex justify-between px-3 py-2">
+                      <span className="text-[var(--color-text-secondary)]">CGST</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        ₹{dispatchResult.gstBreakdown.cgst.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {dispatchResult.gstBreakdown.sgst != null && (
+                    <div className="flex justify-between px-3 py-2">
+                      <span className="text-[var(--color-text-secondary)]">SGST</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        ₹{dispatchResult.gstBreakdown.sgst.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {dispatchResult.gstBreakdown.igst != null && dispatchResult.gstBreakdown.igst > 0 && (
+                    <div className="flex justify-between px-3 py-2">
+                      <span className="text-[var(--color-text-secondary)]">IGST</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        ₹{dispatchResult.gstBreakdown.igst.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {dispatchResult.gstBreakdown.totalTax != null && (
+                    <div className="flex justify-between px-3 py-2 font-medium">
+                      <span className="text-[var(--color-text-primary)]">Total Tax</span>
+                      <span className="tabular-nums text-[var(--color-text-primary)]">
+                        ₹{dispatchResult.gstBreakdown.totalTax.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={() => { setDispatchTarget(null); setDispatchResult(null); }}

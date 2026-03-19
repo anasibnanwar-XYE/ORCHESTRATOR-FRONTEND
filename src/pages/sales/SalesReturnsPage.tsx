@@ -101,6 +101,7 @@ export function SalesReturnsPage() {
   const [reasonError, setReasonError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [returnSuccess, setReturnSuccess] = useState(false);
+  const [returnResult, setReturnResult] = useState<{ id?: number; referenceNumber?: string } | null>(null);
 
   // Detail loading for return form
   const [detailLoading, setDetailLoading] = useState(false);
@@ -198,7 +199,8 @@ export function SalesReturnsPage() {
         reason: returnReason.trim(),
         lines: activeLines,
       };
-      await salesApi.processSalesReturn(req);
+      const result = await salesApi.processSalesReturn(req);
+      setReturnResult(result);
       setReturnSuccess(true);
       toast.success('Return processed — credit note created');
     } catch {
@@ -318,7 +320,7 @@ export function SalesReturnsPage() {
       {/* Return Modal */}
       <Modal
         isOpen={!!returnInvoice}
-        onClose={() => { setReturnInvoice(null); setReturnLines([]); setReturnSuccess(false); }}
+        onClose={() => { setReturnInvoice(null); setReturnLines([]); setReturnSuccess(false); setReturnResult(null); }}
         title={returnSuccess ? 'Return Processed' : `Return — ${returnInvoice?.invoiceNumber ?? ''}`}
       >
         {returnSuccess ? (
@@ -330,11 +332,21 @@ export function SalesReturnsPage() {
                 <p className="text-[12px] text-[var(--color-success)] mt-0.5">
                   Credit note created and dealer balance adjusted.
                 </p>
+                {returnResult?.id && (
+                  <p className="text-[12px] text-[var(--color-success)] mt-0.5" data-testid="credit-note-ref">
+                    Credit note reference: #{returnResult.id}
+                  </p>
+                )}
+                {returnResult?.referenceNumber && (
+                  <p className="text-[12px] text-[var(--color-success)] mt-0.5">
+                    Reference: {returnResult.referenceNumber}
+                  </p>
+                )}
               </div>
             </div>
             <button
               type="button"
-              onClick={() => { setReturnInvoice(null); setReturnSuccess(false); }}
+              onClick={() => { setReturnInvoice(null); setReturnSuccess(false); setReturnResult(null); }}
               className="w-full h-9 rounded-lg bg-[var(--color-neutral-900)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
             >
               Close
