@@ -381,8 +381,15 @@ import { format, parseISO } from 'date-fns';
      if (!orderNumber.trim()) errs.orderNumber = 'Order number is required';
      if (!orderDate) errs.orderDate = 'Order date is required';
      if (lines.length === 0) errs.lines = 'Add at least one line item';
+     const seenMaterials = new Set<string>();
      lines.forEach((line, i) => {
-       if (!line.rawMaterialId) errs[`line_${i}_material`] = 'Select a material';
+       if (!line.rawMaterialId) {
+         errs[`line_${i}_material`] = 'Select a material';
+       } else if (seenMaterials.has(line.rawMaterialId)) {
+         errs[`line_${i}_material`] = 'Duplicate material — each material can appear only once';
+       } else {
+         seenMaterials.add(line.rawMaterialId);
+       }
        if (!line.quantity || parseFloat(line.quantity) <= 0) errs[`line_${i}_qty`] = 'Qty must be > 0';
        if (!line.costPerUnit || parseFloat(line.costPerUnit) <= 0) errs[`line_${i}_cost`] = 'Cost must be > 0';
      });
