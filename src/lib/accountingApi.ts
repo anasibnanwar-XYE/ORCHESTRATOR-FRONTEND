@@ -320,6 +320,14 @@ export interface AgedReceivablesReport {
    allocations: SettlementAllocationRequest[];
  }
 
+ export interface AutoSettlementRequest {
+   cashAccountId?: number;
+   amount: number;
+   referenceNumber?: string;
+   memo?: string;
+   idempotencyKey?: string;
+ }
+
  export interface PartnerSettlementResponse {
    journalEntry: JournalEntryDto;
    totalApplied: number;
@@ -743,6 +751,24 @@ export interface PurchaseRef {
    async recordSupplierPayment(data: SupplierPaymentRequest): Promise<JournalEntryDto> {
      const response = await apiRequest.post<ApiResponse<JournalEntryDto>>(
        '/accounting/suppliers/payments',
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/dealers/{dealerId}/auto-settle */
+   async autoSettleDealer(dealerId: number, data: AutoSettlementRequest): Promise<PartnerSettlementResponse> {
+     const response = await apiRequest.post<ApiResponse<PartnerSettlementResponse>>(
+       `/accounting/dealers/${dealerId}/auto-settle`,
+       data
+     );
+     return response.data.data;
+   },
+
+   /** POST /api/v1/accounting/suppliers/{supplierId}/auto-settle */
+   async autoSettleSupplier(supplierId: number, data: AutoSettlementRequest): Promise<PartnerSettlementResponse> {
+     const response = await apiRequest.post<ApiResponse<PartnerSettlementResponse>>(
+       `/accounting/suppliers/${supplierId}/auto-settle`,
        data
      );
      return response.data.data;

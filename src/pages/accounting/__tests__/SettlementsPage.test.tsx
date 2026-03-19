@@ -2,8 +2,11 @@
  * SettlementsPage tests
  *
  * Covers:
- *  VAL-P2P-011: Supplier payment and settlement both allocate only against outstanding
- *               purchases and show clear result references after success.
+ *  VAL-ACCT-007: Named receipt, note, bad-debt, and accrual flows each block invalid input
+ *                and show success references after successful submission.
+ *  VAL-ACCT-008: Dealer and supplier auto-settle actions are discoverable and show applied results.
+ *  VAL-P2P-011:  Supplier payment and settlement both allocate only against outstanding
+ *                purchases and show clear result references after success.
  *  Also covers basic smoke checks for all tab types.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -25,6 +28,8 @@ vi.mock('@/lib/accountingApi', () => ({
     recordSupplierPayment: vi.fn(),
     createDealerSettlement: vi.fn(),
     createSupplierSettlement: vi.fn(),
+    autoSettleDealer: vi.fn(),
+    autoSettleSupplier: vi.fn(),
     createCreditNote: vi.fn(),
     createDebitNote: vi.fn(),
     writeBadDebt: vi.fn(),
@@ -370,5 +375,382 @@ describe('SettlementsPage', () => {
       expect(screen.getAllByText(/Supplier settlement created/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/SETTLE-SUP-101/)).toBeInTheDocument();
     });
+  });
+
+  // ── VAL-ACCT-007: Named receipt flows block invalid input and show success references ──
+
+  it('dealer receipt blocks submit when required fields are empty and shows error messages', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /record payment/i })).toBeInTheDocument()
+    );
+    // Dealer Receipt is the default tab — attempt submit with empty fields
+    fireEvent.click(screen.getByRole('button', { name: /record payment/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a dealer/i)).toBeInTheDocument();
+      expect(screen.getByText(/Select a payment account/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+      expect(screen.getByText(/Select an invoice to allocate/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.recordDealerReceipt).not.toHaveBeenCalled();
+  });
+
+  it('dealer receipt shows success reference after valid submission', async () => {
+    const mockInvoice = { id: 5, invoiceNumber: 'INV-005', outstandingAmount: 5000, totalAmount: 5000, dueDate: '2026-04-01', status: 'POSTED' };
+    const mockEntry = {
+      id: 20, publicId: 'jrnl-020', referenceNumber: 'RCP-DEALER-020',
+      entryDate: '2026-03-01', memo: '', status: 'POSTED',
+      dealerId: 1, dealerName: 'ABC Paints', supplierId: null, supplierName: null,
+      accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+      reversalOfEntryId: null, reversalEntryId: null,
+      createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+    };
+    vi.mocked(accountingApi.getDealerInvoices).mockResolvedValue([mockInvoice]);
+    vi.mocked(accountingApi.recordDealerReceipt).mockResolvedValue(mockEntry);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: /record payment/i })).toBeInTheDocument());
+
+    // Select dealer
+    fireEvent.change(screen.getByLabelText(/Dealer/i), { target: { value: '1' } });
+    await waitFor(() => expect(screen.getByText(/INV-005/)).toBeInTheDocument());
+
+    // Select account
+    fireEvent.change(screen.getByLabelText(/Payment Account/i), { target: { value: '1' } });
+    // Enter amount
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '5000' } });
+    // Select invoice
+    fireEvent.change(screen.getByLabelText(/Invoice to Allocate/i), { target: { value: '5' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /record payment/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Dealer receipt recorded successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/RCP-DEALER-020/)).toBeInTheDocument();
+    });
+  });
+
+  it('credit note blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Credit Note' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Note' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /create credit note/i })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /create credit note/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a dealer/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.createCreditNote).not.toHaveBeenCalled();
+  });
+
+  it('credit note shows success reference after valid submission', async () => {
+    const mockInvoice = { id: 7, invoiceNumber: 'INV-007', outstandingAmount: 3000, totalAmount: 3000, dueDate: '2026-04-01', status: 'POSTED' };
+    const mockEntry = {
+      id: 30, publicId: 'jrnl-030', referenceNumber: 'CN-030',
+      entryDate: '2026-03-01', memo: '', status: 'POSTED',
+      dealerId: 1, dealerName: 'ABC Paints', supplierId: null, supplierName: null,
+      accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+      reversalOfEntryId: null, reversalEntryId: null,
+      createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+    };
+    vi.mocked(accountingApi.getDealerInvoices).mockResolvedValue([mockInvoice]);
+    vi.mocked(accountingApi.createCreditNote).mockResolvedValue(mockEntry);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Credit Note' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Credit Note' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /create credit note/i })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Dealer/i), { target: { value: '1' } });
+    await waitFor(() => expect(screen.getByText(/INV-007/)).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText(/Invoice/i), { target: { value: '7' } });
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '1000' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create credit note/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Credit note created successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/CN-030/)).toBeInTheDocument();
+    });
+  });
+
+  it('debit note blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Debit Note' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Debit Note' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /create debit note/i })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /create debit note/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a supplier/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.createDebitNote).not.toHaveBeenCalled();
+  });
+
+  it('debit note shows success reference after valid submission', async () => {
+    const mockPurchase = { id: 12, invoiceNumber: 'PUR-012', outstandingAmount: 2000, totalAmount: 2000, invoiceDate: '2026-03-01', status: 'POSTED' };
+    const mockEntry = {
+      id: 40, publicId: 'jrnl-040', referenceNumber: 'DN-040',
+      entryDate: '2026-03-01', memo: '', status: 'POSTED',
+      dealerId: null, dealerName: null, supplierId: 1, supplierName: 'Supplier One',
+      accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+      reversalOfEntryId: null, reversalEntryId: null,
+      createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+    };
+    vi.mocked(accountingApi.getSupplierPurchases).mockResolvedValue([mockPurchase]);
+    vi.mocked(accountingApi.createDebitNote).mockResolvedValue(mockEntry);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Debit Note' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Debit Note' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /create debit note/i })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Supplier/i), { target: { value: '1' } });
+    await waitFor(() => expect(screen.getByText(/PUR-012/)).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText(/Purchase Invoice/i), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '500' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create debit note/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Debit note created successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/DN-040/)).toBeInTheDocument();
+    });
+  });
+
+  it('bad debt write-off blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Bad Debt Write-off' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Bad Debt Write-off' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /write off bad debt/i })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /write off bad debt/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a dealer/i)).toBeInTheDocument();
+      expect(screen.getByText(/Select bad debt expense account/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.writeBadDebt).not.toHaveBeenCalled();
+  });
+
+  it('bad debt write-off shows success reference after valid submission', async () => {
+    const mockInvoice = { id: 8, invoiceNumber: 'INV-008', outstandingAmount: 1500, totalAmount: 1500, dueDate: '2026-04-01', status: 'POSTED' };
+    const mockEntry = {
+      id: 50, publicId: 'jrnl-050', referenceNumber: 'BD-050',
+      entryDate: '2026-03-01', memo: '', status: 'POSTED',
+      dealerId: 1, dealerName: 'ABC Paints', supplierId: null, supplierName: null,
+      accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+      reversalOfEntryId: null, reversalEntryId: null,
+      createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+    };
+    vi.mocked(accountingApi.getDealerInvoices).mockResolvedValue([mockInvoice]);
+    vi.mocked(accountingApi.writeBadDebt).mockResolvedValue(mockEntry);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Bad Debt Write-off' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Bad Debt Write-off' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /write off bad debt/i })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Dealer/i), { target: { value: '1' } });
+    await waitFor(() => expect(screen.getByText(/INV-008/)).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText(/Invoice/i), { target: { value: '8' } });
+    fireEvent.change(screen.getByLabelText(/Bad Debt Expense Account/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/Amount to Write Off/i), { target: { value: '1500' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /write off bad debt/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Bad debt written off successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/BD-050/)).toBeInTheDocument();
+    });
+  });
+
+  it('accrual blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Accrual' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Accrual' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /record accrual/i })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /record accrual/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select debit account/i)).toBeInTheDocument();
+      expect(screen.getByText(/Select credit account/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.recordAccrual).not.toHaveBeenCalled();
+  });
+
+  it('accrual shows success reference after valid submission', async () => {
+    const mockEntry = {
+      id: 60, publicId: 'jrnl-060', referenceNumber: 'ACC-060',
+      entryDate: '2026-03-01', memo: '', status: 'POSTED',
+      dealerId: null, dealerName: null, supplierId: null, supplierName: null,
+      accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+      reversalOfEntryId: null, reversalEntryId: null,
+      createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+    };
+    vi.mocked(accountingApi.recordAccrual).mockResolvedValue(mockEntry);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Accrual' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Accrual' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /record accrual/i })).toBeInTheDocument());
+
+    const selects = screen.getAllByRole('combobox');
+    // Debit account is first select, credit account is second
+    fireEvent.change(selects[0], { target: { value: '1' } });
+    fireEvent.change(selects[1], { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '2500' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /record accrual/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Accrual entry posted successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/ACC-060/)).toBeInTheDocument();
+    });
+  });
+
+  // ── VAL-ACCT-008: Dealer and supplier auto-settle actions are discoverable and show applied results ──
+
+  it('dealer auto-settle tab is visible and renders the form', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Dealer Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dealer Auto-Settle' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /apply dealer auto-settle/i })).toBeInTheDocument();
+      expect(screen.getByText(/automatically net and settle/i)).toBeInTheDocument();
+    });
+  });
+
+  it('dealer auto-settle blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Dealer Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dealer Auto-Settle' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /apply dealer auto-settle/i })).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /apply dealer auto-settle/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a dealer/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.autoSettleDealer).not.toHaveBeenCalled();
+  });
+
+  it('dealer auto-settle shows applied result reference after success', async () => {
+    const mockAutoSettleResponse = {
+      totalApplied: 12000,
+      cashAmount: 12000,
+      totalDiscount: 0,
+      totalWriteOff: 0,
+      totalFxGain: 0,
+      totalFxLoss: 0,
+      journalEntry: {
+        id: 70, publicId: 'jrnl-070', referenceNumber: 'AUTO-DEALER-070',
+        entryDate: '2026-03-01', memo: '', status: 'POSTED',
+        dealerId: 1, dealerName: 'ABC Paints', supplierId: null, supplierName: null,
+        accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+        reversalOfEntryId: null, reversalEntryId: null,
+        createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+      },
+    };
+    vi.mocked(accountingApi.autoSettleDealer).mockResolvedValue(mockAutoSettleResponse);
+
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Dealer Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Dealer Auto-Settle' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /apply dealer auto-settle/i })).toBeInTheDocument()
+    );
+
+    fireEvent.change(screen.getByLabelText(/Dealer/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '12000' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /apply dealer auto-settle/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Dealer auto-settle applied/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/AUTO-DEALER-070/)).toBeInTheDocument();
+    });
+    expect(accountingApi.autoSettleDealer).toHaveBeenCalledWith(1, expect.objectContaining({
+      amount: 12000,
+    }));
+  });
+
+  it('supplier auto-settle tab is visible and renders the form', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Supplier Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Supplier Auto-Settle' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /apply supplier auto-settle/i })).toBeInTheDocument();
+      expect(screen.getByText(/automatically net and settle all outstanding purchase invoices/i)).toBeInTheDocument();
+    });
+  });
+
+  it('supplier auto-settle blocks submit when required fields are empty', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Supplier Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Supplier Auto-Settle' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /apply supplier auto-settle/i })).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /apply supplier auto-settle/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Select a supplier/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a valid amount/i)).toBeInTheDocument();
+    });
+    expect(accountingApi.autoSettleSupplier).not.toHaveBeenCalled();
+  });
+
+  it('supplier auto-settle shows applied result reference after success', async () => {
+    const mockAutoSettleResponse = {
+      totalApplied: 9500,
+      cashAmount: 9500,
+      totalDiscount: 0,
+      totalWriteOff: 0,
+      totalFxGain: 0,
+      totalFxLoss: 0,
+      journalEntry: {
+        id: 80, publicId: 'jrnl-080', referenceNumber: 'AUTO-SUP-080',
+        entryDate: '2026-03-01', memo: '', status: 'POSTED',
+        dealerId: null, dealerName: null, supplierId: 1, supplierName: 'Supplier One',
+        accountingPeriodId: null, accountingPeriodLabel: null, accountingPeriodStatus: null,
+        reversalOfEntryId: null, reversalEntryId: null,
+        createdAt: '2026-03-01T10:00:00Z', updatedAt: '2026-03-01T10:00:00Z', createdBy: 'test', lines: [],
+      },
+    };
+    vi.mocked(accountingApi.autoSettleSupplier).mockResolvedValue(mockAutoSettleResponse);
+
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Supplier Auto-Settle' })).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Supplier Auto-Settle' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /apply supplier auto-settle/i })).toBeInTheDocument()
+    );
+
+    fireEvent.change(screen.getByLabelText(/Supplier/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/^Amount/i), { target: { value: '9500' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /apply supplier auto-settle/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Supplier auto-settle applied/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/AUTO-SUP-080/)).toBeInTheDocument();
+    });
+    expect(accountingApi.autoSettleSupplier).toHaveBeenCalledWith(1, expect.objectContaining({
+      amount: 9500,
+    }));
   });
 });

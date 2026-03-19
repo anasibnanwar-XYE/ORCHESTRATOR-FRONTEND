@@ -27,6 +27,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
   accountingApi,
   type AccountDto,
+  type AutoSettlementRequest,
   type DealerResponse,
   type SupplierResponse,
   type InvoiceRef,
@@ -43,6 +44,8 @@ type TabId =
   | 'supplier-payment'
   | 'dealer-settlement'
   | 'supplier-settlement'
+  | 'dealer-auto-settle'
+  | 'supplier-auto-settle'
   | 'credit-note'
   | 'debit-note'
   | 'bad-debt'
@@ -54,6 +57,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'supplier-payment', label: 'Supplier Payment' },
   { id: 'dealer-settlement', label: 'Dealer Settlement' },
   { id: 'supplier-settlement', label: 'Supplier Settlement' },
+  { id: 'dealer-auto-settle', label: 'Dealer Auto-Settle' },
+  { id: 'supplier-auto-settle', label: 'Supplier Auto-Settle' },
   { id: 'credit-note', label: 'Credit Note' },
   { id: 'debit-note', label: 'Debit Note' },
   { id: 'bad-debt', label: 'Bad Debt Write-off' },
@@ -1190,6 +1195,238 @@ function BadDebtForm({ accounts, dealers }: { accounts: AccountDto[]; dealers: D
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Dealer Auto-Settle Form
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DealerAutoSettleFormProps {
+  dealers: DealerResponse[];
+  accounts: AccountDto[];
+}
+
+function DealerAutoSettleForm({ dealers, accounts }: DealerAutoSettleFormProps) {
+  const toast = useToast();
+  const [dealerId, setDealerId] = useState('');
+  const [cashAccountId, setCashAccountId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<{ totalApplied: number; refNumber: string } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!dealerId) errs.dealerId = 'Select a dealer';
+    if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    setIsLoading(true);
+    try {
+      const payload: AutoSettlementRequest = {
+        amount: Number(amount),
+        cashAccountId: cashAccountId ? Number(cashAccountId) : undefined,
+        memo: memo || undefined,
+        idempotencyKey: uuidv4(),
+      };
+      const resp = await accountingApi.autoSettleDealer(Number(dealerId), payload);
+      setResult({ totalApplied: resp.totalApplied, refNumber: resp.journalEntry.referenceNumber });
+      toast.success('Dealer auto-settle applied.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Auto-settle failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (result) {
+    return (
+      <SuccessResult
+        message={`Dealer auto-settle applied. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
+        referenceNumber={result.refNumber}
+        onReset={() => {
+          setResult(null);
+          setDealerId(''); setCashAccountId(''); setAmount(''); setMemo('');
+        }}
+      />
+    );
+  }
+
+  const dealerOptions = [
+    { value: '', label: 'Select dealer...' },
+    ...dealers.map((d) => ({ value: String(d.id), label: `${d.name} (${d.code})` })),
+  ];
+  const accountOptions = [
+    { value: '', label: 'Select account...' },
+    ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[12px] text-[var(--color-text-tertiary)]">
+        Automatically net and settle all outstanding invoices and receipts for a dealer. The backend allocates the amount against open balances in date order.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Select
+          label="Dealer"
+          options={dealerOptions}
+          value={dealerId}
+          onChange={(e) => setDealerId(e.target.value)}
+          error={errors.dealerId}
+        />
+        <Select
+          label="Cash/Bank Account (optional)"
+          options={accountOptions}
+          value={cashAccountId}
+          onChange={(e) => setCashAccountId(e.target.value)}
+        />
+        <Input
+          label="Amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          error={errors.amount}
+        />
+        <div className="sm:col-span-2">
+          <Input
+            label="Memo (optional)"
+            placeholder="Auto-settle notes..."
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Applying...' : 'Apply Dealer Auto-Settle'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supplier Auto-Settle Form
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface SupplierAutoSettleFormProps {
+  suppliers: SupplierResponse[];
+  accounts: AccountDto[];
+}
+
+function SupplierAutoSettleForm({ suppliers, accounts }: SupplierAutoSettleFormProps) {
+  const toast = useToast();
+  const [supplierId, setSupplierId] = useState('');
+  const [cashAccountId, setCashAccountId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<{ totalApplied: number; refNumber: string } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!supplierId) errs.supplierId = 'Select a supplier';
+    if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    setIsLoading(true);
+    try {
+      const payload: AutoSettlementRequest = {
+        amount: Number(amount),
+        cashAccountId: cashAccountId ? Number(cashAccountId) : undefined,
+        memo: memo || undefined,
+        idempotencyKey: uuidv4(),
+      };
+      const resp = await accountingApi.autoSettleSupplier(Number(supplierId), payload);
+      setResult({ totalApplied: resp.totalApplied, refNumber: resp.journalEntry.referenceNumber });
+      toast.success('Supplier auto-settle applied.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Auto-settle failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (result) {
+    return (
+      <SuccessResult
+        message={`Supplier auto-settle applied. Total applied: ₹${result.totalApplied.toLocaleString('en-IN')}`}
+        referenceNumber={result.refNumber}
+        onReset={() => {
+          setResult(null);
+          setSupplierId(''); setCashAccountId(''); setAmount(''); setMemo('');
+        }}
+      />
+    );
+  }
+
+  const supplierOptions = [
+    { value: '', label: 'Select supplier...' },
+    ...suppliers.map((s) => ({ value: String(s.id), label: s.name })),
+  ];
+  const accountOptions = [
+    { value: '', label: 'Select account...' },
+    ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[12px] text-[var(--color-text-tertiary)]">
+        Automatically net and settle all outstanding purchase invoices for a supplier. The backend allocates the amount against open balances in date order.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Select
+          label="Supplier"
+          options={supplierOptions}
+          value={supplierId}
+          onChange={(e) => setSupplierId(e.target.value)}
+          error={errors.supplierId}
+        />
+        <Select
+          label="Cash/Bank Account (optional)"
+          options={accountOptions}
+          value={cashAccountId}
+          onChange={(e) => setCashAccountId(e.target.value)}
+        />
+        <Input
+          label="Amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          error={errors.amount}
+        />
+        <div className="sm:col-span-2">
+          <Input
+            label="Memo (optional)"
+            placeholder="Auto-settle notes..."
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Applying...' : 'Apply Supplier Auto-Settle'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface AccrualFormProps {
   accounts: AccountDto[];
@@ -1340,6 +1577,8 @@ export function SettlementsPage() {
       case 'supplier-payment': return <SupplierPaymentForm suppliers={suppliers} accounts={accounts} />;
       case 'dealer-settlement': return <DealerSettlementForm dealers={dealers} accounts={accounts} />;
       case 'supplier-settlement': return <SupplierSettlementForm suppliers={suppliers} accounts={accounts} />;
+      case 'dealer-auto-settle': return <DealerAutoSettleForm dealers={dealers} accounts={accounts} />;
+      case 'supplier-auto-settle': return <SupplierAutoSettleForm suppliers={suppliers} accounts={accounts} />;
       case 'credit-note': return <CreditNoteForm dealers={dealers} accounts={accounts} />;
       case 'debit-note': return <DebitNoteForm suppliers={suppliers} />;
       case 'bad-debt': return <BadDebtForm accounts={accounts} dealers={dealers} />;
