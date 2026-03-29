@@ -6,14 +6,15 @@
   *  - Shows skeleton loading state
   *  - Shows error state with retry button
   *  - Empty state with CTA
-  *  - Create role modal opens on button click
   *  - System roles show system badge
+  *  - SUPER_ADMIN role hidden for tenant admin (non-superadmin)
+  *  - SUPER_ADMIN role visible for superadmin user
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
  import { render, screen, waitFor } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
- 
+
  vi.mock('lucide-react', () => {
    const M = () => null;
    return {
@@ -36,6 +37,22 @@
   useToast: () => ({ toast: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn(), dismiss: vi.fn() }),
    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
  }));
+
+ // Mock useAuth — RolesPage uses useAuth() to check for SUPER_ADMIN role
+ let mockUserRoles: string[] = ['ROLE_ADMIN'];
+ vi.mock('@/context/AuthContext', () => ({
+   useAuth: () => ({
+     user: {
+       email: 'admin@test.com',
+       displayName: 'Test Admin',
+       roles: mockUserRoles,
+       permissions: [],
+       mfaEnabled: false,
+     },
+     session: null,
+     isAuthenticated: true,
+   }),
+ }));
  
  const mockNavigate = vi.fn();
  vi.mock('react-router-dom', async () => {
@@ -47,6 +64,15 @@
  import { adminApi } from '@/lib/adminApi';
  
  const mockRoles = [
+   {
+     key: 'ROLE_SUPER_ADMIN',
+     name: 'Super Admin',
+     description: 'Full platform governance',
+     permissions: ['ALL'],
+     isSystem: true,
+     createdAt: '2024-01-01T00:00:00Z',
+     updatedAt: '2024-01-01T00:00:00Z',
+   },
    {
      key: 'ROLE_ADMIN',
      name: 'Administrator',
@@ -78,6 +104,8 @@
  describe('RolesPage', () => {
    beforeEach(() => {
      vi.clearAllMocks();
+     // Default: tenant admin (not superadmin)
+     mockUserRoles = ['ROLE_ADMIN'];
    });
  
    it('renders page heading', async () => {
@@ -148,6 +176,30 @@
      renderPage();
      await waitFor(() => {
       expect(screen.getAllByText(/no roles/i).length).toBeGreaterThan(0);
+     });
+   });
+
+   it('hides ROLE_SUPER_ADMIN from list for tenant admin user', async () => {
+     // Default: mockUserRoles = ['ROLE_ADMIN'] (tenant admin, not superadmin)
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       // Administrator and Custom Role should be visible
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+     // Super Admin role should NOT be visible for tenant admin
+     const superAdminRows = screen.queryAllByText('Super Admin');
+     expect(superAdminRows.length).toBe(0);
+   });
+
+   it('shows ROLE_SUPER_ADMIN in list for superadmin user', async () => {
+     // Override to superadmin
+     mockUserRoles = ['ROLE_SUPER_ADMIN'];
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       // Super Admin role SHOULD be visible for superadmin user
+       expect(screen.getAllByText('Super Admin').length).toBeGreaterThan(0);
      });
    });
  });

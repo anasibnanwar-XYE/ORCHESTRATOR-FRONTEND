@@ -23,6 +23,7 @@
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
  import { Skeleton } from '@/components/ui/Skeleton';
+ import { useAuth } from '@/context/AuthContext';
  import { adminApi } from '@/lib/adminApi';
  import type { Role } from '@/types';
  
@@ -161,10 +162,14 @@ function permKey(perm: unknown, index: number): string {
  // ─────────────────────────────────────────────────────────────────────────────
  
  export function RolesPage() {
+   const { user: currentUser } = useAuth();
    const [roles, setRoles] = useState<Role[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
- 
+
+   // Determine if the current user is a SUPER_ADMIN
+   const isSuperAdmin = currentUser?.roles?.includes('ROLE_SUPER_ADMIN') ?? false;
+
    // Detail panel
    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
  
@@ -229,6 +234,11 @@ function permKey(perm: unknown, index: number): string {
      },
    ];
  
+   // Filter out ROLE_SUPER_ADMIN for non-superadmin users (tenant admin should not see it)
+   const visibleRoles = isSuperAdmin
+     ? roles
+     : roles.filter((r) => r.key !== 'ROLE_SUPER_ADMIN');
+
    if (isLoading) {
      return (
        <div className="space-y-5">
@@ -271,7 +281,7 @@ function permKey(perm: unknown, index: number): string {
              Role Management
            </h1>
            <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-             {roles.length} role{roles.length !== 1 ? 's' : ''} configured
+             {visibleRoles.length} role{visibleRoles.length !== 1 ? 's' : ''} configured
            </p>
          </div>
        </div>
@@ -285,7 +295,7 @@ function permKey(perm: unknown, index: number): string {
        {/* DataTable */}
        <DataTable
          columns={columns}
-         data={roles}
+         data={visibleRoles}
          keyExtractor={(r) => r.key}
          searchable
          searchPlaceholder="Search roles..."
