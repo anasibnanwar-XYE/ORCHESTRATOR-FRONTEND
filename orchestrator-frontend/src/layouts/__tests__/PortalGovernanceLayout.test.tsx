@@ -73,17 +73,40 @@ function renderWithRoute(element: React.ReactNode, initialEntry: string) {
 }
 
 describe('portal governance navigation layouts', () => {
-  it('keeps governance pages out of the admin sidebar while retaining audit trail', () => {
+  it('admin sidebar includes all expected nav items including Analytics & Ops group', () => {
     mockUserRoles = ['ROLE_ADMIN'];
     renderWithRoute(<AdminLayout />, '/admin');
 
-    expect(screen.queryByRole('link', { name: 'Portal Insights' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Tenant Runtime' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Operations Control' })).not.toBeInTheDocument();
+    // Core nav items
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Users' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Roles' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Companies' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Notifications' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Changelog' })).toBeInTheDocument();
+
+    // Analytics & Ops group — tenant-scoped analytics accessible to admin
+    expect(screen.getByRole('link', { name: 'Orchestrator' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Portal Insights' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Audit Trail' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tenant Runtime' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Operations' })).toBeInTheDocument();
   });
 
-  it('adds the moved governance pages to the superadmin sidebar', () => {
+  it('shows logical nav groups (Management, Workflows, Analytics & Ops, System)', () => {
+    mockUserRoles = ['ROLE_ADMIN'];
+    renderWithRoute(<AdminLayout />, '/admin');
+
+    // Group headings
+    expect(screen.getByText('Management')).toBeInTheDocument();
+    expect(screen.getByText('Workflows')).toBeInTheDocument();
+    expect(screen.getByText('Analytics & Ops')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
+  });
+
+  it('adds the governance pages to the superadmin sidebar', () => {
     mockUserRoles = ['ROLE_SUPER_ADMIN'];
     renderWithRoute(<SuperadminLayout />, '/superadmin');
 

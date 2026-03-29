@@ -121,7 +121,7 @@ describe('App route RBAC moves', () => {
     vi.clearAllMocks();
   });
 
-  it('redirects /admin/tenant-runtime back to the admin dashboard for admins', async () => {
+  it('renders TenantRuntimePage at /admin/tenant-runtime for admins (tenant-scoped metrics)', async () => {
     mockAuth = {
       ...mockAuth,
       user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] },
@@ -131,7 +131,9 @@ describe('App route RBAC moves', () => {
     window.history.pushState({}, '', '/admin/tenant-runtime');
     render(<App />);
 
-    expect(await screen.findByText('Admin dashboard page')).toBeInTheDocument();
+    // Admin users can access /admin/tenant-runtime — shows tenant-scoped runtime metrics
+    expect(await screen.findByText('Tenant Runtime')).toBeInTheDocument();
+    // Should NOT show the superadmin runtime page (all-tenants view)
     expect(screen.queryByText('Superadmin tenant runtime page')).not.toBeInTheDocument();
   });
 

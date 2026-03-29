@@ -32,6 +32,8 @@ import {
   FileDown,
   GitBranch,
   ClipboardList,
+  LineChart,
+  Server,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -60,23 +62,51 @@ interface NavItem {
   module?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', to: '/admin', icon: LayoutGrid, end: true },
-  { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
-  { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
-  { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
-  { label: 'Users', to: '/admin/users', icon: Users },
-  { label: 'Roles', to: '/admin/roles', icon: Shield },
-  { label: 'Companies', to: '/admin/companies', icon: Building2 },
-  { label: 'Notifications', to: '/admin/notifications', icon: Bell },
-  { label: 'Changelog', to: '/admin/changelog', icon: BookOpen },
-  { label: 'Settings', to: '/admin/settings', icon: Settings },
-];
+interface NavGroup {
+  label?: string;
+  items: NavItem[];
+}
 
-// Orchestrator & insights nav items (grouped separately)
-const ORCHESTRATOR_NAV_ITEMS: NavItem[] = [
-  { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
-  { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
+/** Primary nav groups — rendered in order with optional section labels */
+const NAV_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { label: 'Dashboard', to: '/admin', icon: LayoutGrid, end: true },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { label: 'Users', to: '/admin/users', icon: Users },
+      { label: 'Roles', to: '/admin/roles', icon: Shield },
+      { label: 'Companies', to: '/admin/companies', icon: Building2 },
+    ],
+  },
+  {
+    label: 'Workflows',
+    items: [
+      { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
+      { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
+      { label: 'Notifications', to: '/admin/notifications', icon: Bell },
+      { label: 'Changelog', to: '/admin/changelog', icon: BookOpen },
+    ],
+  },
+  {
+    label: 'Analytics & Ops',
+    items: [
+      { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
+      { label: 'Portal Insights', to: '/admin/portal-insights', icon: LineChart },
+      { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
+      { label: 'Tenant Runtime', to: '/admin/tenant-runtime', icon: Server },
+      { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Settings', to: '/admin/settings', icon: Settings },
+    ],
+  },
 ];
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -90,19 +120,52 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/notifications': 'Notifications',
   '/admin/changelog': 'Changelog',
   '/admin/settings': 'Settings',
+  '/admin/orchestrator': 'Orchestrator',
+  '/admin/portal-insights': 'Portal Insights',
+  '/admin/insights': 'Portal Insights',
+  '/admin/audit-trail': 'Audit Trail',
+  '/admin/tenant-runtime': 'Tenant Runtime',
   new: 'New',
   edit: 'Edit',
 };
 
-// Add orchestrator route labels
-Object.assign(ROUTE_LABELS, {
-  '/admin/orchestrator': 'Orchestrator',
-  '/admin/audit-trail': 'Audit Trail',
-});
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar content (shared between desktop and mobile drawer)
 // ─────────────────────────────────────────────────────────────────────────────
+
+function NavItemLink({
+  item,
+  onNavClick,
+}: {
+  item: NavItem;
+  onNavClick?: () => void;
+}) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onNavClick}
+      className={({ isActive }) =>
+        clsx(
+          'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+          isActive
+            ? 'bg-[var(--color-primary-600)] text-white'
+            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon
+            size={15}
+            className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
+          />
+          {item.label}
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 function SidebarContent({
   showBackToHub,
@@ -115,11 +178,6 @@ function SidebarContent({
 }) {
   const navigate = useNavigate();
 
-  // Filter out nav items whose module is disabled
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.module || isModuleEnabled(enabledModules, item.module)
-  );
-
   return (
     <div className="flex h-full flex-col">
       {/* Brand */}
@@ -131,7 +189,7 @@ function SidebarContent({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto no-scrollbar">
+      <nav className="flex-1 px-2 py-3 overflow-y-auto no-scrollbar" aria-label="Admin navigation">
         {/* Back to hub */}
         {showBackToHub && (
           <button
@@ -147,65 +205,32 @@ function SidebarContent({
           </button>
         )}
 
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={onNavClick}
-            className={({ isActive }) =>
-              clsx(
-                'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
-                isActive
-                 ? 'bg-[var(--color-primary-600)] text-white'
-                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  size={15}
-                  className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
-                />
-                {item.label}
-              </>
-            )}
-          </NavLink>
-        ))}
+        {NAV_GROUPS.map((group, groupIdx) => {
+          // Filter out items whose module is disabled
+          const visibleItems = group.items.filter(
+            (item) => !item.module || isModuleEnabled(enabledModules, item.module)
+          );
+          if (visibleItems.length === 0) return null;
 
-        {/* Orchestrator / Insights section */}
-        <div className="mt-4 pt-3 border-t border-[var(--color-border-subtle)]">
-          <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-            Insights
-          </p>
-          {ORCHESTRATOR_NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onNavClick}
-              className={({ isActive }) =>
-                clsx(
-                  'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
-                  isActive
-                   ? 'bg-[var(--color-primary-600)] text-white'
-                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon
-                    size={15}
-                    className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
-                  />
-                  {item.label}
-                </>
+          return (
+            <div
+              key={groupIdx}
+              className={clsx(
+                'space-y-0.5',
+                groupIdx > 0 && 'mt-4 pt-3 border-t border-[var(--color-border-subtle)]',
               )}
-            </NavLink>
-          ))}
-        </div>
+            >
+              {group.label && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                  {group.label}
+                </p>
+              )}
+              {visibleItems.map((item) => (
+                <NavItemLink key={item.to} item={item} onNavClick={onNavClick} />
+              ))}
+            </div>
+          );
+        })}
       </nav>
     </div>
   );
