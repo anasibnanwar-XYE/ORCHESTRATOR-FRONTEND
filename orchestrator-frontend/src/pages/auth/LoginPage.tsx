@@ -87,7 +87,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <div ref={formWrapRef}>
+      <div ref={formWrapRef} className="rounded-2xl">
         <header style={{ marginBottom: 30 }}>
           <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
             Sign in
@@ -112,7 +112,7 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} noValidate style={{ display: 'grid', gap: 17 }}>
           <label style={{ display: 'grid', gap: 8, color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
-            <span>Email</span>
+            <span>Work email</span>
             <input
               type="email"
               className="lp-input"
@@ -134,7 +134,7 @@ export function LoginPage() {
                 className="lp-forgot"
                 style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-tertiary)', textDecoration: 'none', transition: 'color 180ms ease' }}
               >
-                Forgot password?
+                Forgot your password?
               </Link>
             </div>
             <div style={{ position: 'relative' }}>

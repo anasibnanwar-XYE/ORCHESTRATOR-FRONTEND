@@ -93,7 +93,7 @@ export function ForgotPasswordPage() {
 
           <form onSubmit={handleSubmit} noValidate style={{ display: 'grid', gap: 17 }}>
             <label style={{ display: 'grid', gap: 8, color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
-              <span>Email</span>
+              <span>Work email</span>
               <input
                 type="email"
                 className="lp-input"
