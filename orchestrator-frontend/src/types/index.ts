@@ -957,9 +957,14 @@ export interface OrchestratorFulfillmentRequest {
 
 export interface PortalDashboard {
   // PortalDashboardInsights from GET /api/v1/portal/dashboard
-  sessions: number;
-  pageViews: number;
-  errors: number;
+  // Backend DashboardInsights shape (actual backend response)
+  highlights?: Array<{ label: string; value: string; detail: string }>;
+  pipeline?: Array<{ label: string; count: number }>;
+  hrPulse?: Array<{ label: string; score: string; context: string }>;
+  // Legacy / PortalInsightsPage fields (kept for backward compat)
+  sessions?: number;
+  pageViews?: number;
+  errors?: number;
   activeUsers?: number;
   avgSessionDuration?: number;
   bounceRate?: number;

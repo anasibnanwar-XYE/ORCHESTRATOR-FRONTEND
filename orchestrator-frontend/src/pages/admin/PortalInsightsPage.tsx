@@ -148,27 +148,33 @@
  
    return (
      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-       <StatTile
-         label="Sessions"
-         value={formatNumber(data.sessions)}
-         sublabel="Active sessions today"
-         icon={<Monitor size={16} />}
-         accent="default"
-       />
-       <StatTile
-         label="Page Views"
-         value={formatNumber(data.pageViews)}
-         sublabel="Total today"
-         icon={<Eye size={16} />}
-         accent="default"
-       />
-       <StatTile
-         label="Errors"
-         value={formatNumber(data.errors)}
-         sublabel="Unhandled errors"
-         icon={<AlertCircle size={16} />}
-         accent={data.errors > 10 ? 'error' : data.errors > 0 ? 'warning' : 'success'}
-       />
+       {data.sessions !== undefined && (
+         <StatTile
+           label="Sessions"
+           value={formatNumber(data.sessions)}
+           sublabel="Active sessions today"
+           icon={<Monitor size={16} />}
+           accent="default"
+         />
+       )}
+       {data.pageViews !== undefined && (
+         <StatTile
+           label="Page Views"
+           value={formatNumber(data.pageViews)}
+           sublabel="Total today"
+           icon={<Eye size={16} />}
+           accent="default"
+         />
+       )}
+       {data.errors !== undefined && (
+         <StatTile
+           label="Errors"
+           value={formatNumber(data.errors)}
+           sublabel="Unhandled errors"
+           icon={<AlertCircle size={16} />}
+           accent={(data.errors ?? 0) > 10 ? 'error' : (data.errors ?? 0) > 0 ? 'warning' : 'success'}
+         />
+       )}
        {data.activeUsers !== undefined && (
          <StatTile
            label="Active Users"

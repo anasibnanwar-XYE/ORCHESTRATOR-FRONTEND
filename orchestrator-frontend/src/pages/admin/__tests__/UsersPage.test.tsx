@@ -49,6 +49,15 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
    useToast: () => ({ addToast: vi.fn(), success: vi.fn(), error: vi.fn(), toast: vi.fn() }),
    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
  }));
+
+ // Mock useAuth — UsersPage uses useAuth() to check for SUPER_ADMIN role
+ vi.mock('@/context/AuthContext', () => ({
+   useAuth: () => ({
+     user: { email: 'admin@test.com', displayName: 'Test Admin', roles: ['ROLE_ADMIN'], permissions: [], mfaEnabled: false },
+     session: null,
+     isAuthenticated: true,
+   }),
+ }));
  
  import { UsersPage } from '../UsersPage';
  import { adminApi } from '@/lib/adminApi';

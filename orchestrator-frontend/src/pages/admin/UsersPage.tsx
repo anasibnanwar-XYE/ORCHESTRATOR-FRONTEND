@@ -19,7 +19,7 @@
    MoreHorizontal,
    AlertCircle,
    RefreshCcw,
-  Shield,
+   Shield,
    Building2,
    Mail,
    User,
@@ -35,6 +35,7 @@
  import { DataTable, type Column } from '@/components/ui/DataTable';
  import { DropdownMenu } from '@/components/ui/DropdownMenu';
  import { useToast } from '@/components/ui/Toast';
+ import { useAuth } from '@/context/AuthContext';
  import { adminApi } from '@/lib/adminApi';
  import type { Role, Company, CreateUserRequest, UpdateUserRequest } from '@/types';
  
@@ -338,6 +339,8 @@
    initialData?: UserFormData;
    title: string;
    submitLabel: string;
+   /** When true, hides ROLE_SUPER_ADMIN from the roles list (for tenant admins) */
+   hideSuperAdmin?: boolean;
  }
  
  function UserFormModal({
@@ -349,6 +352,7 @@
    initialData,
    title,
    submitLabel,
+   hideSuperAdmin = false,
  }: UserFormModalProps) {
    const [form, setForm] = useState<UserFormData>(initialData ?? initialForm);
    const [errors, setErrors] = useState<Partial<UserFormData & { email: string; displayName: string }>>({});
@@ -383,7 +387,9 @@
      }
    };
  
-   const roleOptions = roles.map((r) => ({ value: r.key, label: r.name || formatRole(r.key) }));
+   const roleOptions = roles
+     .filter((r) => !hideSuperAdmin || r.key !== 'ROLE_SUPER_ADMIN')
+     .map((r) => ({ value: r.key, label: r.name || formatRole(r.key) }));
    const companyOptions = companies.map((c) => ({
      value: String(c.id),
      label: c.name,
@@ -524,7 +530,11 @@
  
  export function UsersPage() {
    const { success, error: toastError } = useToast();
- 
+   const { user: currentUser } = useAuth();
+
+   // Determine if the current user is a SUPER_ADMIN
+   const isSuperAdmin = currentUser?.roles?.includes('ROLE_SUPER_ADMIN') ?? false;
+
    const [users, setUsers] = useState<AdminUser[]>([]);
    const [roles, setRoles] = useState<Role[]>([]);
    const [companies, setCompanies] = useState<Company[]>([]);
@@ -844,6 +854,65 @@
            isLoading={isLoading}
            emptyMessage="No users yet. Create the first user to get started."
            onRowClick={(row) => setViewingUser(row)}
+           mobileCardRenderer={(row) => (
+             <div className="p-3 w-full">
+               <div className="flex items-start justify-between gap-3 mb-2">
+                 <div className="flex items-center gap-2.5 min-w-0">
+                   <div className="h-8 w-8 rounded-full bg-[var(--color-surface-secondary)] flex items-center justify-center text-[12px] font-semibold text-[var(--color-text-secondary)] shrink-0">
+                     {row.displayName.charAt(0).toUpperCase()}
+                   </div>
+                   <div className="min-w-0">
+                     <p className="font-medium text-[13px] text-[var(--color-text-primary)] truncate">{row.displayName}</p>
+                     <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">{row.email}</p>
+                   </div>
+                 </div>
+                 <Badge variant={row.enabled ? 'success' : 'danger'} dot>
+                   {row.enabled ? 'Active' : 'Suspended'}
+                 </Badge>
+               </div>
+               {row.roles.length > 0 && (
+                 <div className="flex flex-wrap gap-1 mt-1">
+                   {row.roles.slice(0, 2).map((r) => (
+                     <span
+                       key={r}
+                       className="inline-block px-1.5 py-0.5 text-[10px] rounded-md bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]"
+                     >
+                       {formatRole(r)}
+                     </span>
+                   ))}
+                   {row.roles.length > 2 && (
+                     <span className="inline-block px-1.5 py-0.5 text-[10px] rounded-md bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)]">
+                       +{row.roles.length - 2}
+                     </span>
+                   )}
+                 </div>
+               )}
+               <div className="mt-2 flex items-center justify-between">
+                 <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                   {row.mfaEnabled ? 'MFA enabled' : 'No MFA'}
+                 </span>
+                 <RowActions
+                   user={row}
+                   onView={(u) => setViewingUser(u)}
+                   onEdit={(u) => setEditingUser(u)}
+                   onDelete={(u) => dispatchDialog({ type: 'open', dialogType: 'delete', user: u })}
+                   onSuspend={(u) =>
+                     dispatchDialog({
+                       type: 'open',
+                       dialogType: u.enabled ? 'suspend' : 'unsuspend',
+                       user: u,
+                     })
+                   }
+                   onDisableMfa={(u) =>
+                     dispatchDialog({ type: 'open', dialogType: 'disable-mfa', user: u })
+                   }
+                   onForceReset={(u) =>
+                     dispatchDialog({ type: 'open', dialogType: 'force-reset', user: u })
+                   }
+                 />
+               </div>
+             </div>
+           )}
            rowActions={(row) => (
              <RowActions
                user={row}
@@ -884,6 +953,7 @@
          companies={companies}
          title="Create User"
          submitLabel="Create User"
+         hideSuperAdmin={!isSuperAdmin}
        />
  
        {/* ── Edit User Modal ──────────────────────────────────────────── */}
@@ -896,6 +966,7 @@
          initialData={editingForm}
          title="Edit User"
          submitLabel="Save Changes"
+         hideSuperAdmin={!isSuperAdmin}
        />
  
        {/* ── Confirm Dialogs ──────────────────────────────────────────── */}
