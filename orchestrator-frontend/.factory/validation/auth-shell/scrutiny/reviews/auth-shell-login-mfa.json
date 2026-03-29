@@ -1,0 +1,39 @@
+{
+  "featureId": "auth-shell-login-mfa",
+  "reviewedAt": "2026-03-29T23:10:00.000Z",
+  "commitId": "9744c0b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The commit (9744c0b) is a targeted fix: three small label/class changes to LoginPage.tsx and ForgotPasswordPage.tsx that resolved 35 failing tests. The underlying auth flow implementations (login, MFA, forgot/reset password, forced password change, company switch) were already well-implemented from the foundation milestone and required no logic changes. Review confirms all feature requirements are met by the existing code.",
+    "issues": [
+      {
+        "file": "src/pages/auth/FirstPasswordChangePage.tsx",
+        "line": 179,
+        "severity": "non_blocking",
+        "description": "Uses Tailwind 'border-red-300' and 'text-red-600' instead of CSS variables for the password mismatch error styling. ResetPasswordPage.tsx (lines 224, 229) has the same pattern. These hardcoded Tailwind red colors are inconsistent with the CSS variable convention used everywhere else, but they are standard Tailwind utility classes (not raw hex) and only appear for validation error states."
+      },
+      {
+        "file": "src/pages/auth/ProfilePage.tsx",
+        "line": 150,
+        "severity": "non_blocking",
+        "description": "Uses hardcoded hex '#10b981' for the MFA shield icon and success indicator instead of a CSS variable. This is in the ProfilePage which is technically in the auth-shell-profile-nav feature's scope, not this feature, but noting it as a CSS variable consistency issue."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Password mismatch error styling in FirstPasswordChangePage and ResetPasswordPage uses hardcoded Tailwind red colors (border-red-300, text-red-600) rather than CSS variables like --color-error-*. Other error states in LoginPage use CSS variables (e.g. var(--color-warning-bg)). AGENTS.md does not specify a convention for error-state colors.",
+      "evidence": "FirstPasswordChangePage.tsx:179 ('border-red-300 focus:border-red-400'), FirstPasswordChangePage.tsx:184 ('text-red-600'), ResetPasswordPage.tsx:224-229 same pattern. Contrast with LoginPage.tsx lockout banner using 'var(--color-warning-bg)'."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The auth page tests (LoginPage, ForgotPasswordPage, MfaPage, etc.) are tightly coupled to specific label text ('Work email', 'Forgot your password?', etc.). There is no centralized string constant or i18n key — the strings are duplicated between the component and the test assertions. This means any future label change requires updating both the component and potentially many test files.",
+      "evidence": "LoginPage.tsx uses 'Work email' and 'Forgot your password?' as inline strings. LoginPage.test.tsx asserts via getByLabelText(/work email/i) and getByText(/forgot your password/i). Same pattern in ForgotPasswordPage.tsx/.test.tsx."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The auth-shell-login-mfa feature is complete and correct. The commit is a minimal, targeted fix (3 small changes: 2 label text updates, 1 CSS class addition) that resolved 35 failing tests. The underlying auth flow implementations were already robust from the foundation milestone:\n\n✅ Login: valid/invalid credentials, company code errors, lockout states, runtime denial states — all properly handled with distinct UI states\n✅ MFA: TOTP code input with auto-submit at 6 digits, recovery code toggle, sessionStorage state preservation for mobile app switching, intended destination restoration\n✅ Forgot password: email enumeration prevention (same confirmation for any email), retryable persistence failure state, canonical /auth/password/forgot endpoint\n✅ Reset password: token extraction from URL, redirect to /forgot-password when missing, password rule indicators, token error recovery state vs password policy error distinction\n✅ Forced password change: session gate, redirects to /login when no session, sign-out after password change (token revocation)\n✅ Company switch: correctly uses POST /auth/refresh-token (not /multi-company/companies/switch)\n✅ MFA setup/activate/disable: correct endpoints (/auth/mfa/setup, /auth/mfa/activate, /auth/mfa/disable) with QR code, recovery codes, acknowledgement flow\n✅ Auth pages use CSS variables throughout (minor non-blocking: Tailwind red utilities for validation errors in password change pages)\n✅ Loading states on all submit buttons with Loader2 spinner\n✅ Toast notifications for errors (via centralized resolveError)\n✅ Test coverage: 97 tests across 5 test files covering all VAL-AUTH-001 through VAL-AUTH-008 assertions"
+}
