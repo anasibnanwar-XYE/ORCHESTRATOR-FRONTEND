@@ -1,0 +1,330 @@
+@import './variables.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-[var(--color-border-default)];
+  }
+
+  html {
+    @apply antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)];
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium;
+    @apply rounded-lg transition-all duration-150 ease-out;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--color-neutral-300)];
+    min-height: 40px;
+  }
+
+  /* Focus-visible ring for non-native interactive elements (e.g. span[role=button]
+     used to avoid invalid nested-button DOM structures). Keeps keyboard focus
+     consistent with the .btn ring pattern so all keyboard-activatable elements
+     share the same indicator regardless of their underlying element type. */
+  [role="button"] {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--color-neutral-300)];
+  }
+
+  .btn-primary {
+    @apply btn bg-[var(--color-neutral-900)] text-white;
+    @apply hover:bg-[var(--color-neutral-800)] active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn bg-[var(--color-surface-primary)] text-[var(--color-text-primary)];
+    @apply border border-[var(--color-border-default)] hover:bg-[var(--color-surface-tertiary)] hover:border-[var(--color-border-strong)];
+    @apply active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn bg-[var(--color-surface-primary)] text-red-600;
+    @apply border border-red-200 hover:bg-red-50 hover:border-red-300;
+    @apply active:scale-[0.98];
+  }
+
+  .input {
+    @apply w-full px-3 py-2 text-sm bg-[var(--color-surface-primary)];
+    @apply border border-[var(--color-border-default)] rounded-lg;
+    @apply placeholder:text-[var(--color-text-tertiary)];
+    @apply focus:outline-none focus:border-[var(--color-neutral-400)] focus:shadow-[0_0_0_3px_rgba(0,0,0,0.04)];
+    @apply transition-all duration-150 ease-out;
+    min-height: 40px;
+  }
+
+  .card {
+    @apply bg-[var(--color-surface-primary)] rounded-xl;
+    @apply shadow-[var(--shadow-sm)] border border-[var(--color-border-default)];
+  }
+
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-[var(--color-border-default)];
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-left font-semibold text-[var(--color-text-secondary)];
+    @apply bg-[var(--color-surface-tertiary)] border-b border-[var(--color-border-default)];
+  }
+
+  .table td {
+    @apply px-4 py-3 border-b border-[var(--color-border-subtle)];
+  }
+
+  .table tr:hover td {
+    @apply bg-[var(--color-surface-secondary)];
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn var(--transition-normal) ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp var(--transition-normal) ease-out;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /**
+   * touch-target: ensures a minimum 44×44px tap area on touch devices.
+   * Apply to any interactive element whose visual size is below 44px.
+   * Uses a pseudo-element overlay so layout is not affected.
+   */
+  .touch-target {
+    position: relative;
+  }
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ─── Spring-based animation system ─── */
+/* Apple-style spring: cubic-bezier(0.22, 1, 0.36, 1) */
+/* Snap spring:        cubic-bezier(0.16, 1, 0.3, 1)  */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes o-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes o-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes o-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes o-skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes o-check-draw {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Mobile overlay animations */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideDown {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sheetSlideDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+/* Shake animation for form errors */
+@keyframes o-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+.o-shake {
+  animation: o-shake 500ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Glass toast slide-in */
+@keyframes o-glass-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes o-glass-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+    filter: blur(2px);
+  }
+}
+.animate-glass-in {
+  animation: o-glass-in 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.animate-glass-out {
+  animation: o-glass-out 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Mobile card stack pattern */
+@media (max-width: 639px) {
+  .table-responsive {
+    @apply block;
+  }
+
+  .table-responsive thead {
+    @apply hidden;
+  }
+
+  .table-responsive tbody,
+  .table-responsive tr {
+    @apply block;
+  }
+
+  .table-responsive td {
+    @apply block px-4 py-2 border-b-0;
+    @apply before:content-[attr(data-label)] before:font-semibold before:text-[var(--color-text-secondary)];
+    @apply before:block before:text-xs before:uppercase before:tracking-wider;
+  }
+
+  .table-responsive tr {
+    @apply mb-4 card p-4;
+  }
+}
+
+/**
+  * Mobile touch-target enforcement.
+  * All interactive elements (buttons, links, selects) in the app shell and
+  * page content areas must have a minimum 44px hit area on touch devices.
+  *
+  * We use the "safe area" technique — a transparent ::after pseudo-element
+  * that expands the clickable region without altering visual layout.
+  *
+  * This targets elements whose visual height is ≤ 36px (h-7 / h-8 / p-1.5
+  * icon buttons) but not full-size elements like modals or form inputs.
+  */
+@media (hover: none) and (pointer: coarse) {
+  /* Icon-only small action buttons (p-1, p-1.5, p-2 sized icon buttons) */
+  button[aria-label],
+  a[aria-label] {
+    position: relative;
+  }
+
+  button[aria-label]::after,
+  a[aria-label]::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Navigation links in sidebars — increase height to 44px */
+  nav a,
+  nav button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Pagination buttons */
+  .pagination-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Inputs, textareas, and selects: scroll into view above the virtual
+     keyboard when focused. The 8px margin ensures the label above is
+     also visible. */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    scroll-margin-top: 8px;
+    scroll-margin-bottom: 8px;
+  }
+}

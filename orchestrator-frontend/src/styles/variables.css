@@ -1,0 +1,259 @@
+/* Orchestrator ERP Design System Variables */
+/* Semantic CSS Tokens - No hardcoded colors */
+
+:root {
+  /* Primary Color Palette */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Neutral Colors */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+
+  /* Semantic Error Tokens */
+  --color-error: #dc2626;
+  --color-error-hover: #b91c1c;
+  --color-error-bg: #fef2f2;
+  --color-error-bg-hover: #fee2e2;
+  --color-error-border: #fca5a5;
+  --color-error-border-subtle: #fecaca;
+  --color-error-ring: #fca5a5;
+  --color-error-icon: #f87171;
+
+  /* Semantic Success Tokens */
+  --color-success: #059669;
+  --color-success-icon: #10b981;
+  --color-success-bg: #ecfdf5;
+
+  /* Semantic Warning Tokens */
+  --color-warning: #d97706;
+  --color-warning-hover: #b45309;
+  --color-warning-icon: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-warning-ring: #fcd34d;
+
+  /* Semantic Info Tokens */
+  --color-info: #2563eb;
+
+  /* Status Colors - Success */
+  --color-status-success-bg: #dcfce7;
+  --color-status-success-text: #166534;
+  --color-status-success-border: #86efac;
+
+  /* Status Colors - Warning */
+  --color-status-warning-bg: #fef3c7;
+  --color-status-warning-text: #92400e;
+  --color-status-warning-border: #fcd34d;
+
+  /* Status Colors - Error */
+  --color-status-error-bg: #fee2e2;
+  --color-status-error-text: #991b1b;
+  --color-status-error-border: #fca5a5;
+
+  /* Status Colors - Info */
+  --color-status-info-bg: #dbeafe;
+  --color-status-info-text: #1e40af;
+  --color-status-info-border: #93c5fd;
+
+  /* Status Colors - Pending */
+  --color-status-pending-bg: #fef9c3;
+  --color-status-pending-text: #854d0e;
+  --color-status-pending-border: #fde047;
+
+  /* Ledger / Financial */
+  --color-debit: #2563eb;
+  --color-credit: #059669;
+
+  /* Surface Colors */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #fafafa;
+  --color-surface-tertiary: #f5f5f5;
+  --color-surface-elevated: #ffffff;
+
+  /* Text Colors */
+  --color-text-primary: #171717;
+  --color-text-secondary: #525252;
+  --color-text-tertiary: #737373;
+  --color-text-inverse: #ffffff;
+
+  /* Border Colors */
+  --color-border-default: #e5e5e5;
+  --color-border-strong: #d4d4d4;
+  --color-border-subtle: #f5f5f5;
+
+  /* Spacing */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* Border Radius */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Overlay Colors */
+  --color-overlay: rgba(0, 0, 0, 0.25);
+  --color-overlay-strong: rgba(0, 0, 0, 0.30);
+
+  /* UI Component Tokens */
+  --color-switch-thumb: #ffffff;
+  --color-badge-active-bg: rgba(255, 255, 255, 0.20);
+
+  /* Shadow Tokens */
+  --shadow-modal: 0 24px 80px -16px rgba(0, 0, 0, 0.12), 0 4px 12px -4px rgba(0, 0, 0, 0.05);
+  --shadow-dropdown: 0 8px 30px -8px rgba(0, 0, 0, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  --shadow-popover: 0 8px 40px -12px rgba(0, 0, 0, 0.10), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-drawer-left: 12px 0 48px -16px rgba(0, 0, 0, 0.08);
+  --shadow-drawer-right: -12px 0 48px -16px rgba(0, 0, 0, 0.08);
+
+  /* Z-Index Scale */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-popover: 400;
+  --z-tooltip: 500;
+  --z-toast: 600;
+}
+
+/* ─── Dark Mode ─── */
+.dark {
+  --color-primary-50: #172554;
+  --color-primary-100: #1e3a8a;
+  --color-primary-200: #1e40af;
+  --color-primary-300: #1d4ed8;
+  --color-primary-400: #2563eb;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #60a5fa;
+  --color-primary-700: #93c5fd;
+  --color-primary-800: #bfdbfe;
+  --color-primary-900: #dbeafe;
+
+  --color-neutral-50: #171717;
+  --color-neutral-100: #262626;
+  --color-neutral-200: #404040;
+  --color-neutral-300: #525252;
+  --color-neutral-400: #737373;
+  --color-neutral-500: #a3a3a3;
+  --color-neutral-600: #d4d4d4;
+  --color-neutral-700: #e5e5e5;
+  --color-neutral-800: #f5f5f5;
+  --color-neutral-900: #fafafa;
+
+  --color-surface-primary: #0a0a0a;
+  --color-surface-secondary: #111111;
+  --color-surface-tertiary: #1a1a1a;
+  --color-surface-elevated: #1a1a1a;
+
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a3a3a3;
+  --color-text-tertiary: #737373;
+  --color-text-inverse: #171717;
+
+  --color-border-default: #262626;
+  --color-border-strong: #404040;
+  --color-border-subtle: #1a1a1a;
+
+  /* Semantic Error Tokens (dark) */
+  --color-error: #f87171;
+  --color-error-hover: #ef4444;
+  --color-error-bg: #1a0808;
+  --color-error-bg-hover: #2a0f0f;
+  --color-error-border: #7f1d1d;
+  --color-error-border-subtle: #450a0a;
+  --color-error-ring: #7f1d1d;
+  --color-error-icon: #f87171;
+
+  /* Semantic Success Tokens (dark) */
+  --color-success: #34d399;
+  --color-success-icon: #4ade80;
+  --color-success-bg: #022c22;
+
+  /* Semantic Warning Tokens (dark) */
+  --color-warning: #fbbf24;
+  --color-warning-hover: #f59e0b;
+  --color-warning-icon: #fbbf24;
+  --color-warning-bg: #1c0f00;
+  --color-warning-ring: #92400e;
+
+  /* Semantic Info Tokens (dark) */
+  --color-info: #60a5fa;
+
+  /* Ledger / Financial (dark) */
+  --color-debit: #60a5fa;
+  --color-credit: #34d399;
+
+  --color-status-success-bg: #052e16;
+  --color-status-success-text: #4ade80;
+  --color-status-success-border: #166534;
+
+  --color-status-warning-bg: #451a03;
+  --color-status-warning-text: #fbbf24;
+  --color-status-warning-border: #92400e;
+
+  --color-status-error-bg: #450a0a;
+  --color-status-error-text: #f87171;
+  --color-status-error-border: #991b1b;
+
+  --color-status-info-bg: #172554;
+  --color-status-info-text: #60a5fa;
+  --color-status-info-border: #1e40af;
+
+  --color-status-pending-bg: #422006;
+  --color-status-pending-text: #fbbf24;
+  --color-status-pending-border: #854d0e;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+  --color-overlay: rgba(0, 0, 0, 0.50);
+  --color-overlay-strong: rgba(0, 0, 0, 0.65);
+  --color-switch-thumb: #ffffff;
+  --color-badge-active-bg: rgba(255, 255, 255, 0.15);
+
+  --shadow-modal: 0 24px 80px -16px rgba(0, 0, 0, 0.45), 0 4px 12px -4px rgba(0, 0, 0, 0.30);
+  --shadow-dropdown: 0 8px 30px -8px rgba(0, 0, 0, 0.45), 0 2px 8px -2px rgba(0, 0, 0, 0.30);
+  --shadow-popover: 0 8px 40px -12px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.30);
+  --shadow-drawer-left: 12px 0 48px -16px rgba(0, 0, 0, 0.40);
+  --shadow-drawer-right: -12px 0 48px -16px rgba(0, 0, 0, 0.40);
+}
