@@ -23,7 +23,7 @@
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
- import type { ExportRequestDto } from '@/types';
+ import type { ApprovalItem } from '@/types';
  import { format } from 'date-fns';
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@
  // ─────────────────────────────────────────────────────────────────────────────
  
  interface ActionState {
-   item: ExportRequestDto;
+   item: ApprovalItem;
    action: 'approve' | 'reject';
  }
  
@@ -86,7 +86,7 @@
  
  export function ExportApprovalsPage() {
    const { success, error: toastError } = useToast();
-   const [exports, setExports] = useState<ExportRequestDto[]>([]);
+   const [exports, setExports] = useState<ApprovalItem[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
    const [pendingAction, setPendingAction] = useState<ActionState | null>(null);
@@ -96,8 +96,10 @@
      setIsLoading(true);
      setError(null);
      try {
-       const data = await adminApi.getPendingExports();
-       setExports(data);
+       // Export approvals come from /admin/approvals → exportRequests array
+       // There is no /admin/exports/pending endpoint
+       const data = await adminApi.getApprovals();
+       setExports(data.exportRequests ?? []);
      } catch {
        setError("Couldn't load export requests. Please try again.");
      } finally {
@@ -109,11 +111,11 @@
  
    // ── Action handlers ────────────────────────────────────────────────────────
  
-   const handleApprove = useCallback((item: ExportRequestDto) => {
+   const handleApprove = useCallback((item: ApprovalItem) => {
      setPendingAction({ item, action: 'approve' });
    }, []);
  
-   const handleReject = useCallback((item: ExportRequestDto) => {
+   const handleReject = useCallback((item: ApprovalItem) => {
      setPendingAction({ item, action: 'reject' });
    }, []);
  
@@ -123,10 +125,10 @@
      setIsActing(true);
      try {
        if (action === 'approve') {
-         await adminApi.approveExport(item.requestId);
+         await adminApi.approveExport(item.id);
          success('Export approved. Generation has started.');
        } else {
-         await adminApi.rejectExport(item.requestId, {});
+         await adminApi.rejectExport(item.id, {});
          success('Export request denied. Requester has been notified.');
        }
        setPendingAction(null);
@@ -145,35 +147,39 @@
  
    // ── Table columns ──────────────────────────────────────────────────────────
  
-   const columns: Column<ExportRequestDto>[] = [
+   const columns: Column<ApprovalItem>[] = [
      {
        id: 'requester',
        header: 'Requester',
        accessor: (row) => (
-         <span className="text-[13px] text-[var(--color-text-primary)]">{row.requester}</span>
+         <span className="text-[13px] text-[var(--color-text-primary)]">
+           {row.requesterEmail ?? row.reference}
+         </span>
        ),
        sortable: true,
-       sortAccessor: (row) => row.requester,
+       sortAccessor: (row) => row.requesterEmail ?? row.reference,
      },
      {
        id: 'reportType',
        header: 'Export Type',
        accessor: (row) => (
-         <span className="text-[13px] text-[var(--color-text-primary)]">{row.reportType}</span>
+         <span className="text-[13px] text-[var(--color-text-primary)]">
+           {row.reportType ?? row.summary}
+         </span>
        ),
        sortable: true,
-       sortAccessor: (row) => row.reportType,
+       sortAccessor: (row) => row.reportType ?? row.summary,
      },
      {
        id: 'requestedAt',
        header: 'Requested',
        accessor: (row) => (
          <span className="text-[13px] text-[var(--color-text-secondary)] tabular-nums">
-           {formatDate(row.requestedAt)}
+           {formatDate(row.createdAt)}
          </span>
        ),
        sortable: true,
-       sortAccessor: (row) => new Date(row.requestedAt).getTime(),
+       sortAccessor: (row) => new Date(row.createdAt).getTime(),
        hideOnMobile: true,
      },
      {
@@ -237,12 +243,13 @@
            <DataTable
              columns={columns}
              data={exports}
-             keyExtractor={(row) => row.requestId}
+             keyExtractor={(row) => String(row.id)}
              searchable
              searchPlaceholder="Search by requester or type…"
              searchFilter={(row, q) =>
-               row.requester.toLowerCase().includes(q) ||
-               row.reportType.toLowerCase().includes(q)
+               (row.requesterEmail ?? '').toLowerCase().includes(q) ||
+               (row.reportType ?? row.summary ?? '').toLowerCase().includes(q) ||
+               (row.reference ?? '').toLowerCase().includes(q)
              }
              emptyMessage="No pending export requests"
              rowActions={(row) => (
@@ -268,15 +275,15 @@
                <div className="space-y-2">
                  <div className="flex items-center justify-between gap-2">
                    <span className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
-                     {row.requester}
+                     {row.requesterEmail ?? row.reference}
                    </span>
                    <Badge variant={getStatusBadgeVariant(row.status)} dot>
                      {row.status}
                    </Badge>
                  </div>
-                 <p className="text-[12px] text-[var(--color-text-secondary)]">{row.reportType}</p>
+                 <p className="text-[12px] text-[var(--color-text-secondary)]">{row.reportType ?? row.summary}</p>
                  <p className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums">
-                   {formatDate(row.requestedAt)}
+                   {formatDate(row.createdAt)}
                  </p>
                  <div className="flex items-center gap-1.5 pt-1 border-t border-[var(--color-border-subtle)]">
                    <Button
@@ -312,8 +319,8 @@
            }
            message={
              pendingAction.action === 'approve'
-               ? `Approve the export of "${pendingAction.item.reportType}" requested by ${pendingAction.item.requester}? Export generation will begin immediately.`
-               : `Reject the export request for "${pendingAction.item.reportType}" by ${pendingAction.item.requester}? They will receive a denial notification.`
+               ? `Approve the export of "${pendingAction.item.reportType ?? pendingAction.item.summary}" requested by ${pendingAction.item.requesterEmail ?? pendingAction.item.reference}? Export generation will begin immediately.`
+               : `Reject the export request for "${pendingAction.item.reportType ?? pendingAction.item.summary}" by ${pendingAction.item.requesterEmail ?? pendingAction.item.reference}? They will receive a denial notification.`
            }
            confirmLabel={pendingAction.action === 'approve' ? 'Approve' : 'Reject'}
            variant={pendingAction.action === 'reject' ? 'danger' : 'default'}

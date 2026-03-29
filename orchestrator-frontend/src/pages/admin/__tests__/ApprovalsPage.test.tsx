@@ -33,6 +33,10 @@
      approvePayroll: vi.fn(),
      approveCreditOverride: vi.fn(),
      rejectCreditOverride: vi.fn(),
+     approvePeriodClose: vi.fn(),
+     rejectPeriodClose: vi.fn(),
+     approveExport: vi.fn(),
+     rejectExport: vi.fn(),
    },
  }));
  
@@ -53,7 +57,7 @@
 const mockApprovals = {
   creditRequests: [
     {
-      type: 'CREDIT_REQUEST',
+      originType: 'CREDIT_REQUEST',
       id: 1,
       publicId: 'CR-001',
       reference: 'CR-2024-001',
@@ -64,7 +68,7 @@ const mockApprovals = {
   ],
   payrollRuns: [
     {
-      type: 'PAYROLL_RUN',
+      originType: 'PAYROLL_RUN',
       id: 2,
       publicId: 'PR-001',
       reference: 'PR-2024-001',
@@ -76,7 +80,7 @@ const mockApprovals = {
   exportRequests: [],
   periodCloseRequests: [
     {
-      type: 'CREDIT_OVERRIDE',
+      originType: 'CREDIT_LIMIT_OVERRIDE_REQUEST',
       id: 3,
       publicId: 'CO-001',
       reference: 'CO-2024-001',

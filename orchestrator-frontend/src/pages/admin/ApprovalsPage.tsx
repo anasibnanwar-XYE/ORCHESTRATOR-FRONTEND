@@ -41,8 +41,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
   return [
     ...mapBucket(raw.creditRequests),
     ...mapBucket(raw.payrollRuns),
-    ...mapBucket(raw.exportRequests),
     ...mapBucket(raw.periodCloseRequests),
+    ...mapBucket(raw.exportRequests),
   ].filter((item) => item.status?.toUpperCase() === 'PENDING' || !item.status);
 }
  
@@ -53,9 +53,10 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  function getTypeLabel(type: string): string {
    switch (type) {
      case 'CREDIT_REQUEST': return 'Credit Request';
+     case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'Credit Override';
      case 'PAYROLL_RUN': return 'Payroll Run';
-     case 'CREDIT_OVERRIDE': return 'Credit Override';
-     case 'ORDER_APPROVAL': return 'Order Approval';
+     case 'PERIOD_CLOSE_REQUEST': return 'Period Close';
+     case 'EXPORT_REQUEST': return 'Export Request';
      default: return type.replace(/_/g, ' ');
    }
  }
@@ -63,8 +64,10 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  function getTypeBadgeVariant(type: string): 'info' | 'warning' | 'success' | 'default' {
    switch (type) {
      case 'CREDIT_REQUEST': return 'info';
+     case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'success';
      case 'PAYROLL_RUN': return 'warning';
-     case 'CREDIT_OVERRIDE': return 'success';
+     case 'PERIOD_CLOSE_REQUEST': return 'default';
+     case 'EXPORT_REQUEST': return 'default';
      default: return 'default';
    }
  }
@@ -93,14 +96,14 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  
  function groupByType(items: ApprovalItem[]): GroupedApprovals {
    return items.reduce<GroupedApprovals>((acc, item) => {
-     const key = item.type;
+     const key = item.originType;
      if (!acc[key]) acc[key] = [];
      acc[key].push(item);
      return acc;
    }, {});
  }
  
- const TYPE_ORDER = ['CREDIT_REQUEST', 'PAYROLL_RUN', 'CREDIT_OVERRIDE', 'ORDER_APPROVAL'];
+ const TYPE_ORDER = ['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PAYROLL_RUN', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'];
  
  function sortedGroupKeys(groups: GroupedApprovals): string[] {
    const known = TYPE_ORDER.filter((k) => groups[k]);
@@ -128,7 +131,7 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  }
  
  function ApprovalCard({ item, onApprove, onReject }: ApprovalCardProps) {
-   const canReject = item.type !== 'PAYROLL_RUN';
+   const canReject = item.originType !== 'PAYROLL_RUN';
  
    return (
      <div
@@ -142,10 +145,12 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
        <div
          className={clsx(
            'absolute left-0 top-3 bottom-3 w-[3px] rounded-full',
-           item.type === 'CREDIT_REQUEST' && 'bg-[var(--color-primary-500)]',
-           item.type === 'PAYROLL_RUN' && 'bg-[var(--color-warning-icon)]',
-           item.type === 'CREDIT_OVERRIDE' && 'bg-[var(--color-success-icon)]',
-           !['CREDIT_REQUEST', 'PAYROLL_RUN', 'CREDIT_OVERRIDE'].includes(item.type) && 'bg-[var(--color-neutral-400)]',
+           item.originType === 'CREDIT_REQUEST' && 'bg-[var(--color-primary-500)]',
+           item.originType === 'CREDIT_LIMIT_OVERRIDE_REQUEST' && 'bg-[var(--color-success-icon)]',
+           item.originType === 'PAYROLL_RUN' && 'bg-[var(--color-warning-icon)]',
+           item.originType === 'PERIOD_CLOSE_REQUEST' && 'bg-[var(--color-neutral-400)]',
+           item.originType === 'EXPORT_REQUEST' && 'bg-[var(--color-neutral-400)]',
+           !['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PAYROLL_RUN', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'].includes(item.originType) && 'bg-[var(--color-neutral-400)]',
          )}
        />
  
@@ -155,8 +160,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
            <span className="text-[13px] font-semibold text-[var(--color-text-primary)] tabular-nums">
              {item.reference || item.publicId}
            </span>
-           <Badge variant={getTypeBadgeVariant(item.type)}>
-             {getTypeLabel(item.type)}
+           <Badge variant={getTypeBadgeVariant(item.originType)}>
+             {getTypeLabel(item.originType)}
            </Badge>
            <Badge variant={getStatusBadgeVariant(item.status)} dot>
              {item.status}
@@ -272,7 +277,7 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    }, []);
  
    const handleReject = useCallback((item: ApprovalItem) => {
-     if (item.type === 'PAYROLL_RUN') {
+     if (item.originType === 'PAYROLL_RUN') {
        toastError('Payroll runs can only be approved, not rejected.');
        return;
      }
@@ -285,27 +290,39 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      setIsActing(true);
      try {
        if (action === 'approve') {
-         switch (item.type) {
+         switch (item.originType) {
            case 'CREDIT_REQUEST':
              await adminApi.approveCreditRequest(item.id, { reason: '' });
+             break;
+           case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
+             await adminApi.approveCreditOverride(item.id);
              break;
            case 'PAYROLL_RUN':
              await adminApi.approvePayroll(item.id);
              break;
-           case 'CREDIT_OVERRIDE':
-             await adminApi.approveCreditOverride(item.id);
+           case 'PERIOD_CLOSE_REQUEST':
+             await adminApi.approvePeriodClose(item.id);
+             break;
+           case 'EXPORT_REQUEST':
+             await adminApi.approveExport(item.id);
              break;
            default:
              await adminApi.approveCreditRequest(item.id, { reason: '' });
          }
          success('Approved successfully.');
        } else {
-         switch (item.type) {
+         switch (item.originType) {
            case 'CREDIT_REQUEST':
              await adminApi.rejectCreditRequest(item.id, { reason: '' });
              break;
-           case 'CREDIT_OVERRIDE':
+           case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
              await adminApi.rejectCreditOverride(item.id);
+             break;
+           case 'PERIOD_CLOSE_REQUEST':
+             await adminApi.rejectPeriodClose(item.id);
+             break;
+           case 'EXPORT_REQUEST':
+             await adminApi.rejectExport(item.id);
              break;
            default:
              await adminApi.rejectCreditRequest(item.id, { reason: '' });
@@ -405,7 +422,7 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
                <div className="space-y-2">
                  {groups[type].map((item) => (
                    <ApprovalCard
-                     key={`${item.type}-${item.id}`}
+                     key={`${item.originType}-${item.id}`}
                      item={item}
                      onApprove={handleApprove}
                      onReject={handleReject}
@@ -423,8 +440,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
            isOpen
            title={
              pendingAction.action === 'approve'
-               ? `Approve ${getTypeLabel(pendingAction.item.type)}`
-               : `Reject ${getTypeLabel(pendingAction.item.type)}`
+               ? `Approve ${getTypeLabel(pendingAction.item.originType)}`
+               : `Reject ${getTypeLabel(pendingAction.item.originType)}`
            }
            message={
              pendingAction.action === 'approve'

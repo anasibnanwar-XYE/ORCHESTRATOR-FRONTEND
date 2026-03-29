@@ -26,7 +26,7 @@
  
  vi.mock('@/lib/adminApi', () => ({
    adminApi: {
-     getPendingExports: vi.fn(),
+     getApprovals: vi.fn(),
      approveExport: vi.fn(),
      rejectExport: vi.fn(),
    },
@@ -46,24 +46,33 @@
  import { ExportApprovalsPage } from '../ExportApprovalsPage';
  import { adminApi } from '@/lib/adminApi';
  
- const mockExports = [
-   {
-     requestId: 'exp-001',
-     requester: 'john@example.com',
-     reportType: 'Trial Balance',
-     requestedAt: '2024-03-01T10:00:00Z',
-     status: 'PENDING',
-     parameters: '',
-   },
-   {
-     requestId: 'exp-002',
-     requester: 'jane@example.com',
-     reportType: 'Profit & Loss',
-     requestedAt: '2024-03-02T11:00:00Z',
-     status: 'PENDING',
-     parameters: '',
-   },
- ];
+ const mockApprovalsWithExports = {
+   creditRequests: [],
+   payrollRuns: [],
+   periodCloseRequests: [],
+   exportRequests: [
+     {
+       originType: 'EXPORT_REQUEST',
+       id: 101,
+       reference: 'EXP-101',
+       requesterEmail: 'john@example.com',
+       reportType: 'Trial Balance',
+       createdAt: '2024-03-01T10:00:00Z',
+       status: 'PENDING',
+       parameters: '',
+     },
+     {
+       originType: 'EXPORT_REQUEST',
+       id: 102,
+       reference: 'EXP-102',
+       requesterEmail: 'jane@example.com',
+       reportType: 'Profit & Loss',
+       createdAt: '2024-03-02T11:00:00Z',
+       status: 'PENDING',
+       parameters: '',
+     },
+   ],
+ };
  
  function renderPage() {
    return render(
@@ -79,7 +88,7 @@
    });
  
    it('renders the page heading', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      renderPage();
      await waitFor(() => {
        expect(screen.getByText(/export approval/i)).toBeDefined();
@@ -87,14 +96,14 @@
    });
  
    it('shows skeleton loading state', () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
      renderPage();
      const skeletons = document.querySelectorAll('.animate-pulse');
      expect(skeletons.length).toBeGreaterThan(0);
    });
  
    it('shows error state on API failure', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API error'));
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("API error"));
      renderPage();
      await waitFor(() => {
        const msgs = screen.queryAllByText(/failed|error|couldn't|could not/i);
@@ -103,7 +112,7 @@
    });
  
    it('shows empty state when no pending exports', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue({ creditRequests: [], payrollRuns: [], periodCloseRequests: [], exportRequests: [] });
      renderPage();
      await waitFor(() => {
        const msgs = screen.queryAllByText(/no pending|no export/i);
@@ -112,7 +121,7 @@
    });
  
    it('shows requester email in the list', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      renderPage();
      await waitFor(() => {
        expect(screen.getAllByText('john@example.com').length).toBeGreaterThan(0);
@@ -120,7 +129,7 @@
    });
  
    it('shows export type in the list', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      renderPage();
      await waitFor(() => {
        expect(screen.getAllByText('Trial Balance').length).toBeGreaterThan(0);
@@ -128,7 +137,7 @@
    });
  
    it('shows approve and reject buttons', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      renderPage();
      await waitFor(() => {
        const approveBtns = screen.queryAllByText(/approve/i);
@@ -137,7 +146,7 @@
    });
  
    it('opens confirmation dialog on approve click', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('john@example.com').length).toBeGreaterThan(0));
      const approveBtns = screen.queryAllByText(/^approve$/i);
@@ -151,14 +160,14 @@
    });
  
    it('calls approveExport on confirmation', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      (adminApi.approveExport as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('john@example.com').length).toBeGreaterThan(0));
    });
  
    it('calls rejectExport on rejection confirmation', async () => {
-     (adminApi.getPendingExports as ReturnType<typeof vi.fn>).mockResolvedValue(mockExports);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovalsWithExports);
      (adminApi.rejectExport as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('john@example.com').length).toBeGreaterThan(0));

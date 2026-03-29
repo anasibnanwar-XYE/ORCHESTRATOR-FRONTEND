@@ -1314,14 +1314,23 @@ export interface CreateRoleRequest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ApprovalItem {
-  type: 'CREDIT_REQUEST' | 'PAYROLL_RUN' | 'CREDIT_OVERRIDE' | 'ORDER_APPROVAL' | string;
+  /** Backend field: originType (AdminApprovalItemDto.originType) */
+  originType: 'CREDIT_REQUEST' | 'CREDIT_LIMIT_OVERRIDE_REQUEST' | 'PAYROLL_RUN' | 'PERIOD_CLOSE_REQUEST' | 'EXPORT_REQUEST' | string;
+  ownerType?: string;
   id: number;
-  publicId: string;
+  publicId?: string;
   reference: string;
   status: string;
   summary: string;
+  reportType?: string;
+  parameters?: string;
+  requesterUserId?: number;
+  requesterEmail?: string;
+  actionType?: string;
+  actionLabel?: string;
+  approveEndpoint?: string;
+  rejectEndpoint?: string;
   createdAt: string;
-  details?: Record<string, unknown>;
 }
 
 export interface ApprovalsResponse {
@@ -1335,6 +1344,11 @@ export interface ApprovalsResponse {
 
 export interface CreditRequestDecisionRequest {
   reason: string;
+}
+
+export interface PeriodCloseActionRequest {
+  note?: string;
+  force?: boolean;
 }
  
  // ─────────────────────────────────────────────────────────────────────────────

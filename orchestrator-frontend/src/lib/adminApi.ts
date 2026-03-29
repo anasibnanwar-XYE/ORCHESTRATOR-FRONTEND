@@ -17,6 +17,7 @@ import type {
   Company,
   AdminSettings,
   CreditRequestDecisionRequest,
+  PeriodCloseActionRequest,
   AdminNotifyRequest,
   ChangelogEntryRequest,
   ChangelogEntryResponse,
@@ -79,7 +80,7 @@ export const adminApi = {
 
   async approveCreditRequest(id: number, data: CreditRequestDecisionRequest): Promise<void> {
     const response = await apiRequest.post<ApiResponse<void>>(
-      `/sales/credit-requests/${id}/approve`,
+      `/credit/limit-requests/${id}/approve`,
       data
     );
     if (!response.data.success) {
@@ -89,8 +90,28 @@ export const adminApi = {
 
   async rejectCreditRequest(id: number, data: CreditRequestDecisionRequest): Promise<void> {
     const response = await apiRequest.post<ApiResponse<void>>(
-      `/sales/credit-requests/${id}/reject`,
+      `/credit/limit-requests/${id}/reject`,
       data
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  async approvePeriodClose(id: number, data?: PeriodCloseActionRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/accounting/periods/${id}/approve-close`,
+      data ?? {}
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
+  async rejectPeriodClose(id: number, data?: PeriodCloseActionRequest): Promise<void> {
+    const response = await apiRequest.post<ApiResponse<void>>(
+      `/accounting/periods/${id}/reject-close`,
+      data ?? {}
     );
     if (!response.data.success) {
       throw new Error(response.data.message);
@@ -124,25 +145,20 @@ export const adminApi = {
 
   // ─────────────────────────────────────────────────────────────────────────
   // Export Approvals
+  // NOTE: Export approvals are loaded via getApprovals().exportRequests —
+  //       there is no /admin/exports/pending endpoint.
   // ─────────────────────────────────────────────────────────────────────────
 
-  async getPendingExports(): Promise<ExportRequestDto[]> {
-    const response = await apiRequest.get<ApiResponse<ExportRequestDto[]>>(
-      '/admin/exports/pending'
+  async approveExport(id: number): Promise<ExportRequestDto> {
+    const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
+      `/admin/exports/${id}/approve`
     );
     return response.data.data;
   },
 
-  async approveExport(requestId: string): Promise<ExportRequestDto> {
+  async rejectExport(id: number, data?: ExportRequestDecisionRequest): Promise<ExportRequestDto> {
     const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
-      `/admin/exports/${requestId}/approve`
-    );
-    return response.data.data;
-  },
-
-  async rejectExport(requestId: string, data?: ExportRequestDecisionRequest): Promise<ExportRequestDto> {
-    const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
-      `/admin/exports/${requestId}/reject`,
+      `/admin/exports/${id}/reject`,
       data
     );
     return response.data.data;
