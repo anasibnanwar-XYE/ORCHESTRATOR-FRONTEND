@@ -66,6 +66,35 @@ agent-browser validators MUST simulate real human behavior, not just test predef
 - Do NOT change theme settings if another subagent is testing theme behavior
 - Keep theme-dependent tests isolated to their own subagent
 
+## Flow Validator Guidance: Browser — Auth & Shell Assertions (auth-shell milestone)
+
+### Isolation Rules
+- Auth assertions (VAL-AUTH-001 to VAL-AUTH-017) involve heavy auth state manipulation (login, logout, MFA, company switch)
+- Each subagent MUST use its own agent-browser session to avoid auth state conflicts
+- Group 1 (login/auth core) manipulates login state heavily — must be isolated from Group 2
+- Group 2 (profile/nav/shell) requires staying logged in — must not be disturbed by login/logout in other sessions
+- Both groups can run concurrently using separate browser sessions
+- Do NOT modify user profile data that would affect other tests (e.g., changing MFA state)
+
+### Concurrency
+- Max 2 concurrent subagents for auth-shell (each uses own session with independent auth state)
+- Group 1 and Group 2 can run in parallel with separate sessions
+
+### Shared State to Avoid
+- Do NOT perform logout in one session while another session is testing authenticated features
+- Do NOT modify MFA settings (enable/disable) that would affect login behavior for other sessions
+- Do NOT change company context in one session while another tests company-dependent features
+- Each session should login with its own credentials independently
+
+### Auth Testing Notes
+- For login tests: start from /login page, test valid and invalid credentials
+- Company code field: MOCK for most test accounts, SKE for superadmin
+- MFA: there may not be an MFA-enabled test account; if MFA test account doesn't exist, report as blocked
+- Password reset: requires a valid reset token from backend; may need to trigger forgot-password flow first
+- Forced password change: requires a user with mustChangePassword=true; may not exist in seed data
+- Session keepalive: check network tab for periodic /auth/me requests while logged in
+- Command palette: Ctrl+K (not Cmd+K on Linux) to open
+
 ## Known Testing Constraints
 
 - HR/Payroll module is on hold - skip any HR/payroll testing

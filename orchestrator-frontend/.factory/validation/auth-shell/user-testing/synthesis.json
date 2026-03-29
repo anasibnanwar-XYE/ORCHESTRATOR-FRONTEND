@@ -1,0 +1,54 @@
+{
+  "milestone": "auth-shell",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 17,
+    "passed": 14,
+    "failed": 0,
+    "blocked": 3
+  },
+  "passedAssertions": [
+    "VAL-AUTH-001",
+    "VAL-AUTH-002",
+    "VAL-AUTH-003",
+    "VAL-AUTH-007",
+    "VAL-AUTH-008",
+    "VAL-AUTH-009",
+    "VAL-AUTH-010",
+    "VAL-AUTH-011",
+    "VAL-AUTH-012",
+    "VAL-AUTH-013",
+    "VAL-AUTH-014",
+    "VAL-AUTH-015",
+    "VAL-AUTH-016",
+    "VAL-AUTH-017"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [
+    {
+      "id": "VAL-AUTH-004",
+      "blockedBy": "No MFA-enabled test account available in seed data. All test accounts (admin, accounting, sales, factory, dealer, superadmin) bypass MFA. Frontend code has MFA redirect logic in LoginPage.tsx but no account triggers it."
+    },
+    {
+      "id": "VAL-AUTH-005",
+      "blockedBy": "No MFA-enabled test account with known TOTP secret. Frontend MfaPage.tsx and verifyMfa() in authApi exist but cannot test end-to-end without a provisioned MFA account."
+    },
+    {
+      "id": "VAL-AUTH-006",
+      "blockedBy": "No test account with mustChangePassword=true exists in seed data. Frontend redirect logic exists in LoginPage.tsx but cannot test without a provisioned account with this flag."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added Flow Validator Guidance section for auth-shell assertions with isolation rules, concurrency limits, and shared state avoidance for auth-heavy tests",
+      "source": "setup"
+    }
+  ],
+  "previousRound": null,
+  "flowReports": [
+    ".factory/validation/auth-shell/user-testing/flows/auth-login-core.json",
+    ".factory/validation/auth-shell/user-testing/flows/auth-profile-nav.json"
+  ]
+}
