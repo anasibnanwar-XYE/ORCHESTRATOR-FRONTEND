@@ -99,15 +99,21 @@ describe('useBackgroundFetch', () => {
       useBackgroundFetch(fetchFn, { interval: 5000 }),
     );
 
-    await waitFor(() => expect(result.current.data).toEqual({ n: 1 }));
+    // Flush the initial fetch using act + advanceTimersByTime to allow the
+    // microtask queue (Promise.resolve) to settle under fake timers.
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(result.current.data).toEqual({ n: 1 });
     expect(fetchFn).toHaveBeenCalledTimes(1);
 
-    // Advance timer by two intervals.
+    // Advance timer by two intervals to trigger polling.
     await act(async () => {
       vi.advanceTimersByTime(10_000);
     });
 
-    expect(fetchFn.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(fetchFn.mock.calls.length).toBeGreaterThanOrEqual(3);
 
     vi.useRealTimers();
   });
