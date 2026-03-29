@@ -1,0 +1,50 @@
+{
+  "featureId": "admin-nav-responsive",
+  "reviewedAt": "2026-03-30T00:00:00.000Z",
+  "commitId": "dde122b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation successfully refactors the admin sidebar from a flat list into a logically grouped NAV_GROUPS structure, adds the missing Portal Insights and Tenant Runtime nav items, adds the /admin/tenant-runtime route and /admin/insights alias, updates ROUTE_LABELS for correct breadcrumbs, and ensures responsive layout at 1366px and 768px. The code is clean, well-structured, and follows existing codebase patterns. The NavItemLink helper component properly DRYs up repeated NavLink rendering. All expected nav items (Dashboard, Users, Roles, Companies, Settings, Approvals, Export Approvals, Notifications, Changelog, Orchestrator, Portal Insights, Audit Trail, Tenant Runtime, Operations) are present. Tests were updated to cover the new structure.",
+    "issues": [
+      {
+        "file": "src/layouts/AdminLayout.tsx",
+        "line": 1,
+        "severity": "non_blocking",
+        "description": "The file-level JSDoc comment lists nav items as 'Dashboard, Operations, Approvals, Users, Roles, Companies, Notifications, Changelog, Settings' — this is stale and no longer reflects the grouped NAV_GROUPS structure or the newly added items (Portal Insights, Tenant Runtime, Export Approvals, Orchestrator, Audit Trail). Should be updated to match the current nav configuration."
+      },
+      {
+        "file": "src/layouts/AdminLayout.tsx",
+        "line": 113,
+        "severity": "non_blocking",
+        "description": "The /admin/insights alias route is listed in ROUTE_LABELS but the Portal Insights NavLink points to /admin/portal-insights. When a user navigates to /admin/insights (the alias), the Portal Insights nav item will NOT be highlighted as active because NavLink's default isActive check compares exact paths. The handoff already notes this as a known minor UX issue. This is acceptable for now but could be improved by adding a custom isActive matcher to NavItemLink."
+      },
+      {
+        "file": "src/layouts/AdminLayout.tsx",
+        "line": 204,
+        "severity": "non_blocking",
+        "description": "NAV_GROUPS.map uses array index (groupIdx) as the React key. While this is acceptable here since the groups are a static constant that never reorders, it would be slightly more robust to use group.label as the key (with a fallback for the ungrouped Dashboard entry)."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "NAV_GROUPS pattern (grouped nav with NavGroup interface and NavItemLink helper) is now used in AdminLayout.tsx but other layouts (DealerLayout, SalesLayout, SuperadminLayout) still use flat NAV_ITEMS arrays. If the grouped pattern is preferred, this could be documented in AGENTS.md or architecture docs as the recommended approach for all portal layouts.",
+      "evidence": "AdminLayout.tsx uses NavGroup[] with NAV_GROUPS; DealerLayout.tsx:50, SalesLayout.tsx:51, SuperadminLayout.tsx:53 still use flat NavItem[] with NAV_ITEMS."
+    },
+    {
+      "area": "skills",
+      "observation": "Worker's skillFeedback.suggestedChanges notes that the frontend-worker skill mandates invoking frontend-skill for UI work, but the worker found it less relevant for this structural nav refactor task. The skill file does say 'Invoke frontend-skill (MANDATORY for UI work)' — the skill could clarify that purely structural/routing changes (nav reorganization, route additions) without visual design decisions may not require frontend-skill invocation.",
+      "evidence": "Handoff skillFeedback.suggestedChanges: 'The skill suggests invoking frontend-skill for UI work, but for this nav refactor task which primarily involved structural changes (grouping, new routes) without major visual design decisions, the frontend-skill invocation would have been less relevant.'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The /admin/insights alias route pattern (rendering the same component at two paths) could be documented as a project pattern for route aliases. No existing documentation covers this pattern in .factory/library/.",
+      "evidence": "App.tsx line 886: `<Route path='insights' element={<AdminPortalInsightsPage />} />` mirrors `<Route path='portal-insights' element={<AdminPortalInsightsPage />} />`"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The admin nav responsive feature is well-implemented. All 14 expected nav items are present in 5 logical groups (ungrouped Dashboard, Management, Workflows, Analytics & Ops, System). The NavItemLink helper properly DRYs up repeated NavLink code. Responsive layout is handled correctly: sidebar is hidden on screens < lg (1024px) and replaced with a hamburger-triggered mobile drawer; the main content area uses min-w-0 + overflow-hidden to prevent horizontal overflow at 1366px and 768px. Breadcrumbs are correct for all routes including the /admin/insights alias. Three minor non-blocking issues noted: stale file-level JSDoc comment, Portal Insights nav item not highlighted on /admin/insights alias URL, and array-index keys for static group rendering. Tests were appropriately updated to verify the new nav structure and group headings."
+}

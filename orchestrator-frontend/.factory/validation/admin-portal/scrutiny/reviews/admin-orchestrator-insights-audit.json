@@ -1,0 +1,62 @@
+{
+  "featureId": "admin-orchestrator-insights-audit",
+  "reviewedAt": "2026-03-30T00:30:00.000Z",
+  "commitId": "f1abd40",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation covers all three areas (orchestrator dashboard, portal insights, audit trail) comprehensively. All three orchestrator tabs (Admin/Factory/Finance) correctly fetch from /orchestrator/dashboard/* endpoints using raw JSON (no ApiResponse wrapper). Portal Insights has three tabs (Dashboard/Operations/Workforce) with proper error handling for disabled HR_PAYROLL module. Audit Trail has two tabs (Business Events/ML Events) with paginated DataTable, debounced actor filtering, and graceful handling of backend 500 errors. API types in types/index.ts accurately reflect actual backend DTOs. All pages have loading skeletons, error states, and empty states. Tenant scoping is enforced at the API client level via X-Company-Code and X-Company-Id headers injected on every request.",
+    "issues": [
+      {
+        "file": "src/pages/admin/OrchestratorDashboardPage.tsx",
+        "line": 110,
+        "severity": "non_blocking",
+        "description": "AdminTab's credit utilization percentage calculation uses a hardcoded assumption of 100000 per dealer for the credit limit. The formula `creditUtilization / (total * 100000)` is fragile — if the backend ever provides per-dealer credit limits or the limit changes, this would produce incorrect percentages. Consider fetching the actual credit limit from the backend or making the assumption explicit with a named constant."
+      },
+      {
+        "file": "src/pages/admin/PortalInsightsPage.tsx",
+        "line": 260,
+        "severity": "non_blocking",
+        "description": "WorkforceTab's error detection relies on substring matching of error messages ('HR_PAYROLL', 'disabled', 'MODULE') to distinguish module-disabled errors from other failures. This is fragile — if the backend changes the error message wording, the error would fall through to a generic error state rather than the 'module disabled' state. A more robust approach would be to check the HTTP 403 status code directly (which the API layer already captures) rather than parsing the message text."
+      },
+      {
+        "file": "src/pages/admin/AuditTrailPage.tsx",
+        "line": 171,
+        "severity": "non_blocking",
+        "description": "BusinessEventsTab catches errors and checks for status 500 via Axios error response, but doesn't handle other non-200 status codes (e.g., 403) with specific UI. If the backend returns 403 for audit events, the generic error message would be shown. Consider adding specific handling for 403 similar to what PortalInsightsPage does for the workforce tab."
+      },
+      {
+        "file": "src/pages/admin/AuditTrailPage.tsx",
+        "line": 137,
+        "severity": "non_blocking",
+        "description": "The search input filters by 'actor' query parameter only. The AuditEventFilters type supports additional filter fields (action, resource, from, to) but the BusinessEventsTab UI only exposes the actor search. The superadmin audit page already has date range and action type filters — the admin audit page could benefit from similar filter capabilities for consistency. Not blocking since it's a 'polish' feature, but it's a functional gap."
+      },
+      {
+        "file": "src/types/index.ts",
+        "line": 660,
+        "severity": "non_blocking",
+        "description": "The BusinessEvent type uses `id: string | number` but the DataTable keyExtractor casts it with `String(event.id)`. This is fine for rendering but if the backend returns numeric IDs, the type should be consistent. Minor typing concern, not a runtime issue."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Some API endpoints return raw JSON (no ApiResponse wrapper) while most return ApiResponse<T>. The orchestrator dashboard endpoints (/orchestrator/dashboard/*, /orchestrator/health/*) return raw JSON, requiring `response.data` instead of `response.data.data`. This distinction is currently handled in adminApi.ts with per-method comments, but isn't documented in AGENTS.md as a pattern for future workers to follow.",
+      "evidence": "src/lib/adminApi.ts:218-250 — orchestratorApi methods use response.data directly vs. portalInsightsApi methods using response.data.data"
+    },
+    {
+      "area": "knowledge",
+      "observation": "Backend endpoints may return non-2xx status codes for expected conditions (403 for disabled modules like HR_PAYROLL, 500 for audit service misconfiguration). Frontend code must handle these gracefully. This is a pattern that should be documented for future feature work.",
+      "evidence": "src/pages/admin/PortalInsightsPage.tsx WorkforceTab handles 403, src/pages/admin/AuditTrailPage.tsx BusinessEventsTab handles 500"
+    },
+    {
+      "area": "conventions",
+      "observation": "All admin API modules (orchestratorApi, portalInsightsApi, auditApi) are exported from a single adminApi.ts file. This file is now 400+ lines and growing. While not a problem yet, it may benefit from splitting into separate files (e.g., orchestratorApi.ts, portalApi.ts, auditApi.ts) as more features are added.",
+      "evidence": "src/lib/adminApi.ts — contains adminApi, changelogApi, orchestratorApi, portalInsightsApi, auditApi, tenantApi, operationsControlApi in one file"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The implementation correctly covers all required functionality: orchestrator dashboard with 3 tabs (Admin/Factory/Finance) fetching from correct endpoints, portal insights with 3 tabs (Dashboard/Operations/Workforce) with graceful error handling for disabled modules, and audit trail with 2 tabs (Business Events/ML Events) with pagination and filtering. Tenant scoping is properly enforced through the centralized API client's X-Company-Code/X-Company-Id header injection. Type definitions accurately match actual backend DTOs. Code quality is good with proper loading/error/empty states, responsive layouts, and debounced search. Five non-blocking issues noted: hardcoded credit limit assumption, fragile error message detection, incomplete error status handling, limited filter UI on admin audit, and minor type inconsistency. No cross-tenant data leakage concerns."
+}

@@ -1,0 +1,28 @@
+{
+  "featureId": "admin-approvals-exports",
+  "reviewedAt": "2026-03-30T00:30:00.000Z",
+  "commitId": "fde6212",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly addresses all feature requirements: credit limit request approve/reject uses /credit/limit-requests/{id}/approve|reject, credit override uses /credit/override-requests/{id}/approve|reject, export approvals load from /admin/approvals exportRequests (NOT /admin/exports/pending), and all 4 grouped sections are displayed with approve/reject actions. The old /admin/exports/pending endpoint reference (getPendingExports) has been removed. The ApprovalItem type has been updated to use 'originType' (matching backend AdminApprovalItemDto) instead of 'type'. One minor issue: the ApprovalsPage.tsx file-level comment block (lines 5-6) still references the old '/sales/credit-requests' endpoints, which is misleading though it doesn't affect runtime behavior since the actual API calls are correct. There is also a non-blocking concern about ExportApprovalsPage loading the entire approvals response when it only needs exportRequests.",
+    "issues": [
+      {
+        "file": "src/pages/admin/ApprovalsPage.tsx",
+        "line": 5,
+        "severity": "non_blocking",
+        "description": "File-level JSDoc comment still references old endpoints: 'Credit Request → approve (POST /sales/credit-requests/{id}/approve)' and 'reject (POST /sales/credit-requests/{id}/reject)'. These are incorrect — the actual code uses /credit/limit-requests endpoints. This is misleading for developers reading the file but has no runtime impact since the actual adminApi calls are correct."
+      },
+      {
+        "file": "src/pages/admin/ExportApprovalsPage.tsx",
+        "line": 99,
+        "severity": "non_blocking",
+        "description": "ExportApprovalsPage calls adminApi.getApprovals() which fetches the entire approvals response (creditRequests, payrollRuns, periodCloseRequests, exportRequests) but only uses exportRequests. This is wasteful — it fetches all approval types when only exports are needed. However, this is a reasonable trade-off given that: (a) the alternative (/admin/exports/pending) doesn't exist, (b) the ApprovalsPage already fetches the same endpoint, and (c) the data size is typically small. Not blocking."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Feature implementation is solid and meets all requirements. The critical endpoint fixes are correct: credit limit requests now use /credit/limit-requests/{id}/approve|reject (not /sales/credit-requests), credit overrides use /credit/override-requests/{id}/approve|reject, period close uses /accounting/periods/{id}/approve-close|reject-close, and export approvals are loaded from the /admin/approvals response's exportRequests array (not from the non-existent /admin/exports/pending). The ApprovalItem type was correctly updated from 'type' to 'originType' to match the backend DTO. Approve/reject actions work for all 5 approval types. The code follows existing project patterns (adminApi module, DataTable, Badge, ConfirmDialog). Two minor non-blocking issues: (1) stale JSDoc comment in ApprovalsPage referencing old /sales/credit-requests endpoints, and (2) ExportApprovalsPage fetches the full approvals response when only exports are needed (acceptable trade-off)."
+}

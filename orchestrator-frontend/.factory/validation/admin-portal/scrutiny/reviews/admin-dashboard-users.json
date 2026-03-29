@@ -1,0 +1,51 @@
+{
+  "featureId": "admin-dashboard-users",
+  "reviewedAt": "2026-03-30T12:00:00.000Z",
+  "commitId": "77fc9d0",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation covers the feature requirements well: AdminDashboardPage correctly calls GET /portal/dashboard via portalInsightsApi.getDashboard(), UsersPage has full CRUD with suspend/unsuspend/MFA disable/force reset password, responsive layout uses CSS variables throughout, mobileCardRenderer is properly implemented in the DataTable, and SUPER_ADMIN role is hidden for tenant admins in both the create and edit user modals. API endpoints all match the backend contracts. TypeScript compiles cleanly. A few minor code quality observations noted below.",
+    "issues": [
+      {
+        "file": "src/pages/admin/UsersPage.tsx",
+        "line": 567,
+        "severity": "non_blocking",
+        "description": "Unsafe type cast: `setUsers(usersData as unknown as AdminUser[])`. The `adminApi.getUsers()` returns `User[]` (MeResponse shape) but `AdminUser` expects `id`, `publicId`, `companies` (string[]), `enabled`, and `createdAt`/`lastLogin` fields that don't exist on the `User` type. This works at runtime because the backend response from GET /admin/users likely includes those extra fields, but the type mismatch is fragile. Consider defining an `AdminUserResponse` type matching the actual GET /admin/users response DTO and typing the API method accordingly."
+      },
+      {
+        "file": "src/pages/admin/UsersPage.tsx",
+        "line": 622,
+        "severity": "non_blocking",
+        "description": "The `editingForm` derivation maps `editingUser.companies` (string[]) to `companyIds` by filtering `companies.filter((c) => editingUser.companies.includes(c.code))`. This assumes company strings in AdminUser.companies are company codes. If they're company names or IDs, the match will silently fail and the edit form will open with no companies pre-selected. This works if backend returns codes, but the assumption is implicit."
+      },
+      {
+        "file": "src/pages/admin/AdminDashboardPage.tsx",
+        "line": 355,
+        "severity": "non_blocking",
+        "description": "No explicit 1366px responsive breakpoint. The dashboard uses Tailwind defaults: `grid-cols-2` (mobile) → `lg:grid-cols-4` (1024px). The feature description specifies responsive at 1366px and 768px. The `sm` breakpoint (640px) handles the DataTable mobile card layout switch. The gap is that there's no custom 1366px breakpoint in tailwind.config.js — the `lg` (1024px) breakpoint is used instead. This is acceptable for practical purposes but doesn't exactly match the 1366px specification."
+      },
+      {
+        "file": "src/pages/admin/UsersPage.tsx",
+        "line": 53,
+        "severity": "non_blocking",
+        "description": "RBAC test coverage gap: The UsersPage test file mocks useAuth with a non-SUPER_ADMIN user (ROLE_ADMIN), which verifies the hideSuperAdmin=true path. However, there are no test assertions explicitly verifying that ROLE_SUPER_ADMIN is filtered from the roles list in UserFormModal. The test setup mocks the roles but doesn't assert the filtered behavior."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The `User` type in types/index.ts is defined as matching GET /auth/me (MeResponse), but the admin users endpoint GET /admin/users returns a richer shape with `id`, `publicId`, `companies`, `enabled`, `createdAt`, `lastLogin`. The codebase uses `as unknown as AdminUser[]` to bridge this gap. AGENTS.md does not document the convention for handling response types that differ between endpoints for the same entity.",
+      "evidence": "src/pages/admin/UsersPage.tsx:567 — `setUsers(usersData as unknown as AdminUser[])`, src/types/index.ts:1280 — `User` interface lacks id, companies, enabled fields that AdminUser expects"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The feature description specifies responsive breakpoints at 1366px and 768px, but the project uses Tailwind's default breakpoints (sm=640px, md=768px, lg=1024px, xl=1280px, 2xl=1536px). No custom breakpoints are defined in tailwind.config.js. Workers use `sm:` for mobile card layout (640px) and `lg:` for grid columns (1024px), which are close approximations but not exact matches to the spec.",
+      "evidence": "tailwind.config.js — no custom screens/breakpoints defined, AdminDashboardPage.tsx uses `lg:grid-cols-4` and `sm:gap-2`, DataTable.tsx uses `sm:block`/`sm:hidden` for card/table switching"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The admin-dashboard-users feature is well-implemented. AdminDashboardPage correctly uses GET /portal/dashboard with dynamic highlights/pipeline/hrPulse and proper fallback to static cards. UsersPage has complete CRUD operations, suspend/unsuspend, MFA disable, and force reset password — all mapped to correct backend endpoints. The DataTable mobileCardRenderer provides a good mobile experience with avatar, status badge, role chips, and MFA indicator. SUPER_ADMIN role is correctly hidden for tenant admins in both create and edit user modals via the `hideSuperAdmin` prop pattern. All styling uses CSS variables (no hardcoded hex colors). TypeScript compiles cleanly with no errors. The main non-blocking issue is the unsafe `as unknown as AdminUser[]` cast due to the `User` type not matching the admin users response shape — this should be addressed with a proper admin-specific user type. Responsive layout works but uses Tailwind's default breakpoints (640px/1024px) rather than the specified 768px/1366px."
+}

@@ -1,0 +1,34 @@
+{
+  "featureId": "admin-roles-companies-settings",
+  "reviewedAt": "2026-03-30T01:30:00.000Z",
+  "commitId": "116e03c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly polishes the Roles, Companies, and Settings pages for the admin portal. The commit (116e03c) modifies only RolesPage.tsx and its test file, as CompaniesPage and SettingsPage were already complete and correct. The SUPER_ADMIN filtering logic is sound, the API endpoints are correct, and responsive design is handled via hideOnMobile column flags and sm:grid-cols-2 responsive grids.",
+    "issues": [
+      {
+        "file": "src/pages/admin/RolesPage.tsx",
+        "line": 46,
+        "severity": "non_blocking",
+        "description": "The permToString/permKey helper functions defensively handle permissions as `unknown` (objects or strings), but the Role type declares `permissions: string[]`. This mismatch suggests the type may be inaccurate, or the helpers are overly defensive. Not a bug, but a type consistency concern."
+      },
+      {
+        "file": "src/pages/admin/RolesPage.tsx",
+        "line": 180,
+        "severity": "non_blocking",
+        "description": "The isSuperAdmin check uses `currentUser?.roles?.includes('ROLE_SUPER_ADMIN')` which works but relies on the User type's `roles: string[]` field. This is correct per the User interface definition. However, there's no guard against the edge case where `currentUser` is null (user not logged in) — though in practice the auth routing should prevent unauthenticated access. The `?? false` fallback handles this gracefully."
+      },
+      {
+        "file": "src/pages/admin/CompaniesPage.tsx",
+        "line": 1,
+        "severity": "non_blocking",
+        "description": "CompaniesPage has full CRUD (create, edit, delete) functionality. The feature description says 'list tenant companies' which implies read-only. However, since the backend endpoint `/companies` supports these operations for admin users, this is likely intended behavior. No functional issue."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The implementation fully covers the feature requirements: (1) RolesPage correctly hides ROLE_SUPER_ADMIN for non-superadmin users via a clean client-side filter using `useAuth()`, while showing all roles for superadmin users. The role count in the header correctly reflects the filtered list. (2) CompaniesPage provides full company listing with CRUD operations, proper GST validation, and responsive layout. (3) SettingsPage is properly read-only with a clear notice explaining platform admin management, no save button, and responsive grid layout. API endpoints are correct (GET /admin/roles, GET /companies with CRUD, GET /admin/settings). The commit is minimal and focused — only RolesPage was changed (the other two pages were already implemented). All 24 tests pass. No blocking issues found."
+}

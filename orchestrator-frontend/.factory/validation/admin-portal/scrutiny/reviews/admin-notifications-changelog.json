@@ -1,0 +1,51 @@
+{
+  "featureId": "admin-notifications-changelog",
+  "reviewedAt": "2026-03-30T04:45:00.000Z",
+  "commitId": "61fa10f",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly makes the ChangelogPage read-only for tenant admin by removing all CRUD controls (create/edit/delete buttons, form, and modal) and adding an informational notice. The changelogApi CRUD endpoints were correctly updated to /superadmin/changelog. The NotificationsPage correctly implements a compose form with recipient selector, subject, body, and sends via POST /admin/notify with the correct AdminNotifyRequest payload. The WhatsNewBanner is properly exported and uses GET /changelog/latest-highlighted.",
+    "issues": [
+      {
+        "file": "src/pages/admin/ChangelogPage.tsx",
+        "line": 136,
+        "severity": "non_blocking",
+        "description": "The load() callback calls changelogApi.list(0, 50) but the list function defaults to (page=0, size=20). The hardcoded 50 is fine for now but is not configurable. Minor — not a bug, just a design note."
+      },
+      {
+        "file": "src/pages/admin/NotificationsPage.tsx",
+        "line": 34,
+        "severity": "non_blocking",
+        "description": "SentRecord interface uses `id: number` set via `Date.now()`. This is a local-only session tracker so it's acceptable, but could theoretically collide if two notifications are sent in the same millisecond. Very low risk in practice."
+      },
+      {
+        "file": "src/pages/admin/NotificationsPage.tsx",
+        "line": 53,
+        "severity": "non_blocking",
+        "description": "In the `catch` block for loading users, the error is silently swallowed with a comment 'Non-blocking, still show the form'. While this is intentional UX, there is no error state indicator shown to the user if users fail to load — the dropdown will just be empty. A minor improvement would be to show an error hint in the UI."
+      },
+      {
+        "file": "src/pages/admin/NotificationsPage.tsx",
+        "line": 62,
+        "severity": "non_blocking",
+        "description": "The `handleSend` function falls back to `selectedUser?.email ?? String(selectedUserId)` for the `to` field. Since the backend expects an email address (per AdminNotifyRequest.to comment: 'Email address of the recipient'), using `String(selectedUserId)` as fallback (which would be a numeric ID) could cause a backend error if the user object hasn't loaded yet. However, the form requires `selectedUserId` to be truthy AND users must be loaded for the select to have options, making this edge case very unlikely."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The changelogApi CRUD endpoints were originally pointing to /admin/changelog but should be /superadmin/changelog. This is documented in rbac.md under 'Superadmin-Only Actions > Changelog create/update/delete (/superadmin/changelog)'. The worker correctly identified and fixed this, confirming the rbac.md documentation is accurate.",
+      "evidence": "adminApi.ts:330-346 — changelogApi.create/update/remove now use /superadmin/changelog. rbac.md lists 'Changelog create/update/delete (/superadmin/changelog)' as superadmin-only."
+    },
+    {
+      "area": "conventions",
+      "observation": "The ChangelogPage still imports `changelogApi` from adminApi.ts, which includes create/update/remove methods that are superadmin-only. These methods are defined in adminApi.ts (a shared admin module) even though they call /superadmin/changelog. This is a reasonable pattern — the API module is a shared client library — but it means tenant admin code could accidentally call superadmin endpoints. The UI correctly prevents this by removing the buttons, but there's no programmatic guard in the API module itself.",
+      "evidence": "src/lib/adminApi.ts:326-346 — changelogApi includes create/update/remove methods that call /superadmin/changelog. These are not used in ChangelogPage.tsx anymore but remain in the shared module."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The implementation fully covers the feature requirements: (1) ChangelogPage is read-only for tenant admin with no create/edit/delete buttons, a clear notice about contacting superadmin, and correct read endpoints (GET /changelog, GET /changelog/latest-highlighted). (2) NotificationsPage correctly composes and sends notifications via POST /admin/notify with proper {to, subject, body} payload. (3) changelogApi CRUD endpoints corrected to /superadmin/changelog. (4) WhatsNewBanner is exported and functional. Only non-blocking issues found: silent error swallowing on user load failure in NotificationsPage, and minor edge cases in the notification form. No blocking bugs or missing requirements."
+}
