@@ -588,7 +588,7 @@ export function ProfilePage() {
               required
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Preferred name"
                 value={profile.preferredName ?? ''}
@@ -609,7 +609,7 @@ export function ProfilePage() {
 
             {/* Read-only fields */}
             {user && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
                     Email
