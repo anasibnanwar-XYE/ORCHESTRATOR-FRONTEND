@@ -47,6 +47,7 @@
  import { Input } from '@/components/ui/Input';
  import { Select } from '@/components/ui/Select';
  import { PageHeader } from '@/components/ui/PageHeader';
+ import { DataTable, type Column } from '@/components/ui/DataTable';
  import { Tabs } from '@/components/ui/Tabs';
   import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
  import { useToast } from '@/components/ui/Toast';
@@ -58,6 +59,7 @@
    type PayrollRunType,
    type MonthlyPaySummaryDto,
    type WeeklyPaySummaryDto,
+   type EmployeeMonthlyPayDto,
  } from '@/lib/hrApi';
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -689,46 +691,62 @@
                  </div>
                ))}
              </div>
-             {(monthlySummary.employees ?? []).length > 0 && (
-               <div className="overflow-auto">
-                 <table className="w-full text-[12px] min-w-[400px]">
-                   <thead>
-                     <tr className="border-b border-[var(--color-border-subtle)]">
-                       <th className="text-left pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                         Employee
-                       </th>
-                       <th className="text-right pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                         Gross
-                       </th>
-                       <th className="text-right pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                         PF
-                       </th>
-                       <th className="text-right pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                         Net
-                       </th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                     {(monthlySummary.employees ?? []).map((e) => (
-                       <tr key={e.employeeId} className="py-1">
-                         <td className="py-1.5 text-[var(--color-text-primary)]">
-                           {e.employeeName}
-                         </td>
-                         <td className="py-1.5 text-right tabular-nums">
-                           {formatINR(e.grossPay)}
-                         </td>
-                         <td className="py-1.5 text-right tabular-nums text-red-400">
-                           −{formatINR(e.pfDeduction)}
-                         </td>
-                         <td className="py-1.5 text-right tabular-nums font-medium">
-                           {formatINR(e.netPay)}
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
-             )}
+             {(monthlySummary.employees ?? []).length > 0 && (() => {
+               const monthlyEmpColumns: Column<EmployeeMonthlyPayDto>[] = [
+                 {
+                   id: 'name',
+                   header: 'Employee',
+                   accessor: (e) => (
+                     <span className="text-[var(--color-text-primary)]">{e.employeeName}</span>
+                   ),
+                 },
+                 {
+                   id: 'gross',
+                   header: 'Gross',
+                   accessor: (e) => (
+                     <span className="tabular-nums">{formatINR(e.grossPay)}</span>
+                   ),
+                   align: 'right',
+                   hideOnMobile: true,
+                 },
+                 {
+                   id: 'pf',
+                   header: 'PF',
+                   accessor: (e) => (
+                     <span className="tabular-nums text-red-400">−{formatINR(e.pfDeduction)}</span>
+                   ),
+                   align: 'right',
+                   hideOnMobile: true,
+                 },
+                 {
+                   id: 'net',
+                   header: 'Net',
+                   accessor: (e) => (
+                     <span className="tabular-nums font-medium">{formatINR(e.netPay)}</span>
+                   ),
+                   align: 'right',
+                 },
+               ];
+               return (
+                 <DataTable
+                   columns={monthlyEmpColumns}
+                   data={monthlySummary.employees ?? []}
+                   keyExtractor={(e) => e.employeeId}
+                   pageSize={50}
+                   pageSizeOptions={[50]}
+                   emptyMessage="No employee data."
+                   mobileCardRenderer={(e) => (
+                     <div className="p-3 flex items-center justify-between">
+                       <span className="text-[13px] text-[var(--color-text-primary)]">{e.employeeName}</span>
+                       <div className="text-right">
+                         <p className="text-[12px] tabular-nums font-medium">{formatINR(e.netPay)}</p>
+                         <p className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums">Gross: {formatINR(e.grossPay)}</p>
+                       </div>
+                     </div>
+                   )}
+                 />
+               );
+             })()}
            </>
          ) : (
            <p className="text-[13px] text-[var(--color-text-tertiary)]">

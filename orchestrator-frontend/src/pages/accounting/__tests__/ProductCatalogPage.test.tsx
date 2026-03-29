@@ -15,7 +15,6 @@
      createProduct: vi.fn(),
      updateProduct: vi.fn(),
      archiveProduct: vi.fn(),
-     createBulkVariants: vi.fn(),
    },
  }));
  
@@ -131,13 +130,6 @@
      fireEvent.click(buttons[buttons.length - 1]);
      await waitFor(() => {
        expect(screen.getByText('Brand is required')).toBeInTheDocument();
-     });
-   });
- 
-   it('shows Bulk Variants button', async () => {
-     renderPage();
-     await waitFor(() => {
-       expect(screen.getByText('Bulk Variants')).toBeInTheDocument();
      });
    });
  
@@ -315,110 +307,6 @@
      });
    });
 
-   // ── VAL-O2C-003: Bulk variant generation ────────────────────────────────
-
-   it('validates required fields in bulk variant generator before generating', async () => {
-     renderPage();
-     await waitFor(() => expect(screen.getByText('Bulk Variants')).toBeInTheDocument());
-     fireEvent.click(screen.getByText('Bulk Variants'));
-
-     await waitFor(() => expect(screen.getByText('Generate Variants')).toBeInTheDocument());
-     fireEvent.click(screen.getByText('Generate Variants'));
-
-     await waitFor(() => {
-       expect(screen.getByText('Brand is required')).toBeInTheDocument();
-     });
-     expect(inventoryApi.createBulkVariants).not.toHaveBeenCalled();
-   });
-
-   it('validates sizes and colors are required in bulk variant generator', async () => {
-     renderPage();
-     await waitFor(() => expect(screen.getByText('Bulk Variants')).toBeInTheDocument());
-     fireEvent.click(screen.getByText('Bulk Variants'));
-
-     await waitFor(() => expect(screen.getByText('Generate Variants')).toBeInTheDocument());
-
-     // Fill brand, base name, category but no sizes/colors
-     fireEvent.change(screen.getByLabelText('Brand *'), { target: { value: '1' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. Premium Emulsion'), { target: { value: 'Emulsion' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. Interior Wall Paint'), { target: { value: 'Interior' } });
-
-     fireEvent.click(screen.getByText('Generate Variants'));
-
-     await waitFor(() => {
-       expect(screen.getByText('At least one size required')).toBeInTheDocument();
-     });
-     expect(inventoryApi.createBulkVariants).not.toHaveBeenCalled();
-   });
-
-   it('shows generated variant results clearly after successful bulk generation', async () => {
-     const mockVariants = [
-       { sku: 'ACME-PE-1L-WHITE', name: 'Premium Emulsion 1L White', size: '1L', color: 'White' },
-       { sku: 'ACME-PE-4L-WHITE', name: 'Premium Emulsion 4L White', size: '4L', color: 'White' },
-       { sku: 'ACME-PE-1L-GREY', name: 'Premium Emulsion 1L Grey', size: '1L', color: 'Grey' },
-       { sku: 'ACME-PE-4L-GREY', name: 'Premium Emulsion 4L Grey', size: '4L', color: 'Grey' },
-     ];
-     vi.mocked(inventoryApi.createBulkVariants).mockResolvedValue({
-       created: mockVariants,
-       generated: [],
-       conflicts: [],
-       wouldCreate: [],
-     });
-
-     renderPage();
-     await waitFor(() => expect(screen.getByText('Bulk Variants')).toBeInTheDocument());
-     fireEvent.click(screen.getByText('Bulk Variants'));
-
-     await waitFor(() => expect(screen.getByText('Generate Variants')).toBeInTheDocument());
-
-     // Fill all required fields
-     fireEvent.change(screen.getByLabelText('Brand *'), { target: { value: '1' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. Premium Emulsion'), { target: { value: 'Premium Emulsion' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. Interior Wall Paint'), { target: { value: 'Interior' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. 1L, 4L, 20L'), { target: { value: '1L, 4L' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. White, Off-White, Cream'), { target: { value: 'White, Grey' } });
-
-     fireEvent.click(screen.getByText('Generate Variants'));
-
-     await waitFor(() => {
-       // Verify the result count is visible
-       expect(screen.getByText(/4 variant\(s\) generated successfully/i)).toBeInTheDocument();
-     });
-
-     // Verify result table shows SKU, name, size, color columns (use getAllByText because the
-     // main product table also has a SKU column header in the background)
-     expect(screen.getAllByText('SKU').length).toBeGreaterThan(0);
-     expect(screen.getAllByText('Name').length).toBeGreaterThan(0);
-     expect(screen.getAllByText('Size').length).toBeGreaterThan(0);
-     expect(screen.getAllByText('Color').length).toBeGreaterThan(0);
-
-     // Verify variant data appears in the table (these values are unique to the result table)
-     expect(screen.getByText('ACME-PE-1L-WHITE')).toBeInTheDocument();
-     expect(screen.getByText('Premium Emulsion 1L White')).toBeInTheDocument();
-     expect(screen.getByText('ACME-PE-4L-GREY')).toBeInTheDocument();
-     expect(screen.getByText('Premium Emulsion 4L Grey')).toBeInTheDocument();
-   });
-
-   it('shows variant preview matrix when sizes and colors are entered', async () => {
-     renderPage();
-     await waitFor(() => expect(screen.getByText('Bulk Variants')).toBeInTheDocument());
-     fireEvent.click(screen.getByText('Bulk Variants'));
-
-     await waitFor(() => expect(screen.getByText('Generate Variants')).toBeInTheDocument());
-
-     // Enter sizes and colors to trigger the preview matrix
-     fireEvent.change(screen.getByPlaceholderText('e.g. 1L, 4L, 20L'), { target: { value: '1L, 4L' } });
-     fireEvent.change(screen.getByPlaceholderText('e.g. White, Off-White, Cream'), { target: { value: 'White, Grey' } });
-
-     await waitFor(() => {
-       // Preview section shows variant count (2 sizes × 2 colors = 4)
-       expect(screen.getByText(/4 variant\(s\)/i)).toBeInTheDocument();
-     });
-
-     // Preview chips showing size/color combinations
-     expect(screen.getByText('1L / White')).toBeInTheDocument();
-     expect(screen.getByText('1L / Grey')).toBeInTheDocument();
-     expect(screen.getByText('4L / White')).toBeInTheDocument();
-     expect(screen.getByText('4L / Grey')).toBeInTheDocument();
-   });
  });
+ // Note: Bulk variant generation tests removed — /accounting/catalog/products/bulk-variants
+ // endpoint is retired. The feature has been removed from ProductCatalogPage.

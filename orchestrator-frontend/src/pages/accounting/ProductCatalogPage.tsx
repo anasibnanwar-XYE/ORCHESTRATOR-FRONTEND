@@ -6,7 +6,6 @@
   *  - Create product form (name, brand, colors, sizes, HSN, GST rate, unit)
   *  - Duplicate SKU prevention (BUS_002 error from backend)
   *  - Edit and archive (soft-delete) products
-  *  - Bulk variant generator: matrix UI for size x color combinations
   *
   * API:
   *  GET    /api/v1/catalog/brands?active=true
@@ -14,7 +13,6 @@
   *  POST   /api/v1/catalog/products
   *  PUT    /api/v1/catalog/products/{id}
   *  DELETE /api/v1/catalog/products/{id}
-  *  POST   /api/v1/accounting/catalog/products/bulk-variants
   */
 
 
@@ -24,7 +22,6 @@ import {
   RefreshCcw,
   Plus,
   MoreHorizontal,
-  Layers,
 } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -42,8 +39,6 @@ import {
   type CatalogProductDto,
   type CatalogProductRequest,
   type CatalogBrandDto,
-  type BulkVariantRequest,
-  type VariantItem,
 } from '@/lib/inventoryApi';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,197 +219,6 @@ function ProductForm({ brands, initial, onSave, onClose, isSaving }: ProductForm
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bulk Variant Generator
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface BulkVariantModalProps {
-   brands: CatalogBrandDto[];
-   onSave: (data: BulkVariantRequest) => Promise<void>;
-   onClose: () => void;
-   isSaving: boolean;
-   result: VariantItem[] | null;
-}
-
-interface BulkVariantFormState {
-   brandId: string;
-   baseProductName: string;
-   category: string;
-   sizesRaw: string;
-   colorsRaw: string;
-   hsnCode: string;
-   gstRate: string;
-   unitOfMeasure: string;
-}
-
-function BulkVariantModal({ brands, onSave, onClose, isSaving, result }: BulkVariantModalProps) {
-   const [form, setForm] = useState<BulkVariantFormState>({
-     brandId: '',
-     baseProductName: '',
-     category: '',
-     sizesRaw: '',
-     colorsRaw: '',
-     hsnCode: '',
-     gstRate: '18',
-     unitOfMeasure: 'LITRE',
-   });
-   const [errors, setErrors] = useState<Partial<BulkVariantFormState>>({});
-
-   const field = (key: keyof BulkVariantFormState) => ({
-     value: form[key],
-     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-       setForm((f) => ({ ...f, [key]: e.target.value })),
-   });
-
-   const sizes = parseCommaSeparated(form.sizesRaw);
-   const colors = parseCommaSeparated(form.colorsRaw);
-   const combinations = sizes.flatMap((s) => colors.map((c) => ({ size: s, color: c })));
-
-   const validate = (): boolean => {
-     const errs: Partial<BulkVariantFormState> = {};
-     if (!form.brandId) errs.brandId = 'Brand is required';
-     if (!form.baseProductName.trim()) errs.baseProductName = 'Base name is required';
-     if (!form.category.trim()) errs.category = 'Category is required';
-     if (sizes.length === 0) errs.sizesRaw = 'At least one size required';
-     if (colors.length === 0) errs.colorsRaw = 'At least one color required';
-     setErrors(errs);
-     return Object.keys(errs).length === 0;
-   };
-
-   const handleGenerate = async () => {
-     if (!validate()) return;
-     const brand = brands.find((b) => b.id === parseInt(form.brandId, 10));
-     if (!brand) return;
-     await onSave({
-       brandId: brand.id,
-       brandName: brand.name,
-       brandCode: brand.code,
-       baseProductName: form.baseProductName.trim(),
-       category: form.category.trim(),
-       sizes,
-       colors,
-       unitOfMeasure: form.unitOfMeasure,
-       hsnCode: form.hsnCode.trim() || undefined,
-       gstRate: parseFloat(form.gstRate),
-     });
-   };
-
-   return (
-     <div className="space-y-4">
-       {result ? (
-         <div className="space-y-3">
-           <p className="text-[13px] text-[var(--color-text-secondary)]">
-             {result.length} variant(s) generated successfully.
-           </p>
-           <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--color-border-default)]">
-             <table className="w-full text-[13px]">
-               <thead className="bg-[var(--color-surface-secondary)]">
-                 <tr>
-                   <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">SKU</th>
-                   <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">Name</th>
-                   <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">Size</th>
-                   <th className="px-3 py-2 text-left font-medium text-[var(--color-text-secondary)]">Color</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {result.map((v, i) => (
-                   <tr key={i} className="border-t border-[var(--color-border-subtle)]">
-                     <td className="px-3 py-2 font-mono text-[12px] text-[var(--color-text-secondary)]">{v.sku}</td>
-                     <td className="px-3 py-2 text-[var(--color-text-primary)]">{v.name}</td>
-                     <td className="px-3 py-2 text-[var(--color-text-secondary)]">{v.size}</td>
-                     <td className="px-3 py-2 text-[var(--color-text-secondary)]">{v.color}</td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-           <div className="flex justify-end">
-             <Button onClick={onClose}>Done</Button>
-           </div>
-         </div>
-       ) : (
-         <>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-             <Select
-               label="Brand *"
-               options={brands.map((b) => ({ value: String(b.id), label: b.name }))}
-               placeholder="Select brand"
-               {...field('brandId')}
-               error={errors.brandId}
-             />
-             <Input
-               label="Base Product Name *"
-               placeholder="e.g. Premium Emulsion"
-               {...field('baseProductName')}
-               error={errors.baseProductName}
-             />
-             <Input
-               label="Category *"
-               placeholder="e.g. Interior Wall Paint"
-               {...field('category')}
-               error={errors.category}
-             />
-             <Select
-               label="GST Rate *"
-               options={GST_RATES}
-               {...field('gstRate')}
-             />
-             <Input
-               label="Sizes *"
-               placeholder="e.g. 1L, 4L, 20L"
-               hint="Comma-separated"
-               {...field('sizesRaw')}
-               error={errors.sizesRaw}
-             />
-             <Input
-               label="Colors *"
-               placeholder="e.g. White, Off-White, Cream"
-               hint="Comma-separated"
-               {...field('colorsRaw')}
-               error={errors.colorsRaw}
-             />
-           </div>
-
-           {/* Preview matrix */}
-           {combinations.length > 0 && (
-             <div className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] p-3">
-               <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-2">
-                 Preview — {combinations.length} variant(s)
-               </p>
-               <div className="flex flex-wrap gap-1.5">
-                 {combinations.slice(0, 20).map((c, i) => (
-                   <span
-                     key={i}
-                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] text-[11px] text-[var(--color-text-secondary)]"
-                   >
-                     {c.size} / {c.color}
-                   </span>
-                 ))}
-                 {combinations.length > 20 && (
-                   <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                     +{combinations.length - 20} more
-                   </span>
-                 )}
-               </div>
-             </div>
-           )}
-
-           <div className="flex justify-end gap-2 pt-2">
-             <Button variant="ghost" onClick={onClose} disabled={isSaving}>Cancel</Button>
-             <Button
-               leftIcon={<Layers size={14} />}
-               onClick={handleGenerate}
-               isLoading={isSaving}
-             >
-               Generate Variants
-             </Button>
-           </div>
-         </>
-       )}
-     </div>
-   );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -429,11 +233,6 @@ export function ProductCatalogPage() {
    const [showCreate, setShowCreate] = useState(false);
    const [editProduct, setEditProduct] = useState<CatalogProductDto | null>(null);
    const [isSaving, setIsSaving] = useState(false);
-
-   // Bulk variant modal
-   const [showBulkVariant, setShowBulkVariant] = useState(false);
-   const [isBulkSaving, setIsBulkSaving] = useState(false);
-   const [bulkResult, setBulkResult] = useState<VariantItem[] | null>(null);
 
    // Archive confirm
    const [archiveTarget, setArchiveTarget] = useState<CatalogProductDto | null>(null);
@@ -511,20 +310,6 @@ export function ProductCatalogPage() {
        toast.error('Failed to archive product. Please try again.');
      } finally {
        setIsArchiving(false);
-     }
-   };
-
-   const handleBulkVariants = async (data: BulkVariantRequest) => {
-     setIsBulkSaving(true);
-     try {
-       const resp = await inventoryApi.createBulkVariants(data);
-       setBulkResult(resp.created ?? resp.generated ?? []);
-       toast.success(`Bulk variants generated.`);
-       load();
-     } catch {
-       toast.error('Failed to generate variants. Please try again.');
-     } finally {
-       setIsBulkSaving(false);
      }
    };
 
@@ -637,19 +422,9 @@ export function ProductCatalogPage() {
          title="Product Catalog"
          description="Manage products, variants and pricing"
          actions={
-           <div className="flex items-center gap-2">
-             <Button
-               size="sm"
-               variant="secondary"
-               leftIcon={<Layers size={14} />}
-               onClick={() => { setBulkResult(null); setShowBulkVariant(true); }}
-             >
-               Bulk Variants
-             </Button>
-             <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
-               New Product
-             </Button>
-           </div>
+           <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
+             New Product
+           </Button>
          }
        />
 
@@ -700,23 +475,6 @@ export function ProductCatalogPage() {
              isSaving={isSaving}
            />
          )}
-       </Modal>
-
-       {/* Bulk Variant Modal */}
-       <Modal
-         isOpen={showBulkVariant}
-         onClose={() => setShowBulkVariant(false)}
-         title="Generate Bulk Variants"
-         description="Create a matrix of size × color variant products"
-         size="lg"
-       >
-         <BulkVariantModal
-           brands={brands}
-           onSave={handleBulkVariants}
-           onClose={() => setShowBulkVariant(false)}
-           isSaving={isBulkSaving}
-           result={bulkResult}
-         />
        </Modal>
 
        {/* Archive Confirm */}

@@ -27,6 +27,7 @@
  import { Modal } from '@/components/ui/Modal';
  import { Input } from '@/components/ui/Input';
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+ import { DataTable, type Column } from '@/components/ui/DataTable';
  import { useToast } from '@/components/ui/Toast';
  import type {
    DealerDto,
@@ -654,21 +655,7 @@
  // Skeleton rows
  // ─────────────────────────────────────────────────────────────────────────────
  
- function SkeletonRows({ count = 5 }: { count?: number }) {
-   return (
-     <>
-       {Array.from({ length: count }).map((_, i) => (
-         <tr key={i} className="border-b border-[var(--color-border-subtle)]">
-           {Array.from({ length: 6 }).map((_, j) => (
-             <td key={j} className="px-4 py-3">
-               <Skeleton className="h-4 w-full" />
-             </td>
-           ))}
-         </tr>
-       ))}
-     </>
-   );
- }
+ // SkeletonRows removed — DataTable handles loading skeletons internally.
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Main component
@@ -850,95 +837,112 @@
          </div>
        )}
  
-       {/* Desktop table */}
-       <div className="hidden sm:block rounded-xl border border-[var(--color-border-default)] overflow-hidden bg-[var(--color-surface-primary)]">
-         <table className="w-full text-[13px]">
-           <thead>
-             <tr className="bg-[var(--color-surface-secondary)] border-b border-[var(--color-border-default)]">
-               <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Name</th>
-               <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Code</th>
-               <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Region</th>
-               <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Credit Limit</th>
-               <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Outstanding</th>
-               <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Status</th>
-               <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">Actions</th>
-             </tr>
-           </thead>
-           <tbody className="divide-y divide-[var(--color-border-subtle)]">
-             {loading || isSearching ? (
-               <SkeletonRows count={5} />
-             ) : displayedDealers.length === 0 ? (
-               <tr>
-                 <td colSpan={7} className="px-4 py-12 text-center text-[13px] text-[var(--color-text-secondary)]">
-                   {searchQuery ? 'No dealers match your search.' : 'No dealers yet. Create your first dealer to get started.'}
-                 </td>
-               </tr>
-             ) : (
-               displayedDealers.map((dealer) => (
-                 <tr
-                   key={dealer.id}
-                   className="hover:bg-[var(--color-surface-secondary)] cursor-pointer transition-colors"
-                   onClick={() => setDetailTarget(dealer)}
-                 >
-                   <td className="px-4 py-3">
-                     <p className="font-medium text-[var(--color-text-primary)]">{dealer.name ?? '—'}</p>
-                     <p className="text-[11px] text-[var(--color-text-tertiary)]">{dealer.companyName ?? ''}</p>
-                   </td>
-                   <td className="px-4 py-3 font-mono text-[11px] text-[var(--color-text-secondary)]">{dealer.code ?? '—'}</td>
-                   <td className="px-4 py-3 text-[var(--color-text-secondary)]">{dealer.region ?? '—'}</td>
-                   <td className="px-4 py-3 text-right tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.creditLimit)}</td>
-                   <td className="px-4 py-3 text-right tabular-nums text-[var(--color-text-primary)]">{fmtCurrency(dealer.outstandingBalance)}</td>
-                   <td className="px-4 py-3">
-                     <DealerStatusBadge status={dealer.status} dunning={dealer.dunningStatus} />
-                   </td>
-                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                     <DealerRowActions
-                       dealer={dealer}
-                       onEdit={() => setEditTarget(dealer)}
-                       onDunning={() => handleDunningToggle(dealer)}
-                     />
-                   </td>
-                 </tr>
-               ))
+       {/* Dealers DataTable (desktop + mobile card view) */}
+       {(() => {
+         const dealerColumns: Column<DealerDto>[] = [
+           {
+             id: 'name',
+             header: 'Name',
+             accessor: (dealer) => (
+               <div>
+                 <p className="font-medium text-[var(--color-text-primary)]">{dealer.name ?? '—'}</p>
+                 <p className="text-[11px] text-[var(--color-text-tertiary)]">{dealer.companyName ?? ''}</p>
+               </div>
+             ),
+             sortable: true,
+             sortAccessor: (dealer) => dealer.name ?? '',
+           },
+           {
+             id: 'code',
+             header: 'Code',
+             accessor: (dealer) => (
+               <span className="font-mono text-[11px] text-[var(--color-text-secondary)]">{dealer.code ?? '—'}</span>
+             ),
+             hideOnMobile: true,
+           },
+           {
+             id: 'region',
+             header: 'Region',
+             accessor: (dealer) => (
+               <span className="text-[var(--color-text-secondary)]">{dealer.region ?? '—'}</span>
+             ),
+             hideOnMobile: true,
+           },
+           {
+             id: 'creditLimit',
+             header: 'Credit Limit',
+             accessor: (dealer) => (
+               <span className="tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.creditLimit)}</span>
+             ),
+             align: 'right',
+             hideOnMobile: true,
+           },
+           {
+             id: 'outstanding',
+             header: 'Outstanding',
+             accessor: (dealer) => (
+               <span className="tabular-nums text-[var(--color-text-primary)]">{fmtCurrency(dealer.outstandingBalance)}</span>
+             ),
+             align: 'right',
+             hideOnMobile: true,
+           },
+           {
+             id: 'status',
+             header: 'Status',
+             accessor: (dealer) => (
+               <DealerStatusBadge status={dealer.status} dunning={dealer.dunningStatus} />
+             ),
+           },
+           {
+             id: 'actions',
+             header: '',
+             accessor: (dealer) => (
+               <div onClick={(e) => e.stopPropagation()}>
+                 <DealerRowActions
+                   dealer={dealer}
+                   onEdit={() => setEditTarget(dealer)}
+                   onDunning={() => handleDunningToggle(dealer)}
+                 />
+               </div>
+             ),
+             width: '80px',
+           },
+         ];
+         return (
+           <DataTable
+             columns={dealerColumns}
+             data={displayedDealers}
+             keyExtractor={(dealer) => dealer.id}
+             isLoading={loading || isSearching}
+             onRowClick={(dealer) => setDetailTarget(dealer)}
+             emptyMessage={searchQuery ? 'No dealers match your search.' : 'No dealers yet. Create your first dealer to get started.'}
+             mobileCardRenderer={(dealer) => (
+               <div
+                 className="p-4 cursor-pointer"
+                 onClick={() => setDetailTarget(dealer)}
+               >
+                 <div className="flex items-start justify-between gap-2">
+                   <div>
+                     <p className="font-medium text-[var(--color-text-primary)] text-[13px]">{dealer.name ?? '—'}</p>
+                     <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">{dealer.code} · {dealer.region ?? '—'}</p>
+                   </div>
+                   <DealerStatusBadge status={dealer.status} dunning={dealer.dunningStatus} />
+                 </div>
+                 <div className="flex items-center gap-4 mt-2">
+                   <div>
+                     <p className="text-[10px] text-[var(--color-text-tertiary)]">Credit</p>
+                     <p className="text-[12px] tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.creditLimit)}</p>
+                   </div>
+                   <div>
+                     <p className="text-[10px] text-[var(--color-text-tertiary)]">Outstanding</p>
+                     <p className="text-[12px] tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.outstandingBalance)}</p>
+                   </div>
+                 </div>
+               </div>
              )}
-           </tbody>
-         </table>
-       </div>
- 
-       {/* Mobile card list */}
-       <div className="sm:hidden space-y-2">
-         {loading || isSearching ? (
-           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)
-         ) : displayedDealers.length === 0 ? (
-           <EmptyState message={searchQuery ? 'No dealers match your search.' : 'No dealers yet.'} />
-         ) : (
-           displayedDealers.map((dealer) => (
-             <div
-               key={dealer.id}
-               className="p-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] cursor-pointer"
-               onClick={() => setDetailTarget(dealer)}
-             >
-               <div className="flex items-start justify-between gap-2">
-                 <div>
-                   <p className="font-medium text-[var(--color-text-primary)] text-[13px]">{dealer.name ?? '—'}</p>
-                   <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">{dealer.code} · {dealer.region ?? '—'}</p>
-                 </div>
-                 <DealerStatusBadge status={dealer.status} dunning={dealer.dunningStatus} />
-               </div>
-               <div className="flex items-center gap-4 mt-2">
-                 <div>
-                   <p className="text-[10px] text-[var(--color-text-tertiary)]">Credit</p>
-                   <p className="text-[12px] tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.creditLimit)}</p>
-                 </div>
-                 <div>
-                   <p className="text-[10px] text-[var(--color-text-tertiary)]">Outstanding</p>
-                   <p className="text-[12px] tabular-nums font-medium text-[var(--color-text-primary)]">{fmtCurrency(dealer.outstandingBalance)}</p>
-                 </div>
-               </div>
-             </div>
-           ))
-         )}
-       </div>
+           />
+         );
+       })()}
  
        {/* Pagination */}
        {!searchQuery && totalPages > 1 && (

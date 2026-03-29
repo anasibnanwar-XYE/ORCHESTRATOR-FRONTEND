@@ -27,7 +27,6 @@ import type {
   OrchestratorAdminDashboard,
   OrchestratorFactoryDashboard,
   OrchestratorFinanceDashboard,
-  OrchestratorDispatchRequest,
   OrchestratorFulfillmentRequest,
   PortalDashboard,
   PortalOperations,
@@ -377,14 +376,6 @@ export const orchestratorApi = {
       `/orchestrator/orders/${orderId}/fulfillment`,
       data
     );
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
-  },
-
-  // Dispatch
-  async createDispatch(data: OrchestratorDispatchRequest): Promise<void> {
-    const response = await apiRequest.post<ApiResponse<void>>('/orchestrator/dispatch', data);
     if (!response.data.success) {
       throw new Error(response.data.message);
     }

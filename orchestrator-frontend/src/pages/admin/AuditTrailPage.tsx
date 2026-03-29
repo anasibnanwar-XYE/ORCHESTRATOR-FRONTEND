@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
+import { DataTable, type Column } from '@/components/ui/DataTable';
 import { auditApi } from '@/lib/adminApi';
 import type { BusinessEvent, MlEvent, AuditEventFilters, PageResponse } from '@/types';
 
@@ -192,75 +193,89 @@ function BusinessEventsTab() {
           <p className="text-[13px] text-[var(--color-text-tertiary)]">No events found.</p>
         </div>
       ) : (
-        <div className="space-y-1">
-          <div className="hidden sm:block bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]">
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Timestamp</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Actor</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Action</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Resource</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Severity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                {data.content.map((event) => (
-                  <tr key={event.id} className="hover:bg-[var(--color-surface-secondary)] transition-colors">
-                    <td className="px-4 py-3 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={12} className="shrink-0" />
-                        {formatTimestamp(event.timestamp)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-                        <span className="text-[var(--color-text-primary)]">{event.actor}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
-                        {event.action}
-                      </code>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--color-text-secondary)]">
-                      {event.resource}
-                      {event.resourceId && (
-                        <span className="ml-1 text-[var(--color-text-tertiary)]">#{event.resourceId}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {event.severity && event.severity !== 'INFO' ? (
-                        <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
-                      ) : (
-                        <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="sm:hidden space-y-2">
-            {data.content.map((event) => (
-              <div key={event.id} className="p-3 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-                <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="space-y-3">
+          {(() => {
+            const columns: Column<BusinessEvent>[] = [
+              {
+                id: 'timestamp',
+                header: 'Timestamp',
+                accessor: (event) => (
+                  <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
+                    <Clock size={12} className="shrink-0" />
+                    {formatTimestamp(event.timestamp)}
+                  </div>
+                ),
+              },
+              {
+                id: 'actor',
+                header: 'Actor',
+                accessor: (event) => (
+                  <div className="flex items-center gap-1.5">
+                    <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+                    <span className="text-[var(--color-text-primary)]">{event.actor}</span>
+                  </div>
+                ),
+              },
+              {
+                id: 'action',
+                header: 'Action',
+                accessor: (event) => (
                   <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
                     {event.action}
                   </code>
-                  {event.severity && event.severity !== 'INFO' && (
+                ),
+              },
+              {
+                id: 'resource',
+                header: 'Resource',
+                accessor: (event) => (
+                  <span className="text-[var(--color-text-secondary)]">
+                    {event.resource}
+                    {event.resourceId && (
+                      <span className="ml-1 text-[var(--color-text-tertiary)]">#{event.resourceId}</span>
+                    )}
+                  </span>
+                ),
+                hideOnMobile: true,
+              },
+              {
+                id: 'severity',
+                header: 'Severity',
+                accessor: (event) =>
+                  event.severity && event.severity !== 'INFO' ? (
                     <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
-                  )}
-                </div>
-                <p className="text-[13px] text-[var(--color-text-primary)] mb-1">{event.actor}</p>
-                <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                  {event.resource} · {formatTimestamp(event.timestamp)}
-                </p>
-              </div>
-            ))}
-          </div>
+                  ) : (
+                    <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+                  ),
+              },
+            ];
+            return (
+              <DataTable
+                columns={columns}
+                data={data.content}
+                keyExtractor={(event) => event.id}
+                pageSize={PAGE_SIZE}
+                pageSizeOptions={[PAGE_SIZE]}
+                emptyMessage="No events found."
+                mobileCardRenderer={(event) => (
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+                        {event.action}
+                      </code>
+                      {event.severity && event.severity !== 'INFO' && (
+                        <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
+                      )}
+                    </div>
+                    <p className="text-[13px] text-[var(--color-text-primary)] mb-1">{event.actor}</p>
+                    <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                      {event.resource} · {formatTimestamp(event.timestamp)}
+                    </p>
+                  </div>
+                )}
+              />
+            );
+          })()}
 
           <Pagination
             page={page}
@@ -328,78 +343,98 @@ function MlEventsTab() {
           <p className="text-[13px] text-[var(--color-text-tertiary)]">No ML events found.</p>
         </div>
       ) : (
-        <div className="space-y-1">
-          <div className="hidden sm:block bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]">
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Timestamp</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Model</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Action</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Confidence</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Latency</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border-subtle)]">
-                {data.content.map((event) => (
-                  <tr key={event.id} className="hover:bg-[var(--color-surface-secondary)] transition-colors">
-                    <td className="px-4 py-3 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={12} className="shrink-0" />
-                        {formatTimestamp(event.timestamp)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Activity size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-                        <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
-                        {event.action}
-                      </code>
-                    </td>
-                    <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                      {event.confidence !== undefined ? `${(event.confidence * 100).toFixed(0)}%` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                      {event.latencyMs !== undefined ? `${event.latencyMs} ms` : '—'}
-                    </td>
-                    <td className="px-4 py-3">
+        <div className="space-y-3">
+          {(() => {
+            const columns: Column<MlEvent>[] = [
+              {
+                id: 'timestamp',
+                header: 'Timestamp',
+                accessor: (event) => (
+                  <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
+                    <Clock size={12} className="shrink-0" />
+                    {formatTimestamp(event.timestamp)}
+                  </div>
+                ),
+              },
+              {
+                id: 'model',
+                header: 'Model',
+                accessor: (event) => (
+                  <div className="flex items-center gap-1.5">
+                    <Activity size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+                    <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
+                  </div>
+                ),
+              },
+              {
+                id: 'action',
+                header: 'Action',
+                accessor: (event) => (
+                  <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+                    {event.action}
+                  </code>
+                ),
+              },
+              {
+                id: 'confidence',
+                header: 'Confidence',
+                accessor: (event) => (
+                  <span className="text-[13px] tabular-nums text-[var(--color-text-secondary)]">
+                    {event.confidence !== undefined ? `${(event.confidence * 100).toFixed(0)}%` : '—'}
+                  </span>
+                ),
+                hideOnMobile: true,
+              },
+              {
+                id: 'latency',
+                header: 'Latency',
+                accessor: (event) => (
+                  <span className="text-[13px] tabular-nums text-[var(--color-text-secondary)]">
+                    {event.latencyMs !== undefined ? `${event.latencyMs} ms` : '—'}
+                  </span>
+                ),
+                hideOnMobile: true,
+              },
+              {
+                id: 'status',
+                header: 'Status',
+                accessor: (event) =>
+                  event.status ? (
+                    <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
+                  ) : null,
+              },
+            ];
+            return (
+              <DataTable
+                columns={columns}
+                data={data.content}
+                keyExtractor={(event) => event.id}
+                pageSize={PAGE_SIZE}
+                pageSizeOptions={[PAGE_SIZE]}
+                emptyMessage="No ML events found."
+                mobileCardRenderer={(event) => (
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
                       {event.status && (
                         <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="sm:hidden space-y-2">
-            {data.content.map((event) => (
-              <div key={event.id} className="p-3 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
-                  {event.status && (
-                    <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
-                  )}
-                </div>
-                <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                  {event.action} · {formatTimestamp(event.timestamp)}
-                </p>
-                {(event.confidence !== undefined || event.latencyMs !== undefined) && (
-                  <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-                    {event.confidence !== undefined && `${(event.confidence * 100).toFixed(0)}% confidence`}
-                    {event.confidence !== undefined && event.latencyMs !== undefined && ' · '}
-                    {event.latencyMs !== undefined && `${event.latencyMs} ms`}
-                  </p>
+                    </div>
+                    <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                      {event.action} · {formatTimestamp(event.timestamp)}
+                    </p>
+                    {(event.confidence !== undefined || event.latencyMs !== undefined) && (
+                      <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+                        {event.confidence !== undefined && `${(event.confidence * 100).toFixed(0)}% confidence`}
+                        {event.confidence !== undefined && event.latencyMs !== undefined && ' · '}
+                        {event.latencyMs !== undefined && `${event.latencyMs} ms`}
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
-            ))}
-          </div>
+              />
+            );
+          })()}
 
           <Pagination
             page={page}

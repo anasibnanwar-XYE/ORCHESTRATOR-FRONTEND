@@ -361,25 +361,6 @@
      return response.data.data;
    },
  
-   /** POST /api/v1/catalog/products/bulk-variants */
-   async createBulkVariants(data: BulkVariantRequest): Promise<BulkVariantResponse> {
-    const res2 = await apiRequest.post<ApiResponse<BulkVariantResponse>>(
-       '/accounting/catalog/products/bulk-variants',
-       data
-     );
-     return res2.data.data;
-   },
- 
-   // ── Accounting Catalog Products (read model) ──────────────────────────────
- 
-   /** GET /api/v1/accounting/catalog/products */
-   async getAccountingProducts(): Promise<import('./purchasingApi').RawMaterialDto[]> {
-     const response = await apiRequest.get<ApiResponse<import('./purchasingApi').RawMaterialDto[]>>(
-       '/accounting/catalog/products'
-     );
-     return response.data.data;
-   },
- 
    // ── Raw Materials ─────────────────────────────────────────────────────────
  
    /** GET /api/v1/accounting/raw-materials */

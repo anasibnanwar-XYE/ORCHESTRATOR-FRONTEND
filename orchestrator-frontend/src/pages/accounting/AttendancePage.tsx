@@ -39,6 +39,7 @@
  import { PageHeader } from '@/components/ui/PageHeader';
  import { Tabs } from '@/components/ui/Tabs';
  import { useToast } from '@/components/ui/Toast';
+ import { DataTable, type Column } from '@/components/ui/DataTable';
  import {
    hrApi,
    type AttendanceDto,
@@ -289,115 +290,150 @@
              Retry
            </Button>
          </div>
-       ) : (
-         <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-hidden">
-           <table className="w-full text-[13px]">
-             <thead>
-               <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]">
-                 {bulkMode && <th className="w-10 px-3 py-2.5" />}
-                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Employee
-                 </th>
-                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Department
-                 </th>
-                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Status
-                 </th>
-                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Remarks
-                 </th>
-                 <th className="px-4 py-2.5" />
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-[var(--color-border-subtle)]">
-               {activeEmployees.length === 0 ? (
-                 <tr>
-                   <td
-                     colSpan={bulkMode ? 6 : 5}
-                     className="px-4 py-10 text-center text-[13px] text-[var(--color-text-tertiary)]"
-                   >
-                     No active employees found.
-                   </td>
-                 </tr>
+       ) : (() => {
+         const registerColumns: Column<EmployeeDto>[] = [
+           ...(bulkMode ? [{
+             id: 'select',
+             header: '',
+             accessor: (emp: EmployeeDto) => (
+               <input
+                 type="checkbox"
+                 checked={bulkSelected.has(emp.id)}
+                 onChange={() => toggleBulkSelect(emp.id)}
+                 className="h-4 w-4 rounded border-[var(--color-border-default)]"
+               />
+             ),
+             width: '40px',
+           } as Column<EmployeeDto>] : []),
+           {
+             id: 'employee',
+             header: 'Employee',
+             accessor: (emp) => (
+               <div className={clsx(bulkMode && bulkSelected.has(emp.id) && 'text-[var(--color-text-primary)]')}>
+                 <p className="font-medium text-[var(--color-text-primary)]">
+                   {emp.firstName} {emp.lastName}
+                 </p>
+                 <p className="text-[11px] text-[var(--color-text-tertiary)]">{emp.employeeCode}</p>
+               </div>
+             ),
+           },
+           {
+             id: 'department',
+             header: 'Department',
+             accessor: (emp) => (
+               <span className="text-[var(--color-text-secondary)]">{emp.department ?? '—'}</span>
+             ),
+             hideOnMobile: true,
+           },
+           {
+             id: 'status',
+             header: 'Status',
+             accessor: (emp) => {
+               const att = attendanceMap.get(emp.id);
+               return att ? (
+                 <Badge variant={statusVariant(att.status)}>{statusLabel(att.status)}</Badge>
                ) : (
-                 activeEmployees.map((emp) => {
-                   const att = attendanceMap.get(emp.id);
-                   return (
-                     <tr
-                       key={emp.id}
-                       className={clsx(
-                         'hover:bg-[var(--color-surface-secondary)] transition-colors',
-                         bulkMode && bulkSelected.has(emp.id) && 'bg-[var(--color-surface-tertiary)]'
+                 <span className="text-[12px] text-[var(--color-text-tertiary)]">Not marked</span>
+               );
+             },
+           },
+           {
+             id: 'remarks',
+             header: 'Remarks',
+             accessor: (emp) => {
+               const att = attendanceMap.get(emp.id);
+               return (
+                 <span className="text-[var(--color-text-secondary)] text-[12px]">{att?.remarks ?? '—'}</span>
+               );
+             },
+             hideOnMobile: true,
+           },
+           {
+             id: 'actions',
+             header: '',
+             accessor: (emp) => {
+               const att = attendanceMap.get(emp.id);
+               return !bulkMode ? (
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={() =>
+                     setMarkModal({
+                       employee: att ?? {
+                         id: 0,
+                         employeeId: emp.id,
+                         employeeCode: emp.employeeCode,
+                         employeeName: `${emp.firstName} ${emp.lastName}`,
+                         date: selectedDate,
+                         status: 'PRESENT',
+                       },
+                       status: att?.status ?? 'PRESENT',
+                       remarks: att?.remarks ?? '',
+                     })
+                   }
+                 >
+                   Mark
+                 </Button>
+               ) : null;
+             },
+             width: '80px',
+           },
+         ];
+         return (
+           <DataTable
+             columns={registerColumns}
+             data={activeEmployees}
+             keyExtractor={(emp) => emp.id}
+             pageSize={50}
+             pageSizeOptions={[50]}
+             emptyMessage="No active employees found."
+             mobileCardRenderer={(emp) => {
+               const att = attendanceMap.get(emp.id);
+               return (
+                 <div className="p-3">
+                   <div className="flex items-center justify-between mb-1">
+                     <div>
+                       <p className="font-medium text-[13px] text-[var(--color-text-primary)]">
+                         {emp.firstName} {emp.lastName}
+                       </p>
+                       <p className="text-[11px] text-[var(--color-text-tertiary)]">{emp.employeeCode}</p>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {att ? (
+                         <Badge variant={statusVariant(att.status)}>{statusLabel(att.status)}</Badge>
+                       ) : (
+                         <span className="text-[12px] text-[var(--color-text-tertiary)]">Not marked</span>
                        )}
-                     >
-                       {bulkMode && (
-                         <td className="px-3 py-2.5">
-                           <input
-                             type="checkbox"
-                             checked={bulkSelected.has(emp.id)}
-                             onChange={() => toggleBulkSelect(emp.id)}
-                             className="h-4 w-4 rounded border-[var(--color-border-default)]"
-                           />
-                         </td>
+                       {!bulkMode && (
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() =>
+                             setMarkModal({
+                               employee: att ?? {
+                                 id: 0,
+                                 employeeId: emp.id,
+                                 employeeCode: emp.employeeCode,
+                                 employeeName: `${emp.firstName} ${emp.lastName}`,
+                                 date: selectedDate,
+                                 status: 'PRESENT',
+                               },
+                               status: att?.status ?? 'PRESENT',
+                               remarks: att?.remarks ?? '',
+                             })
+                           }
+                         >
+                           Mark
+                         </Button>
                        )}
-                       <td className="px-4 py-2.5">
-                         <p className="font-medium text-[var(--color-text-primary)]">
-                           {emp.firstName} {emp.lastName}
-                         </p>
-                         <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                           {emp.employeeCode}
-                         </p>
-                       </td>
-                       <td className="px-4 py-2.5 text-[var(--color-text-secondary)]">
-                         {emp.department ?? '—'}
-                       </td>
-                       <td className="px-4 py-2.5">
-                         {att ? (
-                           <Badge variant={statusVariant(att.status)}>
-                             {statusLabel(att.status)}
-                           </Badge>
-                         ) : (
-                           <span className="text-[12px] text-[var(--color-text-tertiary)]">
-                             Not marked
-                           </span>
-                         )}
-                       </td>
-                       <td className="px-4 py-2.5 text-[var(--color-text-secondary)] text-[12px]">
-                         {att?.remarks ?? '—'}
-                       </td>
-                       <td className="px-4 py-2.5">
-                         {!bulkMode && (
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             onClick={() =>
-                               setMarkModal({
-                                 employee: att ?? {
-                                   id: 0,
-                                   employeeId: emp.id,
-                                   employeeCode: emp.employeeCode,
-                                   employeeName: `${emp.firstName} ${emp.lastName}`,
-                                   date: selectedDate,
-                                   status: 'PRESENT',
-                                 },
-                                 status: att?.status ?? 'PRESENT',
-                                 remarks: att?.remarks ?? '',
-                               })
-                             }
-                           >
-                             Mark
-                           </Button>
-                         )}
-                       </td>
-                     </tr>
-                   );
-                 })
-               )}
-             </tbody>
-           </table>
-         </div>
-       )}
+                     </div>
+                   </div>
+                 </div>
+               );
+             }}
+           />
+         );
+       })()}
  
        {/* Single Mark Modal */}
        {markModal && (
@@ -717,72 +753,96 @@
            No attendance data for {MONTH_OPTIONS.find((m) => m.value === String(month))?.label}{' '}
            {year}.
          </div>
-       ) : (
-         <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] overflow-auto">
-           <table className="w-full text-[13px] min-w-[700px]">
-             <thead>
-               <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-secondary)]">
-                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Employee
-                 </th>
-                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Present
-                 </th>
-                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Absent
-                 </th>
-                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Half Day
-                 </th>
-                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Leave
-                 </th>
-                 <th className="px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   Holidays
-                 </th>
-                 <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                   OT Hours
-                 </th>
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-[var(--color-border-subtle)]">
-               {summaries.map((s) => (
-                 <tr
-                   key={s.employeeId}
-                   className="hover:bg-[var(--color-surface-secondary)] transition-colors"
-                 >
-                   <td className="px-4 py-2.5">
-                     <p className="font-medium text-[var(--color-text-primary)]">
-                       {s.employeeName}
-                     </p>
-                     <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                       {s.employeeCode}
-                     </p>
-                   </td>
-                   <td className="px-3 py-2.5 text-center tabular-nums text-green-600 font-medium">
-                     {s.presentDays}
-                   </td>
-                   <td className="px-3 py-2.5 text-center tabular-nums text-red-500 font-medium">
-                     {s.absentDays}
-                   </td>
-                   <td className="px-3 py-2.5 text-center tabular-nums text-yellow-600 font-medium">
-                     {s.halfDays}
-                   </td>
-                   <td className="px-3 py-2.5 text-center tabular-nums text-blue-500 font-medium">
-                     {s.leaveDays}
-                   </td>
-                   <td className="px-3 py-2.5 text-center tabular-nums text-[var(--color-text-secondary)]">
-                     {s.holidayDays}
-                   </td>
-                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--color-text-secondary)]">
-                     {s.overtimeHours?.toFixed(1) ?? '0.0'}h
-                   </td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
-         </div>
-       )}
+       ) : (() => {
+         const summaryColumns: Column<MonthlyAttendanceSummaryDto>[] = [
+           {
+             id: 'employee',
+             header: 'Employee',
+             accessor: (s) => (
+               <div>
+                 <p className="font-medium text-[var(--color-text-primary)]">{s.employeeName}</p>
+                 <p className="text-[11px] text-[var(--color-text-tertiary)]">{s.employeeCode}</p>
+               </div>
+             ),
+           },
+           {
+             id: 'present',
+             header: 'Present',
+             accessor: (s) => (
+               <span className="tabular-nums text-green-600 font-medium">{s.presentDays}</span>
+             ),
+             align: 'center',
+           },
+           {
+             id: 'absent',
+             header: 'Absent',
+             accessor: (s) => (
+               <span className="tabular-nums text-red-500 font-medium">{s.absentDays}</span>
+             ),
+             align: 'center',
+             hideOnMobile: true,
+           },
+           {
+             id: 'halfDay',
+             header: 'Half Day',
+             accessor: (s) => (
+               <span className="tabular-nums text-yellow-600 font-medium">{s.halfDays}</span>
+             ),
+             align: 'center',
+             hideOnMobile: true,
+           },
+           {
+             id: 'leave',
+             header: 'Leave',
+             accessor: (s) => (
+               <span className="tabular-nums text-blue-500 font-medium">{s.leaveDays}</span>
+             ),
+             align: 'center',
+             hideOnMobile: true,
+           },
+           {
+             id: 'holidays',
+             header: 'Holidays',
+             accessor: (s) => (
+               <span className="tabular-nums text-[var(--color-text-secondary)]">{s.holidayDays}</span>
+             ),
+             align: 'center',
+             hideOnMobile: true,
+           },
+           {
+             id: 'ot',
+             header: 'OT Hours',
+             accessor: (s) => (
+               <span className="tabular-nums text-[var(--color-text-secondary)]">{s.overtimeHours?.toFixed(1) ?? '0.0'}h</span>
+             ),
+             align: 'right',
+             hideOnMobile: true,
+           },
+         ];
+         return (
+           <DataTable
+             columns={summaryColumns}
+             data={summaries}
+             keyExtractor={(s) => s.employeeId}
+             pageSize={50}
+             pageSizeOptions={[50]}
+             emptyMessage="No attendance data."
+             mobileCardRenderer={(s) => (
+               <div className="p-3 flex items-center justify-between">
+                 <div>
+                   <p className="font-medium text-[13px] text-[var(--color-text-primary)]">{s.employeeName}</p>
+                   <p className="text-[11px] text-[var(--color-text-tertiary)]">{s.employeeCode}</p>
+                 </div>
+                 <div className="flex items-center gap-3 text-[12px]">
+                   <span className="text-green-600 font-medium">{s.presentDays}P</span>
+                   <span className="text-red-500 font-medium">{s.absentDays}A</span>
+                   <span className="text-blue-500 font-medium">{s.leaveDays}L</span>
+                 </div>
+               </div>
+             )}
+           />
+         );
+       })()}
      </div>
    );
  }

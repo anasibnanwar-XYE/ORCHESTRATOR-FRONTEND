@@ -28,6 +28,7 @@
  import { format } from 'date-fns';
  import { salesApi } from '@/lib/salesApi';
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+ import { DataTable, type Column } from '@/components/ui/DataTable';
  import { CreateOrderDrawer } from './CreateOrderDrawer';
  import type { SalesOrderDto, PageResponse } from '@/types';
  import { useToast } from '@/components/ui/Toast';
@@ -488,164 +489,137 @@
          </div>
        )}
  
-       {/* ── Table ────────────────────────────────────────────────────── */}
-       <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden">
-         {/* Desktop table */}
-         <div className="hidden sm:block overflow-x-auto">
-           <table className="w-full text-[13px]">
-             <thead>
-               <tr className="border-b border-[var(--color-border-default)]">
-                 {['Order', 'Dealer', 'Status', 'Total', 'Date', ''].map((h) => (
-                   <th
-                     key={h}
-                     className={clsx(
-                       'px-3 py-2.5 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] bg-[var(--color-surface-primary)]',
-                       h === 'Total' || h === '' ? 'text-right' : 'text-left',
-                     )}
-                   >
-                     {h}
-                   </th>
-                 ))}
-               </tr>
-             </thead>
-             <tbody>
-               {isLoading
-                 ? Array.from({ length: 5 }).map((_, i) => (
-                   <tr key={`sk-${i}`} className="border-b border-[var(--color-border-subtle)]">
-                     {[1, 2, 3, 4, 5, 6].map((c) => (
-                       <td key={c} className="px-3 py-3">
-                         <div
-                           className="h-3.5 rounded bg-[var(--color-surface-tertiary)] animate-pulse"
-                           style={{ width: `${40 + (i * 13 + c * 7) % 40}%` }}
-                         />
-                       </td>
-                     ))}
-                   </tr>
-                 ))
-                 : orders.length === 0
-                 ? (
-                   <tr>
-                     <td colSpan={6} className="px-3 py-12 text-center text-[13px] text-[var(--color-text-tertiary)]">
-                       {hasFilters ? 'No orders match these filters.' : 'No orders yet. Create your first order.'}
-                     </td>
-                   </tr>
-                 )
-                 : orders.map((order) => (
-                   <tr
-                     key={order.id}
-                     onClick={() => navigate(`/sales/orders/${order.id}`)}
-                     className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer"
-                   >
-                     <td className="px-3 py-2.5 font-medium text-[var(--color-text-primary)]">
-                       {order.orderNumber}
-                     </td>
-                     <td className="px-3 py-2.5 text-[var(--color-text-secondary)] max-w-[140px] truncate">
-                       {order.dealerName ?? '—'}
-                     </td>
-                     <td className="px-3 py-2.5">
-                       {statusBadge(order.status)}
-                     </td>
-                     <td className="px-3 py-2.5 text-right tabular-nums text-[var(--color-text-primary)]">
-                       {fmtCurrency(order.totalAmount)}
-                     </td>
-                     <td className="px-3 py-2.5 text-[var(--color-text-tertiary)]">
-                       {fmtDate(order.createdAt)}
-                     </td>
-                     <td className="px-3 py-2.5 text-right">
-                       <RowActions
-                         order={order}
-                         onEdit={() => setEditOrder(order)}
-                         onDelete={() => setDeleteTarget(order)}
-                         onConfirm={() => handleConfirmOrder(order)}
-                         onCancel={() => setCancelTarget(order)}
-                       />
-                     </td>
-                   </tr>
-                 ))}
-             </tbody>
-           </table>
-         </div>
- 
-         {/* Mobile cards */}
-         <div className="sm:hidden">
-           {isLoading ? (
-             <div className="space-y-2 p-3">
-               {Array.from({ length: 3 }).map((_, i) => (
-                 <div key={`msk-${i}`} className="p-3 rounded-lg border border-[var(--color-border-subtle)] space-y-2 animate-pulse">
-                   <div className="h-3.5 w-2/3 rounded bg-[var(--color-surface-tertiary)]" />
-                   <div className="h-3 w-1/2 rounded bg-[var(--color-surface-tertiary)]" />
-                   <div className="h-3 w-1/3 rounded bg-[var(--color-surface-tertiary)]" />
-                 </div>
-               ))}
-             </div>
-           ) : orders.length === 0 ? (
-             <div className="p-8 text-center text-[13px] text-[var(--color-text-tertiary)]">
-               No orders found.
-             </div>
-           ) : (
-             <div className="space-y-2 p-3">
-               {orders.map((order) => (
-                 <div
-                   key={order.id}
-                   onClick={() => navigate(`/sales/orders/${order.id}`)}
-                   className="p-3 rounded-lg border border-[var(--color-border-subtle)] cursor-pointer active:bg-[var(--color-surface-secondary)] transition-colors"
-                 >
-                   <div className="flex items-center justify-between mb-1.5">
-                     <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
-                       {order.orderNumber}
-                     </span>
-                     {statusBadge(order.status)}
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                       {order.dealerName ?? '—'} · {fmtDate(order.createdAt)}
-                     </span>
-                     <span className="text-[13px] font-semibold tabular-nums text-[var(--color-text-primary)]">
-                       {fmtCurrency(order.totalAmount)}
-                     </span>
-                   </div>
-                   <div className="mt-2 flex justify-end" onClick={(e) => e.stopPropagation()}>
-                     <RowActions
-                       order={order}
-                       onEdit={() => setEditOrder(order)}
-                       onDelete={() => setDeleteTarget(order)}
-                       onConfirm={() => handleConfirmOrder(order)}
-                       onCancel={() => setCancelTarget(order)}
-                     />
-                   </div>
-                 </div>
-               ))}
-             </div>
-           )}
-         </div>
- 
-         {/* Pagination */}
-         {!isLoading && totalElements > 0 && (
-           <div className="flex items-center justify-between px-3 py-2.5 border-t border-[var(--color-border-default)]">
-             <span className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums">
-               {page * pageSize + 1}–{Math.min((page + 1) * pageSize, totalElements)} of {totalElements}
-             </span>
-             <div className="flex items-center gap-0.5">
-               <button
-                 type="button"
-                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                 disabled={page === 0}
-                 className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 transition-colors"
+       {/* ── DataTable (desktop + mobile card view) ──────────────────── */}
+       {(() => {
+         const orderColumns: Column<SalesOrderDto>[] = [
+           {
+             id: 'orderNumber',
+             header: 'Order',
+             accessor: (order) => (
+               <span className="font-medium text-[var(--color-text-primary)]">{order.orderNumber}</span>
+             ),
+             sortable: true,
+             sortAccessor: (order) => order.orderNumber,
+           },
+           {
+             id: 'dealer',
+             header: 'Dealer',
+             accessor: (order) => (
+               <span className="text-[var(--color-text-secondary)] max-w-[140px] truncate block">
+                 {order.dealerName ?? '—'}
+               </span>
+             ),
+             hideOnMobile: true,
+           },
+           {
+             id: 'status',
+             header: 'Status',
+             accessor: (order) => statusBadge(order.status),
+           },
+           {
+             id: 'total',
+             header: 'Total',
+             accessor: (order) => (
+               <span className="tabular-nums text-[var(--color-text-primary)]">{fmtCurrency(order.totalAmount)}</span>
+             ),
+             align: 'right',
+             hideOnMobile: true,
+           },
+           {
+             id: 'date',
+             header: 'Date',
+             accessor: (order) => (
+               <span className="text-[var(--color-text-tertiary)]">{fmtDate(order.createdAt)}</span>
+             ),
+             hideOnMobile: true,
+           },
+           {
+             id: 'actions',
+             header: '',
+             accessor: (order) => (
+               <div onClick={(e) => e.stopPropagation()}>
+                 <RowActions
+                   order={order}
+                   onEdit={() => setEditOrder(order)}
+                   onDelete={() => setDeleteTarget(order)}
+                   onConfirm={() => handleConfirmOrder(order)}
+                   onCancel={() => setCancelTarget(order)}
+                 />
+               </div>
+             ),
+             width: '60px',
+           },
+         ];
+         return (
+           <DataTable
+             columns={orderColumns}
+             data={orders}
+             keyExtractor={(order) => order.id}
+             isLoading={isLoading}
+             onRowClick={(order) => navigate(`/sales/orders/${order.id}`)}
+             emptyMessage={hasFilters ? 'No orders match these filters.' : 'No orders yet. Create your first order.'}
+             pageSize={pageSize}
+             pageSizeOptions={[pageSize]}
+             mobileCardRenderer={(order) => (
+               <div
+                 className="p-3 cursor-pointer"
+                 onClick={() => navigate(`/sales/orders/${order.id}`)}
                >
-                 <ChevronLeft size={14} />
-               </button>
-               <button
-                 type="button"
-                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                 disabled={page >= totalPages - 1}
-                 className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 transition-colors"
-               >
-                 <ChevronRight size={14} />
-               </button>
-             </div>
+                 <div className="flex items-center justify-between mb-1.5">
+                   <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                     {order.orderNumber}
+                   </span>
+                   {statusBadge(order.status)}
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <span className="text-[11px] text-[var(--color-text-tertiary)]">
+                     {order.dealerName ?? '—'} · {fmtDate(order.createdAt)}
+                   </span>
+                   <span className="text-[13px] font-semibold tabular-nums text-[var(--color-text-primary)]">
+                     {fmtCurrency(order.totalAmount)}
+                   </span>
+                 </div>
+                 <div className="mt-2 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                   <RowActions
+                     order={order}
+                     onEdit={() => setEditOrder(order)}
+                     onDelete={() => setDeleteTarget(order)}
+                     onConfirm={() => handleConfirmOrder(order)}
+                     onCancel={() => setCancelTarget(order)}
+                   />
+                 </div>
+               </div>
+             )}
+           />
+         );
+       })()}
+
+       {/* Pagination (server-side) */}
+       {!isLoading && totalElements > 0 && (
+         <div className="flex items-center justify-between px-1 py-1">
+           <span className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums">
+             {page * pageSize + 1}–{Math.min((page + 1) * pageSize, totalElements)} of {totalElements}
+           </span>
+           <div className="flex items-center gap-0.5">
+             <button
+               type="button"
+               onClick={() => setPage((p) => Math.max(0, p - 1))}
+               disabled={page === 0}
+               className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 transition-colors"
+             >
+               <ChevronLeft size={14} />
+             </button>
+             <button
+               type="button"
+               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+               disabled={page >= totalPages - 1}
+               className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] disabled:opacity-25 transition-colors"
+             >
+               <ChevronRight size={14} />
+             </button>
            </div>
-         )}
-       </div>
+         </div>
+       )}
  
        {/* ── Dialogs ──────────────────────────────────────────────────── */}
  
