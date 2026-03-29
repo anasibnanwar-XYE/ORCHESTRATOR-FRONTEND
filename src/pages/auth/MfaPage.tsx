@@ -1,28 +1,11 @@
-/**
- * MfaPage
- *
- * MFA challenge screen. Re-submits POST /auth/login with the original credentials
- * plus mfaCode or recoveryCode — per the backend contract, no separate /auth/mfa/verify
- * endpoint is used.
- *
- * Features:
- *  - TOTP (6-digit) and recovery code modes
- *  - Mobile-resilient state: original credentials (email, password, companyCode) stored
- *    in sessionStorage so switching to authenticator app and back preserves state
- *  - Input cleared and re-focused on invalid code
- *  - Error toast on failure
- *  - Redirect to /login when no valid pending state
- */
-
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth, MFA_SESSION_KEY, type MfaPendingState } from '@/context/AuthContext';
 import { resolveError } from '@/lib/error-resolver';
 import { useToast } from '@/components/ui/Toast';
-import { Button } from '@/components/ui/Button';
-import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { resolvePortalAccess, resolvePostLoginDestination } from '@/lib/portal-routing';
+import { AuthLayout } from './AuthLayout';
 
 export function MfaPage() {
   const navigate = useNavigate();
@@ -151,41 +134,26 @@ export function MfaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-secondary)] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <OrchestratorLogo size={36} variant="full" className="text-[var(--color-text-primary)]" />
-        </div>
+    <AuthLayout>
+      <div>
+        <header style={{ marginBottom: 30 }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+            Two-factor verification
+          </h2>
+          <p style={{ margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit' }}>
+            {useRecoveryCode
+              ? 'Enter one of your recovery codes'
+              : 'Enter the 6-digit code from your authenticator app'}
+          </p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#a3a3a3', fontFamily: 'inherit' }}>
+            for <span style={{ fontWeight: 500, color: '#737373' }}>{pendingState.email}</span>
+          </p>
+        </header>
 
-        {/* Card */}
-        <div className="bg-[var(--color-surface-primary)] rounded-2xl border border-[var(--color-border-default)] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] p-8">
-          <div className="flex flex-col items-center mb-6">
-            <div className="h-12 w-12 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mb-3">
-              <ShieldCheck size={22} className="text-[var(--color-text-secondary)]" />
-            </div>
-            <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)]">
-              Two-factor verification
-            </h1>
-            <p className="mt-1.5 text-[13px] text-[var(--color-text-secondary)] text-center">
-              {useRecoveryCode
-                ? 'Enter one of your recovery codes'
-                : 'Enter the 6-digit code from your authenticator app'}
-            </p>
-            {pendingState.email && (
-              <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-                for <span className="font-medium">{pendingState.email}</span>
-              </p>
-            )}
-          </div>
-
-          {/* TOTP mode */}
-          {!useRecoveryCode && (
-            <div className="mb-6">
-              <label
-                htmlFor="mfa-code"
-                className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5 text-center"
-              >
+        <div style={{ display: 'grid', gap: 17 }}>
+          {!useRecoveryCode ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <label htmlFor="mfa-code" style={{ color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
                 Verification code
               </label>
               <input
@@ -199,22 +167,17 @@ export function MfaPage() {
                 onChange={handleCodeChange}
                 disabled={isLoading}
                 placeholder="000000"
-                className="w-full h-14 text-center text-[24px] font-mono tracking-[0.4em] bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                className="lp-input"
+                style={{ textAlign: 'center', fontSize: 22, fontFamily: 'monospace', letterSpacing: '0.4em', height: 56 }}
                 aria-label="6-digit verification code"
               />
-              <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)] text-center">
+              <p style={{ margin: 0, fontSize: 11, color: '#a3a3a3', fontFamily: 'inherit' }}>
                 Open your authenticator app to find the 6-digit code
               </p>
             </div>
-          )}
-
-          {/* Recovery code mode */}
-          {useRecoveryCode && (
-            <div className="mb-6">
-              <label
-                htmlFor="mfa-recovery-code"
-                className="block text-[13px] font-medium text-[var(--color-text-primary)] mb-1.5 text-center"
-              >
+          ) : (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <label htmlFor="mfa-recovery-code" style={{ color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
                 Recovery code
               </label>
               <input
@@ -226,7 +189,8 @@ export function MfaPage() {
                 onChange={(e) => setRecoveryCode(e.target.value)}
                 disabled={isLoading}
                 placeholder="xxxx-xxxx-xxxx"
-                className="w-full h-11 text-center text-[15px] font-mono tracking-wider bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                className="lp-input"
+                style={{ textAlign: 'center', fontFamily: 'monospace', letterSpacing: '0.1em' }}
                 aria-label="Recovery code"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && recoveryCode.trim() && !isLoading) {
@@ -234,27 +198,32 @@ export function MfaPage() {
                   }
                 }}
               />
-              <p className="mt-2 text-[11px] text-[var(--color-text-tertiary)] text-center">
+              <p style={{ margin: 0, fontSize: 11, color: '#a3a3a3', fontFamily: 'inherit' }}>
                 Each recovery code can only be used once
               </p>
             </div>
           )}
 
-          <Button
-            fullWidth
-            size="lg"
-            isLoading={isLoading}
+          <button
+            type="button"
+            className="lp-btn"
             disabled={useRecoveryCode ? !recoveryCode.trim() : code.length < 6}
             onClick={() => { void handleVerify(); }}
           >
-            {isLoading ? 'Verifying…' : 'Verify'}
-          </Button>
+            {isLoading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              'Verify'
+            )}
+          </button>
 
-          {/* Toggle between TOTP and recovery code */}
           <button
             type="button"
+            className="lp-btn-ghost"
             onClick={handleToggleMode}
-            className="mt-3 w-full text-center text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
             disabled={isLoading}
           >
             {useRecoveryCode ? 'Use authenticator app instead' : 'Use a recovery code instead'}
@@ -262,13 +231,14 @@ export function MfaPage() {
 
           <button
             type="button"
+            className="lp-btn-ghost"
             onClick={() => navigate('/login', { replace: true })}
-            className="mt-2 w-full text-center text-[12px] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+            style={{ marginTop: -8 }}
           >
             Back to sign in
           </button>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
