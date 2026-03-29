@@ -326,27 +326,27 @@ export const changelogApi = {
     }
   },
 
-  /** Create a new changelog entry (admin only) — POST /admin/changelog */
+  /** Create a new changelog entry (SUPER_ADMIN only) — POST /superadmin/changelog */
   async create(data: ChangelogEntryRequest): Promise<ChangelogEntryResponse> {
     const response = await apiRequest.post<ApiResponse<ChangelogEntryResponse>>(
-      '/admin/changelog',
+      '/superadmin/changelog',
       data
     );
     return response.data.data;
   },
 
-  /** Update an existing entry — PUT /admin/changelog/{id} */
+  /** Update an existing entry (SUPER_ADMIN only) — PUT /superadmin/changelog/{id} */
   async update(id: number, data: ChangelogEntryRequest): Promise<ChangelogEntryResponse> {
     const response = await apiRequest.put<ApiResponse<ChangelogEntryResponse>>(
-      `/admin/changelog/${id}`,
+      `/superadmin/changelog/${id}`,
       data
     );
     return response.data.data;
   },
 
-  /** Delete a changelog entry — DELETE /admin/changelog/{id} */
+  /** Delete a changelog entry (SUPER_ADMIN only) — DELETE /superadmin/changelog/{id} */
   async remove(id: number): Promise<void> {
-    await apiRequest.delete<ApiResponse<void>>(`/admin/changelog/${id}`);
+    await apiRequest.delete<ApiResponse<void>>(`/superadmin/changelog/${id}`);
   },
 };
 

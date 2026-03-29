@@ -1,39 +1,36 @@
  /**
-  * ChangelogPage — Changelog Management & What's New Banner
+  * ChangelogPage — Changelog Read-Only View for Tenant Admin
   *
-  * Features:
-  *  - Create changelog entry form: title, body (markdown), version tag, isHighlighted flag
-  *  - Edit existing entries
-  *  - Soft-delete entries
-  *  - WhatsNewBanner: shown to users when there are unread entries
-  *    (tracks last-read version in localStorage)
+  * Tenant admin can READ changelog entries only.
+  * Changelog CRUD (create/update/delete) is superadmin-only via /superadmin/changelog.
   *
-  * Admin write endpoints: POST/PUT/DELETE /admin/changelog
-  * Public read endpoint: GET /changelog (paginated list)
-  * Highlight endpoint: GET /changelog/latest-highlighted
+  * Read endpoints:
+  *   GET /changelog              — paginated list of entries
+  *   GET /changelog/latest-highlighted — for the WhatsNew banner
+  *
+  * WhatsNewBanner: shown when there are unread entries (tracked in localStorage).
+  * Exported separately so it can be mounted in the shell layout.
   */
 
  import { useState, useEffect, useCallback } from 'react';
  import {
-   Plus,
    BookOpen,
-   X,
    Tag,
    Calendar,
    Bell,
    AlertCircle,
-   Pencil,
    RefreshCcw,
    Loader2,
+   X,
+   ChevronDown,
+   ChevronUp,
+   Lock,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
- import { Input } from '@/components/ui/Input';
- import { Modal } from '@/components/ui/Modal';
  import { Badge } from '@/components/ui/Badge';
- import { useToast } from '@/components/ui/Toast';
  import { changelogApi } from '@/lib/adminApi';
- import type { ChangelogEntryResponse, ChangelogEntryRequest } from '@/types';
+ import type { ChangelogEntryResponse } from '@/types';
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Banner read-state helpers (per-browser localStorage tracking only)
@@ -130,38 +127,14 @@
  }
 
  // ─────────────────────────────────────────────────────────────────────────────
- // ChangelogPage
+ // ChangelogPage — Read-Only
  // ─────────────────────────────────────────────────────────────────────────────
 
- interface EntryFormData {
-   title: string;
-   body: string;
-   version: string;
-   isHighlighted: boolean;
- }
-
- const emptyForm: EntryFormData = {
-   title: '',
-   body: '',
-   version: '',
-   isHighlighted: false,
- };
-
- type DialogMode = 'create' | 'edit';
-
  export function ChangelogPage() {
-   const { success, error: toastError } = useToast();
    const [entries, setEntries] = useState<ChangelogEntryResponse[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [loadError, setLoadError] = useState<string | null>(null);
-   const [dialogMode, setDialogMode] = useState<DialogMode>('create');
-   const [editingEntry, setEditingEntry] = useState<ChangelogEntryResponse | null>(null);
-   const [showDialog, setShowDialog] = useState(false);
-   const [form, setForm] = useState<EntryFormData>({ ...emptyForm });
-   const [formError, setFormError] = useState<string | null>(null);
-   const [isSaving, setIsSaving] = useState(false);
    const [expandedId, setExpandedId] = useState<number | null>(null);
-   const [deletingId, setDeletingId] = useState<number | null>(null);
 
    const load = useCallback(async () => {
      setIsLoading(true);
@@ -178,90 +151,6 @@
 
    useEffect(() => { load(); }, [load]);
 
-   // ── Dialog helpers ─────────────────────────────────────────────────────────
-
-   const openCreate = () => {
-     setDialogMode('create');
-     setEditingEntry(null);
-     setForm({ ...emptyForm });
-     setFormError(null);
-     setShowDialog(true);
-   };
-
-   const openEdit = (entry: ChangelogEntryResponse) => {
-     setDialogMode('edit');
-     setEditingEntry(entry);
-     setForm({
-       title: entry.title,
-       body: entry.body,
-       version: entry.version,
-       isHighlighted: entry.isHighlighted ?? false,
-     });
-     setFormError(null);
-     setShowDialog(true);
-   };
-
-   const closeDialog = () => {
-     if (isSaving) return;
-     setShowDialog(false);
-     setForm({ ...emptyForm });
-     setFormError(null);
-     setEditingEntry(null);
-   };
-
-   // ── Submit ─────────────────────────────────────────────────────────────────
-
-   const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault();
-     if (!form.title.trim() || !form.body.trim() || !form.version.trim()) {
-       setFormError('Title, body, and version are required.');
-       return;
-     }
-
-     const payload: ChangelogEntryRequest = {
-       title: form.title.trim(),
-       body: form.body.trim(),
-       version: form.version.trim(),
-       isHighlighted: form.isHighlighted,
-     };
-
-     setIsSaving(true);
-     setFormError(null);
-     try {
-       if (dialogMode === 'edit' && editingEntry) {
-         await changelogApi.update(editingEntry.id, payload);
-         success('Entry updated.');
-       } else {
-         await changelogApi.create(payload);
-         success('Entry published.');
-       }
-       setShowDialog(false);
-       setForm({ ...emptyForm });
-       setEditingEntry(null);
-       await load();
-     } catch (err) {
-       const msg = err instanceof Error ? err.message : 'Failed to save entry. Please try again.';
-       setFormError(msg);
-     } finally {
-       setIsSaving(false);
-     }
-   };
-
-   // ── Delete ─────────────────────────────────────────────────────────────────
-
-   const handleDelete = async (id: number) => {
-     setDeletingId(id);
-     try {
-       await changelogApi.remove(id);
-       success('Entry removed.');
-       await load();
-     } catch {
-       toastError('Failed to remove entry. Please try again.');
-     } finally {
-       setDeletingId(null);
-     }
-   };
-
    // ── Render ─────────────────────────────────────────────────────────────────
 
    return (
@@ -273,18 +162,28 @@
              Changelog
            </h1>
            <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-             Publish updates visible to all users via the What&apos;s New banner
+             Product updates and release notes
            </p>
          </div>
-         <div className="flex items-center gap-2">
-           <Button variant="ghost" size="sm" onClick={load} disabled={isLoading} className="gap-1.5">
-             <RefreshCcw size={13} className={isLoading ? 'animate-spin' : ''} />
-             Refresh
-           </Button>
-           <Button onClick={openCreate} disabled={isLoading}>
-             <Plus size={15} className="mr-1.5" /> New Entry
-           </Button>
-         </div>
+         <Button
+           variant="ghost"
+           size="sm"
+           onClick={load}
+           disabled={isLoading}
+           className="gap-1.5"
+           aria-label="Refresh changelog"
+         >
+           <RefreshCcw size={13} className={isLoading ? 'animate-spin' : ''} />
+           Refresh
+         </Button>
+       </div>
+
+       {/* Read-only notice */}
+       <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]">
+         <Lock size={13} className="shrink-0 text-[var(--color-text-tertiary)]" />
+         <p className="text-[12px] text-[var(--color-text-secondary)]">
+           Changelog entries are managed by the platform team. Contact your superadmin to publish or update entries.
+         </p>
        </div>
 
        {/* Error state */}
@@ -292,7 +191,9 @@
          <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]">
            <AlertCircle size={16} className="shrink-0 text-[var(--color-error)]" />
            <p className="text-[13px] text-[var(--color-text-secondary)]">{loadError}</p>
-           <Button variant="ghost" size="sm" onClick={load} className="ml-auto shrink-0">Try again</Button>
+           <Button variant="ghost" size="sm" onClick={load} className="ml-auto shrink-0">
+             Try again
+           </Button>
          </div>
        )}
 
@@ -304,22 +205,22 @@
          </div>
        )}
 
-       {/* Entry list */}
+       {/* Empty state */}
        {!isLoading && !loadError && entries.length === 0 && (
          <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border-default)] py-16 gap-3">
            <BookOpen size={24} className="text-[var(--color-text-tertiary)]" />
            <p className="text-[13px] text-[var(--color-text-secondary)]">No entries yet</p>
-           <Button size="sm" variant="secondary" onClick={openCreate}>
-             Create your first entry
-           </Button>
+           <p className="text-[12px] text-[var(--color-text-tertiary)]">
+             Check back after the next release.
+           </p>
          </div>
        )}
 
+       {/* Entry list */}
        {!isLoading && !loadError && entries.length > 0 && (
          <div className="space-y-3">
            {entries.map((entry) => {
              const isExpanded = expandedId === entry.id;
-             const isDeleting = deletingId === entry.id;
              return (
                <div
                  key={entry.id}
@@ -339,7 +240,7 @@
                          <Badge variant="warning">Highlighted</Badge>
                        )}
                      </div>
-                     <div className="flex items-center gap-3 mt-1">
+                     <div className="flex items-center gap-3 mt-1 flex-wrap">
                        <span className="flex items-center gap-1 text-[11px] text-[var(--color-text-tertiary)]">
                          <Calendar size={10} />
                          {new Date(entry.publishedAt).toLocaleDateString('en-IN', {
@@ -353,29 +254,18 @@
                        )}
                      </div>
                    </div>
-                   <div className="flex items-center gap-1 shrink-0 ml-3">
-                     <button
-                       onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-                       className="h-7 px-2.5 flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-md transition-colors"
-                     >
-                       {isExpanded ? 'Hide' : 'View'}
-                     </button>
-                     <button
-                       onClick={() => openEdit(entry)}
-                       aria-label="Edit entry"
-                       className="h-7 w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-md transition-colors"
-                     >
-                       <Pencil size={12} />
-                     </button>
-                     <button
-                       onClick={() => handleDelete(entry.id)}
-                       disabled={isDeleting}
-                       aria-label="Delete entry"
-                       className="h-7 w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-bg)] rounded-md transition-colors disabled:opacity-50"
-                     >
-                       {isDeleting ? <Loader2 size={11} className="animate-spin" /> : <X size={13} />}
-                     </button>
-                   </div>
+                   <button
+                     onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                     aria-expanded={isExpanded}
+                     aria-label={isExpanded ? 'Collapse entry' : 'Expand entry'}
+                     className="ml-3 h-7 px-2.5 flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-md transition-colors shrink-0"
+                   >
+                     {isExpanded ? (
+                       <><ChevronUp size={12} /> Hide</>
+                     ) : (
+                       <><ChevronDown size={12} /> View</>
+                     )}
+                   </button>
                  </div>
                  {isExpanded && (
                    <div className="px-5 pb-4 border-t border-[var(--color-border-subtle)]">
@@ -389,83 +279,6 @@
            })}
          </div>
        )}
-
-       {/* Create / Edit Modal */}
-       <Modal
-         isOpen={showDialog}
-         onClose={closeDialog}
-         title={dialogMode === 'edit' ? 'Edit Changelog Entry' : 'Create Changelog Entry'}
-         description={
-           dialogMode === 'edit'
-             ? 'Update this entry in the changelog feed.'
-             : "Publish a new update to the What's New banner."
-         }
-         size="lg"
-         footer={
-           <>
-             <Button variant="secondary" onClick={closeDialog} disabled={isSaving}>
-               Cancel
-             </Button>
-             <Button type="submit" form="changelog-form" disabled={isSaving}>
-               {isSaving
-                 ? (dialogMode === 'edit' ? 'Saving…' : 'Publishing…')
-                 : (dialogMode === 'edit' ? 'Save Changes' : 'Create Entry')}
-             </Button>
-           </>
-         }
-       >
-         <form id="changelog-form" onSubmit={handleSubmit} className="space-y-4">
-           <Input
-             label="Title"
-             required
-             value={form.title}
-             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-             placeholder="e.g. New Features in v2.1"
-           />
-           <Input
-             label="Version Tag"
-             required
-             value={form.version}
-             onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))}
-             placeholder="e.g. v2.1.0"
-           />
-           <div className="space-y-1.5">
-             <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-               Body (Markdown supported)
-             </label>
-             <textarea
-               required
-               value={form.body}
-               onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-               placeholder="## New Features&#10;&#10;- Added X&#10;- Improved Y"
-               rows={7}
-               className={clsx(
-                 'w-full rounded-lg border border-[var(--color-border-default)] px-3 py-2.5',
-                 'text-[13px] font-mono text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
-                 'placeholder:text-[var(--color-text-tertiary)]',
-                 'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-               )}
-             />
-           </div>
-           <label className="flex items-center gap-2 cursor-pointer select-none">
-             <input
-               type="checkbox"
-               checked={form.isHighlighted}
-               onChange={(e) => setForm((f) => ({ ...f, isHighlighted: e.target.checked }))}
-               className="h-4 w-4 rounded border-[var(--color-border-default)] accent-[var(--color-neutral-900)]"
-             />
-             <span className="text-[13px] text-[var(--color-text-primary)]">
-               Highlight this entry in the What&apos;s New banner
-             </span>
-           </label>
-           {formError && (
-             <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)]">
-               <AlertCircle size={14} />
-               <p className="text-[12px]">{formError}</p>
-             </div>
-           )}
-         </form>
-       </Modal>
      </div>
    );
  }

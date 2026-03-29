@@ -1,29 +1,30 @@
  /**
-  * Tests for ChangelogPage and WhatsNewBanner
+  * Tests for ChangelogPage (read-only) and WhatsNewBanner
   *
   * Covers:
-  *  - Page loads entries from changelogApi on mount
-  *  - Loading and error states
-  *  - Create entry form submits to changelogApi.create()
-  *  - Edit entry dialog submits to changelogApi.update()
-  *  - Delete entry calls changelogApi.remove()
-  *  - List refreshes after mutations
-  *  - WhatsNewBanner renders unread entries, dismisses, and tracks last-read
+  *  - Page loads entries from changelogApi.list() on mount
+  *  - Loading state shown during fetch
+  *  - Error state shown on API failure
+  *  - Empty state shown when no entries
+  *  - Entry list renders with title, version, date
+  *  - Entry body can be expanded and collapsed
+  *  - No create / edit / delete buttons present (read-only for tenant admin)
+  *  - WhatsNewBanner: shows unread entries, dismisses, tracks last-read
   */
 
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  import type { ChangelogEntryResponse } from '@/types';
 
  vi.mock('lucide-react', () => {
    const M = () => null;
    return {
-     Plus: M, BookOpen: M, X: M, ChevronDown: M, Check: M,
+     Plus: M, BookOpen: M, X: M, ChevronDown: M, ChevronUp: M, Check: M,
      AlertCircle: M, Tag: M, Calendar: M, Bell: M, Sparkles: M,
      ArrowUpDown: M, ArrowUp: M, ArrowDown: M, ChevronLeft: M, ChevronRight: M,
      Search: M, CheckCircle2: M, AlertTriangle: M, Info: M,
-     Pencil: M, RefreshCcw: M, Loader2: M,
+     Pencil: M, RefreshCcw: M, Loader2: M, Lock: M,
    };
  });
 
@@ -102,7 +103,6 @@
    it('shows loading state initially', () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
      renderPage();
-     // Loading state is shown while API call is in progress
      expect(screen.queryByText(/loading entries/i)).toBeDefined();
    });
 
@@ -136,79 +136,58 @@
      });
    });
 
-   it('shows create entry button', async () => {
+   it('does NOT show create / new entry button (read-only)', async () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({ content: [], totalElements: 0 });
      renderPage();
      await waitFor(() => expect(screen.getByText(/no entries yet/i)).toBeDefined());
-     const btn = screen.getByText(/new entry/i);
-     expect(btn).toBeDefined();
+     // No "New Entry" button should be present
+     expect(screen.queryByText(/new entry/i)).toBeNull();
+     // No "Create your first entry" button should be present
+     expect(screen.queryByText(/create your first entry/i)).toBeNull();
    });
 
-   it('opens create form dialog on button click', async () => {
+   it('does NOT show edit buttons on entries (read-only)', async () => {
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
+       content: mockEntries,
+       totalElements: 2,
+     });
+     renderPage();
+     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
+     // No edit buttons should be present
+     expect(document.querySelectorAll('[aria-label="Edit entry"]').length).toBe(0);
+   });
+
+   it('does NOT show delete buttons on entries (read-only)', async () => {
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
+       content: mockEntries,
+       totalElements: 2,
+     });
+     renderPage();
+     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
+     // No delete buttons should be present
+     expect(document.querySelectorAll('[aria-label="Delete entry"]').length).toBe(0);
+   });
+
+   it('shows read-only notice', async () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({ content: [], totalElements: 0 });
      renderPage();
-     await waitFor(() => expect(screen.getByText(/no entries yet/i)).toBeDefined());
-     fireEvent.click(screen.getByText(/new entry/i));
      await waitFor(() => {
-       expect(screen.getByText(/create changelog entry/i)).toBeDefined();
+       expect(screen.queryByText(/managed by the platform team/i)).not.toBeNull();
      });
    });
 
-   it('submits create form and calls changelogApi.create', async () => {
-     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({ content: [], totalElements: 0 });
-     (changelogApi.create as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntries[0]);
+   it('renders version badge for each entry', async () => {
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
+       content: mockEntries,
+       totalElements: 2,
+     });
      renderPage();
-     await waitFor(() => expect(screen.getByText(/no entries yet/i)).toBeDefined());
-
-     // Open dialog
-     fireEvent.click(screen.getByText(/new entry/i));
-     await waitFor(() => expect(screen.getByText(/create changelog entry/i)).toBeDefined());
-
-     // Fill form fields
-     const titleInput = screen.getByPlaceholderText(/e.g. New Features/i);
-     fireEvent.change(titleInput, { target: { value: 'Test Entry' } });
-
-     const versionInput = screen.getByPlaceholderText(/e.g. v2.1.0/i);
-     fireEvent.change(versionInput, { target: { value: 'v2.1.0' } });
-
-     const bodyInput = screen.getByPlaceholderText(/## New Features/i);
-     fireEvent.change(bodyInput, { target: { value: 'Some body text' } });
-
-     // Submit
-     await act(async () => {
-       fireEvent.submit(document.getElementById('changelog-form')!);
-     });
-
-     await waitFor(() => {
-       expect(changelogApi.create).toHaveBeenCalledWith({
-         title: 'Test Entry',
-         body: 'Some body text',
-         version: 'v2.1.0',
-         isHighlighted: false,
-       });
-     });
+     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
+     expect(screen.getByText('v2.0.0')).toBeDefined();
+     expect(screen.getByText('v1.9.0')).toBeDefined();
    });
 
-   it('shows validation error when required fields are missing', async () => {
-     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({ content: [], totalElements: 0 });
-     renderPage();
-     await waitFor(() => expect(screen.getByText(/no entries yet/i)).toBeDefined());
-
-     fireEvent.click(screen.getByText(/new entry/i));
-     await waitFor(() => expect(screen.getByText(/create changelog entry/i)).toBeDefined());
-
-     // Submit without filling in fields
-     await act(async () => {
-       fireEvent.submit(document.getElementById('changelog-form')!);
-     });
-
-     await waitFor(() => {
-       expect(screen.getByText(/title, body, and version are required/i)).toBeDefined();
-     });
-     expect(changelogApi.create).not.toHaveBeenCalled();
-   });
-
-   it('opens edit dialog with pre-filled values', async () => {
+   it('expands entry body on view click', async () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
        content: mockEntries,
        totalElements: 2,
@@ -216,79 +195,22 @@
      renderPage();
      await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
 
-     // Click edit button for first entry
-     const editBtns = document.querySelectorAll('[aria-label="Edit entry"]');
-     fireEvent.click(editBtns[0]);
+     // Click the first "View" button
+     const viewBtns = screen.getAllByText('View');
+     fireEvent.click(viewBtns[0]);
 
      await waitFor(() => {
-       expect(screen.getByText(/edit changelog entry/i)).toBeDefined();
+       expect(screen.queryByText(/## What is new/i)).not.toBeNull();
      });
    });
 
-   it('calls changelogApi.update on edit submission', async () => {
-     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
-       content: mockEntries,
-       totalElements: 2,
-     });
-     (changelogApi.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntries[0]);
+   it('refresh button reloads entries', async () => {
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({ content: [], totalElements: 0 });
      renderPage();
-     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
+     await waitFor(() => expect(screen.getByText(/no entries yet/i)).toBeDefined());
 
-     // Click edit button
-     const editBtns = document.querySelectorAll('[aria-label="Edit entry"]');
-     fireEvent.click(editBtns[0]);
-
-     await waitFor(() => expect(screen.getByText(/edit changelog entry/i)).toBeDefined());
-
-     // Submit edit form
-     await act(async () => {
-       fireEvent.submit(document.getElementById('changelog-form')!);
-     });
-
-     await waitFor(() => {
-       expect(changelogApi.update).toHaveBeenCalledWith(
-         mockEntries[0].id,
-         expect.objectContaining({
-           title: mockEntries[0].title,
-           version: mockEntries[0].version,
-         })
-       );
-     });
-   });
-
-   it('calls changelogApi.remove on delete click', async () => {
-     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
-       content: mockEntries,
-       totalElements: 2,
-     });
-     (changelogApi.remove as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-     renderPage();
-     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
-
-     // Click delete button for first entry
-     const deleteBtns = document.querySelectorAll('[aria-label="Delete entry"]');
-     await act(async () => {
-       fireEvent.click(deleteBtns[0]);
-     });
-
-     await waitFor(() => {
-       expect(changelogApi.remove).toHaveBeenCalledWith(mockEntries[0].id);
-     });
-   });
-
-   it('refreshes list after delete', async () => {
-     const updatedEntries = [mockEntries[1]]; // only second entry remains
-     (changelogApi.list as ReturnType<typeof vi.fn>)
-       .mockResolvedValueOnce({ content: mockEntries, totalElements: 2 })
-       .mockResolvedValueOnce({ content: updatedEntries, totalElements: 1 });
-     (changelogApi.remove as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-     renderPage();
-     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
-
-     const deleteBtns = document.querySelectorAll('[aria-label="Delete entry"]');
-     await act(async () => {
-       fireEvent.click(deleteBtns[0]);
-     });
+     const refreshBtn = screen.getByLabelText(/refresh changelog/i);
+     fireEvent.click(refreshBtn);
 
      await waitFor(() => {
        expect(changelogApi.list).toHaveBeenCalledTimes(2);
@@ -347,15 +269,12 @@
    });
 
    it('hides banner after dismiss marks entries as read', async () => {
-     // Render with entries, dismiss the banner, and verify it disappears
      const { container } = render(
        <MemoryRouter>
          <WhatsNewBanner entries={mockEntries} />
        </MemoryRouter>
      );
-     // Banner should be visible
      expect(screen.queryByText(/what.s new/i)).not.toBeNull();
-     // Click dismiss
      const dismissBtn = container.querySelector('[aria-label="Dismiss"]');
      if (dismissBtn) {
        fireEvent.click(dismissBtn);
@@ -371,7 +290,6 @@
          <WhatsNewBanner entries={mockEntries} />
        </MemoryRouter>
      );
-     // Should show "2 updates" badge since both entries are unread
      const badge = screen.queryByText(/2 updates/i);
      expect(badge).not.toBeNull();
    });
