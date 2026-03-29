@@ -9,9 +9,9 @@
  
  import { useCallback, useEffect, useState } from 'react';
  import { Plus, X, ChevronRight, Beaker } from 'lucide-react';
- import { clsx } from 'clsx';
  import { format } from 'date-fns';
  import { Button } from '@/components/ui/Button';
+ import { Badge } from '@/components/ui/Badge';
  import { Input } from '@/components/ui/Input';
  import { Select } from '@/components/ui/Select';
  import { Modal } from '@/components/ui/Modal';
@@ -52,16 +52,15 @@
    FULLY_PACKED: 'Fully Packed',
  };
  
- function statusBadgeClass(status: string | undefined): string {
+ function statusBadgeVariant(status: string | undefined): 'success' | 'warning' | 'default' {
    switch (status) {
      case 'READY_TO_PACK':
-       return 'bg-[var(--color-success-bg)] text-[var(--color-success)]';
+       return 'success';
      case 'PARTIAL_PACKED':
-       return 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]';
+       return 'warning';
      case 'FULLY_PACKED':
-       return 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)]';
      default:
-       return 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]';
+       return 'default';
    }
  }
  
@@ -194,14 +193,9 @@
        {/* Status */}
        {detail.status && (
          <div className="flex items-center gap-2">
-           <span
-             className={clsx(
-               'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-               statusBadgeClass(detail.status),
-             )}
-           >
+           <Badge variant={statusBadgeVariant(detail.status)}>
              {STATUS_LABELS[detail.status] ?? detail.status}
-           </span>
+           </Badge>
          </div>
        )}
  
@@ -513,14 +507,9 @@
        id: 'status',
        header: 'Status',
        accessor: (row) => (
-         <span
-           className={clsx(
-             'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-             statusBadgeClass(row.status),
-           )}
-         >
+         <Badge variant={statusBadgeVariant(row.status)}>
            {STATUS_LABELS[row.status ?? ''] ?? row.status ?? '—'}
-         </span>
+         </Badge>
        ),
      },
      {

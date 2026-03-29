@@ -11,9 +11,9 @@
  
  import { useCallback, useEffect, useState } from 'react';
  import { Plus, Pencil, Trash2, ChevronRight } from 'lucide-react';
- import { clsx } from 'clsx';
  import { format } from 'date-fns';
  import { Button } from '@/components/ui/Button';
+ import { Badge } from '@/components/ui/Badge';
  import { Input } from '@/components/ui/Input';
  import { Modal } from '@/components/ui/Modal';
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -42,20 +42,20 @@
    CANCELLED: 'Cancelled',
  };
  
- function statusBadgeClass(status: ProductionPlanStatus): string {
+ function statusBadgeVariant(status: ProductionPlanStatus): 'warning' | 'info' | 'success' | 'default' | 'danger' {
    switch (status) {
      case 'DRAFT':
-       return 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]';
+       return 'warning';
      case 'SCHEDULED':
-       return 'bg-[var(--color-info-bg,var(--color-surface-tertiary))] text-[var(--color-info,var(--color-text-secondary))]';
+       return 'info';
      case 'IN_PROGRESS':
-       return 'bg-[var(--color-success-bg)] text-[var(--color-success)]';
+       return 'success';
      case 'COMPLETED':
-       return 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)]';
+       return 'default';
      case 'CANCELLED':
-       return 'bg-[var(--color-error-bg)] text-[var(--color-error)]';
+       return 'danger';
      default:
-       return 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]';
+       return 'default';
    }
  }
  
@@ -293,14 +293,9 @@
        id: 'status',
        header: 'Status',
        accessor: (row) => (
-         <span
-           className={clsx(
-             'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-             statusBadgeClass(row.status),
-           )}
-         >
+         <Badge variant={statusBadgeVariant(row.status)}>
            {STATUS_LABELS[row.status]}
-         </span>
+         </Badge>
        ),
      },
      {

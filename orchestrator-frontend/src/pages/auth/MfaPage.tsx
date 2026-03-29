@@ -137,23 +137,23 @@ export function MfaPage() {
     <AuthLayout>
       <div>
         <header style={{ marginBottom: 30 }}>
-          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
             Two-factor verification
           </h2>
-          <p style={{ margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit' }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit' }}>
             {useRecoveryCode
               ? 'Enter one of your recovery codes'
               : 'Enter the 6-digit code from your authenticator app'}
           </p>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#a3a3a3', fontFamily: 'inherit' }}>
-            for <span style={{ fontWeight: 500, color: '#737373' }}>{pendingState.email}</span>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
+            for <span style={{ fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{pendingState.email}</span>
           </p>
         </header>
 
         <div style={{ display: 'grid', gap: 17 }}>
           {!useRecoveryCode ? (
             <div style={{ display: 'grid', gap: 8 }}>
-              <label htmlFor="mfa-code" style={{ color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+              <label htmlFor="mfa-code" style={{ color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
                 Verification code
               </label>
               <input
@@ -171,13 +171,13 @@ export function MfaPage() {
                 style={{ textAlign: 'center', fontSize: 22, fontFamily: 'monospace', letterSpacing: '0.4em', height: 56 }}
                 aria-label="6-digit verification code"
               />
-              <p style={{ margin: 0, fontSize: 11, color: '#a3a3a3', fontFamily: 'inherit' }}>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
                 Open your authenticator app to find the 6-digit code
               </p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: 8 }}>
-              <label htmlFor="mfa-recovery-code" style={{ color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+              <label htmlFor="mfa-recovery-code" style={{ color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
                 Recovery code
               </label>
               <input
@@ -198,7 +198,7 @@ export function MfaPage() {
                   }
                 }}
               />
-              <p style={{ margin: 0, fontSize: 11, color: '#a3a3a3', fontFamily: 'inherit' }}>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
                 Each recovery code can only be used once
               </p>
             </div>

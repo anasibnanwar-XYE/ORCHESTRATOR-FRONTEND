@@ -89,29 +89,29 @@ export function LoginPage() {
     <AuthLayout>
       <div ref={formWrapRef}>
         <header style={{ marginBottom: 30 }}>
-          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
             Sign in
           </h2>
-          <p style={{ width: 300, margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit' }}>
+          <p style={{ width: 300, margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit' }}>
             Enter your credentials to access the admin portal
           </p>
         </header>
 
         {lockoutState && (
-          <div role="alert" data-testid="lockout-banner" style={{ marginBottom: 20, padding: '10px 12px', borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 13, color: '#92400e' }}>
+          <div role="alert" data-testid="lockout-banner" style={{ marginBottom: 20, padding: '10px 12px', borderRadius: 8, background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-ring)', fontSize: 13, color: 'var(--color-status-warning-text)' }}>
             <p style={{ margin: 0, fontWeight: 500 }}>Account locked</p>
             <p style={{ margin: '2px 0 0', fontSize: 12 }}>{lockoutState}</p>
           </div>
         )}
 
         {runtimeDenialState && (
-          <div role="alert" data-testid="runtime-denial-banner" style={{ marginBottom: 20, padding: '10px 12px', borderRadius: 8, background: '#f5f5f5', border: '1px solid #e5e5e5', fontSize: 13, color: '#525252' }}>
+          <div role="alert" data-testid="runtime-denial-banner" style={{ marginBottom: 20, padding: '10px 12px', borderRadius: 8, background: 'var(--color-surface-tertiary)', border: '1px solid var(--color-border-default)', fontSize: 13, color: 'var(--color-text-secondary)' }}>
             {runtimeDenialState}
           </div>
         )}
 
         <form onSubmit={handleSubmit} noValidate style={{ display: 'grid', gap: 17 }}>
-          <label style={{ display: 'grid', gap: 8, color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+          <label style={{ display: 'grid', gap: 8, color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
             <span>Email</span>
             <input
               type="email"
@@ -128,11 +128,11 @@ export function LoginPage() {
 
           <div style={{ display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem' }}>
-              <span style={{ color: '#171717', fontWeight: 500, fontSize: 13 }}>Password</span>
+              <span style={{ color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13 }}>Password</span>
               <Link
                 to="/forgot-password"
                 className="lp-forgot"
-                style={{ fontSize: 12, fontWeight: 400, color: '#737373', textDecoration: 'none', transition: 'color 180ms ease' }}
+                style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-tertiary)', textDecoration: 'none', transition: 'color 180ms ease' }}
               >
                 Forgot password?
               </Link>
@@ -153,14 +153,14 @@ export function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#737373', display: 'flex', alignItems: 'center' }}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center' }}
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
 
-          <label style={{ display: 'grid', gap: 8, color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+          <label style={{ display: 'grid', gap: 8, color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
             <span>Company code</span>
             <input
               type="text"
@@ -174,8 +174,8 @@ export function LoginPage() {
             />
           </label>
 
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#525252', fontSize: 12, fontWeight: 400, cursor: 'pointer', marginTop: -2, fontFamily: 'inherit' }}>
-            <input type="checkbox" style={{ width: 14, height: 14, margin: 0, borderRadius: 3, accentColor: '#171717' }} />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 400, cursor: 'pointer', marginTop: -2, fontFamily: 'inherit' }}>
+            <input type="checkbox" style={{ width: 14, height: 14, margin: 0, borderRadius: 3, accentColor: 'var(--color-neutral-900)' }} />
             <span>Remember me</span>
           </label>
 

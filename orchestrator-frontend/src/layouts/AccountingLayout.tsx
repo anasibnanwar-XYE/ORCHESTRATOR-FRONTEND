@@ -37,10 +37,6 @@ import {
   FlaskConical,
   Boxes,
   ClipboardEdit,
-  UserCheck,
-  CalendarDays,
-  Palmtree,
-  Banknote,
   Scale,
   TrendingUp,
   PieChart,
@@ -71,7 +67,7 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { resolvePortalAccess, shouldShowHub, MODULE_KEYS, isModuleEnabled, getModuleForPath } from '@/lib/portal-routing';
+import { resolvePortalAccess, shouldShowHub, isModuleEnabled, getModuleForPath } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
 import { AdminCompanySwitcher } from '@/components/CompanySwitcher';
 import { CommandPaletteButton } from '@/components/CommandPalette';
@@ -140,15 +136,6 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: 'HR & Payroll',
-    items: [
-      { label: 'Employees', to: '/accounting/employees', icon: UserCheck, module: MODULE_KEYS.HR },
-      { label: 'Attendance', to: '/accounting/attendance', icon: CalendarDays, module: MODULE_KEYS.HR },
-      { label: 'Leave', to: '/accounting/leave', icon: Palmtree, module: MODULE_KEYS.HR },
-      { label: 'Payroll', to: '/accounting/payroll', icon: Banknote, module: MODULE_KEYS.PAYROLL },
-    ],
-  },
-  {
     title: 'Reports',
     items: [
       { label: 'Trial Balance', to: '/accounting/reports/trial-balance', icon: Scale },
@@ -188,12 +175,7 @@ const NAV_GROUPS: NavGroup[] = [
  * Map of route path prefixes to their module keys.
  * Routes that start with these prefixes belong to gated modules.
  */
-const MODULE_ROUTES: Record<string, string> = {
-  '/accounting/employees': MODULE_KEYS.HR,
-  '/accounting/attendance': MODULE_KEYS.HR,
-  '/accounting/leave': MODULE_KEYS.HR,
-  '/accounting/payroll': MODULE_KEYS.PAYROLL,
-};
+const MODULE_ROUTES: Record<string, string> = {};
 
 const ROUTE_LABELS: Record<string, string> = {
   '/accounting': 'Dashboard',
@@ -215,10 +197,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/accounting/finished-goods': 'Finished Goods',
   '/accounting/adjustments': 'Adjustments',
   '/accounting/opening-stock': 'Opening Stock',
-  '/accounting/employees': 'Employees',
-  '/accounting/attendance': 'Attendance',
-  '/accounting/leave': 'Leave',
-  '/accounting/payroll': 'Payroll',
   '/accounting/reports/trial-balance': 'Trial Balance',
   '/accounting/reports/pl': 'P&L',
   '/accounting/reports/balance-sheet': 'Balance Sheet',

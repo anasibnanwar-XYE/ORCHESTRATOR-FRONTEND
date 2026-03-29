@@ -132,7 +132,7 @@ export function FirstPasswordChangePage() {
                         className={clsx(
                           'shrink-0 h-4 w-4 rounded-full flex items-center justify-center',
                           passed
-                            ? 'bg-[#10b981] text-white'
+                            ? 'bg-[var(--color-success-icon)] text-[var(--color-text-inverse)]'
                             : 'bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)]'
                         )}
                         aria-hidden="true"

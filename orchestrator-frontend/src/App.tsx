@@ -267,30 +267,7 @@ const FinishedGoodsPage = lazy(() =>
   }))
 );
 
-/** Accounting portal — Employees */
-const EmployeesPage = lazy(() =>
-  import('@/pages/accounting/EmployeesPage').then((m) => ({
-    default: m.EmployeesPage,
-  }))
-);
-/** Accounting portal — Attendance */
-const AttendancePage = lazy(() =>
-  import('@/pages/accounting/AttendancePage').then((m) => ({
-    default: m.AttendancePage,
-  }))
-);
-/** Accounting portal — Leave Requests */
-const LeaveRequestsPage = lazy(() =>
-  import('@/pages/accounting/LeaveRequestsPage').then((m) => ({
-    default: m.LeaveRequestsPage,
-  }))
-);
-/** Accounting portal — Payroll */
-const PayrollPage = lazy(() =>
-  import('@/pages/accounting/PayrollPage').then((m) => ({
-    default: m.PayrollPage,
-  }))
-);
+
 
  /** Accounting portal — Month-End Checklist */
  const MonthEndChecklistPage = lazy(() =>
@@ -944,10 +921,7 @@ function AppRouter() {
             <Route path="reports/inventory" element={<InventoryValuationPage />} />
             <Route path="reports/audit" element={<ReconciliationDashboardPage />} />
             <Route path="reports" element={<ReportsIndexPage />} />
-            <Route path="employees" element={<EmployeesPage />} />
-            <Route path="attendance" element={<AttendancePage />} />
-            <Route path="leave" element={<LeaveRequestsPage />} />
-            <Route path="payroll" element={<PayrollPage />} />
+
             <Route path="month-end" element={<MonthEndChecklistPage />} />
             <Route path="bank-reconciliation" element={<BankReconciliationPage />} />
             <Route path="audit-digest" element={<AuditDigestPage />} />

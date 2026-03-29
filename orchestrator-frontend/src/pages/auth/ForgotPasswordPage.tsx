@@ -39,7 +39,7 @@ export function ForgotPasswordPage() {
     <Link
       to="/login"
       className="lp-forgot"
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#737373', textDecoration: 'none', transition: 'color 180ms ease', marginTop: 16 }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-text-tertiary)', textDecoration: 'none', transition: 'color 180ms ease', marginTop: 16 }}
     >
       <ArrowLeft size={12} />
       Back to sign in
@@ -51,10 +51,10 @@ export function ForgotPasswordPage() {
       {submitted ? (
         /* ── Confirmation state ── */
         <div>
-          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
             Check your email
           </h2>
-          <p style={{ margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }}>
             If an account with that address exists, we've sent a link to reset
             your password. Check your inbox and spam folder.
           </p>
@@ -63,10 +63,10 @@ export function ForgotPasswordPage() {
       ) : retryableFailure ? (
         /* ── Retryable failure state ── */
         <div>
-          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
             Something went wrong
           </h2>
-          <p style={{ margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }}>
+          <p style={{ margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6 }}>
             We were unable to send the reset link right now. Please try again in a moment.
           </p>
           <button
@@ -83,16 +83,16 @@ export function ForgotPasswordPage() {
         /* ── Form state ── */
         <div>
           <header style={{ marginBottom: 30 }}>
-            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: '#171717', fontFamily: 'inherit' }}>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
               Reset your password
             </h2>
-            <p style={{ width: 300, margin: '4px 0 0', color: '#737373', fontSize: 13, fontFamily: 'inherit' }}>
+            <p style={{ width: 300, margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit' }}>
               Enter your work email and we'll send you a reset link if an account exists.
             </p>
           </header>
 
           <form onSubmit={handleSubmit} noValidate style={{ display: 'grid', gap: 17 }}>
-            <label style={{ display: 'grid', gap: 8, color: '#171717', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+            <label style={{ display: 'grid', gap: 8, color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
               <span>Email</span>
               <input
                 type="email"

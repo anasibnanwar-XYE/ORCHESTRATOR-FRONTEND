@@ -19,42 +19,42 @@ const STYLES = `
 
   .lp-input {
     width:100%; height:40px; padding:0 12px;
-    border-radius:8px; border:1px solid #e5e5e5;
-    background:#fff; outline:none; color:#171717;
+    border-radius:8px; border:1px solid var(--color-border-default);
+    background:var(--color-surface-primary); outline:none; color:var(--color-text-primary);
     font-size:13px; font-family:inherit;
     transition: border-color 180ms ease;
   }
-  .lp-input::placeholder { color:#737373; }
-  .lp-input:focus { border-color:#171717; }
+  .lp-input::placeholder { color:var(--color-text-tertiary); }
+  .lp-input:focus { border-color:var(--color-neutral-900); }
   .lp-input:disabled { opacity:0.45; cursor:not-allowed; }
   .lp-input-mono { text-transform:uppercase; letter-spacing:0.1em; font-family:monospace; }
 
   .lp-btn {
     width:100%; height:40px; border:0; border-radius:8px;
-    background:#171717; color:#fff; font-size:13px; font-weight:500;
+    background:var(--color-neutral-900); color:var(--color-text-inverse); font-size:13px; font-weight:500;
     font-family:inherit; cursor:pointer; margin-top:2px;
     display:flex; align-items:center; justify-content:center; gap:8px;
     transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
   }
   .lp-btn:hover:not(:disabled) {
-    background:#0e0e0e;
+    background:var(--color-neutral-800);
     transform:translateY(-1px);
     box-shadow:0 8px 18px rgba(0,0,0,0.12);
   }
   .lp-btn:active:not(:disabled) { transform:translateY(0); }
-  .lp-btn:disabled { background:#525252; cursor:not-allowed; }
+  .lp-btn:disabled { background:var(--color-neutral-600); cursor:not-allowed; }
 
   .lp-btn-ghost {
     width:100%; height:36px; border:0; border-radius:8px;
-    background:transparent; color:#737373; font-size:12px; font-weight:400;
+    background:transparent; color:var(--color-text-tertiary); font-size:12px; font-weight:400;
     font-family:inherit; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:6px;
     transition: color 180ms ease;
   }
-  .lp-btn-ghost:hover:not(:disabled) { color:#171717; }
+  .lp-btn-ghost:hover:not(:disabled) { color:var(--color-text-primary); }
   .lp-btn-ghost:disabled { opacity:0.45; cursor:not-allowed; }
 
-  .lp-forgot:hover { color:#171717 !important; }
+  .lp-forgot:hover { color:var(--color-text-primary) !important; }
 
   @media (max-width: 900px) {
     .lp-shell { grid-template-columns: 1fr !important; }
@@ -83,7 +83,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         {/* ── Brand panel (dark) ── */}
         <section
           className="lp-brand"
-          style={{ minHeight: '100vh', position: 'relative', background: '#171717', color: '#f5f5f5', padding: '0 60px', overflow: 'hidden' }}
+          style={{ minHeight: '100vh', position: 'relative', background: 'var(--color-neutral-900)', color: 'var(--color-neutral-100)', padding: '0 60px', overflow: 'hidden' }}
         >
           <div
             className="lp-brand-block"
@@ -101,18 +101,18 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             <h1 style={{ margin: 0, fontSize: 32, fontWeight: 600, letterSpacing: 0, fontFamily: 'inherit' }}>
               Orchestrator
             </h1>
-            <p style={{ margin: '1px 0 0', maxWidth: 260, fontSize: 16, color: '#999', fontFamily: 'inherit' }}>
+            <p style={{ margin: '1px 0 0', maxWidth: 260, fontSize: 16, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
               Enterprise resource planning, designed for clarity.
             </p>
           </div>
 
           <blockquote
             className="lp-quote"
-            style={{ position: 'absolute', left: 60, top: 760, maxWidth: 360, color: '#808080', margin: 0, padding: 0 }}
+            style={{ position: 'absolute', left: 60, top: 760, maxWidth: 360, color: 'var(--color-neutral-500)', margin: 0, padding: 0 }}
           >
             <p style={{ margin: 0, fontSize: 13 }}>"The cleanest ERP we've ever used.</p>
             <p style={{ margin: 0, fontSize: 13 }}>It just works."</p>
-            <footer style={{ marginTop: 16, fontSize: 11, fontWeight: 500, color: '#666' }}>
+            <footer style={{ marginTop: 16, fontSize: 11, fontWeight: 500, color: 'var(--color-neutral-500)' }}>
               — CFO, Manufacturing Co.
             </footer>
           </blockquote>
@@ -121,7 +121,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         {/* ── Form panel (light) ── */}
         <section
           className="lp-form-panel"
-          style={{ minHeight: '100vh', background: '#fafafa' }}
+          style={{ minHeight: '100vh', background: 'var(--color-surface-secondary)' }}
         >
           <div className="lp-form-wrap" style={{ width: 340, marginLeft: 220, marginTop: 320 }}>
             {children}
