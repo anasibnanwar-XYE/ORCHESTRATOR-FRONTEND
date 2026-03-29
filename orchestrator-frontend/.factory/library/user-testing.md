@@ -46,6 +46,26 @@ agent-browser validators MUST simulate real human behavior, not just test predef
 6. **Backend discovery** — when an API call fails (404, 400, 500), this likely means the backend changed. Document the failure with endpoint, response code, and response body. This is a discovery, not just a failure.
 7. **Remove dead UI** — if a page/tab/action has no working backend support, that's a finding workers must act on
 
+## Flow Validator Guidance: Browser (agent-browser)
+
+### Isolation Rules
+- All foundation assertions are read-only inspection tests — no data mutation
+- All subagents share the same frontend instance at http://localhost:3002
+- No login required for most foundation checks (CSS variables, theme, 404 page)
+- For assertions requiring authenticated pages (DataTable on /admin/users), use admin account
+- Each subagent should use its own agent-browser session to avoid conflicts
+- Do NOT modify any data — only inspect and verify
+
+### Concurrency
+- Up to 4 subagents can run concurrently for foundation assertions
+- Each uses its own browser session — no shared state conflicts
+- All read-only: no risk of data interference
+
+### Shared State to Avoid
+- Do NOT log in/out in one subagent while another is testing authenticated pages
+- Do NOT change theme settings if another subagent is testing theme behavior
+- Keep theme-dependent tests isolated to their own subagent
+
 ## Known Testing Constraints
 
 - HR/Payroll module is on hold - skip any HR/payroll testing

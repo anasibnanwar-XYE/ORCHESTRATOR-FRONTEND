@@ -1,0 +1,96 @@
+{
+  "groupId": "theme",
+  "testedAt": "2026-03-29T12:00:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "session": "94d5a195396d__theme",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd / MOCK"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-FOUNDATION-006",
+      "title": "Dark Mode Toggle Switches Theme",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to http://localhost:3002/login",
+          "expected": "Login page displayed in light mode",
+          "observed": "Login page displayed in light mode — no dark class on html, body bg rgb(250,250,250), text rgb(23,23,23)"
+        },
+        {
+          "action": "Login with admin credentials (validation.admin@example.com / MOCK)",
+          "expected": "Redirect to /hub page",
+          "observed": "Redirected to http://localhost:3002/hub — Portal Hub page displayed with theme toggle visible"
+        },
+        {
+          "action": "Verify light mode state before toggle",
+          "expected": "html has no dark class, light background and dark text",
+          "observed": "html.className='', dark class absent, body bg rgb(250,250,250), text color rgb(23,23,23)"
+        },
+        {
+          "action": "Click theme toggle button ('Switch to dark mode')",
+          "expected": "html gains dark class, colors switch to dark theme, text remains readable",
+          "observed": "html.className='dark', body bg switched to rgb(17,17,17), text color switched to rgb(250,250,250) — dark theme active, text clearly readable"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/theme/VAL-FOUNDATION-006-hub-light-mode.png",
+          "foundation/theme/VAL-FOUNDATION-006-hub-dark-mode.png",
+          "foundation/theme/VAL-FOUNDATION-006-login-light-annotated.png"
+        ],
+        "consoleErrors": "none",
+        "network": "n/a — client-side only toggle, no API calls"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-FOUNDATION-007",
+      "title": "Theme Preference Persists Across Sessions",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Verify dark mode is active after VAL-FOUNDATION-006 toggle",
+          "expected": "localStorage.o-theme = 'dark', html has dark class",
+          "observed": "localStorage.getItem('o-theme') = 'dark', html.className='dark', body bg rgb(17,17,17)"
+        },
+        {
+          "action": "Take pre-reload screenshot for comparison",
+          "expected": "Screenshot captured in dark mode",
+          "observed": "Screenshot saved as VAL-FOUNDATION-007-hub-dark-before-reload.png"
+        },
+        {
+          "action": "Reload the page (browser reload)",
+          "expected": "Page reloads and returns to /hub",
+          "observed": "Page reloaded, URL still http://localhost:3002/hub"
+        },
+        {
+          "action": "Verify dark theme persists after reload",
+          "expected": "html still has dark class, dark background/light text maintained, localStorage.o-theme still 'dark'",
+          "observed": "html.className='dark', localStorage.o-theme='dark', body bg rgb(17,17,17), text rgb(250,250,250) — dark theme fully persisted via localStorage"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "foundation/theme/VAL-FOUNDATION-007-hub-dark-before-reload.png",
+          "foundation/theme/VAL-FOUNDATION-007-hub-dark-after-reload.png"
+        ],
+        "consoleErrors": "none",
+        "localStorage": "o-theme = 'dark' persisted across page reload",
+        "network": "n/a — client-side persistence via localStorage"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Theme toggle is not available on the login page — it only appears on authenticated pages (Portal Hub, portal layouts). Had to log in first to test the toggle.",
+      "resolved": true,
+      "resolution": "Logged in with admin credentials to access the Portal Hub page where the theme toggle is located",
+      "affectedAssertions": ["VAL-FOUNDATION-006", "VAL-FOUNDATION-007"]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 2 assertions: 2 passed. Dark mode toggle correctly adds 'dark' class to html element, switches colors (background rgb(250,250,250)→rgb(17,17,17), text rgb(23,23,23)→rgb(250,250,250)), and text remains fully readable in both modes. Theme preference persists via localStorage key 'o-theme' across page reloads."
+}

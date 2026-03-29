@@ -1,0 +1,83 @@
+{
+  "milestone": "foundation",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-FOUNDATION-001",
+    "VAL-FOUNDATION-002",
+    "VAL-FOUNDATION-003",
+    "VAL-FOUNDATION-004",
+    "VAL-FOUNDATION-005",
+    "VAL-FOUNDATION-006",
+    "VAL-FOUNDATION-007",
+    "VAL-FOUNDATION-008",
+    "VAL-FOUNDATION-009",
+    "VAL-FOUNDATION-010"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added Flow Validator Guidance: Browser (agent-browser) section with isolation rules, concurrency limits, and shared state avoidance for foundation assertions",
+      "source": "setup"
+    }
+  ],
+  "previousRound": null,
+  "flowReports": [
+    ".factory/validation/foundation/user-testing/flows/css-variables.json",
+    ".factory/validation/foundation/user-testing/flows/theme.json",
+    ".factory/validation/foundation/user-testing/flows/components.json",
+    ".factory/validation/foundation/user-testing/flows/infrastructure.json"
+  ],
+  "frictions": [
+    {
+      "description": "Theme toggle is not available on the login page — only appears on authenticated pages (Portal Hub, portal layouts). Required login to test theme behavior.",
+      "affectedAssertions": ["VAL-FOUNDATION-006", "VAL-FOUNDATION-007"],
+      "severity": "low"
+    },
+    {
+      "description": "Sidebar active link uses text-white (Tailwind utility) instead of a CSS variable for text color. Not a hardcoded hex, but could be improved for consistency.",
+      "affectedAssertions": ["VAL-FOUNDATION-001"],
+      "severity": "suggestion"
+    }
+  ],
+  "testDetails": {
+    "VAL-FOUNDATION-001": {
+      "summary": "Button components (.lp-btn, .btn-primary, .btn-secondary) use CSS variables (var(--color-neutral-900), var(--color-surface-primary), etc.) for all color properties. No hardcoded hex colors found."
+    },
+    "VAL-FOUNDATION-002": {
+      "summary": "Login email input (.lp-input) uses CSS variables for border (var(--color-border-default)), background (var(--color-surface-primary)), color (var(--color-text-primary)), and focus state (var(--color-neutral-900))."
+    },
+    "VAL-FOUNDATION-003": {
+      "summary": "Command palette (Ctrl+K) opens as centered modal with backdrop overlay (bg-black/20, backdrop-blur-[2px]). Has proper ARIA attributes (role=dialog, aria-modal=true). Escape key dismisses correctly."
+    },
+    "VAL-FOUNDATION-004": {
+      "summary": "Users DataTable renders 5 column headers and 6 data rows with pagination. Responsive: table view at desktop/tablet widths with overflow-x-auto, card-based layout on mobile (375px)."
+    },
+    "VAL-FOUNDATION-005": {
+      "summary": "Audited 5 elements (quick action button, sidebar active link, KPI card, page heading, theme toggle). All use var(--color-*) CSS variables. Only Tailwind reset/preflight rules contain hex values (framework internals)."
+    },
+    "VAL-FOUNDATION-006": {
+      "summary": "Dark mode toggle adds 'dark' class to html element. Background switches rgb(250,250,250)→rgb(17,17,17), text rgb(23,23,23)→rgb(250,250,250). Text fully readable in both modes."
+    },
+    "VAL-FOUNDATION-007": {
+      "summary": "Theme preference stored in localStorage key 'o-theme'. Dark mode persists across page reload — html retains dark class and dark color scheme."
+    },
+    "VAL-FOUNDATION-008": {
+      "summary": "Vite dev server proxies API calls correctly. Login succeeds through proxy without CORS errors. curl tests confirm identical responses from localhost:3002 (proxy) and localhost:8081 (direct backend)."
+    },
+    "VAL-FOUNDATION-009": {
+      "summary": "Build produces 6 portal chunks (accounting 380KB, admin 157KB, sales 178KB, factory 153KB, superadmin 97KB, dealer 60KB) and 4 vendor chunks (react 207KB, misc 72KB, date 23KB, router 14KB)."
+    },
+    "VAL-FOUNDATION-010": {
+      "summary": "Dead routes (/nonexistent-portal) handled gracefully: redirects to /hub when authenticated, /login when unauthenticated. No blank screen."
+    }
+  }
+}
