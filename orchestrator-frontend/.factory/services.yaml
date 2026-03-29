@@ -1,0 +1,22 @@
+commands:
+  install: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun install
+  typecheck: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && npx tsc --noEmit
+  build: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run build
+  test: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run test --run
+  lint: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run lint
+  test:e2e: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run test:e2e
+
+services:
+  backend:
+    start: echo "Backend is managed by Docker - do NOT start/stop"
+    stop: echo "Backend is managed by Docker - do NOT stop"
+    healthcheck: curl -sf http://localhost:8081/api/v1/auth/me -o /dev/null -w '%{http_code}' | grep -q '401\|403'
+    port: 8081
+    depends_on: []
+
+  frontend:
+    start: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run dev &
+    stop: lsof -ti :3002 | xargs kill -9 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3002 -o /dev/null
+    port: 3002
+    depends_on: [backend]

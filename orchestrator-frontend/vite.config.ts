@@ -80,14 +80,10 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://100.109.241.47:8081',
+        target: 'http://localhost:8081',
         changeOrigin: true,
-        // The backend only accepts requests from its own origin. Override the
-        // Origin header so the dev proxy presents as a same-origin server call.
-        // This applies only to the dev server — production builds are served
-        // from the same origin as the backend API.
         headers: {
-          Origin: 'http://100.109.241.47:8081',
+          Origin: 'http://localhost:8081',
         },
       },
     },
