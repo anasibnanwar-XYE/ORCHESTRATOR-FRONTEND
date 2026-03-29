@@ -6,15 +6,16 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     LayoutGrid: M, Factory: M, DollarSign: M, ShoppingCart: M, Truck: M, Package: M,
-     TrendingUp: M, Activity: M, RefreshCcw: M, AlertCircle: M, CheckCircle: M,
-     BarChart2: M, Cpu: M, Boxes: M, CreditCard: M, Receipt: M, ArrowRight: M,
-     AlertTriangle: M, ChevronDown: M, X: M,
-   };
- });
+vi.mock('lucide-react', () => {
+  const M = () => null;
+  return {
+    LayoutGrid: M, Factory: M, DollarSign: M, ShoppingCart: M, Truck: M, Package: M,
+    TrendingUp: M, TrendingDown: M, Activity: M, RefreshCcw: M, AlertCircle: M,
+    CheckCircle: M, BarChart2: M, Cpu: M, Boxes: M, CreditCard: M, Receipt: M,
+    ArrowRight: M, ArrowRightLeft: M, AlertTriangle: M, ChevronDown: M, X: M,
+    Users: M, BookOpen: M, Layers: M, Clock: M,
+  };
+});
  
  vi.mock('@/lib/adminApi', () => ({
    orchestratorApi: {
@@ -32,31 +33,24 @@
  import { OrchestratorDashboardPage } from '../OrchestratorDashboardPage';
  import { orchestratorApi } from '@/lib/adminApi';
  
- const mockAdminData = {
-   totalOrders: 1245,
-   totalDispatches: 987,
-   totalFulfilments: 843,
-   pendingApprovals: 12,
-   revenueThisMonth: 1500000,
-   activeUsers: 45,
- };
- 
- const mockFactoryData = {
-   activeJobs: 8,
-   throughput: 94.5,
-   packingQueue: 23,
-   completedToday: 156,
-   efficiencyRate: 87.3,
- };
- 
- const mockFinanceData = {
-   revenue: 5200000,
-   cogs: 3100000,
-   grossProfit: 2100000,
-   receivables: 890000,
-   payables: 420000,
-   netCashFlow: 1680000,
- };
+const mockAdminData = {
+  dealers: { active: 12, total: 15, creditUtilization: 450000 },
+  orders: { total: 1245, pending: 12, approved: 987 },
+  accounting: { accounts: 16, ledgerBalance: 5000000 },
+};
+
+const mockFactoryData = {
+  production: { efficiency: 87.3, completed: 156, batchesLogged: 200 },
+  inventory: { value: 1200000, lowStock: 3 },
+  tasks: 8,
+};
+
+const mockFinanceData = {
+  ledger: { accounts: 16, ledgerBalance: 5000000 },
+  cashflow: { net: 1680000, operating: 2100000, investing: -200000, financing: -220000 },
+  agedDebtors: [],
+  reconciliation: { physicalInventoryValue: 1200000, ledgerInventoryBalance: 1150000, variance: 50000 },
+};
  
  function renderPage() {
    return render(
@@ -88,45 +82,46 @@
      });
    });
  
-   it('shows total orders in admin tab', async () => {
-     renderPage();
-     await waitFor(() => {
-       const allMatches = screen.getAllByText(/1[,.]245|1245/);
-       expect(allMatches.length).toBeGreaterThan(0);
-     });
-   });
- 
-   it('shows total dispatches in admin tab', async () => {
-     renderPage();
-     await waitFor(() => {
-       const allMatches = screen.getAllByText(/987/);
-       expect(allMatches.length).toBeGreaterThan(0);
-     });
-   });
- 
-   it('can switch to Factory tab', async () => {
-     renderPage();
-     await waitFor(() => {
-       expect(screen.getByText('Factory')).toBeInTheDocument();
-     });
-     fireEvent.click(screen.getByText('Factory'));
-     await waitFor(() => {
-       const allMatches = screen.getAllByText(/Active Jobs/i);
-       expect(allMatches.length).toBeGreaterThan(0);
-     });
-   });
- 
-   it('can switch to Finance tab', async () => {
-     renderPage();
-     await waitFor(() => {
-       expect(screen.getByText('Finance')).toBeInTheDocument();
-     });
-     fireEvent.click(screen.getByText('Finance'));
-     await waitFor(() => {
-       const allMatches = screen.getAllByText(/Revenue|COGS|Receivables/i);
-       expect(allMatches.length).toBeGreaterThan(0);
-     });
-   });
+  it('shows orders total in admin tab', async () => {
+    renderPage();
+    await waitFor(() => {
+      const allMatches = screen.getAllByText(/1[,.]245|1245/);
+      expect(allMatches.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows dealers in admin tab', async () => {
+    renderPage();
+    await waitFor(() => {
+      // Active Dealers value is 12
+      const allMatches = screen.getAllByText(/Active Dealers|Dealers/i);
+      expect(allMatches.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('can switch to Factory tab', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Factory')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Factory'));
+    await waitFor(() => {
+      const allMatches = screen.getAllByText(/Production|Efficiency|Batches/i);
+      expect(allMatches.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('can switch to Finance tab', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Finance')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Finance'));
+    await waitFor(() => {
+      const allMatches = screen.getAllByText(/Ledger|Cash Flow|Reconciliation/i);
+      expect(allMatches.length).toBeGreaterThan(0);
+    });
+  });
  
    it('shows loading skeleton initially', () => {
      vi.mocked(orchestratorApi.getAdminDashboard).mockImplementation(

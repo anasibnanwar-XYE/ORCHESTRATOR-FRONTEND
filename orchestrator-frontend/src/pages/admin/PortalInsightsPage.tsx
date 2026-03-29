@@ -1,487 +1,553 @@
- /**
-  * PortalInsightsPage
-  *
-  * Tabbed portal monitoring views:
-  *  - Dashboard: Platform usage (sessions, page views, errors, active users)
-  *  - Operations: API latency p50/p95/p99, queue depths, uptime
-  *  - Workforce: Attendance rate, overtime, department headcount, leave utilisation
-  *
-  * Data sources:
-  *  - GET /api/v1/portal/dashboard
-  *  - GET /api/v1/portal/operations
-  *  - GET /api/v1/portal/workforce
-  */
- 
- import { useEffect, useState, useCallback } from 'react';
- import {
-   Monitor,
-   Activity,
-   Users,
-   TrendingUp,
-   Eye,
-   AlertCircle,
-   RefreshCcw,
-   Clock,
-   Zap,
-   BarChart2,
-   UserCheck,
-   Building2,
- } from 'lucide-react';
- import { clsx } from 'clsx';
- import { Tabs } from '@/components/ui/Tabs';
- import { Skeleton } from '@/components/ui/Skeleton';
- import { portalInsightsApi } from '@/lib/adminApi';
- import type { PortalDashboard, PortalOperations, PortalWorkforce } from '@/types';
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Helpers
- // ─────────────────────────────────────────────────────────────────────────────
- 
- function formatNumber(n: number): string {
-   return new Intl.NumberFormat('en-IN').format(n);
- }
- 
- function formatPercent(n: number): string {
-   return `${n.toFixed(1)}%`;
- }
- 
- function formatMs(n: number): string {
-   return `${n} ms`;
- }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Stat Tile (compact metric display)
- // ─────────────────────────────────────────────────────────────────────────────
- 
- interface StatTileProps {
-   label: string;
-   value: string | number;
-   sublabel?: string;
-   icon: React.ReactNode;
-   accent?: 'default' | 'success' | 'warning' | 'error';
- }
- 
- function StatTile({ label, value, sublabel, icon, accent = 'default' }: StatTileProps) {
-   const accentMap = {
-     default: 'text-[var(--color-text-tertiary)] bg-[var(--color-surface-tertiary)]',
-     success: 'text-[var(--color-success)] bg-[var(--color-success-bg)]',
-     warning: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]',
-     error: 'text-[var(--color-error)] bg-[var(--color-error-bg)]',
-   };
- 
-   return (
-     <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-       <div className="flex items-start justify-between gap-3 mb-3">
-         <span className={clsx('p-2 rounded-lg', accentMap[accent])}>{icon}</span>
-       </div>
-       <p className="text-2xl font-semibold tabular-nums text-[var(--color-text-primary)]">{value}</p>
-       <p className="mt-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">{label}</p>
-       {sublabel && (
-         <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">{sublabel}</p>
-       )}
-     </div>
-   );
- }
- 
- function StatTileSkeleton() {
-   return (
-     <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl animate-pulse">
-       <Skeleton width={32} height={32} className="rounded-lg mb-3" />
-       <Skeleton width="60%" height={28} />
-       <Skeleton width="40%" height={12} className="mt-2" />
-     </div>
-   );
- }
- 
- function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-   return (
-     <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
-       <AlertCircle size={16} className="shrink-0" />
-       <span>{message}</span>
-       <button
-         type="button"
-         onClick={onRetry}
-         className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80"
-       >
-         <RefreshCcw size={13} />
-         Retry
-       </button>
-     </div>
-   );
- }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Dashboard Tab
- // ─────────────────────────────────────────────────────────────────────────────
- 
- function DashboardTab() {
-   const [data, setData] = useState<PortalDashboard | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
- 
-   const load = useCallback(async () => {
-     setLoading(true);
-     setError(null);
-     try {
-       const result = await portalInsightsApi.getDashboard();
-       setData(result);
-     } catch {
-       setError('Failed to load platform dashboard data.');
-     } finally {
-       setLoading(false);
-     }
-   }, []);
- 
-   useEffect(() => { void load(); }, [load]);
- 
-   if (loading) {
-     return (
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-         {Array.from({ length: 6 }).map((_, i) => <StatTileSkeleton key={i} />)}
-       </div>
-     );
-   }
- 
-   if (error || !data) {
-     return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
-   }
- 
-   return (
-     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-       {data.sessions !== undefined && (
-         <StatTile
-           label="Sessions"
-           value={formatNumber(data.sessions)}
-           sublabel="Active sessions today"
-           icon={<Monitor size={16} />}
-           accent="default"
-         />
-       )}
-       {data.pageViews !== undefined && (
-         <StatTile
-           label="Page Views"
-           value={formatNumber(data.pageViews)}
-           sublabel="Total today"
-           icon={<Eye size={16} />}
-           accent="default"
-         />
-       )}
-       {data.errors !== undefined && (
-         <StatTile
-           label="Errors"
-           value={formatNumber(data.errors)}
-           sublabel="Unhandled errors"
-           icon={<AlertCircle size={16} />}
-           accent={(data.errors ?? 0) > 10 ? 'error' : (data.errors ?? 0) > 0 ? 'warning' : 'success'}
-         />
-       )}
-       {data.activeUsers !== undefined && (
-         <StatTile
-           label="Active Users"
-           value={formatNumber(data.activeUsers)}
-           sublabel="Online now"
-           icon={<Users size={16} />}
-           accent="default"
-         />
-       )}
-       {data.avgSessionDuration !== undefined && (
-         <StatTile
-           label="Avg Session"
-           value={`${Math.floor(data.avgSessionDuration / 60)}m ${data.avgSessionDuration % 60}s`}
-           sublabel="Average duration"
-           icon={<Clock size={16} />}
-           accent="default"
-         />
-       )}
-       {data.bounceRate !== undefined && (
-         <StatTile
-           label="Bounce Rate"
-           value={formatPercent(data.bounceRate)}
-           sublabel="Single-page sessions"
-           icon={<TrendingUp size={16} />}
-           accent={data.bounceRate > 60 ? 'warning' : 'default'}
-         />
-       )}
-     </div>
-   );
- }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Operations Tab
- // ─────────────────────────────────────────────────────────────────────────────
- 
- function OperationsTab() {
-   const [data, setData] = useState<PortalOperations | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
- 
-   const load = useCallback(async () => {
-     setLoading(true);
-     setError(null);
-     try {
-       const result = await portalInsightsApi.getOperations();
-       setData(result);
-     } catch {
-       setError('Failed to load operations data.');
-     } finally {
-       setLoading(false);
-     }
-   }, []);
- 
-   useEffect(() => { void load(); }, [load]);
- 
-   if (loading) {
-     return (
-       <div className="space-y-4">
-         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-           {Array.from({ length: 3 }).map((_, i) => <StatTileSkeleton key={i} />)}
-         </div>
-         <div className="animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4 h-32" />
-       </div>
-     );
-   }
- 
-   if (error || !data) {
-     return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
-   }
- 
-   const latencyAccent = (ms: number): 'success' | 'warning' | 'error' =>
-     ms < 100 ? 'success' : ms < 500 ? 'warning' : 'error';
- 
-   return (
-     <div className="space-y-6">
-       {/* API Latency */}
-       <div>
-         <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
-           API Latency
-         </h3>
-         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-           <StatTile
-             label="p50"
-             value={formatMs(data.apiLatencyP50)}
-             sublabel="Median response time"
-             icon={<Zap size={16} />}
-             accent={latencyAccent(data.apiLatencyP50)}
-           />
-           <StatTile
-             label="p95"
-             value={formatMs(data.apiLatencyP95)}
-             sublabel="95th percentile"
-             icon={<Activity size={16} />}
-             accent={latencyAccent(data.apiLatencyP95)}
-           />
-           <StatTile
-             label="p99"
-             value={formatMs(data.apiLatencyP99)}
-             sublabel="99th percentile"
-             icon={<BarChart2 size={16} />}
-             accent={latencyAccent(data.apiLatencyP99)}
-           />
-         </div>
-       </div>
- 
-       {/* Service Health */}
-       {(data.uptime !== undefined || data.errorRate !== undefined) && (
-         <div>
-           <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
-             Service Health
-           </h3>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             {data.uptime !== undefined && (
-               <StatTile
-                 label="Uptime"
-                 value={formatPercent(data.uptime)}
-                 sublabel="Last 30 days"
-                 icon={<TrendingUp size={16} />}
-                 accent={data.uptime >= 99.9 ? 'success' : data.uptime >= 99 ? 'warning' : 'error'}
-               />
-             )}
-             {data.errorRate !== undefined && (
-               <StatTile
-                 label="Error Rate"
-                 value={formatPercent(data.errorRate)}
-                 sublabel="Request error rate"
-                 icon={<AlertCircle size={16} />}
-                 accent={data.errorRate < 1 ? 'success' : data.errorRate < 5 ? 'warning' : 'error'}
-               />
-             )}
-           </div>
-         </div>
-       )}
- 
-       {/* Queue Depths */}
-       {data.queueDepths.length > 0 && (
-         <div>
-           <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
-             Queue Depths
-           </h3>
-           <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
-             {data.queueDepths.map((q) => (
-               <div key={q.queue} className="flex items-center justify-between px-4 py-3">
-                 <span className="text-[13px] text-[var(--color-text-primary)] font-medium">{q.queue}</span>
-                 <span className={clsx(
-                   'text-[13px] tabular-nums font-semibold',
-                   q.depth > 100 ? 'text-[var(--color-error)]' :
-                   q.depth > 50 ? 'text-[var(--color-warning)]' :
-                   'text-[var(--color-success)]',
-                 )}>
-                   {formatNumber(q.depth)}
-                 </span>
-               </div>
-             ))}
-           </div>
-         </div>
-       )}
-     </div>
-   );
- }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Workforce Tab
- // ─────────────────────────────────────────────────────────────────────────────
- 
- function WorkforceTab() {
-   const [data, setData] = useState<PortalWorkforce | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
- 
-   const load = useCallback(async () => {
-     setLoading(true);
-     setError(null);
-     try {
-       const result = await portalInsightsApi.getWorkforce();
-       setData(result);
-     } catch {
-       setError('Failed to load workforce data.');
-     } finally {
-       setLoading(false);
-     }
-   }, []);
- 
-   useEffect(() => { void load(); }, [load]);
- 
-   if (loading) {
-     return (
-       <div className="space-y-4">
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-           {Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)}
-         </div>
-         <div className="animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4 h-32" />
-       </div>
-     );
-   }
- 
-   if (error || !data) {
-     return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
-   }
- 
-   return (
-     <div className="space-y-6">
-       {/* KPIs */}
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-         <StatTile
-           label="Attendance Rate"
-           value={formatPercent(data.attendanceRate)}
-           sublabel="This month"
-           icon={<UserCheck size={16} />}
-           accent={data.attendanceRate >= 95 ? 'success' : data.attendanceRate >= 85 ? 'warning' : 'error'}
-         />
-         <StatTile
-           label="Overtime Hours"
-           value={formatNumber(data.overtime)}
-           sublabel="This period"
-           icon={<Clock size={16} />}
-           accent={data.overtime > 100 ? 'warning' : 'default'}
-         />
-         <StatTile
-           label="Leave Utilisation"
-           value={formatPercent(data.leaveUtilisation)}
-           sublabel="Leave quota used"
-           icon={<Activity size={16} />}
-           accent="default"
-         />
-         {data.totalHeadcount !== undefined && (
-           <StatTile
-             label="Total Headcount"
-             value={formatNumber(data.totalHeadcount)}
-             sublabel="All departments"
-             icon={<Users size={16} />}
-             accent="default"
-           />
-         )}
-       </div>
- 
-       {/* Department Headcount */}
-       {data.departmentHeadcount.length > 0 && (
-         <div>
-           <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
-             Department Headcount
-           </h3>
-           <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
-             {data.departmentHeadcount.map((d) => {
-               const total = data.totalHeadcount || data.departmentHeadcount.reduce((sum, x) => sum + x.count, 0);
-               const pct = total > 0 ? (d.count / total) * 100 : 0;
-               return (
-                 <div key={d.department} className="px-4 py-3">
-                   <div className="flex items-center justify-between mb-1.5">
-                     <div className="flex items-center gap-2">
-                       <Building2 size={13} className="text-[var(--color-text-tertiary)]" />
-                       <span className="text-[13px] text-[var(--color-text-primary)] font-medium">
-                         {d.department}
-                       </span>
-                     </div>
-                     <span className="text-[13px] tabular-nums font-semibold text-[var(--color-text-secondary)]">
-                       {d.count}
-                     </span>
-                   </div>
-                   <div className="h-1.5 bg-[var(--color-surface-tertiary)] rounded-full overflow-hidden">
-                     <div
-                       className="h-full bg-[var(--color-neutral-900)] rounded-full transition-all duration-500"
-                       style={{ width: `${pct}%` }}
-                     />
-                   </div>
-                 </div>
-               );
-             })}
-           </div>
-         </div>
-       )}
-     </div>
-   );
- }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Main Page
- // ─────────────────────────────────────────────────────────────────────────────
- 
- const TABS = [
-   { label: 'Dashboard', value: 'dashboard' },
-   { label: 'Operations', value: 'operations' },
-   { label: 'Workforce', value: 'workforce' },
- ];
- 
- export function PortalInsightsPage() {
-   const [activeTab, setActiveTab] = useState('dashboard');
- 
-   return (
-     <div className="space-y-6">
-       {/* Header */}
-       <div>
-         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Portal Insights</h1>
-         <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-           Platform usage, API health, and workforce analytics.
-         </p>
-       </div>
- 
-       {/* Tabs */}
-       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
- 
-       {/* Tab content */}
-       <div>
-         {activeTab === 'dashboard' && <DashboardTab />}
-         {activeTab === 'operations' && <OperationsTab />}
-         {activeTab === 'workforce' && <WorkforceTab />}
-       </div>
-     </div>
-   );
- }
+/**
+ * PortalInsightsPage
+ *
+ * Tabbed portal monitoring views aligned to actual backend DTOs:
+ *
+ *  - Dashboard: highlights (KPI tiles), pipeline (stage funnel), hrPulse (metric rows)
+ *    → GET /api/v1/portal/dashboard  (DashboardInsights DTO, wrapped in ApiResponse)
+ *
+ *  - Operations: summary (velocity/SLA/working capital), supply alerts, automation runs
+ *    → GET /api/v1/portal/operations  (OperationsInsights DTO, wrapped in ApiResponse)
+ *
+ *  - Workforce: squads, upcoming moments, performance leaders
+ *    → GET /api/v1/portal/workforce  (WorkforceInsights DTO, wrapped in ApiResponse)
+ *      NOTE: Returns error when HR_PAYROLL module is disabled — handled gracefully.
+ */
+
+import { useEffect, useState, useCallback } from 'react';
+import {
+  TrendingUp,
+  AlertCircle,
+  RefreshCcw,
+  Zap,
+  Users,
+  Activity,
+  Award,
+  Calendar,
+  Package,
+  ArrowRight,
+  ShieldAlert,
+  CheckCircle,
+} from 'lucide-react';
+import { clsx } from 'clsx';
+import { Tabs } from '@/components/ui/Tabs';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Badge } from '@/components/ui/Badge';
+import { portalInsightsApi } from '@/lib/adminApi';
+import type { PortalDashboard, PortalOperations, PortalWorkforce } from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SkeletonGrid({ count }: { count: number }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl animate-pulse">
+          <Skeleton width={32} height={32} className="rounded-lg mb-3" />
+          <Skeleton width="60%" height={24} />
+          <Skeleton width="40%" height={12} className="mt-2" />
+          <Skeleton width="80%" height={12} className="mt-1" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
+      <AlertCircle size={16} className="shrink-0" />
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80"
+      >
+        <RefreshCcw size={13} />
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">{title}</h3>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashboard Tab
+// DashboardInsights: { highlights[], pipeline[], hrPulse[] }
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DashboardTab() {
+  const [data, setData] = useState<PortalDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await portalInsightsApi.getDashboard();
+      setData(result);
+    } catch {
+      setError('Failed to load platform dashboard data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonGrid count={3} />
+        <div className="animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl h-32" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
+  }
+
+  const hasHighlights = data.highlights && data.highlights.length > 0;
+  const hasPipeline = data.pipeline && data.pipeline.length > 0;
+  const hasHrPulse = data.hrPulse && data.hrPulse.length > 0;
+
+  if (!hasHighlights && !hasPipeline && !hasHrPulse) {
+    return (
+      <div className="text-center py-12">
+        <TrendingUp size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+        <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">No insights available</p>
+        <p className="text-[13px] text-[var(--color-text-tertiary)]">Dashboard data will appear as your platform generates activity.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Highlights — KPI tiles */}
+      {hasHighlights && (
+        <div>
+          <SectionHeader title="Key Highlights" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.highlights.map((h, i) => (
+              <div
+                key={i}
+                className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={14} className="text-[var(--color-text-tertiary)]" />
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                    {h.label}
+                  </span>
+                </div>
+                <p className="text-xl font-semibold tabular-nums text-[var(--color-text-primary)]">{h.value}</p>
+                {h.detail && (
+                  <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">{h.detail}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pipeline — stage funnel */}
+      {hasPipeline && (
+        <div>
+          <SectionHeader title="Pipeline" />
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.pipeline.map((stage, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <ArrowRight size={13} className="text-[var(--color-text-tertiary)]" />
+                  <span className="text-[13px] text-[var(--color-text-primary)] font-medium">{stage.label}</span>
+                </div>
+                <span className="text-[13px] tabular-nums font-semibold text-[var(--color-text-secondary)]">
+                  {stage.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* HR Pulse */}
+      {hasHrPulse && (
+        <div>
+          <SectionHeader title="HR Pulse" />
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.hrPulse.map((metric, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-[13px] text-[var(--color-text-primary)] font-medium">{metric.label}</p>
+                  {metric.context && (
+                    <p className="text-[12px] text-[var(--color-text-tertiary)]">{metric.context}</p>
+                  )}
+                </div>
+                <span className="text-[13px] tabular-nums font-semibold text-[var(--color-text-primary)]">
+                  {metric.score}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Operations Tab
+// OperationsInsights: { summary: {productionVelocity, logisticsSla, workingCapital},
+//                       supplyAlerts[], automationRuns[] }
+// ─────────────────────────────────────────────────────────────────────────────
+
+function supplyStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'default' {
+  const s = status.toLowerCase();
+  if (s === 'healthy' || s === 'ok' || s === 'normal') return 'success';
+  if (s === 'low' || s === 'warning') return 'warning';
+  if (s === 'critical' || s === 'out_of_stock' || s === 'stockout') return 'danger';
+  return 'default';
+}
+
+function automationStateVariant(state: string): 'success' | 'warning' | 'danger' | 'default' {
+  const s = state.toLowerCase();
+  if (s === 'completed' || s === 'success' || s === 'running') return 'success';
+  if (s === 'pending' || s === 'scheduled') return 'warning';
+  if (s === 'failed' || s === 'error') return 'danger';
+  return 'default';
+}
+
+function OperationsTab() {
+  const [data, setData] = useState<PortalOperations | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await portalInsightsApi.getOperations();
+      setData(result);
+    } catch {
+      setError('Failed to load operations data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <SkeletonGrid count={3} />
+        <div className="animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4 h-40" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary */}
+      <div>
+        <SectionHeader title="Operations Summary" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap size={14} className="text-[var(--color-text-tertiary)]" />
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                Production Velocity
+              </span>
+            </div>
+            <p className="text-xl font-semibold tabular-nums text-[var(--color-text-primary)]">
+              {data.summary.productionVelocity.toFixed(1)}
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">Units / hour</p>
+          </div>
+          <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity size={14} className="text-[var(--color-text-tertiary)]" />
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                Logistics SLA
+              </span>
+            </div>
+            <p className={clsx(
+              'text-xl font-semibold tabular-nums',
+              data.summary.logisticsSla >= 90 ? 'text-[var(--color-success)]'
+                : data.summary.logisticsSla >= 70 ? 'text-[var(--color-warning)]'
+                : 'text-[var(--color-error)]',
+            )}>
+              {data.summary.logisticsSla.toFixed(1)}%
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">On-time delivery rate</p>
+          </div>
+          <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={14} className="text-[var(--color-text-tertiary)]" />
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                Working Capital
+              </span>
+            </div>
+            <p className="text-xl font-semibold tabular-nums text-[var(--color-text-primary)]">
+              {data.summary.workingCapital}
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">Current position</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Supply Alerts */}
+      <div>
+        <SectionHeader title="Supply Alerts" />
+        {data.supplyAlerts.length === 0 ? (
+          <div className="p-4 rounded-xl bg-[var(--color-success-bg)] text-[var(--color-success)] text-[13px] flex items-center gap-2">
+            <CheckCircle size={15} />
+            <span>No supply alerts — all materials within healthy range.</span>
+          </div>
+        ) : (
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.supplyAlerts.map((alert, i) => (
+              <div key={i} className="flex items-start justify-between gap-4 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Package size={14} className="text-[var(--color-text-tertiary)] shrink-0" />
+                  <div>
+                    <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{alert.material}</p>
+                    {alert.detail && (
+                      <p className="text-[12px] text-[var(--color-text-tertiary)]">{alert.detail}</p>
+                    )}
+                  </div>
+                </div>
+                <Badge variant={supplyStatusVariant(alert.status)}>
+                  {alert.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Automation Runs */}
+      <div>
+        <SectionHeader title="Automation Runs" />
+        {data.automationRuns.length === 0 ? (
+          <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)] text-[13px] flex items-center gap-2">
+            <ShieldAlert size={15} />
+            <span>No automation runs recorded in this period.</span>
+          </div>
+        ) : (
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.automationRuns.map((run, i) => (
+              <div key={i} className="flex items-start justify-between gap-4 px-4 py-3">
+                <div>
+                  <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{run.name}</p>
+                  {run.description && (
+                    <p className="text-[12px] text-[var(--color-text-tertiary)]">{run.description}</p>
+                  )}
+                </div>
+                <Badge variant={automationStateVariant(run.state)}>
+                  {run.state}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workforce Tab
+// WorkforceInsights: { squads[], moments[], leaders[] }
+// NOTE: This endpoint may return error if HR_PAYROLL module is disabled.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WorkforceTab() {
+  const [data, setData] = useState<PortalWorkforce | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [moduleDisabled, setModuleDisabled] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setModuleDisabled(false);
+    try {
+      const result = await portalInsightsApi.getWorkforce();
+      setData(result);
+    } catch (err: unknown) {
+      // Check if error is due to HR_PAYROLL module being disabled
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('HR_PAYROLL') || msg.includes('disabled') || msg.includes('MODULE')) {
+        setModuleDisabled(true);
+      } else {
+        setError('Failed to load workforce data.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <SkeletonGrid count={3} />
+        <div className="animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4 h-32" />
+      </div>
+    );
+  }
+
+  if (moduleDisabled) {
+    return (
+      <div className="text-center py-16">
+        <div className="mx-auto w-12 h-12 rounded-full bg-[var(--color-surface-tertiary)] flex items-center justify-center mb-4">
+          <Users size={22} className="text-[var(--color-text-tertiary)]" />
+        </div>
+        <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-2">Workforce Module Unavailable</h3>
+        <p className="text-[13px] text-[var(--color-text-tertiary)] max-w-md mx-auto">
+          The HR &amp; Payroll module is not enabled for this tenant. Workforce insights will be available once the module is activated.
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return <ErrorState message={error || 'Failed to load data.'} onRetry={load} />;
+  }
+
+  const hasSquads = data.squads && data.squads.length > 0;
+  const hasMoments = data.moments && data.moments.length > 0;
+  const hasLeaders = data.leaders && data.leaders.length > 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Squads */}
+      {hasSquads && (
+        <div>
+          <SectionHeader title="Teams & Squads" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.squads.map((squad, i) => (
+              <div
+                key={i}
+                className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Users size={14} className="text-[var(--color-text-tertiary)]" />
+                  <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{squad.name}</span>
+                </div>
+                <p className="text-lg font-semibold tabular-nums text-[var(--color-text-primary)]">{squad.capacity}</p>
+                {squad.detail && (
+                  <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">{squad.detail}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Moments */}
+      {hasMoments && (
+        <div>
+          <SectionHeader title="Upcoming Events" />
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.moments.map((moment, i) => (
+              <div key={i} className="flex items-start gap-3 px-4 py-3">
+                <Calendar size={14} className="text-[var(--color-text-tertiary)] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{moment.title}</p>
+                  {moment.description && (
+                    <p className="text-[12px] text-[var(--color-text-tertiary)]">{moment.description}</p>
+                  )}
+                </div>
+                {moment.schedule && (
+                  <span className="text-[12px] text-[var(--color-text-tertiary)] whitespace-nowrap shrink-0">{moment.schedule}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Performance Leaders */}
+      {hasLeaders && (
+        <div>
+          <SectionHeader title="Performance Leaders" />
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl divide-y divide-[var(--color-border-subtle)]">
+            {data.leaders.map((leader, i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[var(--color-surface-tertiary)] flex items-center justify-center">
+                  <Award size={13} className="text-[var(--color-text-secondary)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{leader.name}</p>
+                  <p className="text-[12px] text-[var(--color-text-tertiary)]">{leader.role}</p>
+                </div>
+                {leader.highlight && (
+                  <span className="text-[12px] text-[var(--color-success)] font-medium shrink-0">{leader.highlight}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hasSquads && !hasMoments && !hasLeaders && (
+        <div className="text-center py-12">
+          <Users size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">No workforce data</p>
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">Workforce insights will appear once team data is available.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Page
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { label: 'Dashboard', value: 'dashboard' },
+  { label: 'Operations', value: 'operations' },
+  { label: 'Workforce', value: 'workforce' },
+];
+
+export function PortalInsightsPage() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Portal Insights</h1>
+        <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+          Platform usage, operational health, and workforce analytics.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+
+      {/* Tab content */}
+      <div>
+        {activeTab === 'dashboard' && <DashboardTab />}
+        {activeTab === 'operations' && <OperationsTab />}
+        {activeTab === 'workforce' && <WorkforceTab />}
+      </div>
+    </div>
+  );
+}

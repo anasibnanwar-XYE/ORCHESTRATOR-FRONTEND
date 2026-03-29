@@ -916,29 +916,55 @@ export interface SalesReturnRequest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface OrchestratorAdminDashboard {
-  totalOrders: number;
-  totalDispatches: number;
-  totalFulfilments: number;
-  pendingApprovals: number;
-  revenueThisMonth?: number;
-  activeUsers?: number;
+  /** GET /api/v1/orchestrator/dashboard/admin — raw (no ApiResponse wrapper) */
+  dealers: {
+    active: number;
+    total: number;
+    creditUtilization: number;
+  };
+  orders: {
+    total: number;
+    pending: number;
+    approved: number;
+  };
+  accounting: {
+    accounts: number;
+    ledgerBalance: number;
+  };
 }
 
 export interface OrchestratorFactoryDashboard {
-  activeJobs: number;
-  throughput: number;
-  packingQueue: number;
-  completedToday: number;
-  efficiencyRate?: number;
+  /** GET /api/v1/orchestrator/dashboard/factory — raw (no ApiResponse wrapper) */
+  production: {
+    efficiency: number;
+    completed: number;
+    batchesLogged: number;
+  };
+  inventory: {
+    value: number;
+    lowStock: number;
+  };
+  tasks: number;
 }
 
 export interface OrchestratorFinanceDashboard {
-  revenue: number;
-  cogs: number;
-  grossProfit: number;
-  receivables: number;
-  payables: number;
-  netCashFlow?: number;
+  /** GET /api/v1/orchestrator/dashboard/finance — raw (no ApiResponse wrapper) */
+  ledger: {
+    accounts: number;
+    ledgerBalance: number;
+  };
+  cashflow: {
+    investing: number;
+    net: number;
+    financing: number;
+    operating: number;
+  };
+  agedDebtors: Array<{ label?: string; debtorName?: string; amount?: number; count?: number }>;
+  reconciliation: {
+    physicalInventoryValue: number;
+    ledgerInventoryBalance: number;
+    variance: number;
+  };
 }
 
 export interface OrchestratorDispatchRequest {
@@ -956,39 +982,38 @@ export interface OrchestratorFulfillmentRequest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface PortalDashboard {
-  // PortalDashboardInsights from GET /api/v1/portal/dashboard
-  // Backend DashboardInsights shape (actual backend response)
-  highlights?: Array<{ label: string; value: string; detail: string }>;
-  pipeline?: Array<{ label: string; count: number }>;
-  hrPulse?: Array<{ label: string; score: string; context: string }>;
-  // Legacy / PortalInsightsPage fields (kept for backward compat)
-  sessions?: number;
-  pageViews?: number;
-  errors?: number;
-  activeUsers?: number;
-  avgSessionDuration?: number;
-  bounceRate?: number;
-  topVisitedPages?: Array<{ page: string; views: number }>;
+  /**
+   * GET /api/v1/portal/dashboard — DashboardInsights DTO
+   * Wrapped in ApiResponse (uses response.data.data).
+   */
+  highlights: Array<{ label: string; value: string; detail: string }>;
+  pipeline: Array<{ label: string; count: number }>;
+  hrPulse: Array<{ label: string; score: string; context: string }>;
 }
 
 export interface PortalOperations {
-  // PortalOperationsInsights from GET /api/v1/portal/operations
-  apiLatencyP50: number;
-  apiLatencyP95: number;
-  apiLatencyP99: number;
-  queueDepths: Array<{ queue: string; depth: number }>;
-  errorRate?: number;
-  uptime?: number;
-  backgroundJobs?: Array<{ name: string; status: string; lastRun?: string }>;
+  /**
+   * GET /api/v1/portal/operations — OperationsInsights DTO
+   * Wrapped in ApiResponse (uses response.data.data).
+   */
+  summary: {
+    productionVelocity: number;
+    logisticsSla: number;
+    workingCapital: string;
+  };
+  supplyAlerts: Array<{ material: string; status: string; detail: string }>;
+  automationRuns: Array<{ name: string; state: string; description: string }>;
 }
 
 export interface PortalWorkforce {
-  // PortalWorkforceInsights from GET /api/v1/portal/workforce
-  attendanceRate: number;
-  overtime: number;
-  leaveUtilisation: number;
-  totalHeadcount?: number;
-  departmentHeadcount: Array<{ department: string; count: number }>;
+  /**
+   * GET /api/v1/portal/workforce — WorkforceInsights DTO
+   * Wrapped in ApiResponse (uses response.data.data).
+   * NOTE: May return 403/500 if HR_PAYROLL module is disabled for the tenant.
+   */
+  squads: Array<{ name: string; capacity: string; detail: string }>;
+  moments: Array<{ title: string; schedule: string; description: string }>;
+  leaders: Array<{ name: string; role: string; highlight: string }>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -996,35 +1021,60 @@ export interface PortalWorkforce {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface BusinessEvent {
+  /**
+   * GET /api/v1/audit/business-events — BusinessAuditEventResponse DTO
+   * Wrapped in ApiResponse<PageResponse<BusinessAuditEventResponse>>.
+   */
   id: string | number;
-  timestamp: string;
-  actor: string;
+  occurredAt: string;
+  source?: string;
+  module?: string;
   action: string;
-  resource: string;
-  resourceId?: string;
-  /** Target tenant (company code) for platform-level governance events */
-  targetTenant?: string;
-  details?: Record<string, unknown> | string;
-  companyCode?: string;
-  severity?: 'INFO' | 'WARNING' | 'ERROR';
+  entityType?: string;
+  entityId?: string;
+  referenceNumber?: string;
+  status?: string;
+  failureReason?: string;
+  amount?: number;
+  currency?: string;
+  correlationId?: string;
+  requestId?: string;
+  traceId?: string;
+  actorUserId?: number;
+  actorIdentifier?: string;
+  metadata?: Record<string, string>;
 }
- 
- /** Role-assignment request for assigning a platform role to a superadmin user */
- export interface RoleAssignmentRequest {
-   userId: number;
-   roleKey: string;
- }
+
+/** Role-assignment request for assigning a platform role to a superadmin user */
+export interface RoleAssignmentRequest {
+  userId: number;
+  roleKey: string;
+}
 
 export interface MlEvent {
+  /**
+   * GET /api/v1/audit/ml-events — MlInteractionEventResponse DTO
+   * Wrapped in ApiResponse<PageResponse<MlInteractionEventResponse>>.
+   */
   id: string | number;
-  timestamp: string;
-  model: string;
+  occurredAt: string;
+  module?: string;
   action: string;
-  input?: string;
-  output?: string;
-  confidence?: number;
-  latencyMs?: number;
-  status?: 'SUCCESS' | 'FAILURE' | 'PARTIAL';
+  interactionType?: string;
+  screen?: string;
+  targetId?: string;
+  status?: string;
+  failureReason?: string;
+  correlationId?: string;
+  requestId?: string;
+  traceId?: string;
+  actorUserId?: number;
+  actorIdentifier?: string;
+  actorAnonymized?: boolean;
+  consentOptIn?: boolean;
+  trainingSubjectKey?: string;
+  payload?: string;
+  metadata?: Record<string, string>;
 }
 
 export interface AuditEventFilters {

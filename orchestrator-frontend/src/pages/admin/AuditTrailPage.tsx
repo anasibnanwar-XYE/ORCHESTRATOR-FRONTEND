@@ -2,12 +2,12 @@
  * AuditTrailPage
  *
  * Paginated, filterable audit trail with two tabs:
- *  - Business Events: All business events (timestamp, actor, action, resource, details)
- *  - ML Events: Model inference entries (model, action, confidence, latency, status)
+ *  - Business Events: BusinessAuditEventResponse (occurredAt, actorIdentifier, action, entityType, entityId, status, module)
+ *    GET /api/v1/audit/business-events  (wrapped in ApiResponse<PageResponse<...>>)
+ *    NOTE: May return 500 if audit private key is not configured on the backend — handled gracefully.
  *
- * Data sources:
- *  - GET /api/v1/audit/business-events
- *  - GET /api/v1/audit/ml-events
+ *  - ML Events: MlInteractionEventResponse (occurredAt, actorIdentifier, action, interactionType, status, module)
+ *    GET /api/v1/audit/ml-events  (wrapped in ApiResponse<PageResponse<...>>)
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -20,11 +20,12 @@ import {
   Clock,
   User,
   Activity,
+  Cpu,
+  ServerCrash,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { Tabs } from '@/components/ui/Tabs';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { auditApi } from '@/lib/adminApi';
@@ -40,16 +41,26 @@ function formatTimestamp(ts: string): string {
   }
 }
 
-function severityVariant(s?: string): 'danger' | 'warning' | 'default' {
-  if (s === 'ERROR') return 'danger';
-  if (s === 'WARNING') return 'warning';
+/**
+ * Map backend AuditActionEventStatus → badge variant.
+ * Backend statuses: INFO, SUCCESS, FAILURE, WARNING (and anything else)
+ */
+function businessStatusVariant(s?: string): 'success' | 'danger' | 'warning' | 'default' {
+  if (!s) return 'default';
+  const upper = s.toUpperCase();
+  if (upper === 'SUCCESS') return 'success';
+  if (upper === 'FAILURE' || upper === 'ERROR') return 'danger';
+  if (upper === 'WARNING') return 'warning';
   return 'default';
 }
 
-function mlStatusVariant(s?: string): 'success' | 'danger' | 'warning' {
-  if (s === 'SUCCESS') return 'success';
-  if (s === 'FAILURE') return 'danger';
-  return 'warning';
+function mlStatusVariant(s?: string): 'success' | 'danger' | 'warning' | 'default' {
+  if (!s) return 'default';
+  const upper = s.toUpperCase();
+  if (upper === 'SUCCESS') return 'success';
+  if (upper === 'FAILURE' || upper === 'ERROR') return 'danger';
+  if (upper === 'WARNING') return 'warning';
+  return 'default';
 }
 
 interface PaginationProps {
@@ -104,10 +115,16 @@ function Pagination({ page, totalPages, totalElements, size, onPageChange }: Pag
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Business Events Tab
+// Fields: id, occurredAt, actorIdentifier, action, entityType, entityId, module, status
+// ─────────────────────────────────────────────────────────────────────────────
+
 function BusinessEventsTab() {
   const [data, setData] = useState<PageResponse<BusinessEvent> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState(false);
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<AuditEventFilters>({});
   const [search, setSearch] = useState('');
@@ -116,11 +133,18 @@ function BusinessEventsTab() {
   const load = useCallback(async (f: AuditEventFilters = {}, p = 0) => {
     setLoading(true);
     setError(null);
+    setBackendError(false);
     try {
       const result = await auditApi.getBusinessEvents({ ...f, page: p, size: PAGE_SIZE });
       setData(result);
-    } catch {
-      setError('Failed to load business events.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 500) {
+        // Audit service may have configuration issues on the backend
+        setBackendError(true);
+      } else {
+        setError('Failed to load business events.');
+      }
     } finally {
       setLoading(false);
     }
@@ -137,6 +161,75 @@ function BusinessEventsTab() {
       setPage(0);
     }, 400);
   };
+
+  const columns: Column<BusinessEvent>[] = [
+    {
+      id: 'timestamp',
+      header: 'Timestamp',
+      accessor: (event) => (
+        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
+          <Clock size={12} className="shrink-0" />
+          {formatTimestamp(event.occurredAt)}
+        </div>
+      ),
+    },
+    {
+      id: 'actor',
+      header: 'Actor',
+      accessor: (event) => (
+        <div className="flex items-center gap-1.5">
+          <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+          <span className="text-[13px] text-[var(--color-text-primary)]">
+            {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'action',
+      header: 'Action',
+      accessor: (event) => (
+        <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+          {event.action}
+        </code>
+      ),
+    },
+    {
+      id: 'entity',
+      header: 'Entity',
+      accessor: (event) => (
+        <span className="text-[var(--color-text-secondary)]">
+          {event.entityType || '—'}
+          {event.entityId && (
+            <span className="ml-1 text-[var(--color-text-tertiary)]">#{event.entityId}</span>
+          )}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'module',
+      header: 'Module',
+      accessor: (event) => (
+        event.module ? (
+          <Badge variant="default">{event.module}</Badge>
+        ) : (
+          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+        )
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      accessor: (event) =>
+        event.status && event.status !== 'INFO' ? (
+          <Badge variant={businessStatusVariant(event.status)}>{event.status}</Badge>
+        ) : (
+          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+        ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -169,16 +262,24 @@ function BusinessEventsTab() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="p-3 animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-2">
-                  <Skeleton width="40%" height={13} />
-                  <Skeleton width="70%" height={12} />
-                </div>
-                <Skeleton width={60} height={20} className="rounded-full" />
-              </div>
-            </div>
+            <div key={i} className="p-3 animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl h-16" />
           ))}
+        </div>
+      ) : backendError ? (
+        <div className="text-center py-12">
+          <ServerCrash size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">Audit Service Unavailable</p>
+          <p className="text-[13px] text-[var(--color-text-tertiary)] max-w-md mx-auto">
+            The audit trail service is experiencing issues on the backend. Please try again later or contact your system administrator.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load(filters, page)}
+            className="mt-4 flex items-center gap-1.5 mx-auto h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors border border-[var(--color-border-default)]"
+          >
+            <RefreshCcw size={13} />
+            Try again
+          </button>
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
@@ -190,92 +291,40 @@ function BusinessEventsTab() {
         </div>
       ) : !data || data.content.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">No events found.</p>
+          <Activity size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">No business events found.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {(() => {
-            const columns: Column<BusinessEvent>[] = [
-              {
-                id: 'timestamp',
-                header: 'Timestamp',
-                accessor: (event) => (
-                  <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
-                    <Clock size={12} className="shrink-0" />
-                    {formatTimestamp(event.timestamp)}
-                  </div>
-                ),
-              },
-              {
-                id: 'actor',
-                header: 'Actor',
-                accessor: (event) => (
-                  <div className="flex items-center gap-1.5">
-                    <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-                    <span className="text-[var(--color-text-primary)]">{event.actor}</span>
-                  </div>
-                ),
-              },
-              {
-                id: 'action',
-                header: 'Action',
-                accessor: (event) => (
+          <DataTable
+            columns={columns}
+            data={data.content}
+            keyExtractor={(event) => String(event.id)}
+            pageSize={PAGE_SIZE}
+            pageSizeOptions={[PAGE_SIZE]}
+            emptyMessage="No events found."
+            mobileCardRenderer={(event) => (
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
                   <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
                     {event.action}
                   </code>
-                ),
-              },
-              {
-                id: 'resource',
-                header: 'Resource',
-                accessor: (event) => (
-                  <span className="text-[var(--color-text-secondary)]">
-                    {event.resource}
-                    {event.resourceId && (
-                      <span className="ml-1 text-[var(--color-text-tertiary)]">#{event.resourceId}</span>
-                    )}
-                  </span>
-                ),
-                hideOnMobile: true,
-              },
-              {
-                id: 'severity',
-                header: 'Severity',
-                accessor: (event) =>
-                  event.severity && event.severity !== 'INFO' ? (
-                    <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
-                  ) : (
-                    <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
-                  ),
-              },
-            ];
-            return (
-              <DataTable
-                columns={columns}
-                data={data.content}
-                keyExtractor={(event) => event.id}
-                pageSize={PAGE_SIZE}
-                pageSizeOptions={[PAGE_SIZE]}
-                emptyMessage="No events found."
-                mobileCardRenderer={(event) => (
-                  <div className="p-3">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
-                        {event.action}
-                      </code>
-                      {event.severity && event.severity !== 'INFO' && (
-                        <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-[var(--color-text-primary)] mb-1">{event.actor}</p>
-                    <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                      {event.resource} · {formatTimestamp(event.timestamp)}
-                    </p>
-                  </div>
-                )}
-              />
-            );
-          })()}
+                  {event.status && event.status !== 'INFO' && (
+                    <Badge variant={businessStatusVariant(event.status)}>{event.status}</Badge>
+                  )}
+                </div>
+                <p className="text-[13px] text-[var(--color-text-primary)] mb-1">
+                  {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
+                </p>
+                <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                  {event.entityType}
+                  {event.entityId && ` #${event.entityId}`}
+                  {' · '}
+                  {formatTimestamp(event.occurredAt)}
+                </p>
+              </div>
+            )}
+          />
 
           <Pagination
             page={page}
@@ -289,6 +338,11 @@ function BusinessEventsTab() {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ML Events Tab
+// Fields: id, occurredAt, actorIdentifier, action, interactionType, module, status, payload
+// ─────────────────────────────────────────────────────────────────────────────
 
 function MlEventsTab() {
   const [data, setData] = useState<PageResponse<MlEvent> | null>(null);
@@ -310,6 +364,70 @@ function MlEventsTab() {
   }, []);
 
   useEffect(() => { void load(page); }, [load, page]);
+
+  const columns: Column<MlEvent>[] = [
+    {
+      id: 'timestamp',
+      header: 'Timestamp',
+      accessor: (event) => (
+        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
+          <Clock size={12} className="shrink-0" />
+          {formatTimestamp(event.occurredAt)}
+        </div>
+      ),
+    },
+    {
+      id: 'actor',
+      header: 'Actor',
+      accessor: (event) => (
+        <div className="flex items-center gap-1.5">
+          <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+          <span className="text-[13px] text-[var(--color-text-primary)]">
+            {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'action',
+      header: 'Action',
+      accessor: (event) => (
+        <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+          {event.action}
+        </code>
+      ),
+    },
+    {
+      id: 'interaction',
+      header: 'Type',
+      accessor: (event) => (
+        <span className="text-[13px] text-[var(--color-text-secondary)]">
+          {event.interactionType || '—'}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'module',
+      header: 'Module',
+      accessor: (event) => (
+        event.module ? (
+          <Badge variant="default">{event.module}</Badge>
+        ) : (
+          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+        )
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      accessor: (event) =>
+        event.status ? (
+          <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
+        ) : null,
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -340,101 +458,36 @@ function MlEventsTab() {
         </div>
       ) : !data || data.content.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">No ML events found.</p>
+          <Cpu size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">No ML events recorded yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {(() => {
-            const columns: Column<MlEvent>[] = [
-              {
-                id: 'timestamp',
-                header: 'Timestamp',
-                accessor: (event) => (
-                  <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
-                    <Clock size={12} className="shrink-0" />
-                    {formatTimestamp(event.timestamp)}
-                  </div>
-                ),
-              },
-              {
-                id: 'model',
-                header: 'Model',
-                accessor: (event) => (
-                  <div className="flex items-center gap-1.5">
-                    <Activity size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-                    <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
-                  </div>
-                ),
-              },
-              {
-                id: 'action',
-                header: 'Action',
-                accessor: (event) => (
-                  <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
-                    {event.action}
-                  </code>
-                ),
-              },
-              {
-                id: 'confidence',
-                header: 'Confidence',
-                accessor: (event) => (
-                  <span className="text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                    {event.confidence !== undefined ? `${(event.confidence * 100).toFixed(0)}%` : '—'}
-                  </span>
-                ),
-                hideOnMobile: true,
-              },
-              {
-                id: 'latency',
-                header: 'Latency',
-                accessor: (event) => (
-                  <span className="text-[13px] tabular-nums text-[var(--color-text-secondary)]">
-                    {event.latencyMs !== undefined ? `${event.latencyMs} ms` : '—'}
-                  </span>
-                ),
-                hideOnMobile: true,
-              },
-              {
-                id: 'status',
-                header: 'Status',
-                accessor: (event) =>
-                  event.status ? (
+          <DataTable
+            columns={columns}
+            data={data.content}
+            keyExtractor={(event) => String(event.id)}
+            pageSize={PAGE_SIZE}
+            pageSizeOptions={[PAGE_SIZE]}
+            emptyMessage="No ML events found."
+            mobileCardRenderer={(event) => (
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.action}</code>
+                  {event.status && (
                     <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
-                  ) : null,
-              },
-            ];
-            return (
-              <DataTable
-                columns={columns}
-                data={data.content}
-                keyExtractor={(event) => event.id}
-                pageSize={PAGE_SIZE}
-                pageSizeOptions={[PAGE_SIZE]}
-                emptyMessage="No ML events found."
-                mobileCardRenderer={(event) => (
-                  <div className="p-3">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.model}</code>
-                      {event.status && (
-                        <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                      {event.action} · {formatTimestamp(event.timestamp)}
-                    </p>
-                    {(event.confidence !== undefined || event.latencyMs !== undefined) && (
-                      <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-                        {event.confidence !== undefined && `${(event.confidence * 100).toFixed(0)}% confidence`}
-                        {event.confidence !== undefined && event.latencyMs !== undefined && ' · '}
-                        {event.latencyMs !== undefined && `${event.latencyMs} ms`}
-                      </p>
-                    )}
-                  </div>
-                )}
-              />
-            );
-          })()}
+                  )}
+                </div>
+                <p className="text-[13px] text-[var(--color-text-primary)] mb-1">
+                  {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
+                </p>
+                <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                  {event.interactionType && `${event.interactionType} · `}
+                  {formatTimestamp(event.occurredAt)}
+                </p>
+              </div>
+            )}
+          />
 
           <Pagination
             page={page}
@@ -449,6 +502,10 @@ function MlEventsTab() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Page
+// ─────────────────────────────────────────────────────────────────────────────
+
 const TABS = [
   { label: 'Business Events', value: 'business' },
   { label: 'ML Events', value: 'ml' },
@@ -462,7 +519,7 @@ export function AuditTrailPage() {
       <div>
         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Audit Trail</h1>
         <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-          Filterable log of all business events and AI model inferences.
+          Tenant-scoped log of all business events and AI model interactions.
         </p>
       </div>
 

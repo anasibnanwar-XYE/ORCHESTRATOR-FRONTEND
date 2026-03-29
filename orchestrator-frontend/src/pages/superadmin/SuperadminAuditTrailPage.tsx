@@ -52,9 +52,12 @@ function formatTimestamp(ts: string): string {
   }
 }
 
-function severityVariant(s?: string): 'danger' | 'warning' | 'default' {
-  if (s === 'ERROR') return 'danger';
-  if (s === 'WARNING') return 'warning';
+function severityVariant(s?: string): 'danger' | 'warning' | 'success' | 'default' {
+  if (!s) return 'default';
+  const upper = s.toUpperCase();
+  if (upper === 'FAILURE' || upper === 'ERROR') return 'danger';
+  if (upper === 'WARNING') return 'warning';
+  if (upper === 'SUCCESS') return 'success';
   return 'default';
 }
 
@@ -256,7 +259,7 @@ function BusinessEventsSection() {
                       <div className="flex items-center gap-1.5">
                         <Clock size={11} className="text-[var(--color-text-tertiary)] shrink-0" />
                         <span className="text-[11px] tabular-nums text-[var(--color-text-tertiary)]">
-                          {formatTimestamp(event.timestamp)}
+                          {formatTimestamp(event.occurredAt)}
                         </span>
                       </div>
                     </td>
@@ -264,7 +267,7 @@ function BusinessEventsSection() {
                       <div className="flex items-center gap-1.5">
                         <User size={11} className="text-[var(--color-text-tertiary)] shrink-0" />
                         <span className="text-[12px] text-[var(--color-text-secondary)] truncate max-w-[120px]">
-                          {event.actor}
+                          {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
                         </span>
                       </div>
                     </td>
@@ -275,18 +278,18 @@ function BusinessEventsSection() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-[12px] text-[var(--color-text-secondary)]">
-                        {event.resource}
-                        {event.resourceId && (
+                        {event.entityType || '—'}
+                        {event.entityId && (
                           <span className="ml-1 text-[var(--color-text-tertiary)]">
-                            #{event.resourceId}
+                            #{event.entityId}
                           </span>
                         )}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {event.severity && (
-                        <Badge variant={severityVariant(event.severity)}>
-                          {event.severity}
+                      {event.status && (
+                        <Badge variant={severityVariant(event.status)}>
+                          {event.status}
                         </Badge>
                       )}
                     </td>
@@ -307,14 +310,14 @@ function BusinessEventsSection() {
                   <span className="text-[12px] font-mono font-medium text-[var(--color-text-primary)]">
                     {event.action}
                   </span>
-                  {event.severity && (
-                    <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
+                  {event.status && (
+                    <Badge variant={severityVariant(event.status)}>{event.status}</Badge>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--color-text-tertiary)]">
-                  <span>{event.actor}</span>
-                  <span>{event.resource}</span>
-                  <span className="tabular-nums">{formatTimestamp(event.timestamp)}</span>
+                  <span>{event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}</span>
+                  <span>{event.entityType || '—'}</span>
+                  <span className="tabular-nums">{formatTimestamp(event.occurredAt)}</span>
                 </div>
               </div>
             ))}

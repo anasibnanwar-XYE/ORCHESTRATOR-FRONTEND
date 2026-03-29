@@ -38,21 +38,21 @@ import { superadminAuditApi } from '@/lib/superadminApi';
 const mockEvents = [
   {
     id: 'evt-1',
-    timestamp: '2024-03-01T10:00:00Z',
-    actor: 'admin@platform.com',
+    occurredAt: '2024-03-01T10:00:00Z',
+    actorIdentifier: 'admin@platform.com',
     action: 'TENANT_CREATED',
-    resource: 'Company',
-    resourceId: '42',
-    severity: 'INFO' as const,
+    entityType: 'Company',
+    entityId: '42',
+    status: 'SUCCESS',
   },
   {
     id: 'evt-2',
-    timestamp: '2024-03-02T14:30:00Z',
-    actor: 'superadmin@platform.com',
+    occurredAt: '2024-03-02T14:30:00Z',
+    actorIdentifier: 'superadmin@platform.com',
     action: 'TENANT_SUSPENDED',
-    resource: 'Company',
-    resourceId: '15',
-    severity: 'WARNING' as const,
+    entityType: 'Company',
+    entityId: '15',
+    status: 'WARNING',
   },
 ];
 

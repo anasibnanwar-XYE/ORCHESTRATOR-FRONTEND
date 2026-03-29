@@ -6,15 +6,15 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     List: M, Cpu: M, Search: M, Filter: M, RefreshCcw: M, AlertCircle: M,
-     ChevronLeft: M, ChevronRight: M, ChevronDown: M, X: M, ArrowUpDown: M,
-     ArrowUp: M, ArrowDown: M, Clock: M, User: M, Activity: M, FileText: M,
-     MoreHorizontal: M,
-   };
- });
+vi.mock('lucide-react', () => {
+  const M = () => null;
+  return {
+    List: M, Cpu: M, Search: M, Filter: M, RefreshCcw: M, AlertCircle: M,
+    ChevronLeft: M, ChevronRight: M, ChevronDown: M, X: M, ArrowUpDown: M,
+    ArrowUp: M, ArrowDown: M, Clock: M, User: M, Activity: M, FileText: M,
+    MoreHorizontal: M, ServerCrash: M,
+  };
+});
  
  vi.mock('@/lib/adminApi', () => ({
    auditApi: {
@@ -33,53 +33,52 @@
 import type { BusinessEvent, MlEvent, PageResponse } from '@/types';
  
 const mockBusinessEvents: PageResponse<BusinessEvent> = {
-   content: [
-     {
-       id: 1,
-       timestamp: '2024-03-01T10:00:00Z',
-       actor: 'john@example.com',
-       action: 'USER_LOGIN',
-       resource: 'User',
-       resourceId: 'USR-001',
-       details: 'Login from 192.168.1.1',
-      severity: 'INFO' as const,
-     },
-     {
-       id: 2,
-       timestamp: '2024-03-01T09:30:00Z',
-       actor: 'admin@example.com',
-       action: 'ORDER_APPROVED',
-       resource: 'SalesOrder',
-       resourceId: 'SO-2024-001',
-       details: 'Order approved manually',
-      severity: 'INFO' as const,
-     },
-   ],
-   totalElements: 2,
-   totalPages: 1,
-   page: 0,
-   size: 20,
- };
- 
+  content: [
+    {
+      id: 1,
+      occurredAt: '2024-03-01T10:00:00Z',
+      actorIdentifier: 'john@example.com',
+      action: 'USER_LOGIN',
+      entityType: 'User',
+      entityId: 'USR-001',
+      module: 'AUTH',
+      status: 'SUCCESS',
+    },
+    {
+      id: 2,
+      occurredAt: '2024-03-01T09:30:00Z',
+      actorIdentifier: 'admin@example.com',
+      action: 'ORDER_APPROVED',
+      entityType: 'SalesOrder',
+      entityId: 'SO-2024-001',
+      module: 'SALES',
+      status: 'SUCCESS',
+    },
+  ],
+  totalElements: 2,
+  totalPages: 1,
+  page: 0,
+  size: 20,
+};
+
 const mockMlEvents: PageResponse<MlEvent> = {
-   content: [
-     {
-       id: 1,
-       timestamp: '2024-03-01T10:05:00Z',
-       model: 'credit-risk-v2',
-       action: 'INFERENCE',
-       input: '{"dealerId": 123}',
-       output: '{"risk": "LOW", "score": 0.12}',
-       confidence: 0.94,
-       latencyMs: 145,
-      status: 'SUCCESS' as const,
-     },
-   ],
-   totalElements: 1,
-   totalPages: 1,
-   page: 0,
-   size: 20,
- };
+  content: [
+    {
+      id: 1,
+      occurredAt: '2024-03-01T10:05:00Z',
+      actorIdentifier: 'system@example.com',
+      action: 'INFERENCE',
+      interactionType: 'CREDIT_RISK',
+      module: 'ML',
+      status: 'SUCCESS',
+      payload: '{"dealerId": 123}',
+    },
+  ],
+  totalElements: 1,
+  totalPages: 1,
+  page: 0,
+  size: 20,
+};
  
  function renderPage() {
    return render(

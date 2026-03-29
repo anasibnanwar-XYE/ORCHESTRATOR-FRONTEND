@@ -878,6 +878,7 @@ function AppRouter() {
            <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
            <Route path="orchestrator" element={<AdminOrchestratorDashboardPage />} />
            <Route path="audit-trail" element={<AdminAuditTrailPage />} />
+           <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
            <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 

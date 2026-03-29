@@ -355,26 +355,31 @@ export const changelogApi = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const orchestratorApi = {
+  /**
+   * Orchestrator dashboard endpoints return raw JSON (NOT wrapped in ApiResponse).
+   * Use response.data directly — do NOT access response.data.data.
+   */
+
   // Dashboards
   async getAdminDashboard(): Promise<OrchestratorAdminDashboard> {
-    const response = await apiRequest.get<ApiResponse<OrchestratorAdminDashboard>>(
+    const response = await apiRequest.get<OrchestratorAdminDashboard>(
       '/orchestrator/dashboard/admin'
     );
-    return response.data.data;
+    return response.data;
   },
 
   async getFactoryDashboard(): Promise<OrchestratorFactoryDashboard> {
-    const response = await apiRequest.get<ApiResponse<OrchestratorFactoryDashboard>>(
+    const response = await apiRequest.get<OrchestratorFactoryDashboard>(
       '/orchestrator/dashboard/factory'
     );
-    return response.data.data;
+    return response.data;
   },
 
   async getFinanceDashboard(): Promise<OrchestratorFinanceDashboard> {
-    const response = await apiRequest.get<ApiResponse<OrchestratorFinanceDashboard>>(
+    const response = await apiRequest.get<OrchestratorFinanceDashboard>(
       '/orchestrator/dashboard/finance'
     );
-    return response.data.data;
+    return response.data;
   },
 
   // Order actions
@@ -397,19 +402,19 @@ export const orchestratorApi = {
     }
   },
 
-  // Health
+  // Health — also raw JSON (no ApiResponse wrapper)
   async getEventHealth(): Promise<Record<string, unknown>> {
-    const response = await apiRequest.get<ApiResponse<Record<string, unknown>>>(
+    const response = await apiRequest.get<Record<string, unknown>>(
       '/orchestrator/health/events'
     );
-    return response.data.data;
+    return response.data;
   },
 
   async getIntegrationsHealth(): Promise<Record<string, unknown>> {
-    const response = await apiRequest.get<ApiResponse<Record<string, unknown>>>(
+    const response = await apiRequest.get<Record<string, unknown>>(
       '/orchestrator/health/integrations'
     );
-    return response.data.data;
+    return response.data;
   },
 };
 
@@ -429,8 +434,22 @@ export const portalInsightsApi = {
   },
 
   async getWorkforce(): Promise<PortalWorkforce> {
-    const response = await apiRequest.get<ApiResponse<PortalWorkforce>>('/portal/workforce');
-    return response.data.data;
+    try {
+      const response = await apiRequest.get<ApiResponse<PortalWorkforce>>('/portal/workforce');
+      if (!response.data.success) {
+        // Module may be disabled (HR_PAYROLL) — propagate the backend message
+        throw new Error(response.data.message || 'Workforce module unavailable');
+      }
+      return response.data.data;
+    } catch (err: unknown) {
+      // If it's a 403 AxiosError, read the backend message and re-throw
+      const axErr = err as { response?: { status?: number; data?: ApiResponse<unknown> } };
+      if (axErr?.response?.status === 403) {
+        const msg = axErr.response.data?.message ?? 'Workforce module unavailable';
+        throw new Error(msg);
+      }
+      throw err;
+    }
   },
 };
 
