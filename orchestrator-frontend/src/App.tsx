@@ -350,6 +350,20 @@ const AdminUsersPage = lazy(() =>
    }))
  );
 
+ /** Admin portal — Finance Support */
+ const AdminFinanceSupportPage = lazy(() =>
+   import('@/pages/admin/FinanceSupportPage').then((m) => ({
+     default: m.FinanceSupportPage,
+   }))
+ );
+
+ /** Admin portal — Support Tickets */
+ const AdminSupportTicketsPage = lazy(() =>
+   import('@/pages/admin/SupportTicketsPage').then((m) => ({
+     default: m.SupportTicketsPage,
+   }))
+ );
+
  /** Portal Insights — used by superadmin */
  const AdminPortalInsightsPage = lazy(() =>
    import('@/pages/admin/PortalInsightsPage').then((m) => ({
@@ -861,6 +875,8 @@ function AppRouter() {
             {/* NOTE: /admin/export-approvals route removed - export approvals merged into unified ApprovalsPage */}
             <Route path="export-approvals" element={<Navigate to="/admin/approvals" replace />} />
             <Route path="audit-trail" element={<AdminAuditTrailPage />} />
+            <Route path="finance" element={<AdminFinanceSupportPage />} />
+            <Route path="support" element={<AdminSupportTicketsPage />} />
             <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 

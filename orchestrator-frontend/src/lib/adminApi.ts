@@ -563,3 +563,119 @@ export const operationsControlApi = {
     return cloneOperationsStatus();
   },
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finance Support APIs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LedgerEntry {
+  date: string;
+  reference: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface FinanceInvoice {
+  id: number;
+  invoiceNumber: string;
+  issueDate: string;
+  dueDate: string;
+  totalAmount: number;
+  outstandingAmount: number;
+  status: string;
+}
+
+export interface AgingBucket {
+  label: string;
+  fromDays: number;
+  toDays: number;
+  amount: number;
+}
+
+export interface FinanceAging {
+  dealerId: number;
+  dealerName: string;
+  totalOutstanding: number;
+  buckets: AgingBucket[];
+}
+
+export const financeSupportApi = {
+  /** Get dealer ledger entries */
+  async getLedger(dealerId: number): Promise<LedgerEntry[]> {
+    const response = await apiRequest.get<ApiResponse<LedgerEntry[]>>(
+      `/portal/finance/ledger?dealerId=${dealerId}`
+    );
+    return response.data.data;
+  },
+
+  /** Get dealer invoices */
+  async getInvoices(dealerId: number): Promise<FinanceInvoice[]> {
+    const response = await apiRequest.get<ApiResponse<FinanceInvoice[]>>(
+      `/portal/finance/invoices?dealerId=${dealerId}`
+    );
+    return response.data.data;
+  },
+
+  /** Get dealer aging report */
+  async getAging(dealerId: number): Promise<FinanceAging> {
+    const response = await apiRequest.get<ApiResponse<FinanceAging>>(
+      `/portal/finance/aging?dealerId=${dealerId}`
+    );
+    return response.data.data;
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Support Ticket APIs (Admin Portal)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SupportTicket {
+  id: number;
+  publicId: string;
+  subject: string;
+  description: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
+  requesterEmail: string;
+  companyCode: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface CreateTicketRequest {
+  subject: string;
+  description: string;
+  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+export const adminSupportApi = {
+  /** List all support tickets */
+  async listTickets(): Promise<SupportTicket[]> {
+    const response = await apiRequest.get<ApiResponse<{ tickets: SupportTicket[] }>>(
+      '/portal/support/tickets'
+    );
+    return response.data.data.tickets;
+  },
+
+  /** Get ticket detail by ID */
+  async getTicket(ticketId: number): Promise<SupportTicket> {
+    const response = await apiRequest.get<ApiResponse<SupportTicket>>(
+      `/portal/support/tickets/${ticketId}`
+    );
+    return response.data.data;
+  },
+
+  /** Create a new support ticket */
+  async createTicket(request: CreateTicketRequest): Promise<SupportTicket> {
+    const response = await apiRequest.post<ApiResponse<SupportTicket>>(
+      '/portal/support/tickets',
+      request
+    );
+    return response.data.data;
+  },
+};

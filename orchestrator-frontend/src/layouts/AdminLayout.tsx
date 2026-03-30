@@ -28,6 +28,8 @@ import {
   Bell,
   BookOpen,
   ClipboardList,
+  Ticket,
+  Banknote,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -90,6 +92,18 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Finance',
+    items: [
+      { label: 'Dealer Finance', to: '/admin/finance', icon: Banknote },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { label: 'Tickets', to: '/admin/support', icon: Ticket },
+    ],
+  },
+  {
     label: 'System',
     items: [
       { label: 'Settings', to: '/admin/settings', icon: Settings },
@@ -106,6 +120,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/changelog': 'Changelog',
   '/admin/audit-trail': 'Audit Trail',
   '/admin/settings': 'Settings',
+  '/admin/finance': 'Dealer Finance',
+  '/admin/support': 'Support Tickets',
   new: 'New',
   edit: 'Edit',
 };
