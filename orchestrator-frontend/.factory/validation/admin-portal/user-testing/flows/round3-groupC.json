@@ -1,0 +1,116 @@
+{
+  "groupId": "round3-groupC",
+  "testedAt": "2026-03-30T09:45:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / *** / MOCK",
+    "browserSession": "acf4adeaebbb__grpC"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-008",
+      "title": "Disable MFA for User",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin/users", "expected": "Users list loads", "observed": "Users list loaded with 7 users" },
+        { "action": "Inspect user rows for MFA badge/icon", "expected": "At least one user with MFA enabled", "observed": "No MFA badges or icons visible on any user row" },
+        { "action": "Click action menu on first user (Validation Admin)", "expected": "Action dropdown with Disable MFA option", "observed": "Dropdown shows: View, Edit, Suspend, Force reset password, Delete — no Disable MFA option" },
+        { "action": "Check other users' action menus", "expected": "Disable MFA option available for MFA-enabled user", "observed": "No user has MFA enabled; Disable MFA option not present in any action menu" }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-008-users-list.png", "VAL-ADMIN-008-user-actions-no-mfa.png"],
+        "consoleErrors": "none",
+        "network": "N/A — no MFA-related API calls"
+      },
+      "issues": "Blocked: No test users have MFA enabled in seed data. The Disable MFA action only appears for users with MFA active. No MFA badges visible on any user row."
+    },
+    {
+      "id": "VAL-ADMIN-018",
+      "title": "Changelog Management Lists Entries",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin/changelog", "expected": "Changelog entries listed with version, date, content preview", "observed": "Page renders with empty state: 'No entries yet' and 'Check back after the next release.'" },
+        { "action": "Check for changelog entries in data", "expected": "At least one changelog entry from backend seed data", "observed": "No entries exist. Page shows informational message: 'Changelog entries are managed by the platform team.'" }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-018-changelog-page.png"],
+        "consoleErrors": "none",
+        "network": "N/A — page correctly renders empty state"
+      },
+      "issues": "Blocked: No changelog entries exist in the backend. Page correctly renders an empty state with descriptive message. Cannot verify listing behavior without seed data."
+    },
+    {
+      "id": "VAL-ADMIN-020",
+      "title": "WhatsNew Banner Displays for Unread Changelog",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin (dashboard)", "expected": "WhatsNew banner or indicator visible if unread changelog exists", "observed": "No WhatsNew banner or indicator visible on dashboard" },
+        { "action": "Check /admin/changelog for entries that would trigger banner", "expected": "Unread changelog entries exist", "observed": "No changelog entries exist at all — cannot trigger WhatsNew banner" }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-020-admin-dashboard-no-banner.png", "VAL-ADMIN-018-changelog-page.png"],
+        "consoleErrors": "none",
+        "network": "N/A — banner requires changelog entries to trigger"
+      },
+      "issues": "Blocked: Requires changelog entries to trigger the WhatsNew banner. Since no changelog entries exist in seed data (see VAL-ADMIN-018), the banner cannot be tested."
+    },
+    {
+      "id": "VAL-ADMIN-026",
+      "title": "Audit Trail Lists Business Events",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin/audit-trail", "expected": "Business events listed with timestamp, actor, action, resource", "observed": "Page shows error state: 'Audit Service Unavailable — The audit trail service is experiencing issues on the backend.'" },
+        { "action": "Click 'Try again' button", "expected": "Retry loads events", "observed": "Same error persists after retry" },
+        { "action": "Direct API call to backend: GET /api/v1/audit/business-events?page=0&size=20", "expected": "200 OK with event data", "observed": "Backend returns HTTP 500 (Internal Server Error)" }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-026-audit-trail.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/audit/business-events?page=0&size=20 -> 500 (backend error)"
+      },
+      "issues": "Blocked: Backend GET /api/v1/audit/business-events returns HTTP 500. Same issue as Round 2. The backend audit service is broken (Docker-managed, not modified). Frontend correctly shows error state with retry option."
+    },
+    {
+      "id": "VAL-ADMIN-028",
+      "title": "Tenant Runtime View Shows Active Tenants",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin/tenant-runtime", "expected": "Active tenants with resource usage and connection status", "observed": "Page shows 'Failed to load runtime metrics.' with Retry button" },
+        { "action": "Click 'Retry' button", "expected": "Metrics load on retry", "observed": "Same error persists after retry" },
+        { "action": "Direct API call to backend: GET /api/v1/admin/tenant-runtime/metrics", "expected": "200 OK with tenant metrics", "observed": "Backend returns HTTP 404 (endpoint not found)" },
+        { "action": "Try with X-Company-Code header instead of X-Company-Id", "expected": "200 OK with correct header", "observed": "Still returns 404 — endpoint does not exist on backend" }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-028-tenant-runtime.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/tenant-runtime/metrics -> 404 (endpoint doesn't exist on backend)"
+      },
+      "issues": "Blocked: Backend endpoint GET /api/v1/admin/tenant-runtime/metrics returns 404. The endpoint does not exist in the Docker-managed backend. Same issue as Round 2. Note: Security Policy section of the page does render correctly with session timeout, password rules, MFA policy — but the Runtime Metrics section cannot load."
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "VAL-ADMIN-008: No test users have MFA enabled in seed data. Cannot test Disable MFA action.",
+      "affectedAssertions": ["VAL-ADMIN-008"],
+      "quickFixAttempted": "Checked all 7 users in the users list — none have MFA badge or icon"
+    },
+    {
+      "description": "VAL-ADMIN-018/VAL-ADMIN-020: No changelog entries in backend seed data. Cannot test listing or WhatsNew banner.",
+      "affectedAssertions": ["VAL-ADMIN-018", "VAL-ADMIN-020"],
+      "quickFixAttempted": "Navigated to /admin/changelog — confirmed empty state"
+    },
+    {
+      "description": "VAL-ADMIN-026: Backend GET /api/v1/audit/business-events returns HTTP 500. Audit service is broken.",
+      "affectedAssertions": ["VAL-ADMIN-026"],
+      "quickFixAttempted": "Retried 3 times via UI and direct curl — all return 500"
+    },
+    {
+      "description": "VAL-ADMIN-028: Backend GET /api/v1/admin/tenant-runtime/metrics returns HTTP 404. Endpoint does not exist.",
+      "affectedAssertions": ["VAL-ADMIN-028"],
+      "quickFixAttempted": "Tried with X-Company-Code header — still 404. Endpoint confirmed non-existent on backend."
+    }
+  ],
+  "summary": "Tested 5 assertions in Round 3 re-check: all 5 remain blocked with the same issues as Round 2. No backend changes detected (Docker-managed). VAL-ADMIN-008 blocked by missing MFA-enabled test users. VAL-ADMIN-018/020 blocked by missing changelog seed data. VAL-ADMIN-026 blocked by backend 500 on audit endpoint. VAL-ADMIN-028 blocked by backend 404 (endpoint doesn't exist). Frontend error handling is appropriate for all blocked cases."
+}

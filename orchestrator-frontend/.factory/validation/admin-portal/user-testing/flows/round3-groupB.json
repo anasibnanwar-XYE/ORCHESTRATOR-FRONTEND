@@ -1,0 +1,60 @@
+{
+  "groupId": "round3-groupB",
+  "testedAt": "2026-03-30T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd / company code: MOCK",
+    "sessionName": "acf4adeaebbb__grpB"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-004",
+      "title": "Create User Form Validates and Submits",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Login with admin credentials and navigate to /admin/users",
+          "expected": "Users list page renders with Add User button",
+          "observed": "Users list page rendered with 7 users, Add User button visible"
+        },
+        {
+          "action": "Click 'Add User' button",
+          "expected": "Create User modal/dialog opens with required fields",
+          "observed": "Create User dialog opened with fields: Email, Display Name, Roles (checkboxes for ROLE_ADMIN, ROLE_ACCOUNTING, ROLE_FACTORY, ROLE_SALES, ROLE_DEALER), Companies (Mock Training Co checkbox), Cancel and Create User buttons"
+        },
+        {
+          "action": "Click 'Create User' with empty form",
+          "expected": "Validation errors appear for required fields",
+          "observed": "Validation errors displayed: 'Email is required' and 'Display name is required'. Dialog stayed open, form was not submitted."
+        },
+        {
+          "action": "Fill form with valid data: email=uat-test-r3-grpb@example.com, display name=UAT Test Round3 GroupB, roles=ACCOUNTING checked, company=Mock Training Co checked",
+          "expected": "Form populated correctly, ready for submission",
+          "observed": "Form fields populated correctly with valid data"
+        },
+        {
+          "action": "Click 'Create User' to submit",
+          "expected": "POST /api/v1/admin/users returns 201, user added to list",
+          "observed": "POST /api/v1/admin/users returned 500 Internal Server Error. Toast notification displayed: 'Failed to create user — Request failed with status code 500'. Dialog remained open with form data intact."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-users-list-page.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-create-user-form.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-validation-errors.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-form-filled-before-submit.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-submit-result-500-error.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-final-state-backend-500.png"
+        ],
+        "consoleErrors": "POST /api/v1/admin/users returned 500 Internal Server Error. Also minor React key prop warning in MultiSelect component (non-blocking).",
+        "network": "POST /api/v1/admin/users -> 500 (Internal Server Error)"
+      },
+      "issues": "Backend POST /api/v1/admin/users returns 500 for all payloads. This is a persistent backend bug present since Round 1. The frontend form, validation, and error handling all work correctly — the issue is entirely server-side. Frontend properly displays the error toast and preserves form state."
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 1 assertion: VAL-ADMIN-004 FAILED. Frontend create user form works correctly: dialog opens, renders required fields (email, display name, roles, companies), validation fires on empty submit showing 'Email is required' and 'Display name is required'. However, the backend POST /api/v1/admin/users returns 500 Internal Server Error for all payloads — this is the same persistent backend bug from Round 1 and Round 2. The frontend is not at fault; the backend endpoint is broken."
+}

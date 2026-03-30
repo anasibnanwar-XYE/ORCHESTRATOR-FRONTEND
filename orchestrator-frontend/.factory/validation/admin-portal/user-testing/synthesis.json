@@ -1,11 +1,11 @@
 {
   "milestone": "admin-portal",
-  "round": 2,
+  "round": 3,
   "status": "fail",
   "assertionsSummary": {
     "total": 30,
-    "passed": 22,
-    "failed": 2,
+    "passed": 23,
+    "failed": 1,
     "blocked": 6
   },
   "passedAssertions": [
@@ -20,6 +20,7 @@
     "VAL-ADMIN-011",
     "VAL-ADMIN-012",
     "VAL-ADMIN-013",
+    "VAL-ADMIN-015",
     "VAL-ADMIN-016",
     "VAL-ADMIN-017",
     "VAL-ADMIN-019",
@@ -35,74 +36,51 @@
   "failedAssertions": [
     {
       "id": "VAL-ADMIN-004",
-      "reason": "Frontend form renders and validates correctly but backend POST /admin/users returns 500 for all payloads — persistent backend bug since Round 1."
-    },
-    {
-      "id": "VAL-ADMIN-015",
-      "reason": "Approve confirmation dialog sends { reason: '' } but backend POST /credit/limit-requests/{id}/approve requires non-blank reason (400: 'Validation failed: reason must not be blank'). Approve dialog needs a reason textarea like the reject dialog."
+      "reason": "Frontend form renders and validates correctly but backend POST /admin/users returns 500 for all payloads — persistent backend bug since Round 1. Confirmed still failing in Round 3."
     }
   ],
   "blockedAssertions": [
     {
       "id": "VAL-ADMIN-008",
-      "blockedBy": "No test users have MFA enabled in backend seed data — all users have mfaEnabled=false. Cannot test Disable MFA functionality."
+      "blockedBy": "No test users have MFA enabled in backend seed data — all users have mfaEnabled=false. Cannot test Disable MFA functionality. Dropdown actions now work (event propagation fixed) but MFA disable option not applicable."
     },
     {
       "id": "VAL-ADMIN-018",
-      "blockedBy": "No changelog entries exist in backend seed data. Page renders correct empty state. Blocked on test data."
+      "blockedBy": "No changelog entries exist in backend seed data. Page renders correct empty state. Blocked on seed data — confirmed across 3 rounds."
     },
     {
       "id": "VAL-ADMIN-020",
-      "blockedBy": "Requires changelog entries to trigger WhatsNew banner. No seed data entries exist. Blocked on test data."
+      "blockedBy": "Requires changelog entries to trigger WhatsNew banner. No seed data entries exist. Blocked on test data — confirmed across 3 rounds."
     },
     {
       "id": "VAL-ADMIN-026",
-      "blockedBy": "Backend GET /audit/business-events returns HTTP 500 ('Failed to write request'). Frontend handles gracefully with error UI and retry. Backend bug."
+      "blockedBy": "Backend GET /audit/business-events returns HTTP 500 ('Failed to write request'). Frontend handles gracefully with error UI and retry. Backend bug — confirmed across 3 rounds."
     },
     {
       "id": "VAL-ADMIN-028",
-      "blockedBy": "Backend GET /admin/tenant-runtime/metrics returns HTTP 404 (endpoint doesn't exist). Security Policy section renders correctly. Blocked on backend endpoint implementation."
+      "blockedBy": "Backend GET /admin/tenant-runtime/metrics returns HTTP 404 (endpoint doesn't exist). Security Policy section renders correctly. Blocked on backend endpoint — confirmed across 3 rounds."
     }
   ],
   "appliedUpdates": [],
-  "previousRound": ".factory/validation/admin-portal/user-testing/synthesis.json (round 1)",
-  "round2Changes": {
-    "newlyPassed": [
-      "VAL-ADMIN-006",
-      "VAL-ADMIN-007",
-      "VAL-ADMIN-010",
-      "VAL-ADMIN-012",
-      "VAL-ADMIN-016",
-      "VAL-ADMIN-021",
-      "VAL-ADMIN-029"
-    ],
-    "newlyFailed": ["VAL-ADMIN-004", "VAL-ADMIN-015"],
+  "previousRound": ".factory/validation/admin-portal/user-testing/synthesis.json (round 2)",
+  "round3Changes": {
+    "newlyPassed": ["VAL-ADMIN-015"],
+    "stillFailed": ["VAL-ADMIN-004"],
     "stillBlocked": ["VAL-ADMIN-008", "VAL-ADMIN-018", "VAL-ADMIN-020", "VAL-ADMIN-026", "VAL-ADMIN-028"],
     "fixesVerified": [
-      "VAL-ADMIN-006: DropdownMenu event propagation fix confirmed — suspend action works",
-      "VAL-ADMIN-007: DropdownMenu event propagation fix confirmed — force reset password works",
-      "VAL-ADMIN-012: CompanyDetailDrawer added — company detail now shows on row click",
-      "VAL-ADMIN-016: Rejection dialog reason textarea fix confirmed — required reason validation works"
-    ],
-    "newlyDiscovered": [
-      "VAL-ADMIN-015: Approve dialog also needs a reason textarea (same pattern as reject) — backend requires non-blank reason",
-      "VAL-ADMIN-028: Endpoint changed from 500 to 404 — backend endpoint /admin/tenant-runtime/metrics does not exist at all"
+      "VAL-ADMIN-015: Approve dialog now has required reason textarea (fix from commit 203ff10). Approval flow works end-to-end."
     ]
   },
   "notableFindings": {
     "backendBugs": [
-      "POST /api/v1/admin/users returns 500 for all payloads (persistent since Round 1)",
-      "GET /api/v1/audit/business-events returns 500 ('Failed to write request')",
-      "GET /api/v1/admin/tenant-runtime/metrics returns 404 (endpoint does not exist)",
-      "POST /api/v1/credit/limit-requests/{id}/approve requires non-blank reason field (frontend was sending empty reason)"
-    ],
-    "frontendBugs": [
-      "Approve confirmation dialog lacks reason textarea — sends empty reason causing 400 from backend"
+      "POST /api/v1/admin/users returns 500 for all payloads (persistent since Round 1, confirmed in Round 3)",
+      "GET /api/v1/audit/business-events returns 500 ('Failed to write request') (persistent since Round 1)",
+      "GET /api/v1/admin/tenant-runtime/metrics returns 404 (endpoint does not exist, persistent since Round 2)"
     ],
     "dataGaps": [
-      "No MFA-enabled users in backend seed data",
-      "No changelog entries in backend seed data",
-      "No pending approval items in initial seed data (though can be created via API)"
-    ]
+      "No MFA-enabled users in backend seed data (persistent across all rounds)",
+      "No changelog entries in backend seed data (persistent across all rounds)"
+    ],
+    "frontendQuality": "Frontend handles all backend failures gracefully with error UI, retry buttons, and empty states. No console errors on normal flows. All 23 passing assertions confirmed working."
   }
 }
