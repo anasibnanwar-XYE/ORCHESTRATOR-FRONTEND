@@ -100,10 +100,14 @@
      expect(screen.getByText('Changelog')).toBeDefined();
    });
 
-   it('shows loading state initially', () => {
+   it('shows skeleton loading state initially', () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
-     renderPage();
-     expect(screen.queryByText(/loading entries/i)).toBeDefined();
+     const { container } = renderPage();
+     // Should show Skeleton placeholder blocks (animate-pulse), not a Loader2 spinner
+     const skeletons = container.querySelectorAll('.animate-pulse');
+     expect(skeletons.length).toBeGreaterThan(0);
+     // Should NOT show a Loader2 spinner text
+     expect(screen.queryByText(/loading entries/i)).toBeNull();
    });
 
    it('loads entries from changelogApi on mount', async () => {

@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -106,54 +108,38 @@ export function NotificationsPage() {
           </div>
           <form onSubmit={handleSend} className="p-5 space-y-4">
             {/* User selector */}
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-primary)]">
-                <Users size={13} />
-                Recipient
-              </label>
-              {isLoading ? (
+            {isLoading ? (
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-primary)]">
+                  <Users size={13} />
+                  Recipient
+                </label>
                 <Skeleton height={36} />
-              ) : (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) =>
-                    setSelectedUserId(e.target.value ? Number(e.target.value) : '')
-                  }
-                  required
-                  className={clsx(
-                    'w-full h-9 rounded-lg border border-[var(--color-border-default)] px-3',
-                    'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
-                    'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-                  )}
-                >
-                  <option value="">Select a user...</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.displayName} — {u.email}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+              </div>
+            ) : (
+              <Select
+                label="Recipient"
+                value={String(selectedUserId)}
+                onChange={(e) =>
+                  setSelectedUserId(e.target.value ? Number(e.target.value) : '')
+                }
+                required
+                placeholder="Select a user..."
+                options={users.map((u) => ({
+                  value: String(u.id),
+                  label: `${u.displayName} — ${u.email}`,
+                }))}
+              />
+            )}
 
             {/* Subject */}
-            <div className="space-y-1.5">
-              <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-                Subject
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject..."
-                className={clsx(
-                  'w-full h-9 rounded-lg border border-[var(--color-border-default)] px-3',
-                  'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
-                  'placeholder:text-[var(--color-text-tertiary)]',
-                  'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
-                )}
-              />
-            </div>
+            <Input
+              label="Subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Subject..."
+            />
 
             {/* Body */}
             <div className="space-y-1.5">
@@ -170,7 +156,8 @@ export function NotificationsPage() {
                   'w-full rounded-lg border border-[var(--color-border-default)] px-3 py-2.5',
                   'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
                   'placeholder:text-[var(--color-text-tertiary)] resize-none',
-                  'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
+                  'transition-all duration-150 ease-out',
+                  'focus:outline-none focus:border-[var(--color-neutral-300)] focus:shadow-sm',
                 )}
               />
               <p className="text-[11px] text-[var(--color-text-tertiary)] text-right">

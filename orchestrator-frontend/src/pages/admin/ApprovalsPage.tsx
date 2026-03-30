@@ -25,6 +25,7 @@
  import { clsx } from 'clsx';
  import { Badge } from '@/components/ui/Badge';
  import { Button } from '@/components/ui/Button';
+ import { EmptyState } from '@/components/ui/EmptyState';
  import { Modal } from '@/components/ui/Modal';
  import { PageHeader } from '@/components/ui/PageHeader';
  import { Skeleton } from '@/components/ui/Skeleton';
@@ -431,15 +432,17 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  
        {/* Empty state */}
        {!isLoading && !error && groupKeys.length === 0 && (
-         <div className="flex flex-col items-center justify-center py-16 text-center">
-           <CheckCircle size={32} className="text-[var(--color-text-tertiary)] mb-3" />
-           <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
-             No pending approvals
-           </p>
-           <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
-             All items have been reviewed. Check back later.
-           </p>
-         </div>
+         <EmptyState
+           icon={<CheckCircle size={32} />}
+           title="No pending approvals"
+           description="All items have been reviewed. Check back later."
+           action={
+             <Button variant="ghost" size="sm" onClick={load}>
+               <RefreshCcw size={13} className="mr-1.5" />
+               Refresh
+             </Button>
+           }
+         />
        )}
  
        {/* Grouped approval items */}

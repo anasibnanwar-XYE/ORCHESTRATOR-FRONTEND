@@ -20,7 +20,6 @@
    Bell,
    AlertCircle,
    RefreshCcw,
-   Loader2,
    X,
    ChevronDown,
    ChevronUp,
@@ -30,6 +29,8 @@
  import { Button } from '@/components/ui/Button';
  import { Badge } from '@/components/ui/Badge';
  import { PageHeader } from '@/components/ui/PageHeader';
+ import { Skeleton } from '@/components/ui/Skeleton';
+ import { EmptyState } from '@/components/ui/EmptyState';
  import { changelogApi } from '@/lib/adminApi';
  import type { ChangelogEntryResponse } from '@/types';
 
@@ -194,23 +195,31 @@
          </div>
        )}
 
-       {/* Loading state */}
+       {/* Loading state — Skeleton blocks instead of spinner */}
        {isLoading && (
-         <div className="flex flex-col items-center justify-center py-16 gap-3">
-           <Loader2 size={20} className="animate-spin text-[var(--color-text-tertiary)]" />
-           <p className="text-[13px] text-[var(--color-text-secondary)]">Loading entries…</p>
+         <div className="space-y-3">
+           {Array.from({ length: 3 }).map((_, i) => (
+             <div
+               key={i}
+               className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] p-5 space-y-3"
+             >
+               <div className="flex items-center gap-2">
+                 <Skeleton width="45%" height={16} />
+                 <Skeleton width={60} height={20} />
+               </div>
+               <Skeleton width="30%" height={12} />
+             </div>
+           ))}
          </div>
        )}
 
        {/* Empty state */}
        {!isLoading && !loadError && entries.length === 0 && (
-         <div className="flex flex-col items-center justify-center rounded-xl border border-[var(--color-border-default)] py-16 gap-3">
-           <BookOpen size={24} className="text-[var(--color-text-tertiary)]" />
-           <p className="text-[13px] text-[var(--color-text-secondary)]">No entries yet</p>
-           <p className="text-[12px] text-[var(--color-text-tertiary)]">
-             Check back after the next release.
-           </p>
-         </div>
+         <EmptyState
+           icon={<BookOpen size={24} />}
+           title="No entries yet"
+           description="Check back after the next release."
+         />
        )}
 
        {/* Entry list */}

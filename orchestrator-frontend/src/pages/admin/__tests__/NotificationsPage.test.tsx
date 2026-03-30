@@ -180,4 +180,28 @@
        expect(screen.getAllByText(/send notification/i).length).toBeGreaterThan(0);
      });
    });
+
+   it('uses shared Select component for recipient (has placeholder option)', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+     await waitFor(() => {
+       const select = document.querySelector('select');
+       expect(select).not.toBeNull();
+     });
+     // The shared Select component renders a placeholder as a disabled option
+     const placeholder = document.querySelector('select option[disabled]');
+     expect(placeholder).not.toBeNull();
+     expect(placeholder?.textContent).toMatch(/select a user/i);
+   });
+
+   it('uses shared Input component for subject (has label)', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+     await waitFor(() => {
+       // Shared Input renders a label element with id-based htmlFor
+       const label = screen.queryByText('Subject');
+       expect(label).not.toBeNull();
+       expect(label?.tagName).toBe('LABEL');
+     });
+   });
  });

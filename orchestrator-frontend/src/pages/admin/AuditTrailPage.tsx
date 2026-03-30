@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import { Tabs } from '@/components/ui/Tabs';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { auditApi } from '@/lib/adminApi';
 import type { BusinessEvent, AccountingAuditTrailEntry, AuditEventFilters, PageResponse } from '@/types';
@@ -282,10 +283,11 @@ function BusinessEventsTab() {
           </button>
         </div>
       ) : !data || data.content.length === 0 ? (
-        <div className="text-center py-12">
-          <Activity size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">No business events found.</p>
-        </div>
+        <EmptyState
+          icon={<Activity size={32} />}
+          title="No business events found"
+          description="There are no audit events matching your filters."
+        />
       ) : (
         <div className="space-y-3">
           <DataTable
@@ -505,10 +507,11 @@ function AccountingAuditTab() {
           </button>
         </div>
       ) : !data || data.content.length === 0 ? (
-        <div className="text-center py-12">
-          <BookOpen size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">No accounting audit entries found.</p>
-        </div>
+        <EmptyState
+          icon={<BookOpen size={32} />}
+          title="No accounting audit entries"
+          description="There are no accounting audit entries matching your filters."
+        />
       ) : (
         <div className="space-y-3">
           <DataTable
