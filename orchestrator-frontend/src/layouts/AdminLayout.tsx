@@ -24,15 +24,10 @@ import {
   CheckSquare,
   Users,
   Shield,
-  Building2,
   Settings,
-  BarChart3,
   Bell,
   BookOpen,
-  FileDown,
-  GitBranch,
   ClipboardList,
-  LineChart,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -78,25 +73,20 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Users', to: '/admin/users', icon: Users },
       { label: 'Roles', to: '/admin/roles', icon: Shield },
-      { label: 'Companies', to: '/admin/companies', icon: Building2 },
     ],
   },
   {
     label: 'Workflows',
     items: [
       { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
-      { label: 'Export Approvals', to: '/admin/export-approvals', icon: FileDown },
       { label: 'Notifications', to: '/admin/notifications', icon: Bell },
       { label: 'Changelog', to: '/admin/changelog', icon: BookOpen },
     ],
   },
   {
-    label: 'Analytics & Ops',
+    label: 'Analytics',
     items: [
-      { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
-      { label: 'Portal Insights', to: '/admin/portal-insights', icon: LineChart },
       { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
-      { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
     ],
   },
   {
@@ -109,19 +99,13 @@ const NAV_GROUPS: NavGroup[] = [
 
 const ROUTE_LABELS: Record<string, string> = {
   '/admin': 'Dashboard',
-  '/admin/operations': 'Operations',
   '/admin/approvals': 'Approvals',
-  '/admin/export-approvals': 'Export Approvals',
   '/admin/users': 'Users',
   '/admin/roles': 'Roles',
-  '/admin/companies': 'Companies',
   '/admin/notifications': 'Notifications',
   '/admin/changelog': 'Changelog',
-  '/admin/settings': 'Settings',
-  '/admin/orchestrator': 'Orchestrator',
-  '/admin/portal-insights': 'Portal Insights',
-  '/admin/insights': 'Portal Insights',
   '/admin/audit-trail': 'Audit Trail',
+  '/admin/settings': 'Settings',
   new: 'New',
   edit: 'Edit',
 };

@@ -318,12 +318,6 @@ const AdminUsersPage = lazy(() =>
      default: m.RolesPage,
    }))
  );
- /** Admin portal — Companies */
- const AdminCompaniesPage = lazy(() =>
-   import('@/pages/admin/CompaniesPage').then((m) => ({
-     default: m.CompaniesPage,
-   }))
- );
  /** Admin portal — Settings */
  const AdminSettingsPage = lazy(() =>
    import('@/pages/admin/SettingsPage').then((m) => ({
@@ -348,38 +342,27 @@ const AdminUsersPage = lazy(() =>
      default: m.ApprovalsPage,
    }))
  );
- /** Admin portal — Export Approvals */
- const AdminExportApprovalsPage = lazy(() =>
-   import('@/pages/admin/ExportApprovalsPage').then((m) => ({
-     default: m.ExportApprovalsPage,
-   }))
- );
 
- /** Admin portal — Orchestrator Dashboard */
- const AdminOrchestratorDashboardPage = lazy(() =>
-   import('@/pages/admin/OrchestratorDashboardPage').then((m) => ({
-     default: m.OrchestratorDashboardPage,
-   }))
- );
- /** Admin portal — Portal Insights */
- const AdminPortalInsightsPage = lazy(() =>
-   import('@/pages/admin/PortalInsightsPage').then((m) => ({
-     default: m.PortalInsightsPage,
-   }))
- );
  /** Admin portal — Audit Trail */
  const AdminAuditTrailPage = lazy(() =>
    import('@/pages/admin/AuditTrailPage').then((m) => ({
      default: m.AuditTrailPage,
    }))
  );
- /** Admin portal — Operations Control */
+
+ /** Portal Insights — used by superadmin */
+ const AdminPortalInsightsPage = lazy(() =>
+   import('@/pages/admin/PortalInsightsPage').then((m) => ({
+     default: m.PortalInsightsPage,
+   }))
+ );
+
+ /** Operations Control — used by superadmin */
  const AdminOperationsControlPage = lazy(() =>
    import('@/pages/admin/OperationsControlPage').then((m) => ({
      default: m.OperationsControlPage,
    }))
  );
-
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Lazy-loaded Superadmin portal pages
@@ -871,20 +854,12 @@ function AppRouter() {
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="roles" element={<AdminRolesPage />} />
-            <Route path="companies" element={<AdminCompaniesPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
             <Route path="notifications" element={<AdminNotificationsPage />} />
             <Route path="changelog" element={<AdminChangelogPage />} />
-           <Route path="approvals" element={<AdminApprovalsPage />} />
-           <Route path="export-approvals" element={<AdminExportApprovalsPage />} />
-           <Route path="orchestrator" element={<AdminOrchestratorDashboardPage />} />
-           <Route path="audit-trail" element={<AdminAuditTrailPage />} />
-           <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
-           {/* /admin/insights is an alias for /admin/portal-insights */}
-           <Route path="insights" element={<AdminPortalInsightsPage />} />
-           {/* /admin/operations shows portal insights (operations tab) */}
-           <Route path="operations" element={<AdminPortalInsightsPage />} />
-           <Route path="*" element={<AdminDashboardPage />} />
+            <Route path="approvals" element={<AdminApprovalsPage />} />
+            <Route path="audit-trail" element={<AdminAuditTrailPage />} />
+            <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 
           {/* ── Accounting portal ──────────────────────────────────── */}

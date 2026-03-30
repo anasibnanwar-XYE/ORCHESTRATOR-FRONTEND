@@ -13,7 +13,7 @@ Any frontend implementation feature: page builds, component work, API integratio
 
 ## Required Skills
 
-- `frontend-skill` — Invoke FIRST before any UI implementation. This skill enforces restrained composition, image-led hierarchy, cohesive content structure, and tasteful motion. Use it for all page builds, component work, and UX improvements to ensure production-grade visual quality.
+- `frontend-design` — Invoke FIRST before any UI implementation. This skill focuses on design quality, visual hierarchy, composition, and user experience. Use it for ALL page builds, component work, and UX improvements. The design bar is set by the login page (AuthLayout.tsx) — typography-driven, minimal, deliberate, no visual clutter.
 - `agent-browser` — For manual verification of UI changes. Invoke after implementation to verify pages render correctly, flows work end-to-end, responsive behavior is correct, and visual quality meets standards.
 
 ## Work Procedure
@@ -25,6 +25,10 @@ Before writing ANY code:
 - Read `.factory/library/rbac.md` — role boundaries for the portal you're working on
 - Read `.factory/library/architecture.md` — code organization and patterns
 - Read the feature description carefully — it contains expected behavior and verification steps
+- Read the **DesignSystemBoard.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/DesignSystemBoard.tsx` — this is the GOLD STANDARD for layout, visual style, and hierarchy
+- Read the **ComponentShowcase.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/ComponentShowcase.tsx` — this shows ALL available components and how they look
+- Check `src/components/ui/` for already-bridged components. If a component exists in the design system but NOT in production, **bridge it first** (copy from design system, adapt imports) before using it
+- **NEVER build custom markup when a design system component exists.** Reuse StatCard, ApprovalCard, AuditLog, Timeline, LedgerCard, BarChart, Changelog, etc. Adapt labels/data but keep the component's design
 
 ### 2. Verify Backend Contracts (Use codebase-scout-assistant)
 
