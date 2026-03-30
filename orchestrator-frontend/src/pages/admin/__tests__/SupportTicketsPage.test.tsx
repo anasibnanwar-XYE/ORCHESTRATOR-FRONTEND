@@ -144,7 +144,8 @@ describe('SupportTicketsPage', () => {
     renderPage();
     await waitFor(() => {
       expect(adminSupportApi.listTickets).toHaveBeenCalled();
-      expect(screen.getByText('Login issues')).toBeDefined();
+      // Use getAllByText since "Login issues" appears in both table and mobile card
+      expect(screen.getAllByText('Login issues').length).toBeGreaterThan(0);
       expect(screen.getByText('#TKT-001')).toBeDefined();
     });
   });
@@ -181,8 +182,9 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      const createBtn = screen.getByText('Create ticket');
-      fireEvent.click(createBtn);
+      // Use getAllByText since "Create ticket" appears both as header button and in modal
+      const createBtns = screen.getAllByText('Create ticket');
+      fireEvent.click(createBtns[0]);
     });
     
     await waitFor(() => {
@@ -219,14 +221,16 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      const createBtn = screen.getByText('Create ticket');
-      fireEvent.click(createBtn);
+      // Use getAllByText since "Create ticket" appears in multiple places
+      const createBtns = screen.getAllByText('Create ticket');
+      fireEvent.click(createBtns[0]);
     });
     
     await waitFor(() => {
-      // Try to submit without filling required fields
-      const submitBtn = screen.getByText('Create ticket', { selector: 'button' });
-      fireEvent.click(submitBtn);
+      // Try to submit without filling required fields - look for the submit button in modal
+      const submitBtns = screen.getAllByText('Create ticket');
+      // The last one should be the modal submit button
+      fireEvent.click(submitBtns[submitBtns.length - 1]);
     });
     
     // Form should show validation errors or stay open
@@ -325,9 +329,9 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      // Click on a row to open detail drawer
-      const ticketRow = screen.getByText('Login issues');
-      fireEvent.click(ticketRow);
+      // Click on a row to open detail drawer - use first occurrence
+      const ticketRows = screen.getAllByText('Login issues');
+      fireEvent.click(ticketRows[0]);
     });
     
     await waitFor(() => {
@@ -341,8 +345,9 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      const ticketRow = screen.getByText('Login issues');
-      fireEvent.click(ticketRow);
+      // Use first occurrence since there are duplicates in mobile/desktop views
+      const ticketRows = screen.getAllByText('Login issues');
+      fireEvent.click(ticketRows[0]);
     });
     
     await waitFor(() => {
@@ -356,7 +361,8 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Login issues')).toBeDefined();
+      // Use getAllByText since text appears in both table and mobile card views
+      expect(screen.getAllByText('Login issues').length).toBeGreaterThan(0);
     });
   });
 

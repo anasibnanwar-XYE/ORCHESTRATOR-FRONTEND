@@ -146,7 +146,7 @@ function NavItemLink({
         clsx(
           'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
           isActive
-            ? 'bg-[var(--color-neutral-900)] text-white'
+            ? 'bg-[var(--color-neutral-900)] dark:bg-white/15 text-white'
             : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
         )
       }
@@ -332,7 +332,7 @@ export function AdminLayout() {
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-7xl p-4 sm:p-6">
+          <div className="mx-auto max-w-[1600px] p-4 sm:p-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

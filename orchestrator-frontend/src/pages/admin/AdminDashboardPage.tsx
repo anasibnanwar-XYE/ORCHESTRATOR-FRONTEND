@@ -68,7 +68,7 @@ function MiniChart({ data, color, height = 32 }: { data: number[]; color: string
 
 function SkeletonGrid({ count }: { count: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl animate-pulse">
           <Skeleton width={32} height={32} className="rounded-lg mb-3" />
@@ -678,7 +678,7 @@ function WorkforceTab() {
       {hasSquads && (
         <div>
           <SectionHeader title="Teams & Squads" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {data.squads.map((squad, i) => (
               <div
                 key={i}

@@ -189,7 +189,7 @@ function CreateTicketModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateTi
           disabled={isSubmitting}
         />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Select
             label="Category"
             options={categoryOptions}
@@ -261,7 +261,7 @@ function TicketDetailDrawer({ ticket, onClose }: TicketDetailDrawerProps) {
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--color-surface-secondary)] rounded-xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[var(--color-surface-secondary)] rounded-xl">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
               Created
