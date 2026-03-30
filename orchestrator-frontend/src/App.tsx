@@ -336,7 +336,7 @@ const AdminUsersPage = lazy(() =>
      default: m.ChangelogPage,
    }))
  );
- /** Admin portal — Approvals */
+ /** Admin portal — Approvals (unified approval center) */
  const AdminApprovalsPage = lazy(() =>
    import('@/pages/admin/ApprovalsPage').then((m) => ({
      default: m.ApprovalsPage,
@@ -858,6 +858,8 @@ function AppRouter() {
             <Route path="notifications" element={<AdminNotificationsPage />} />
             <Route path="changelog" element={<AdminChangelogPage />} />
             <Route path="approvals" element={<AdminApprovalsPage />} />
+            {/* NOTE: /admin/export-approvals route removed - export approvals merged into unified ApprovalsPage */}
+            <Route path="export-approvals" element={<Navigate to="/admin/approvals" replace />} />
             <Route path="audit-trail" element={<AdminAuditTrailPage />} />
             <Route path="*" element={<AdminDashboardPage />} />
           </Route>
