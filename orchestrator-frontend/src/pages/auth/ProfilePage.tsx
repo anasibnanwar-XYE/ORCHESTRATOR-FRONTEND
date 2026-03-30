@@ -2,15 +2,17 @@
  * ProfilePage
  *
  * Features:
- *  - View and update profile fields (displayName, preferredName, jobTitle, email)
+ *  - View and update profile fields (displayName, preferredName, jobTitle, phoneSecondary, secondaryEmail)
  *  - MFA setup: shows QR code (from qrUri), manual secret, and one-time recovery codes
  *    with required acknowledgement before the setup flow can be dismissed
  *  - MFA activate: enters TOTP code to confirm enrollment
  *  - MFA disable: supports both TOTP code and recovery code paths
+ *  - Session info: shows account creation date and company memberships
  */
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import { Camera, ShieldCheck, ShieldOff, User as UserIcon, KeyRound, Copy, Check } from 'lucide-react';
+import { format } from 'date-fns';
+import { Camera, ShieldCheck, ShieldOff, User as UserIcon, KeyRound, Copy, Check, Mail, Building, Clock, Fingerprint } from 'lucide-react';
 import { clsx } from 'clsx';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/context/AuthContext';
@@ -518,6 +520,8 @@ export function ProfilePage() {
         displayName: profile.displayName,
         preferredName: profile.preferredName,
         jobTitle: profile.jobTitle,
+        phoneSecondary: profile.phoneSecondary,
+        secondaryEmail: profile.secondaryEmail,
       });
       // Sync displayName back into the auth session user
       if (user) {
@@ -607,24 +611,52 @@ export function ProfilePage() {
               />
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Phone number"
+                value={profile.phoneSecondary ?? ''}
+                onChange={(e) =>
+                  setProfile((prev) => prev ? { ...prev, phoneSecondary: e.target.value } : prev)
+                }
+                disabled={isSaving}
+                placeholder="+1 (555) 000-0000"
+              />
+              <Input
+                label="Secondary email"
+                type="email"
+                value={profile.secondaryEmail ?? ''}
+                onChange={(e) =>
+                  setProfile((prev) => prev ? { ...prev, secondaryEmail: e.target.value } : prev)
+                }
+                disabled={isSaving}
+                placeholder="backup@example.com"
+              />
+            </div>
+
             {/* Read-only fields */}
             {user && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
-                    Email
-                  </p>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
-                    {profile.email}
-                  </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[var(--color-border-subtle)]">
+                <div className="flex items-start gap-2">
+                  <Mail size={14} className="text-[var(--color-text-tertiary)] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+                      Email
+                    </p>
+                    <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
+                      {profile.email}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1">
-                    Roles
-                  </p>
-                  <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
-                    {user.roles.join(', ')}
-                  </p>
+                <div className="flex items-start gap-2">
+                  <Fingerprint size={14} className="text-[var(--color-text-tertiary)] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+                      Roles
+                    </p>
+                    <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
+                      {user.roles.join(', ')}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -689,6 +721,90 @@ export function ProfilePage() {
         >
           Reset password
         </Button>
+      </section>
+
+      {/* Account/Session section */}
+      <section className="bg-[var(--color-surface-primary)] rounded-xl border border-[var(--color-border-default)] p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-8 w-8 rounded-lg bg-[var(--color-surface-tertiary)] flex items-center justify-center">
+            <Clock size={16} className="text-[var(--color-text-secondary)]" />
+          </div>
+          <div>
+            <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+              Account information
+            </h2>
+            <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
+              Session and membership details
+            </p>
+          </div>
+        </div>
+
+        {isProfileLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
+        ) : profile ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--color-surface-secondary)]">
+                <div className="h-8 w-8 rounded-lg bg-[var(--color-surface-tertiary)] flex items-center justify-center shrink-0">
+                  <Clock size={14} className="text-[var(--color-text-tertiary)]" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+                    Account created
+                  </p>
+                  <p className="text-[13px] text-[var(--color-text-primary)] font-medium">
+                    {profile.createdAt ? format(new Date(profile.createdAt), 'MMM d, yyyy') : '—'}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                    {profile.createdAt ? format(new Date(profile.createdAt), 'h:mm a') : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--color-surface-secondary)]">
+                <div className="h-8 w-8 rounded-lg bg-[var(--color-surface-tertiary)] flex items-center justify-center shrink-0">
+                  <Building size={14} className="text-[var(--color-text-tertiary)]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+                    Company memberships
+                  </p>
+                  <p className="text-[13px] text-[var(--color-text-primary)] font-medium truncate">
+                    {profile.companies?.length ?? 0} {profile.companies?.length === 1 ? 'company' : 'companies'}
+                  </p>
+                  {profile.companies && profile.companies.length > 0 && (
+                    <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">
+                      {profile.companies.join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {profile.publicId && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--color-surface-secondary)]">
+                <div className="h-8 w-8 rounded-lg bg-[var(--color-surface-tertiary)] flex items-center justify-center shrink-0">
+                  <Fingerprint size={14} className="text-[var(--color-text-tertiary)]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)] mb-0.5">
+                    User ID
+                  </p>
+                  <p className="text-[13px] text-[var(--color-text-secondary)] font-medium truncate font-mono">
+                    {profile.publicId}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+            Could not load account information.
+          </p>
+        )}
       </section>
     </div>
   );

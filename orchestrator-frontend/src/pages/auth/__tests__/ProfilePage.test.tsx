@@ -96,6 +96,8 @@ const mockProfile: Profile = {
   companies: ['Company A'],
   createdAt: '2024-01-01T00:00:00Z',
   publicId: 'usr_123',
+  phoneSecondary: '+1 (555) 123-4567',
+  secondaryEmail: 'backup@example.com',
 };
 
 const mockProfileMfaEnabled: Profile = {
@@ -188,6 +190,8 @@ describe('ProfilePage', () => {
           displayName: 'Updated Name',
           preferredName: 'Admin',
           jobTitle: 'Administrator',
+          phoneSecondary: '+1 (555) 123-4567',
+          secondaryEmail: 'backup@example.com',
         });
         expect(mockToastSuccess).toHaveBeenCalledWith('Profile updated');
       });
@@ -215,6 +219,48 @@ describe('ProfilePage', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/could not load profile/i)).toBeInTheDocument();
+      });
+    });
+
+    it('renders phone secondary and secondary email fields', async () => {
+      renderProfilePage();
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
+      });
+
+      // Check phone and secondary email are displayed
+      expect(screen.getByDisplayValue('+1 (555) 123-4567')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('backup@example.com')).toBeInTheDocument();
+    });
+
+    it('calls PUT /auth/profile with phoneSecondary and secondaryEmail on save', async () => {
+      mockUpdateProfile.mockResolvedValue({ ...mockProfile, displayName: 'Updated Name' });
+      renderProfilePage();
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
+      });
+
+      // Update phone and secondary email
+      const phoneInput = screen.getByDisplayValue('+1 (555) 123-4567');
+      fireEvent.change(phoneInput, { target: { value: '+1 (555) 987-6543' } });
+
+      const secondaryEmailInput = screen.getByDisplayValue('backup@example.com');
+      fireEvent.change(secondaryEmailInput, { target: { value: 'newbackup@example.com' } });
+
+      // Submit the form
+      const saveButton = screen.getByRole('button', { name: /save changes/i });
+      fireEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockUpdateProfile).toHaveBeenCalledWith({
+          displayName: 'Admin User',
+          preferredName: 'Admin',
+          jobTitle: 'Administrator',
+          phoneSecondary: '+1 (555) 987-6543',
+          secondaryEmail: 'newbackup@example.com',
+        });
       });
     });
   });
@@ -397,6 +443,51 @@ describe('ProfilePage', () => {
       const emailEl = screen.getByText('admin@example.com');
       const gridDiv = emailEl.closest('.grid');
       expect(gridDiv).toHaveClass('grid-cols-1', 'sm:grid-cols-2');
+    });
+  });
+
+  describe('Account information section', () => {
+    it('shows account creation date', async () => {
+      renderProfilePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Account information')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Account created')).toBeInTheDocument();
+      expect(screen.getByText('Jan 1, 2024')).toBeInTheDocument();
+    });
+
+    it('shows company memberships count', async () => {
+      renderProfilePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Account information')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Company memberships')).toBeInTheDocument();
+      expect(screen.getByText('1 company')).toBeInTheDocument();
+      expect(screen.getByText('Company A')).toBeInTheDocument();
+    });
+
+    it('shows public user ID', async () => {
+      renderProfilePage();
+
+      await waitFor(() => {
+        expect(screen.getByText('Account information')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('User ID')).toBeInTheDocument();
+      expect(screen.getByText('usr_123')).toBeInTheDocument();
+    });
+
+    it('shows skeleton while loading account info', async () => {
+      mockGetProfile.mockImplementation(() => new Promise(() => {}));
+      renderProfilePage();
+
+      // Should show skeleton elements for account section
+      const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+      expect(skeletons.length).toBeGreaterThan(0);
     });
   });
 });
