@@ -191,6 +191,38 @@
      expect(screen.getByText('v1.9.0')).toBeDefined();
    });
 
+   it('shows "Highlighted" badge for highlighted entries', async () => {
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
+       content: mockEntries,
+       totalElements: 2,
+     });
+     renderPage();
+     await waitFor(() => expect(screen.getByText('New Features in v2.0')).toBeDefined());
+     // The first entry (isHighlighted: true) should show a "Highlighted" badge
+     expect(screen.getByText('Highlighted')).toBeDefined();
+   });
+
+   it('does not show "Highlighted" badge for non-highlighted entries', async () => {
+     const nonHighlighted: ChangelogEntryResponse[] = [
+       {
+         id: 1,
+         title: 'Bug Fixes v1.9',
+         body: 'Various bug fixes.',
+         version: 'v1.9.0',
+         isHighlighted: false,
+         publishedAt: '2024-02-01T00:00:00Z',
+         createdBy: 'admin@example.com',
+       },
+     ];
+     (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
+       content: nonHighlighted,
+       totalElements: 1,
+     });
+     renderPage();
+     await waitFor(() => expect(screen.getByText('Bug Fixes v1.9')).toBeDefined());
+     expect(screen.queryByText('Highlighted')).toBeNull();
+   });
+
    it('expands entry body on view click', async () => {
      (changelogApi.list as ReturnType<typeof vi.fn>).mockResolvedValue({
        content: mockEntries,

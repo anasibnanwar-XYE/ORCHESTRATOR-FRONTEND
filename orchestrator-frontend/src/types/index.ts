@@ -1372,8 +1372,8 @@ export interface Role {
   description?: string;
   permissions: string[];
   isSystem: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateRoleRequest {

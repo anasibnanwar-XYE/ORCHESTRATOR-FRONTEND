@@ -16,12 +16,12 @@
    RefreshCcw,
    Lock,
    ChevronRight,
-   X,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
+ import { Drawer } from '@/components/ui/Drawer';
  import { PageHeader } from '@/components/ui/PageHeader';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useAuth } from '@/context/AuthContext';
@@ -57,104 +57,87 @@ function permKey(perm: unknown, index: number): string {
  // (No write helpers needed: role creation is superadmin-only per backend contract)
  
  // ─────────────────────────────────────────────────────────────────────────────
- // Role Detail Drawer (side panel)
+ // Role Detail Drawer (uses shared Drawer component)
  // ─────────────────────────────────────────────────────────────────────────────
- 
- function RoleDetailPanel({ role, onClose }: { role: Role; onClose: () => void }) {
+
+ function RoleDetailDrawer({ role, onClose }: { role: Role | null; onClose: () => void }) {
+   if (!role) return null;
+
    return (
-     <div className="fixed inset-0 z-50 flex justify-end">
-       <div
-         className="absolute inset-0 bg-[var(--color-overlay)]"
-         onClick={onClose}
-       />
-       <div
-         className={clsx(
-           'relative w-full max-w-md bg-[var(--color-surface-primary)]',
-           'border-l border-[var(--color-border-default)] flex flex-col',
+     <Drawer
+       isOpen={!!role}
+       onClose={onClose}
+       title={role.name}
+       description={role.key}
+       size="md"
+     >
+       <div className="space-y-5">
+         {role.isSystem && (
+           <Badge variant="default">
+             <Lock size={10} className="mr-1" />
+             System
+           </Badge>
          )}
-         style={{ animation: 'slideInRight 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards' }}
-       >
-         {/* Header */}
-         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-default)]">
+
+         {role.description && (
            <div>
-             <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-               {role.name}
-             </h2>
-             <p className="text-[12px] text-[var(--color-text-tertiary)] mt-0.5 font-mono">{role.key}</p>
+             <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1.5">
+               Description
+             </p>
+             <p className="text-[13px] text-[var(--color-text-secondary)]">{role.description}</p>
            </div>
-           <div className="flex items-center gap-2">
-             {role.isSystem && (
-               <Badge variant="default">
-                 <Lock size={10} className="mr-1" />
-                 System
-               </Badge>
-             )}
-             <button
-               onClick={onClose}
-               className="h-7 w-7 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
-               aria-label="Close"
-             >
-               <X size={15} />
-             </button>
-           </div>
-         </div>
- 
-         {/* Content */}
-         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-           {role.description && (
-             <div>
-               <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1.5">
-                 Description
-               </p>
-               <p className="text-[13px] text-[var(--color-text-secondary)]">{role.description}</p>
+         )}
+
+         <div>
+           <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-2">
+             Permissions ({role.permissions.length})
+           </p>
+           {role.permissions.length === 0 ? (
+             <p className="text-[13px] text-[var(--color-text-tertiary)]">No permissions assigned.</p>
+           ) : (
+             <div className="flex flex-wrap gap-1.5">
+               {role.permissions.map((perm, i) => (
+                 <span
+                   key={permKey(perm, i)}
+                   className={clsx(
+                     'inline-flex items-center px-2 py-1 rounded-md',
+                     'text-[11px] font-mono font-medium',
+                     'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]',
+                   )}
+                 >
+                   {permToString(perm)}
+                 </span>
+               ))}
              </div>
            )}
- 
-           <div>
-             <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-2">
-               Permissions ({role.permissions.length})
-             </p>
-             {role.permissions.length === 0 ? (
-               <p className="text-[13px] text-[var(--color-text-tertiary)]">No permissions assigned.</p>
-             ) : (
-               <div className="flex flex-wrap gap-1.5">
-                 {role.permissions.map((perm, i) => (
-                   <span
-                     key={permKey(perm, i)}
-                     className={clsx(
-                       'inline-flex items-center px-2 py-1 rounded-md',
-                       'text-[11px] font-mono font-medium',
-                       'bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]',
-                     )}
-                   >
-                     {permToString(perm)}
-                   </span>
-                 ))}
+         </div>
+
+         {(role.createdAt || role.updatedAt) && (
+           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--color-border-subtle)]">
+             {role.createdAt && (
+               <div>
+                 <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1">
+                   Created
+                 </p>
+                 <p className="text-[12px] text-[var(--color-text-secondary)]">
+                   {new Date(role.createdAt).toLocaleDateString('en-IN')}
+                 </p>
+               </div>
+             )}
+             {role.updatedAt && (
+               <div>
+                 <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1">
+                   Updated
+                 </p>
+                 <p className="text-[12px] text-[var(--color-text-secondary)]">
+                   {new Date(role.updatedAt).toLocaleDateString('en-IN')}
+                 </p>
                </div>
              )}
            </div>
- 
-           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--color-border-subtle)]">
-             <div>
-               <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1">
-                 Created
-               </p>
-               <p className="text-[12px] text-[var(--color-text-secondary)]">
-                 {new Date(role.createdAt).toLocaleDateString('en-IN')}
-               </p>
-             </div>
-             <div>
-               <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-1">
-                 Updated
-               </p>
-               <p className="text-[12px] text-[var(--color-text-secondary)]">
-                 {new Date(role.updatedAt).toLocaleDateString('en-IN')}
-               </p>
-             </div>
-           </div>
-         </div>
+         )}
        </div>
-     </div>
+     </Drawer>
    );
  }
  
@@ -311,10 +294,8 @@ function permKey(perm: unknown, index: number): string {
          )}
        />
  
-       {/* Role Detail Panel */}
-       {selectedRole && (
-         <RoleDetailPanel role={selectedRole} onClose={() => setSelectedRole(null)} />
-       )}
+       {/* Role Detail Drawer */}
+       <RoleDetailDrawer role={selectedRole} onClose={() => setSelectedRole(null)} />
      </div>
    );
  }

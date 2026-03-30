@@ -12,7 +12,7 @@
   */
  
  import { describe, it, expect, vi, beforeEach } from 'vitest';
- import { render, screen, waitFor } from '@testing-library/react';
+ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
 
  vi.mock('lucide-react', () => {
@@ -200,6 +200,115 @@
      await waitFor(() => {
        // Super Admin role SHOULD be visible for superadmin user
        expect(screen.getAllByText('Super Admin').length).toBeGreaterThan(0);
+     });
+   });
+
+   it('opens shared Drawer when a role row is clicked', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+
+     // Click the Administrator role row
+     const adminRow = screen.getAllByText('Administrator')[0].closest('tr') 
+       || screen.getAllByText('Administrator')[0].closest('[role="row"]')
+       || screen.getAllByText('Administrator')[0].closest('div');
+     if (adminRow) {
+       fireEvent.click(adminRow);
+     }
+
+     // Should open a Drawer (dialog) with role details
+     await waitFor(() => {
+       const dialog = document.querySelector('[role="dialog"]');
+       expect(dialog).not.toBeNull();
+     });
+   });
+
+   it('shows role permissions in the Drawer detail view', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+
+     // Click the Administrator role row
+     const adminRow = screen.getAllByText('Administrator')[0].closest('tr')
+       || screen.getAllByText('Administrator')[0].closest('[role="row"]')
+       || screen.getAllByText('Administrator')[0].closest('div');
+     if (adminRow) {
+       fireEvent.click(adminRow);
+     }
+
+     // Should show permissions in the Drawer
+     await waitFor(() => {
+       expect(screen.getByText('USERS_READ')).toBeDefined();
+       expect(screen.getByText('USERS_WRITE')).toBeDefined();
+     });
+   });
+
+   it('closes the Drawer when close button is clicked', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+
+     // Click to open
+     const adminRow = screen.getAllByText('Administrator')[0].closest('tr')
+       || screen.getAllByText('Administrator')[0].closest('[role="row"]')
+       || screen.getAllByText('Administrator')[0].closest('div');
+     if (adminRow) {
+       fireEvent.click(adminRow);
+     }
+
+     await waitFor(() => {
+       expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+     });
+
+     // Click close button
+     const closeBtn = screen.getByLabelText(/close panel/i);
+     fireEvent.click(closeBtn);
+
+     await waitFor(() => {
+       expect(document.querySelector('[role="dialog"]')).toBeNull();
+     });
+   });
+
+   it('search input filters roles by name', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+       expect(screen.getAllByText('Custom Role').length).toBeGreaterThan(0);
+     });
+
+     // Find the search input
+     const searchInput = screen.getByPlaceholderText(/search roles/i);
+     fireEvent.change(searchInput, { target: { value: 'Custom' } });
+
+     await waitFor(() => {
+       expect(screen.getAllByText('Custom Role').length).toBeGreaterThan(0);
+       // Administrator should be filtered out
+       expect(screen.queryByText('Administrator')).toBeNull();
+     });
+   });
+
+   it('search input filters roles by key', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+
+     // Find the search input and filter by key
+     const searchInput = screen.getByPlaceholderText(/search roles/i);
+     fireEvent.change(searchInput, { target: { value: 'ROLE_ADMIN' } });
+
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+       // Custom Role should be filtered out (key is ROLE_CUSTOM, not matching ROLE_ADMIN)
+       expect(screen.queryByText('Custom Role')).toBeNull();
      });
    });
  });

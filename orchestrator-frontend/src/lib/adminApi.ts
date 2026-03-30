@@ -243,8 +243,28 @@ export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
 
   async getRoles(): Promise<Role[]> {
-    const response = await apiRequest.get<ApiResponse<Role[]>>('/admin/roles');
-    return response.data.data;
+    // Backend returns: { name: "ROLE_ADMIN", description: "Administrator", permissions: [{id,code,description}] }
+    // Frontend Role type expects: { key, name, description, permissions: string[], isSystem }
+    // Map backend shape to frontend Role type
+    const response = await apiRequest.get<ApiResponse<Record<string, unknown>[]>>('/admin/roles');
+    const raw = response.data.data ?? [];
+    return raw.map((r) => {
+      const backendName = (r.name as string) ?? '';
+      const perms = Array.isArray(r.permissions) ? r.permissions : [];
+      return {
+        key: backendName,
+        name: (r.description as string) || backendName,
+        description: (r.description as string) || undefined,
+        permissions: perms.map((p: unknown) => {
+          if (typeof p === 'string') return p;
+          if (p && typeof p === 'object' && 'code' in p) return (p as { code: string }).code;
+          return String(p);
+        }),
+        isSystem: backendName.startsWith('ROLE_SUPER_ADMIN') || backendName.startsWith('ROLE_ADMIN'),
+        createdAt: r.createdAt as string | undefined,
+        updatedAt: r.updatedAt as string | undefined,
+      } satisfies Role;
+    });
   },
 
   async getRoleByKey(key: string): Promise<Role> {
