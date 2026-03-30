@@ -26,6 +26,7 @@
  import { Badge } from '@/components/ui/Badge';
  import { Button } from '@/components/ui/Button';
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+ import { Modal } from '@/components/ui/Modal';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
@@ -254,6 +255,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    const [error, setError] = useState<string | null>(null);
    const [pendingAction, setPendingAction] = useState<ActionState | null>(null);
    const [isActing, setIsActing] = useState(false);
+   const [rejectReason, setRejectReason] = useState('');
+   const [rejectReasonError, setRejectReasonError] = useState<string | null>(null);
  
    const load = useCallback(async () => {
      setIsLoading(true);
@@ -281,12 +284,23 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
        toastError('Payroll runs can only be approved, not rejected.');
        return;
      }
+     setRejectReason('');
+     setRejectReasonError(null);
      setPendingAction({ item, action: 'reject' });
    }, [toastError]);
  
    const handleConfirm = useCallback(async () => {
      if (!pendingAction) return;
      const { item, action } = pendingAction;
+ 
+     // Validate rejection reason
+     if (action === 'reject') {
+       if (!rejectReason.trim()) {
+         setRejectReasonError('Please provide a reason for rejection.');
+         return;
+       }
+     }
+ 
      setIsActing(true);
      try {
        if (action === 'approve') {
@@ -311,25 +325,28 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
          }
          success('Approved successfully.');
        } else {
+         const reason = rejectReason.trim();
          switch (item.originType) {
            case 'CREDIT_REQUEST':
-             await adminApi.rejectCreditRequest(item.id, { reason: '' });
+             await adminApi.rejectCreditRequest(item.id, { reason });
              break;
            case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
              await adminApi.rejectCreditOverride(item.id);
              break;
            case 'PERIOD_CLOSE_REQUEST':
-             await adminApi.rejectPeriodClose(item.id);
+             await adminApi.rejectPeriodClose(item.id, { note: reason });
              break;
            case 'EXPORT_REQUEST':
-             await adminApi.rejectExport(item.id);
+             await adminApi.rejectExport(item.id, { reason });
              break;
            default:
-             await adminApi.rejectCreditRequest(item.id, { reason: '' });
+             await adminApi.rejectCreditRequest(item.id, { reason });
          }
          success('Rejected successfully.');
        }
        setPendingAction(null);
+       setRejectReason('');
+       setRejectReasonError(null);
        // Reload to remove the acted-upon item
        await load();
      } catch (err) {
@@ -338,10 +355,14 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      } finally {
        setIsActing(false);
      }
-   }, [pendingAction, success, toastError, load]);
+   }, [pendingAction, rejectReason, success, toastError, load]);
  
    const handleCancel = useCallback(() => {
-     if (!isActing) setPendingAction(null);
+     if (!isActing) {
+       setPendingAction(null);
+       setRejectReason('');
+       setRejectReasonError(null);
+     }
    }, [isActing]);
  
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -434,26 +455,86 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
          </div>
        )}
  
-       {/* Confirmation dialog */}
-       {pendingAction && (
+       {/* Approve confirmation dialog */}
+       {pendingAction && pendingAction.action === 'approve' && (
          <ConfirmDialog
            isOpen
-           title={
-             pendingAction.action === 'approve'
-               ? `Approve ${getTypeLabel(pendingAction.item.originType)}`
-               : `Reject ${getTypeLabel(pendingAction.item.originType)}`
-           }
-           message={
-             pendingAction.action === 'approve'
-               ? `Are you sure you want to approve "${pendingAction.item.reference || pendingAction.item.publicId}"? This action cannot be undone.`
-               : `Are you sure you want to reject "${pendingAction.item.reference || pendingAction.item.publicId}"? This will permanently decline the request.`
-           }
-           confirmLabel={pendingAction.action === 'approve' ? 'Approve' : 'Reject'}
-           variant={pendingAction.action === 'reject' ? 'danger' : 'default'}
+           title={`Approve ${getTypeLabel(pendingAction.item.originType)}`}
+           message={`Are you sure you want to approve "${pendingAction.item.reference || pendingAction.item.publicId}"? This action cannot be undone.`}
+           confirmLabel="Approve"
+           variant="default"
            isLoading={isActing}
            onConfirm={handleConfirm}
            onCancel={handleCancel}
          />
+       )}
+ 
+       {/* Reject dialog with required reason textarea */}
+       {pendingAction && pendingAction.action === 'reject' && (
+         <Modal
+           isOpen
+           onClose={handleCancel}
+           title={`Reject ${getTypeLabel(pendingAction.item.originType)}`}
+           size="sm"
+           footer={
+             <>
+               <Button
+                 variant="secondary"
+                 size="sm"
+                 onClick={handleCancel}
+                 disabled={isActing}
+               >
+                 Cancel
+               </Button>
+               <Button
+                 size="sm"
+                 onClick={handleConfirm}
+                 isLoading={isActing}
+                 className="bg-[var(--color-error)] hover:bg-[var(--color-error-hover)] text-[var(--color-text-inverse)]"
+               >
+                 Reject
+               </Button>
+             </>
+           }
+         >
+           <div className="space-y-4">
+             <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+               You are rejecting{' '}
+               <span className="font-medium text-[var(--color-text-primary)]">
+                 "{pendingAction.item.reference || pendingAction.item.publicId}"
+               </span>
+               . This will permanently decline the request.
+             </p>
+             <div className="space-y-1.5">
+               <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
+                 Reason for rejection <span className="text-[var(--color-error)]">*</span>
+               </label>
+               <textarea
+                 value={rejectReason}
+                 onChange={(e) => {
+                   setRejectReason(e.target.value);
+                   if (e.target.value.trim()) setRejectReasonError(null);
+                 }}
+                 placeholder="Explain why this request is being rejected..."
+                 rows={4}
+                 disabled={isActing}
+                 className={clsx(
+                   'w-full rounded-lg border px-3 py-2',
+                   'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
+                   'placeholder:text-[var(--color-text-tertiary)] resize-none',
+                   'focus:outline-none focus:ring-1',
+                   rejectReasonError
+                     ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]'
+                     : 'border-[var(--color-border-default)] focus:ring-[var(--color-neutral-900)]',
+                   isActing && 'opacity-60 cursor-not-allowed',
+                 )}
+               />
+               {rejectReasonError && (
+                 <p className="text-[11px] text-[var(--color-error)]">{rejectReasonError}</p>
+               )}
+             </div>
+           </div>
+         </Modal>
        )}
      </div>
    );

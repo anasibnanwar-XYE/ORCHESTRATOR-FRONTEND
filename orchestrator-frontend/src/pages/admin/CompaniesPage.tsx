@@ -3,6 +3,7 @@
   *
   * Features:
   *  - DataTable listing companies: code, name, email, GST number, active status
+  *  - Company detail drawer (click row) with info, status, and settings sections
   *  - Create company form modal (name, code, email, phone, address, GST)
   *  - Update company form modal (pre-filled)
   *  - Delete with ConfirmDialog danger variant
@@ -15,6 +16,13 @@
    RefreshCcw,
    Pencil,
    Trash2,
+   Building2,
+   Phone,
+   Mail,
+   MapPin,
+   Calendar,
+   FileText,
+   Settings2,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
@@ -23,6 +31,7 @@
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
+ import { Drawer } from '@/components/ui/Drawer';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
@@ -51,6 +60,155 @@
  };
  
  // ─────────────────────────────────────────────────────────────────────────────
+ // Helpers
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ function formatDate(iso?: string): string {
+   if (!iso) return '—';
+   try {
+     return new Date(iso).toLocaleString('en-IN', {
+       day: '2-digit',
+       month: 'short',
+       year: 'numeric',
+       hour: '2-digit',
+       minute: '2-digit',
+     });
+   } catch {
+     return iso;
+   }
+ }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Company Detail Drawer
+ // ─────────────────────────────────────────────────────────────────────────────
+ 
+ interface CompanyDetailDrawerProps {
+   company: Company | null;
+   onClose: () => void;
+   onEdit: (company: Company) => void;
+ }
+ 
+ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string }) {
+   return (
+     <div className="flex items-start gap-3">
+       <div className="mt-0.5 h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)] shrink-0">
+         {icon}
+       </div>
+       <div className="flex-1 min-w-0">
+         <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
+           {label}
+         </p>
+         <p className="text-[13px] text-[var(--color-text-primary)] break-words">
+           {value || <span className="text-[var(--color-text-tertiary)]">—</span>}
+         </p>
+       </div>
+     </div>
+   );
+ }
+ 
+ function CompanyDetailDrawer({ company, onClose, onEdit }: CompanyDetailDrawerProps) {
+   if (!company) return null;
+ 
+   return (
+     <Drawer
+       isOpen={company !== null}
+       onClose={onClose}
+       title={company.name}
+       description={`Company code: ${company.code}`}
+       size="md"
+       footer={
+         <>
+           <Button variant="secondary" size="sm" onClick={onClose}>
+             Close
+           </Button>
+           <Button
+             size="sm"
+             onClick={() => {
+               onClose();
+               onEdit(company);
+             }}
+           >
+             Edit Company
+           </Button>
+         </>
+       }
+     >
+       <div className="space-y-6">
+         {/* Status badge */}
+         <div className="flex items-center gap-2">
+           <Badge variant={company.isActive ? 'success' : 'default'} dot>
+             {company.isActive ? 'Active' : 'Inactive'}
+           </Badge>
+         </div>
+ 
+         {/* Company Info section */}
+         <div>
+           <div className="flex items-center gap-2 mb-3">
+             <Building2 size={13} className="text-[var(--color-text-tertiary)]" />
+             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+               Company Info
+             </h3>
+           </div>
+           <div className="space-y-3 pl-1">
+             <DetailRow icon={<Building2 size={12} />} label="Company Name" value={company.name} />
+             <DetailRow
+               icon={<FileText size={12} />}
+               label="Company Code"
+               value={company.code}
+             />
+             <DetailRow icon={<Mail size={12} />} label="Email" value={company.email} />
+             <DetailRow icon={<Phone size={12} />} label="Phone" value={company.phone} />
+             <DetailRow icon={<MapPin size={12} />} label="Address" value={company.address} />
+             <DetailRow
+               icon={<FileText size={12} />}
+               label="GST Number"
+               value={company.gstNumber}
+             />
+           </div>
+         </div>
+ 
+         {/* Subscription section */}
+         <div>
+           <div className="flex items-center gap-2 mb-3">
+             <Settings2 size={13} className="text-[var(--color-text-tertiary)]" />
+             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+               Subscription & Settings
+             </h3>
+           </div>
+           <div className="rounded-lg border border-[var(--color-border-subtle)] p-3 bg-[var(--color-surface-secondary)]">
+             <p className="text-[12px] text-[var(--color-text-secondary)]">
+               Subscription details and module configuration are managed by platform administrators.
+             </p>
+           </div>
+         </div>
+ 
+         {/* Dates section */}
+         <div>
+           <div className="flex items-center gap-2 mb-3">
+             <Calendar size={13} className="text-[var(--color-text-tertiary)]" />
+             <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+               Dates
+             </h3>
+           </div>
+           <div className="space-y-3 pl-1">
+             <DetailRow
+               icon={<Calendar size={12} />}
+               label="Created"
+               value={formatDate(company.createdAt)}
+             />
+             <DetailRow
+               icon={<Calendar size={12} />}
+               label="Last Updated"
+               value={formatDate(company.updatedAt)}
+             />
+           </div>
+         </div>
+       </div>
+     </Drawer>
+   );
+ }
+ 
+ // ─────────────────────────────────────────────────────────────────────────────
  // GST Validation (15-char alphanumeric)
  // ─────────────────────────────────────────────────────────────────────────────
  
@@ -71,6 +229,9 @@
    const [companies, setCompanies] = useState<Company[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
+ 
+   // Detail drawer
+   const [viewingCompany, setViewingCompany] = useState<Company | null>(null);
  
    // Create/Edit modal
    const [showForm, setShowForm] = useState(false);
@@ -296,6 +457,7 @@
            (c.email ?? '').toLowerCase().includes(q.toLowerCase())
          }
          emptyMessage="No companies found"
+         onRowClick={(c) => setViewingCompany(c)}
          rowActions={(c) => (
            <div className="flex items-center gap-1">
              <button
@@ -425,6 +587,13 @@
          message={`Are you sure you want to delete "${deletingCompany?.name}" (${deletingCompany?.code})? This action cannot be undone.`}
          confirmLabel="Delete Company"
          variant="danger"
+       />
+ 
+       {/* Company Detail Drawer */}
+       <CompanyDetailDrawer
+         company={viewingCompany}
+         onClose={() => setViewingCompany(null)}
+         onEdit={(c) => { setViewingCompany(null); openEdit(c); }}
        />
      </div>
    );

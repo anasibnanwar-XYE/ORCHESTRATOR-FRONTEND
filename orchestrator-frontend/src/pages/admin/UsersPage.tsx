@@ -509,18 +509,22 @@
    };
  
    return (
-     <DropdownMenu
-       trigger={
-         <button
-           type="button"
-           className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
-         >
-           <MoreHorizontal size={14} />
-         </button>
-       }
-       items={items}
-       onSelect={handleSelect}
-     />
+     // Stop propagation to prevent row onClick (user detail modal) from firing
+     // when the user is interacting with the dropdown actions.
+     <div onClick={(e) => e.stopPropagation()}>
+       <DropdownMenu
+         trigger={
+           <button
+             type="button"
+             className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
+           >
+             <MoreHorizontal size={14} />
+           </button>
+         }
+         items={items}
+         onSelect={handleSelect}
+       />
+     </div>
    );
  }
  

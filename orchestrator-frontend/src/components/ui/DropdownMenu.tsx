@@ -22,6 +22,10 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  // portalRef tracks the portal container so we can exclude it from the
+  // outside-click handler — the portal is rendered to document.body and is
+  // NOT a DOM descendant of ref.current, but it IS part of the dropdown.
+  const portalRef = useRef<HTMLDivElement>(null);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
 
   const close = useCallback(() => setOpen(false), []);
@@ -41,7 +45,11 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
     if (!open) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (!ref.current?.contains(target) && !triggerRef.current?.contains(target)) close();
+      if (
+        !ref.current?.contains(target) &&
+        !triggerRef.current?.contains(target) &&
+        !portalRef.current?.contains(target)
+      ) close();
     };
     const keyHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
@@ -64,6 +72,7 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
       <div ref={triggerRef} onClick={() => { updatePosition(); setOpen(!open); }}>{trigger}</div>
       {open && createPortal(
         <div
+          ref={portalRef}
           className={clsx(
             'z-[9999] min-w-[180px]',
             'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
