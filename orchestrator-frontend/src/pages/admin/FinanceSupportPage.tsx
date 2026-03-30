@@ -19,6 +19,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { salesApi } from '@/lib/salesApi';
@@ -627,16 +628,10 @@ export function FinanceSupportPage() {
   return (
     <div className="space-y-5">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)]">
-            Finance Support
-          </h1>
-          <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
-            View dealer ledger, invoices, and aging analysis
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Finance Support"
+        description="View dealer ledger, invoices, and aging analysis"
+        actions={
           <Button
             variant="secondary"
             size="sm"
@@ -646,8 +641,8 @@ export function FinanceSupportPage() {
           >
             Refresh
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Error State */}
       {error && (

@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import { Tabs } from '@/components/ui/Tabs';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { auditApi } from '@/lib/adminApi';
 import type { BusinessEvent, AccountingAuditTrailEntry, AuditEventFilters, PageResponse } from '@/types';
 
@@ -568,12 +569,10 @@ export function AuditTrailPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Audit Trail</h1>
-        <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-          Tenant-scoped log of business events and accounting operations.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit Trail"
+        description="Tenant-scoped log of business events and accounting operations."
+      />
 
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} variant="pill" />
 

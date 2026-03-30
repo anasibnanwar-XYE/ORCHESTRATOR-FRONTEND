@@ -11,6 +11,8 @@ import { AlertCircle, RefreshCcw, ArrowRight } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Sparkline } from '@/components/ui/Sparkline';
+import { StatCard } from '@/components/ui/StatCard';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { portalInsightsApi } from '@/lib/adminApi';
 import type { PortalDashboard } from '@/types';
 
@@ -67,19 +69,17 @@ export function AdminDashboardPage() {
     <div className="space-y-8">
 
       {/* Page header */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-          {new Date().toLocaleDateString('en-IN', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-          })}
-        </p>
-        <h1 className="mt-1 text-xl font-semibold text-[var(--color-text-primary)] tracking-tight">
-          {greeting}
-        </h1>
-        <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-          Platform overview and operational status.
-        </p>
-      </div>
+      <PageHeader
+        title={greeting}
+        description="Platform overview and operational status."
+        breadcrumb={
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+            {new Date().toLocaleDateString('en-IN', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+            })}
+          </p>
+        }
+      />
 
       {/* ── Stat Cards ──────────────────────────────────────────────────── */}
       {loading ? (
@@ -108,14 +108,12 @@ export function AdminDashboardPage() {
       ) : hasHighlights ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {highlights.slice(0, 4).map((item, idx) => (
-            <div
+            <StatCard
               key={item.label}
-              className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl"
-            >
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)] leading-snug">
-                  {item.label}
-                </p>
+              label={item.label}
+              value={item.value}
+              detail={item.detail}
+              sparkline={
                 <Sparkline
                   data={SPARKLINE_SHAPES[idx % SPARKLINE_SHAPES.length]}
                   color={SPARKLINE_COLORS[idx % SPARKLINE_COLORS.length]}
@@ -125,16 +123,8 @@ export function AdminDashboardPage() {
                   smooth
                   fill
                 />
-              </div>
-              <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--color-text-primary)]">
-                {item.value}
-              </p>
-              {item.detail && (
-                <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)] truncate">
-                  {item.detail}
-                </p>
-              )}
-            </div>
+              }
+            />
           ))}
         </div>
       ) : null}

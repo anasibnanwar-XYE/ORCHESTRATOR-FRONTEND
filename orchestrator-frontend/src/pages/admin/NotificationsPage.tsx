@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '@/components/ui/Button';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { adminApi } from '@/lib/adminApi';
@@ -89,14 +90,10 @@ export function NotificationsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-          Send Notification
-        </h1>
-        <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-          Send a direct message to a user
-        </p>
-      </div>
+      <PageHeader
+        title="Send Notification"
+        description="Send a direct message to a user"
+      />
 
       <div className="max-w-xl">
         {/* Compose form */}

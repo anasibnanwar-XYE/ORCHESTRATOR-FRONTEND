@@ -29,6 +29,7 @@
  import { clsx } from 'clsx';
  import { Button } from '@/components/ui/Button';
  import { Badge } from '@/components/ui/Badge';
+ import { PageHeader } from '@/components/ui/PageHeader';
  import { changelogApi } from '@/lib/adminApi';
  import type { ChangelogEntryResponse } from '@/types';
 
@@ -156,27 +157,23 @@
    return (
      <div className="space-y-5">
        {/* Header */}
-       <div className="flex items-center justify-between gap-4">
-         <div>
-           <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-             Changelog
-           </h1>
-           <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-             Product updates and release notes
-           </p>
-         </div>
-         <Button
-           variant="ghost"
-           size="sm"
-           onClick={load}
-           disabled={isLoading}
-           className="gap-1.5"
-           aria-label="Refresh changelog"
-         >
-           <RefreshCcw size={13} className={isLoading ? 'animate-spin' : ''} />
-           Refresh
-         </Button>
-       </div>
+       <PageHeader
+         title="Changelog"
+         description="Product updates and release notes"
+         actions={
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={load}
+             disabled={isLoading}
+             className="gap-1.5"
+             aria-label="Refresh changelog"
+           >
+             <RefreshCcw size={13} className={isLoading ? 'animate-spin' : ''} />
+             Refresh
+           </Button>
+         }
+       />
 
        {/* Read-only notice */}
        <div className="flex items-center gap-2.5 px-4 py-3 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]">

@@ -26,6 +26,7 @@
  import { Badge } from '@/components/ui/Badge';
  import { Button } from '@/components/ui/Button';
  import { Modal } from '@/components/ui/Modal';
+ import { PageHeader } from '@/components/ui/PageHeader';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
  import { adminApi } from '@/lib/adminApi';
@@ -391,30 +392,28 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    return (
      <div className="space-y-6">
        {/* Header */}
-       <div className="flex items-start justify-between gap-4">
-         <div>
-           <h1 className="text-[22px] font-semibold tracking-tight text-[var(--color-text-primary)]">
-             Approvals
-           </h1>
-           <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
-             {isLoading
-               ? 'Loading pending approval items…'
-               : totalPending > 0
-                 ? `${totalPending} item${totalPending !== 1 ? 's' : ''} awaiting review`
-                 : 'No pending items'}
-           </p>
-         </div>
-         <Button
-           variant="ghost"
-           size="sm"
-           onClick={load}
-           disabled={isLoading}
-           className="gap-1.5 shrink-0"
-         >
-           <RefreshCcw size={14} className={isLoading ? 'animate-spin' : ''} />
-           Refresh
-         </Button>
-       </div>
+       <PageHeader
+         title="Approvals"
+         description={
+           isLoading
+             ? 'Loading pending approval items…'
+             : totalPending > 0
+               ? `${totalPending} item${totalPending !== 1 ? 's' : ''} awaiting review`
+               : 'No pending items'
+         }
+         actions={
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={load}
+             disabled={isLoading}
+             className="gap-1.5 shrink-0"
+           >
+             <RefreshCcw size={14} className={isLoading ? 'animate-spin' : ''} />
+             Refresh
+           </Button>
+         }
+       />
  
        {/* Error state */}
        {error && !isLoading && (

@@ -34,6 +34,7 @@
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
  import { DropdownMenu } from '@/components/ui/DropdownMenu';
+ import { PageHeader } from '@/components/ui/PageHeader';
  import { useToast } from '@/components/ui/Toast';
  import { useAuth } from '@/context/AuthContext';
  import { adminApi } from '@/lib/adminApi';
@@ -867,19 +868,15 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
    return (
      <div className="space-y-4">
        {/* ── Page Header ─────────────────────────────────────────────── */}
-       <div className="flex items-center justify-between gap-4">
-         <div>
-           <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)]">
-             User Management
-           </h1>
-           <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
-             Manage system users, roles, and access control
-           </p>
-         </div>
-         <Button size="sm" leftIcon={<Plus />} onClick={() => setShowCreateModal(true)}>
-           Add User
-         </Button>
-       </div>
+       <PageHeader
+         title="User Management"
+         description="Manage system users, roles, and access control"
+         actions={
+           <Button size="sm" leftIcon={<Plus />} onClick={() => setShowCreateModal(true)}>
+             Add User
+           </Button>
+         }
+       />
  
        {/* ── Error State ─────────────────────────────────────────────── */}
        {loadError && (

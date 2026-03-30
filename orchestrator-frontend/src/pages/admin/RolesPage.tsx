@@ -22,6 +22,7 @@
  import { Button } from '@/components/ui/Button';
  import { Badge } from '@/components/ui/Badge';
  import { DataTable, type Column } from '@/components/ui/DataTable';
+ import { PageHeader } from '@/components/ui/PageHeader';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useAuth } from '@/context/AuthContext';
  import { adminApi } from '@/lib/adminApi';
@@ -275,16 +276,10 @@ function permKey(perm: unknown, index: number): string {
    return (
      <div className="space-y-5">
        {/* Header */}
-       <div className="flex items-center justify-between gap-4">
-         <div>
-           <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-             Role Management
-           </h1>
-           <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-             {visibleRoles.length} role{visibleRoles.length !== 1 ? 's' : ''} configured
-           </p>
-         </div>
-       </div>
+       <PageHeader
+         title="Role Management"
+         description={`${visibleRoles.length} role${visibleRoles.length !== 1 ? 's' : ''} configured`}
+       />
 
        {/* Read-only notice */}
        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] text-[13px] text-[var(--color-text-secondary)]">

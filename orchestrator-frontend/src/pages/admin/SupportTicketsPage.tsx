@@ -19,6 +19,8 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Drawer } from '@/components/ui/Drawer';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { adminSupportApi, type SupportTicket, type CreateTicketRequest } from '@/lib/adminApi';
@@ -485,45 +487,33 @@ export function SupportTicketsPage() {
   return (
     <div className="space-y-5">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[17px] font-semibold text-[var(--color-text-primary)]">Support Tickets</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">View and manage support tickets</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<RefreshCcw size={14} />}
-            onClick={loadTickets}
-            disabled={isLoading}
-          >
-            Refresh
-          </Button>
-          <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
-            Create ticket
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Support Tickets"
+        description="View and manage support tickets"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<RefreshCcw size={14} />}
+              onClick={loadTickets}
+              disabled={isLoading}
+            >
+              Refresh
+            </Button>
+            <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
+              Create ticket
+            </Button>
+          </div>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-          <p className="text-[11px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold">Total</p>
-          <p className="text-2xl font-semibold tabular-nums mt-1">{stats.total}</p>
-        </div>
-        <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-          <p className="text-[11px] uppercase tracking-widest text-[var(--color-info)] font-semibold">Open</p>
-          <p className="text-2xl font-semibold tabular-nums mt-1">{stats.open}</p>
-        </div>
-        <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-          <p className="text-[11px] uppercase tracking-widest text-[var(--color-warning)] font-semibold">In Progress</p>
-          <p className="text-2xl font-semibold tabular-nums mt-1">{stats.inProgress}</p>
-        </div>
-        <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-          <p className="text-[11px] uppercase tracking-widest text-[var(--color-success)] font-semibold">Resolved</p>
-          <p className="text-2xl font-semibold tabular-nums mt-1">{stats.resolved}</p>
-        </div>
+        <StatCard label="Total" value={stats.total} />
+        <StatCard label="Open" value={stats.open} />
+        <StatCard label="In Progress" value={stats.inProgress} />
+        <StatCard label="Resolved" value={stats.resolved} />
       </div>
 
       {/* Error State */}

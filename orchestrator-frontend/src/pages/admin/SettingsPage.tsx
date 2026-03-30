@@ -20,6 +20,7 @@
    Lock,
  } from 'lucide-react';
  import { Button } from '@/components/ui/Button';
+ import { PageHeader } from '@/components/ui/PageHeader';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { adminApi } from '@/lib/adminApi';
  import type { ExtendedAdminSettings } from '@/types';
@@ -116,14 +117,10 @@
    return (
      <div className="space-y-5">
        {/* Header */}
-       <div>
-         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
-           System Settings
-         </h1>
-         <p className="text-[13px] text-[var(--color-text-tertiary)] mt-0.5">
-           System-wide configuration for this organisation
-         </p>
-       </div>
+       <PageHeader
+         title="System Settings"
+         description="System-wide configuration for this organisation"
+       />
 
        {/* Read-only notice */}
        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-secondary)] text-[13px] text-[var(--color-text-secondary)]">
