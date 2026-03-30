@@ -157,6 +157,19 @@ agent-browser validators MUST simulate real human behavior, not just test predef
 - VAL-ADMIN-028: Tenant Runtime View Shows Active Tenants
 - VAL-ADMIN-029: Operations Control Panel
 
+## Screenshot Evidence for Linear (CRITICAL)
+
+During UAT validation, agent-browser subagents MUST save screenshots as PNG files for every assertion tested. Save them to `.factory/validation/<milestone>/user-testing/screenshots/` with naming convention `VAL-<ID>-<brief-desc>.png` (e.g., `VAL-ADMIN-001-dashboard-kpis.png`).
+
+After UAT completes, the orchestrator will spawn codebase-scout-assistant subagents to upload these screenshots to the corresponding Linear milestone issue as attachments, and add a summary comment with pass/fail/blocked results.
+
+**Minimum screenshots per milestone:**
+- Portal dashboard at desktop width
+- Key CRUD flows (create form, list view, detail)
+- Responsive at 768px and 375px
+- Any failed assertions showing failure state
+- Error states and empty states
+
 ## Known Testing Constraints
 
 - HR/Payroll module is on hold - skip any HR/payroll testing
