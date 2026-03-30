@@ -1,13 +1,16 @@
 /**
  * AuditTrailPage
  *
- * Paginated, filterable audit trail with two tabs:
+ * Paginated, filterable audit trail with three tabs:
  *  - Business Events: BusinessAuditEventResponse (occurredAt, actorIdentifier, action, entityType, entityId, status, module)
  *    GET /api/v1/audit/business-events  (wrapped in ApiResponse<PageResponse<...>>)
  *    NOTE: May return 500 if audit private key is not configured on the backend — handled gracefully.
  *
  *  - ML Events: MlInteractionEventResponse (occurredAt, actorIdentifier, action, interactionType, status, module)
  *    GET /api/v1/audit/ml-events  (wrapped in ApiResponse<PageResponse<...>>)
+ *
+ *  - Accounting: AccountingAuditTrailEntryDto (timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, ...)
+ *    GET /api/v1/accounting/audit-trail  (wrapped in ApiResponse<PageResponse<...>>)
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -22,6 +25,7 @@ import {
   Activity,
   Cpu,
   ServerCrash,
+  BookOpen,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
@@ -29,7 +33,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { auditApi } from '@/lib/adminApi';
-import type { BusinessEvent, MlEvent, AuditEventFilters, PageResponse } from '@/types';
+import type { BusinessEvent, MlEvent, AccountingAuditTrailEntry, AuditEventFilters, PageResponse } from '@/types';
 
 const PAGE_SIZE = 20;
 
@@ -503,12 +507,237 @@ function MlEventsTab() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Accounting Audit Trail Tab
+// Fields: id, timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, sensitiveOperation
+// GET /api/v1/accounting/audit-trail
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AccountingAuditTab() {
+  const [data, setData] = useState<PageResponse<AccountingAuditTrailEntry> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [backendError, setBackendError] = useState(false);
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [userFilter, setUserFilter] = useState<string | undefined>(undefined);
+
+  const load = useCallback(async (p = 0, user?: string) => {
+    setLoading(true);
+    setError(null);
+    setBackendError(false);
+    try {
+      const result = await auditApi.getAccountingAuditTrail({ page: p, size: PAGE_SIZE, user });
+      setData(result);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 500 || status === 403) {
+        setBackendError(true);
+      } else {
+        setError('Failed to load accounting audit trail.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(page, userFilter); }, [load, page, userFilter]);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setUserFilter(value || undefined);
+      setPage(0);
+    }, 400);
+  };
+
+  const columns: Column<AccountingAuditTrailEntry>[] = [
+    {
+      id: 'timestamp',
+      header: 'Timestamp',
+      accessor: (entry) => (
+        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
+          <Clock size={12} className="shrink-0" />
+          {formatTimestamp(entry.timestamp)}
+        </div>
+      ),
+    },
+    {
+      id: 'actor',
+      header: 'Actor',
+      accessor: (entry) => (
+        <div className="flex items-center gap-1.5">
+          <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+          <span className="text-[13px] text-[var(--color-text-primary)]">
+            {entry.actorIdentifier || `User #${entry.actorUserId ?? '—'}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'actionType',
+      header: 'Action',
+      accessor: (entry) => (
+        <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+          {entry.actionType}
+        </code>
+      ),
+    },
+    {
+      id: 'entity',
+      header: 'Entity',
+      accessor: (entry) => (
+        <span className="text-[var(--color-text-secondary)]">
+          {entry.entityType || '—'}
+          {entry.entityId && (
+            <span className="ml-1 text-[var(--color-text-tertiary)]">#{entry.entityId}</span>
+          )}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'reference',
+      header: 'Reference',
+      accessor: (entry) => (
+        entry.referenceNumber ? (
+          <span className="text-[12px] font-mono text-[var(--color-text-secondary)]">{entry.referenceNumber}</span>
+        ) : (
+          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+        )
+      ),
+      hideOnMobile: true,
+    },
+    {
+      id: 'sensitive',
+      header: 'Sensitive',
+      accessor: (entry) =>
+        entry.sensitiveOperation ? (
+          <Badge variant="warning">Sensitive</Badge>
+        ) : (
+          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
+        ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Filter by actor..."
+            className={clsx(
+              'w-full pl-9 pr-3 h-8 text-[13px] rounded-lg',
+              'bg-[var(--color-surface-secondary)] border border-[var(--color-border-default)]',
+              'text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]',
+              'focus:outline-none focus:ring-1 focus:ring-[var(--color-neutral-900)]',
+            )}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => void load(page, userFilter)}
+          className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
+        >
+          <RefreshCcw size={13} />
+          Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="p-3 animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl h-16" />
+          ))}
+        </div>
+      ) : backendError ? (
+        <div className="text-center py-12">
+          <ServerCrash size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[14px] font-medium text-[var(--color-text-primary)] mb-1">Accounting Audit Service Unavailable</p>
+          <p className="text-[13px] text-[var(--color-text-tertiary)] max-w-md mx-auto">
+            The accounting audit trail service is experiencing issues on the backend. Please try again later or contact your system administrator.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load(page, userFilter)}
+            className="mt-4 flex items-center gap-1.5 mx-auto h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors border border-[var(--color-border-default)]"
+          >
+            <RefreshCcw size={13} />
+            Try again
+          </button>
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
+          <AlertCircle size={16} className="shrink-0" />
+          <span>{error}</span>
+          <button type="button" onClick={() => void load(page, userFilter)} className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80">
+            <RefreshCcw size={13} /> Retry
+          </button>
+        </div>
+      ) : !data || data.content.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">No accounting audit entries found.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <DataTable
+            columns={columns}
+            data={data.content}
+            keyExtractor={(entry) => String(entry.id)}
+            pageSize={PAGE_SIZE}
+            pageSizeOptions={[PAGE_SIZE]}
+            emptyMessage="No accounting audit entries found."
+            mobileCardRenderer={(entry) => (
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
+                    {entry.actionType}
+                  </code>
+                  {entry.sensitiveOperation && (
+                    <Badge variant="warning">Sensitive</Badge>
+                  )}
+                </div>
+                <p className="text-[13px] text-[var(--color-text-primary)] mb-1">
+                  {entry.actorIdentifier || `User #${entry.actorUserId ?? '—'}`}
+                </p>
+                <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                  {entry.entityType}
+                  {entry.entityId && ` #${entry.entityId}`}
+                  {entry.referenceNumber && ` · ${entry.referenceNumber}`}
+                  {' · '}
+                  {formatTimestamp(entry.timestamp)}
+                </p>
+              </div>
+            )}
+          />
+
+          <Pagination
+            page={page}
+            totalPages={data.totalPages}
+            totalElements={data.totalElements}
+            size={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TABS = [
   { label: 'Business Events', value: 'business' },
   { label: 'ML Events', value: 'ml' },
+  { label: 'Accounting', value: 'accounting' },
 ];
 
 export function AuditTrailPage() {
@@ -519,15 +748,16 @@ export function AuditTrailPage() {
       <div>
         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Audit Trail</h1>
         <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-          Tenant-scoped log of all business events and AI model interactions.
+          Tenant-scoped log of business events, AI model interactions, and accounting operations.
         </p>
       </div>
 
-      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} variant="pill" />
 
       <div>
         {activeTab === 'business' && <BusinessEventsTab />}
         {activeTab === 'ml' && <MlEventsTab />}
+        {activeTab === 'accounting' && <AccountingAuditTab />}
       </div>
     </div>
   );

@@ -34,6 +34,7 @@ import type {
   PortalWorkforce,
   BusinessEvent,
   MlEvent,
+  AccountingAuditTrailEntry,
   AuditEventFilters,
   TenantRuntimeMetrics,
   TenantPolicy,
@@ -484,6 +485,30 @@ export const auditApi = {
     const qs = params.toString();
     const response = await apiRequest.get<ApiResponse<PageResponse<MlEvent>>>(
       `/audit/ml-events${qs ? `?${qs}` : ''}`
+    );
+    return response.data.data;
+  },
+
+  async getAccountingAuditTrail(filters: {
+    page?: number;
+    size?: number;
+    from?: string;
+    to?: string;
+    user?: string;
+    actionType?: string;
+    entityType?: string;
+  } = {}): Promise<PageResponse<AccountingAuditTrailEntry>> {
+    const params = new URLSearchParams();
+    if (filters.page !== undefined) params.set('page', String(filters.page));
+    if (filters.size !== undefined) params.set('size', String(filters.size));
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+    if (filters.user) params.set('user', filters.user);
+    if (filters.actionType) params.set('actionType', filters.actionType);
+    if (filters.entityType) params.set('entityType', filters.entityType);
+    const qs = params.toString();
+    const response = await apiRequest.get<ApiResponse<PageResponse<AccountingAuditTrailEntry>>>(
+      `/accounting/audit-trail${qs ? `?${qs}` : ''}`
     );
     return response.data.data;
   },

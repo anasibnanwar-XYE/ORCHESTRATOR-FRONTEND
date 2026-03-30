@@ -1087,6 +1087,29 @@ export interface AuditEventFilters {
   size?: number;
 }
 
+/**
+ * GET /api/v1/accounting/audit-trail — AccountingAuditTrailEntryDto
+ * Wrapped in ApiResponse<PageResponse<AccountingAuditTrailEntryDto>>.
+ */
+export interface AccountingAuditTrailEntry {
+  id: number;
+  timestamp: string;
+  companyId?: number;
+  companyCode?: string;
+  actorUserId?: number;
+  actorIdentifier?: string;
+  actionType: string;
+  entityType?: string;
+  entityId?: string;
+  referenceNumber?: string;
+  traceId?: string;
+  ipAddress?: string;
+  beforeState?: string;
+  afterState?: string;
+  sensitiveOperation?: boolean;
+  metadata?: Record<string, string>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tenant Runtime Types
 // ─────────────────────────────────────────────────────────────────────────────
