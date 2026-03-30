@@ -11,7 +11,7 @@
  *     - Right 1-col: Quick Actions + Activity Feed + Pending Items
  *
  * Data source:
- *  - GET /api/v1/portal/dashboard → { highlights, pipeline, hrPulse }
+ *  - GET /api/v1/portal/dashboard → { highlights, pipeline }
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -395,50 +395,7 @@ export function AdminDashboardPage() {
             )}
           </div>
 
-          {/* Workforce Pulse (from hrPulse backend data) */}
-          {(isLoading || (data?.hrPulse && data.hrPulse.length > 0)) && (
-            <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-              <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
-                Workforce Pulse
-              </h2>
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3 p-2">
-                      <Skeleton width={24} height={24} className="rounded-lg" />
-                      <div className="flex-1">
-                        <Skeleton width="50%" className="mb-1" />
-                        <Skeleton width="30%" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="divide-y divide-[var(--color-border-subtle)]">
-                  {data!.hrPulse!.map((metric) => (
-                    <div
-                      key={metric.label}
-                      className="flex items-center justify-between py-2.5"
-                    >
-                      <div>
-                        <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
-                          {metric.label}
-                        </p>
-                        {metric.context && (
-                          <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                            {metric.context}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[13px] font-semibold tabular-nums text-[var(--color-text-primary)] shrink-0">
-                        {metric.score}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+
         </div>
 
         {/* Right 1-col */}

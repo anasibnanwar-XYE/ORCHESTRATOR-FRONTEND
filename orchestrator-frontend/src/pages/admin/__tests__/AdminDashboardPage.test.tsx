@@ -6,7 +6,7 @@
  *  - Shows skeleton loading state while data loads
  *  - Shows error state with retry button on API failure
  *  - Pipeline stages visualization renders
- *  - Workforce pulse card renders (when hrPulse data present)
+ *  - (HR/Payroll on hold — no workforce data)
  *  - Activity feed section renders
  *  - Quick Actions section renders with colored icons
  *  - Pending Items section renders
@@ -65,11 +65,7 @@ const mockDashboard = {
     { label: 'Dispatch', count: 6 },
     { label: 'Delivery', count: 2 },
   ],
-  hrPulse: [
-    { label: 'Headcount', score: '42', context: 'Total users' },
-    { label: 'New this month', score: '3', context: 'Joiners' },
-    { label: 'Inactive', score: '4', context: 'Suspended accounts' },
-  ],
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,17 +179,6 @@ describe('AdminDashboardPage', () => {
     await waitFor(() => {
       const pipelineEls = screen.queryAllByText(/pipeline|orders|dispatch|delivery/i);
       expect(pipelineEls.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('renders workforce pulse section from hrPulse data', async () => {
-    (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
-
-    renderPage();
-
-    await waitFor(() => {
-      const hrPulse = screen.queryByText(/workforce pulse|headcount/i);
-      expect(hrPulse).not.toBeNull();
     });
   });
 
