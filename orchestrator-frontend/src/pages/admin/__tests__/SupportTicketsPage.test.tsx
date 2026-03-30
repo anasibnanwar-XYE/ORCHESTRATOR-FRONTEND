@@ -42,6 +42,15 @@ vi.mock('lucide-react', () => {
     ArrowUpDown: M,
     ArrowUp: M,
     ArrowDown: M,
+    ChevronDown: M,
+    ChevronUp: M,
+    Check: M,
+    Filter: M,
+    Eye: M,
+    EyeOff: M,
+    Clipboard: M,
+    Info: M,
+    Loader2: M,
   };
 });
 
@@ -55,9 +64,17 @@ vi.mock('@/lib/adminApi', () => ({
   financeSupportApi: {},
 }));
 
-// Mock Toast
+// Mock Toast — stable references to prevent infinite re-render loops
+const mockToastFns = {
+  toast: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn(),
+  info: vi.fn(),
+  dismiss: vi.fn(),
+};
 vi.mock('@/components/ui/Toast', () => ({
-  useToast: () => ({ toast: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn(), dismiss: vi.fn() }),
+  useToast: () => mockToastFns,
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -146,7 +163,7 @@ describe('SupportTicketsPage', () => {
       expect(adminSupportApi.listTickets).toHaveBeenCalled();
       // Use getAllByText since "Login issues" appears in both table and mobile card
       expect(screen.getAllByText('Login issues').length).toBeGreaterThan(0);
-      expect(screen.getByText('#TKT-001')).toBeDefined();
+      expect(screen.getAllByText('#TKT-001').length).toBeGreaterThan(0);
     });
   });
 
@@ -171,9 +188,10 @@ describe('SupportTicketsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Total')).toBeDefined();
       expect(screen.getByText('3')).toBeDefined(); // Total count
-      expect(screen.getByText('Open')).toBeDefined();
-      expect(screen.getByText('In Progress')).toBeDefined();
-      expect(screen.getByText('Resolved')).toBeDefined();
+      // These labels may appear in both stat cards and status badges, use getAllByText
+      expect(screen.getAllByText('Open').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Resolved').length).toBeGreaterThan(0);
     });
   });
 
@@ -181,11 +199,14 @@ describe('SupportTicketsPage', () => {
     (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     
+    // Wait for tickets to load first
     await waitFor(() => {
-      // Use getAllByText since "Create ticket" appears both as header button and in modal
-      const createBtns = screen.getAllByText('Create ticket');
-      fireEvent.click(createBtns[0]);
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
     });
+    
+    // Find and click the Create ticket button in the header
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
     
     await waitFor(() => {
       expect(screen.getByText('Create support ticket')).toBeDefined();
@@ -203,15 +224,20 @@ describe('SupportTicketsPage', () => {
     
     renderPage();
     
+    // Wait for tickets to load
     await waitFor(() => {
-      const createBtn = screen.getByText('Create ticket');
-      fireEvent.click(createBtn);
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
     });
+    
+    // Click the Create ticket button
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
     
     await waitFor(() => {
       expect(screen.getByText('Subject')).toBeDefined();
-      expect(screen.getByText('Category')).toBeDefined();
-      expect(screen.getByText('Priority')).toBeDefined();
+      // Category and Priority may appear in table columns too, use getAllByText
+      expect(screen.getAllByText('Category').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Priority').length).toBeGreaterThan(0);
       expect(screen.getByText('Description')).toBeDefined();
     });
   });
@@ -220,18 +246,22 @@ describe('SupportTicketsPage', () => {
     (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
     renderPage();
     
+    // Wait for tickets to load
     await waitFor(() => {
-      // Use getAllByText since "Create ticket" appears in multiple places
-      const createBtns = screen.getAllByText('Create ticket');
-      fireEvent.click(createBtns[0]);
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
     });
     
+    // Open the modal
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
+    
     await waitFor(() => {
-      // Try to submit without filling required fields - look for the submit button in modal
-      const submitBtns = screen.getAllByText('Create ticket');
-      // The last one should be the modal submit button
-      fireEvent.click(submitBtns[submitBtns.length - 1]);
+      expect(screen.getByText('Create support ticket')).toBeDefined();
     });
+    
+    // Click submit without filling required fields
+    const submitBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(submitBtns[submitBtns.length - 1]);
     
     // Form should show validation errors or stay open
     await waitFor(() => {
@@ -266,8 +296,9 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      expect(screen.getByText('Bug Report')).toBeDefined();
-      expect(screen.getByText('Feature Request')).toBeDefined();
+      // Category labels appear in both desktop table and mobile card views
+      expect(screen.getAllByText('Bug Report').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Feature Request').length).toBeGreaterThan(0);
     });
   });
 
@@ -276,7 +307,8 @@ describe('SupportTicketsPage', () => {
     renderPage();
     
     await waitFor(() => {
-      expect(screen.getByText(/No tickets yet/i)).toBeDefined();
+      // Text appears in both desktop table and mobile card view
+      expect(screen.getAllByText(/No tickets yet/i).length).toBeGreaterThan(0);
     });
   });
 

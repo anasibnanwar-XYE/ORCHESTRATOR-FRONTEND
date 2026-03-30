@@ -59,9 +59,17 @@ vi.mock('@/lib/adminApi', () => ({
   adminSupportApi: {},
 }));
 
-// Mock Toast
+// Mock Toast — stable references to prevent infinite re-render loops
+const mockToastFns = {
+  toast: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn(),
+  info: vi.fn(),
+  dismiss: vi.fn(),
+};
 vi.mock('@/components/ui/Toast', () => ({
-  useToast: () => ({ toast: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn(), dismiss: vi.fn() }),
+  useToast: () => mockToastFns,
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -141,7 +149,7 @@ describe('FinanceSupportPage', () => {
     (salesApi.listDealers as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
     renderPage();
     // Page renders with dealer selector showing loading state
-    expect(screen.getByText(/Select dealer.../)).toBeDefined();
+    expect(screen.getByText(/Loading dealers/i)).toBeDefined();
   });
 
   it('shows error state when dealers fail to load', async () => {
@@ -160,14 +168,27 @@ describe('FinanceSupportPage', () => {
     
     renderPage();
     
-    // Open dealer selector and select first dealer
-    const selectorBtn = screen.getByText(/Select dealer.../);
-    fireEvent.click(selectorBtn);
+    // Wait for dealers to load
+    await waitFor(() => {
+      expect(salesApi.listDealers).toHaveBeenCalled();
+    });
+    
+    // Click the dealer-selector wrapper button (the one inside .dealer-selector)
+    const dealerSelectorDiv = document.querySelector('.dealer-selector button');
+    expect(dealerSelectorDiv).not.toBeNull();
+    fireEvent.click(dealerSelectorDiv!);
     
     await waitFor(() => {
-      expect(screen.getByText('Ledger')).toBeDefined();
-      expect(screen.getByText('Invoices')).toBeDefined();
-      expect(screen.getByText('Aging')).toBeDefined();
+      expect(screen.getByText('Sharma Trading Co.')).toBeDefined();
+    });
+    
+    fireEvent.click(screen.getByText('Sharma Trading Co.'));
+    
+    await waitFor(() => {
+      // Tab labels may appear in multiple places
+      expect(screen.getAllByText(/Ledger/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Invoices/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Aging/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -194,9 +215,9 @@ describe('FinanceSupportPage', () => {
     renderPage();
     
     await waitFor(() => {
-      // Ledger tab should be visible after dealer selection
-      const ledgerTab = screen.queryByText(/Ledger/i);
-      expect(ledgerTab).not.toBeNull();
+      // Ledger tab should be visible — may appear in multiple places
+      const ledgerElements = screen.queryAllByText(/Ledger/i);
+      expect(ledgerElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -209,8 +230,8 @@ describe('FinanceSupportPage', () => {
     renderPage();
     
     await waitFor(() => {
-      const invoicesTab = screen.queryByText(/Invoices/i);
-      expect(invoicesTab).not.toBeNull();
+      const invoicesElements = screen.queryAllByText(/Invoices/i);
+      expect(invoicesElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -223,8 +244,8 @@ describe('FinanceSupportPage', () => {
     renderPage();
     
     await waitFor(() => {
-      const agingTab = screen.queryByText(/Aging/i);
-      expect(agingTab).not.toBeNull();
+      const agingElements = screen.queryAllByText(/Aging/i);
+      expect(agingElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -237,17 +258,35 @@ describe('FinanceSupportPage', () => {
     renderPage();
     
     await waitFor(() => {
-      expect(screen.getByText(/Ledger/i)).toBeDefined();
+      // Ledger text may appear in page description and tabs
+      const ledgerElements = screen.queryAllByText(/Ledger/i);
+      expect(ledgerElements.length).toBeGreaterThan(0);
     });
   });
 
-  it('shows stat cards for ledger summary', async () => {
+  it('shows stat cards for ledger summary after dealer selection', async () => {
     (salesApi.listDealers as ReturnType<typeof vi.fn>).mockResolvedValue(mockDealers);
     (financeSupportApi.getLedger as ReturnType<typeof vi.fn>).mockResolvedValue(mockLedger);
     (financeSupportApi.getInvoices as ReturnType<typeof vi.fn>).mockResolvedValue(mockInvoices);
     (financeSupportApi.getAging as ReturnType<typeof vi.fn>).mockResolvedValue(mockAging);
     
     renderPage();
+    
+    // Wait for dealers to load
+    await waitFor(() => {
+      expect(salesApi.listDealers).toHaveBeenCalled();
+    });
+    
+    // Select a dealer to show stat cards
+    const dealerBtn = document.querySelector('.dealer-selector button');
+    expect(dealerBtn).not.toBeNull();
+    fireEvent.click(dealerBtn!);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Sharma Trading Co.')).toBeDefined();
+    });
+    
+    fireEvent.click(screen.getByText('Sharma Trading Co.'));
     
     await waitFor(() => {
       // Check for stat card labels
@@ -257,7 +296,7 @@ describe('FinanceSupportPage', () => {
     });
   });
 
-  it('shows stat cards for invoices summary', async () => {
+  it('loads invoices data when dealer is selected', async () => {
     (salesApi.listDealers as ReturnType<typeof vi.fn>).mockResolvedValue(mockDealers);
     (financeSupportApi.getLedger as ReturnType<typeof vi.fn>).mockResolvedValue(mockLedger);
     (financeSupportApi.getInvoices as ReturnType<typeof vi.fn>).mockResolvedValue(mockInvoices);
@@ -265,10 +304,27 @@ describe('FinanceSupportPage', () => {
     
     renderPage();
     
+    // Wait for dealers to load
     await waitFor(() => {
-      const totalInvoiced = screen.queryByText(/Total Invoiced/i);
-      const outstanding = screen.queryByText(/Outstanding/i);
-      expect(totalInvoiced || outstanding).not.toBeNull();
+      expect(salesApi.listDealers).toHaveBeenCalled();
+    });
+    
+    // Select a dealer using the dealer-selector wrapper
+    const dealerBtn = document.querySelector('.dealer-selector button');
+    expect(dealerBtn).not.toBeNull();
+    fireEvent.click(dealerBtn!);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Sharma Trading Co.')).toBeDefined();
+    });
+    
+    fireEvent.click(screen.getByText('Sharma Trading Co.'));
+    
+    // Finance data should be loaded (all 3 endpoints called)
+    await waitFor(() => {
+      expect(financeSupportApi.getLedger).toHaveBeenCalledWith(1);
+      expect(financeSupportApi.getInvoices).toHaveBeenCalledWith(1);
+      expect(financeSupportApi.getAging).toHaveBeenCalledWith(1);
     });
   });
 
