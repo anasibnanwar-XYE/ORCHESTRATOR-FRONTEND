@@ -28,7 +28,6 @@ import {
   ShieldAlert,
   CheckCircle,
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
@@ -302,12 +301,12 @@ function OperationsTab() {
               </div>
               <MiniChart
                 data={[20, 25, 22, 30, 28, 35, 32, 38, 42]}
-                color="#22c55e"
+                color="var(--color-success-icon)"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <TrendingUp size={12} className="text-emerald-600" />
-              <span className="text-[11px] font-medium text-emerald-600">+5.2%</span>
+              <TrendingUp size={12} style={{ color: 'var(--color-success-icon)' }} />
+              <span className="text-[11px] font-medium" style={{ color: 'var(--color-success-icon)' }}>+5.2%</span>
               <span className="text-[11px] text-[var(--color-text-tertiary)]">units/hr vs last month</span>
             </div>
           </div>
@@ -319,27 +318,34 @@ function OperationsTab() {
                 <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
                   Logistics SLA
                 </p>
-                <p className={clsx(
-                  'text-2xl font-semibold mt-1 tabular-nums tracking-tight',
-                  data.summary.logisticsSla >= 90 ? 'text-emerald-600'
-                    : data.summary.logisticsSla >= 70 ? 'text-amber-600'
-                    : 'text-red-500',
-                )}>
+                <p
+                  className="text-2xl font-semibold mt-1 tabular-nums tracking-tight"
+                  style={{
+                    color: data.summary.logisticsSla >= 90
+                      ? 'var(--color-success-icon)'
+                      : data.summary.logisticsSla >= 70
+                        ? 'var(--color-warning-icon)'
+                        : 'var(--color-error-icon)',
+                  }}
+                >
                   {data.summary.logisticsSla.toFixed(1)}%
                 </p>
               </div>
               <MiniChart
                 data={[85, 88, 84, 90, 87, 92, 89, 94, data.summary.logisticsSla]}
-                color={data.summary.logisticsSla >= 90 ? '#22c55e' : data.summary.logisticsSla >= 70 ? '#f59e0b' : '#ef4444'}
+                color={data.summary.logisticsSla >= 90 ? 'var(--color-success-icon)' : data.summary.logisticsSla >= 70 ? 'var(--color-warning-icon)' : 'var(--color-error-icon)'}
               />
             </div>
             <div className="flex items-center gap-1.5">
               {data.summary.logisticsSla >= 85 ? (
-                <TrendingUp size={12} className="text-emerald-600" />
+                <TrendingUp size={12} style={{ color: 'var(--color-success-icon)' }} />
               ) : (
-                <TrendingDown size={12} className="text-red-500" />
+                <TrendingDown size={12} style={{ color: 'var(--color-error-icon)' }} />
               )}
-              <span className={`text-[11px] font-medium ${data.summary.logisticsSla >= 85 ? 'text-emerald-600' : 'text-red-500'}`}>
+              <span
+                className="text-[11px] font-medium"
+                style={{ color: data.summary.logisticsSla >= 85 ? 'var(--color-success-icon)' : 'var(--color-error-icon)' }}
+              >
                 {data.summary.logisticsSla >= 85 ? '+2.1%' : '-1.4%'}
               </span>
               <span className="text-[11px] text-[var(--color-text-tertiary)]">on-time delivery rate</span>
@@ -359,12 +365,12 @@ function OperationsTab() {
               </div>
               <MiniChart
                 data={[40, 42, 45, 43, 48, 50, 52, 55, 58]}
-                color="#8b5cf6"
+                color="var(--color-accent-icon)"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <TrendingUp size={12} className="text-emerald-600" />
-              <span className="text-[11px] font-medium text-emerald-600">+3.8%</span>
+              <TrendingUp size={12} style={{ color: 'var(--color-success-icon)' }} />
+              <span className="text-[11px] font-medium" style={{ color: 'var(--color-success-icon)' }}>+3.8%</span>
               <span className="text-[11px] text-[var(--color-text-tertiary)]">current position</span>
             </div>
           </div>

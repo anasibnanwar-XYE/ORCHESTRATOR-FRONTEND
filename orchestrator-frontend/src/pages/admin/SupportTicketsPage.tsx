@@ -323,7 +323,8 @@ function TicketDetailDrawer({ ticket, onClose }: TicketDetailDrawerProps) {
                 href={(ticket as unknown as { githubIssueUrl?: string }).githubIssueUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[13px] text-blue-600 hover:underline flex items-center gap-1.5"
+                className="text-[13px] hover:underline flex items-center gap-1.5"
+                style={{ color: 'var(--color-link)' }}
               >
                 #{((ticket as unknown as { githubIssueNumber?: number }).githubIssueNumber)} on GitHub
                 <ArrowUpRight size={12} />
@@ -569,7 +570,8 @@ export function SupportTicketsPage() {
                     e.stopPropagation();
                     setSelectedTicket(row);
                   }}
-                  className="text-[11px] text-blue-600 hover:underline"
+                  className="text-[11px] hover:underline"
+                  style={{ color: 'var(--color-link)' }}
                 >
                   View details
                 </button>

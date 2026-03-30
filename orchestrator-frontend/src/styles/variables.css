@@ -51,6 +51,14 @@
   /* Semantic Info Tokens */
   --color-info: #2563eb;
 
+  /* Accent Color (violet/purple) */
+  --color-accent: #7c3aed;
+  --color-accent-icon: #8b5cf6;
+
+  /* Link Color */
+  --color-link: #2563eb;
+  --color-link-hover: #1d4ed8;
+
   /* Status Colors - Success */
   --color-status-success-bg: #dcfce7;
   --color-status-success-text: #166534;
@@ -216,6 +224,14 @@
 
   /* Semantic Info Tokens (dark) */
   --color-info: #60a5fa;
+
+  /* Accent Color (dark) */
+  --color-accent: #a78bfa;
+  --color-accent-icon: #c4b5fd;
+
+  /* Link Color (dark) */
+  --color-link: #60a5fa;
+  --color-link-hover: #93c5fd;
 
   /* Ledger / Financial (dark) */
   --color-debit: #60a5fa;

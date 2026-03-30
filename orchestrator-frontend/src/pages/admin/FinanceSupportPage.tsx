@@ -249,17 +249,17 @@ function LedgerTab({ entries, isLoading }: { entries: LedgerEntry[]; isLoading: 
         <StatCard
           label="Total Debit"
           value={formatCurrency(totalDebit)}
-          icon={<TrendingUp size={16} className="text-emerald-600" />}
+          icon={<TrendingUp size={16} style={{ color: 'var(--color-success-icon)' }} />}
         />
         <StatCard
           label="Total Credit"
           value={formatCurrency(totalCredit)}
-          icon={<Receipt size={16} className="text-blue-600" />}
+          icon={<Receipt size={16} style={{ color: 'var(--color-debit)' }} />}
         />
         <StatCard
           label="Net Balance"
           value={formatCurrency(entries[entries.length - 1]?.balance || 0)}
-          icon={<FileText size={16} className="text-violet-600" />}
+          icon={<FileText size={16} style={{ color: 'var(--color-accent-icon)' }} />}
         />
       </div>
 
@@ -286,8 +286,8 @@ function LedgerTab({ entries, isLoading }: { entries: LedgerEntry[]; isLoading: 
               </div>
               <p className="text-[13px] text-[var(--color-text-primary)]">{row.description || row.reference || '—'}</p>
               <div className="flex items-center gap-4 pt-1">
-                {row.debit > 0 && <span className="text-[12px] text-emerald-600">Dr: {formatCurrency(row.debit)}</span>}
-                {row.credit > 0 && <span className="text-[12px] text-blue-600">Cr: {formatCurrency(row.credit)}</span>}
+                {row.debit > 0 && <span className="text-[12px]" style={{ color: 'var(--color-credit)' }}>Dr: {formatCurrency(row.debit)}</span>}
+                {row.credit > 0 && <span className="text-[12px]" style={{ color: 'var(--color-debit)' }}>Cr: {formatCurrency(row.credit)}</span>}
               </div>
             </div>
           )}
@@ -361,17 +361,17 @@ function InvoicesTab({ invoices, isLoading }: { invoices: FinanceInvoice[]; isLo
         <StatCard
           label="Total Invoiced"
           value={formatCurrency(totalAmount)}
-          icon={<FileText size={16} className="text-violet-600" />}
+          icon={<FileText size={16} style={{ color: 'var(--color-accent-icon)' }} />}
         />
         <StatCard
           label="Outstanding"
           value={formatCurrency(outstandingAmount)}
-          icon={<AlertCircle size={16} className="text-amber-600" />}
+          icon={<AlertCircle size={16} style={{ color: 'var(--color-warning-icon)' }} />}
         />
         <StatCard
           label="Paid"
           value={`${paidCount} invoices`}
-          icon={<Receipt size={16} className="text-emerald-600" />}
+          icon={<Receipt size={16} style={{ color: 'var(--color-success-icon)' }} />}
         />
       </div>
 
