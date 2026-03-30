@@ -1,0 +1,129 @@
+{
+  "groupId": "group3-roles-companies",
+  "testedAt": "2026-03-30T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / MOCK",
+    "session": "304a7ae37667__g3"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-009",
+      "title": "Roles List Renders with Permissions",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/roles", "expected": "Roles table with role names and permission counts", "observed": "Roles table renders with 5 roles: ROLE_ADMIN (7 perms), ROLE_ACCOUNTING (3), ROLE_FACTORY (3), ROLE_SALES (1), ROLE_DEALER (1)" },
+        { "action": "Click 'View role details' on ROLE_ADMIN", "expected": "Expandable detail shows permissions", "observed": "Detail panel opens showing ROLE_ADMIN with 7 permissions: portal:factory, payroll.run, factory.dispatch, portal:accounting, portal:sales, portal:dealer, dispatch.confirm" },
+        { "action": "Check browser console for errors", "expected": "No console errors", "observed": "No console errors" }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-009-roles-list.png", "admin-portal/group3/VAL-ADMIN-009-roles-expanded.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/admin/roles -> 200 (via proxy)"
+      },
+      "issues": "Dates show 'Invalid Date' for Created and Updated fields in role detail panel"
+    },
+    {
+      "id": "VAL-ADMIN-010",
+      "title": "Create Role with Permissions",
+      "status": "blocked",
+      "steps": [
+        { "action": "Navigate to /admin/roles", "expected": "Create Role button available", "observed": "No Create Role button found. Page displays: 'Role creation is managed by platform administrators. Contact your platform team to add new roles.'" },
+        { "action": "Attempt to find Create Role form", "expected": "Form with name, description, permission checkboxes", "observed": "No create role functionality available for tenant admin. Role creation is restricted to platform administrators (superadmin)." }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-009-roles-list.png"],
+        "consoleErrors": "none",
+        "network": "N/A - no create action available"
+      },
+      "issues": "Create Role is not available for tenant admin (ROLE_ADMIN). The page explicitly states role creation is managed by platform administrators. This may be by design (RBAC restriction) but the assertion assumes a create form should exist."
+    },
+    {
+      "id": "VAL-ADMIN-011",
+      "title": "Companies List Shows Active Tenants",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/companies", "expected": "DataTable shows companies with status badges", "observed": "DataTable renders with 1 company: MOCK (Mock Training Co), status: Inactive badge" },
+        { "action": "Test search filter with 'NonExistent'", "expected": "Filter works, shows no results", "observed": "Search filter works correctly — shows 'No companies found' when filtering with non-matching text" },
+        { "action": "Clear search filter", "expected": "Company reappears", "observed": "Company row reappears after clearing filter" },
+        { "action": "Check browser console for errors", "expected": "No console errors", "observed": "No console errors" }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-011-companies-list.png", "admin-portal/group3/VAL-ADMIN-011-companies-filter.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/admin/companies -> 200 (via proxy)"
+      },
+      "issues": "Only 1 company in test data (MOCK). Status shows 'Inactive' which may be a data issue rather than a UI issue. Company code, name, email, GST, and status columns all present."
+    },
+    {
+      "id": "VAL-ADMIN-012",
+      "title": "Company Detail Shows Full Information",
+      "status": "fail",
+      "steps": [
+        { "action": "Navigate to /admin/companies", "expected": "Company rows in table", "observed": "1 company row rendered (MOCK - Mock Training Co)" },
+        { "action": "Click on company row for detail view", "expected": "Detail view shows company info, subscription, users count, settings", "observed": "Company rows are not clickable — no onclick handler on table rows. No /admin/companies/:id route exists in the frontend." },
+        { "action": "Click 'Edit company' button instead", "expected": "At minimum see company information", "observed": "Edit Company dialog opens with form fields: Company Name (Mock Training Co), Company Code (MOCK, disabled), Email, Phone, Address, GST Number. No subscription, users count, or settings information shown." }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-012-company-detail.png"],
+        "consoleErrors": "none",
+        "network": "N/A - no detail page navigation"
+      },
+      "issues": "No company detail page exists. There is no /admin/companies/:id route. The only way to view company info is through the Edit Company dialog, which shows a simple edit form without subscription info, user count, or settings sections. The assertion expects a full detail view that does not exist in the current implementation."
+    },
+    {
+      "id": "VAL-ADMIN-013",
+      "title": "Settings Page Renders Configuration Sections",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/settings", "expected": "Configuration sections render (general, email, integrations)", "observed": "Settings page renders with 4 sections: General (Company Name, Currency, Timezone, Date Format), Approvals (Auto-Approval Threshold, Period Lock, Export Approval Required), Email (SMTP Host, SMTP Port, From Email, From Name, Email Notifications), Advanced (CORS Allowed Origins)" },
+        { "action": "Check for interactive elements / save button", "expected": "Values editable and saveable", "observed": "No interactive elements on page — all values display as read-only text. Page states: 'Global settings are managed by platform administrators.' This is expected for tenant admin since PUT /admin/settings requires SUPER_ADMIN." },
+        { "action": "Check browser console for errors", "expected": "No console errors", "observed": "No console errors" }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-013-settings.png", "admin-portal/group3/VAL-ADMIN-013-settings-full.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/admin/settings -> 200 (via proxy)"
+      },
+      "issues": "All settings values display as '—' (dash), indicating either the backend returns null/empty values or the GET endpoint doesn't return setting data for tenant admin. The page is read-only for tenant admin (expected per task note). No save button present."
+    },
+    {
+      "id": "VAL-ADMIN-025",
+      "title": "Portal Insights Dashboard View",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/portal-insights", "expected": "Dashboard with charts, key metrics, trends", "observed": "Dashboard renders with tab navigation (Dashboard, Operations, Workforce) and Key Highlights section showing 3 metrics: Revenue run rate (₹1180.00, Last 30d: ₹0.00), Fulfilment SLA (0.0%, Awaiting fulfilment data), Dealer coverage (3 Connected dealer entities)" },
+        { "action": "Check browser console for errors", "expected": "No console errors", "observed": "No console errors" }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group3/VAL-ADMIN-025-portal-insights.png", "admin-portal/group3/VAL-ADMIN-025-portal-insights-full.png"],
+        "consoleErrors": "none",
+        "network": "API calls completed without errors"
+      },
+      "issues": "Dashboard shows key metrics but limited chart/trend data in the visible area. The page is not empty — it renders metrics. Fulfilment SLA shows 'Awaiting fulfilment data' suggesting some data hasn't been populated yet."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Role detail panel shows 'Invalid Date' for Created and Updated timestamps — likely a date parsing issue from the backend response",
+      "resolved": false,
+      "resolution": "Not resolved — appears to be a frontend date formatting bug",
+      "affectedAssertions": ["VAL-ADMIN-009"]
+    },
+    {
+      "description": "Settings page displays all values as '—' (dash) rather than actual values or meaningful placeholders",
+      "resolved": false,
+      "resolution": "Not resolved — may be backend returning empty settings or tenant admin not having read access to settings values",
+      "affectedAssertions": ["VAL-ADMIN-013"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "VAL-ADMIN-010: Create Role form not available for tenant admin. Page states role creation is managed by platform administrators. No create button or form exists for ROLE_ADMIN users.",
+      "affectedAssertions": ["VAL-ADMIN-010"],
+      "quickFixAttempted": "Searched for any clickable element that could trigger role creation — none found. The restriction appears intentional per RBAC design."
+    }
+  ],
+  "summary": "Tested 6 assertions: 4 passed, 1 failed (VAL-ADMIN-012: no company detail page exists), 1 blocked (VAL-ADMIN-010: create role restricted to platform admin). Key findings: roles page renders well with expandable permissions; companies list works but lacks a detail view page; settings page renders read-only for tenant admin; portal insights shows key metrics dashboard."
+}

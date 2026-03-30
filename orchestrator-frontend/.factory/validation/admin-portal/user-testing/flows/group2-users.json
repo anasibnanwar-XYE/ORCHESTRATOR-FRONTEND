@@ -1,0 +1,216 @@
+{
+  "groupId": "group2-users",
+  "testedAt": "2026-03-30T00:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": {
+      "email": "validation.admin@example.com",
+      "companyCode": "MOCK"
+    },
+    "agentBrowserSession": "304a7ae37667__g2b"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-003",
+      "title": "Users List Loads with Pagination",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/users",
+          "expected": "DataTable renders with user rows and pagination controls",
+          "observed": "DataTable rendered 7 user rows with columns: User, Email, Role, Status. All users visible (Validation Admin, Accounting, Sales, Factory, Dealer, Super Admin, UTest Validate G2 Edited). Pagination shows '1–7 of 7'."
+        },
+        {
+          "action": "Change page size selector from 10 to 25 rows",
+          "expected": "Page size selector is functional",
+          "observed": "Combobox with options: 10 rows (selected), 25 rows, 50 rows. Successfully changed to 25 and back to 10."
+        },
+        {
+          "action": "Verify pagination controls",
+          "expected": "Previous/Next buttons present and disabled for single page",
+          "observed": "Previous and Next buttons present but disabled (only 1 page of data)."
+        },
+        {
+          "action": "Check console for errors",
+          "expected": "No JS errors",
+          "observed": "No console errors on this page."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-003-users-list.png",
+          "admin-portal/group2/VAL-ADMIN-003-pagination-test.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/users -> 200 (from network history)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-004",
+      "title": "Create User Form Validates and Submits",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Click 'Add User' button on /admin/users",
+          "expected": "Create user form renders with required fields",
+          "observed": "Modal dialog opens with Email, Display Name textboxes, Roles checkboxes (ROLE_ADMIN, ROLE_ACCOUNTING, ROLE_FACTORY, ROLE_SALES, ROLE_DEALER), Companies checkbox (Mock Training Co), and Cancel/Create User buttons."
+        },
+        {
+          "action": "Click 'Create User' with empty form",
+          "expected": "Validation fires showing required field errors",
+          "observed": "Validation errors displayed: 'Email is required' and 'Display name is required' shown as P elements with error styling. 8 error/invalid elements found in DOM."
+        },
+        {
+          "action": "Fill form with unique test data and submit",
+          "expected": "POST /api/v1/admin/users returns 201, user added to list",
+          "observed": "POST /api/v1/admin/users returns 500 (Internal Server Error). Toast notification shows 'Failed to create user: Request failed with status code 500'. Tried multiple variations: single role (ROLE_ACCOUNTING), single role (ROLE_ADMIN), always 500. User NOT added to list."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-004-create-user-form.png",
+          "admin-portal/group2/VAL-ADMIN-004-validation-errors.png",
+          "admin-portal/group2/VAL-ADMIN-004-form-filled.png",
+          "admin-portal/group2/VAL-ADMIN-004-after-create.png"
+        ],
+        "consoleErrors": "Request failed with status code 500 (from failed POST attempts)",
+        "network": "POST /api/v1/admin/users -> 500 (repeated, 8+ attempts)"
+      },
+      "issues": "Create user form renders and validates correctly, but backend POST /api/v1/admin/users returns 500 for all attempted payloads. The form UI works (validation, field rendering), but the create action cannot complete due to backend error. Likely a backend issue with the user creation endpoint."
+    },
+    {
+      "id": "VAL-ADMIN-005",
+      "title": "Edit User Updates Fields",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click row action button on 'Validation Dealer' row, then click Edit",
+          "expected": "Edit form opens with pre-filled current data",
+          "observed": "Action dropdown shows View, Edit, Suspend, Force reset password, Delete. Clicking Edit opens 'Edit User' dialog with Email pre-filled as 'validation.dealer@example.com', Display Name as 'Validation Dealer', ROLE_DEALER checkbox checked, Mock Training Co checkbox checked."
+        },
+        {
+          "action": "Change display name to 'Validation Dealer Edited' and click Save Changes",
+          "expected": "PUT request sent, user data updated in list",
+          "observed": "PUT /api/v1/admin/users/5 sent successfully. No error toast. List refreshed."
+        },
+        {
+          "action": "Verify updated data in users list",
+          "expected": "Display name shows 'Validation Dealer Edited'",
+          "observed": "User list row now shows 'Validation Dealer Edited' instead of 'Validation Dealer'. Update confirmed."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-005-edit-form.png",
+          "admin-portal/group2/VAL-ADMIN-005-edit-user-form.png",
+          "admin-portal/group2/VAL-ADMIN-005-after-edit.png"
+        ],
+        "consoleErrors": "Previous 500 errors from create user attempts only; no new errors from edit.",
+        "network": "PUT /api/v1/admin/users/5 -> success (200/204), followed by GET /api/v1/admin/users refresh"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-006",
+      "title": "Suspend User Changes Status",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Click row action button on a user row to open dropdown menu",
+          "expected": "Dropdown menu with Suspend option appears",
+          "observed": "Dropdown menu shows: View, Edit, Suspend, Force reset password, Delete. Suspend button present."
+        },
+        {
+          "action": "Click 'Suspend' button in dropdown",
+          "expected": "Confirmation dialog shown, user status changes to suspended",
+          "observed": "Clicking 'Suspend' opens the 'User Details' dialog (same as clicking View/row) instead of showing a confirmation dialog. No API call made. No status change. The row click event handler appears to fire instead of the dropdown button's handler."
+        },
+        {
+          "action": "Multiple attempts with different users (Validation Factory, UTest Validate G2 Edited)",
+          "expected": "Confirmation dialog should appear for suspend",
+          "observed": "Same behavior on all attempts - clicking Suspend in the dropdown opens the User Details dialog. No confirmation dialog. No suspend API call. No status change."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-006-action-menu.png",
+          "admin-portal/group2/VAL-ADMIN-006-dropdown-with-suspend.png",
+          "admin-portal/group2/VAL-ADMIN-006-after-suspend-click.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No suspend API call detected in network requests"
+      },
+      "issues": "UI bug: The Suspend button in the row action dropdown does not work. Clicking it triggers the row's onClick handler which opens the User Details dialog, rather than the button's own handler which should show a suspend confirmation. The dropdown action buttons (Suspend, Force reset password) appear to be non-functional due to event propagation issues."
+    },
+    {
+      "id": "VAL-ADMIN-007",
+      "title": "Force Password Reset Triggers Flag",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Click row action button on 'Validation Accounting' row",
+          "expected": "Dropdown menu with 'Force reset password' option",
+          "observed": "Dropdown menu shows: View, Edit, Suspend, Force reset password, Delete. 'Force reset password' button present."
+        },
+        {
+          "action": "Click 'Force reset password' button",
+          "expected": "API call succeeds, user flagged for password change, toast notification",
+          "observed": "Clicking 'Force reset password' opens the 'User Details' dialog instead of triggering the force-reset action. Same bug as Suspend - the row click handler fires instead of the button handler. No API call made. No toast notification."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-007-dropdown-with-force-reset.png",
+          "admin-portal/group2/VAL-ADMIN-007-after-force-reset.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No force-reset API call detected in network requests"
+      },
+      "issues": "Same UI bug as VAL-ADMIN-006: The 'Force reset password' dropdown button click is intercepted by the row's onClick handler, opening User Details instead of triggering the action. The dropdown action buttons are non-functional."
+    },
+    {
+      "id": "VAL-ADMIN-008",
+      "title": "Disable MFA for User",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Check all users in the list for MFA status",
+          "expected": "At least one user with MFA enabled to test disable action",
+          "observed": "All 7 users show 'No MFA' in the expanded card view. User Details dialog for tested users shows 'MFA Status: Not enabled'. The row action dropdowns show: View, Edit, Suspend, Force reset password, Delete — no 'Disable MFA' option present (likely conditionally rendered only for MFA-enabled users)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/group2/VAL-ADMIN-008-no-mfa-users.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No MFA-related API calls"
+      },
+      "issues": "Blocked: No users in the test data have MFA enabled. All users show 'No MFA' / 'Not enabled'. Cannot test the Disable MFA functionality without a user that has MFA active. Note: Even if a user had MFA enabled, the dropdown action buttons (Suspend, Force reset password) are currently broken due to event propagation issues, so Disable MFA would likely also be broken."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Row action dropdown buttons (Suspend, Force reset password, Delete) do not work — clicking them triggers the row's onClick handler (opening User Details) instead of the button's own action. This makes it impossible to test VAL-ADMIN-006 and VAL-ADMIN-007 through the dropdown menu.",
+      "resolved": false,
+      "resolution": "Could not resolve — appears to be a frontend event propagation bug in the DataTable row action dropdown",
+      "affectedAssertions": ["VAL-ADMIN-006", "VAL-ADMIN-007", "VAL-ADMIN-008"]
+    },
+    {
+      "description": "Create user always returns HTTP 500 from backend regardless of payload (tried single role, multiple roles, different email patterns). The form UI works correctly but backend rejects the creation.",
+      "resolved": false,
+      "resolution": "Backend issue — POST /api/v1/admin/users returns 500 for all payloads tested",
+      "affectedAssertions": ["VAL-ADMIN-004"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "No users have MFA enabled in the test data — cannot test VAL-ADMIN-008 Disable MFA functionality",
+      "affectedAssertions": ["VAL-ADMIN-008"],
+      "quickFixAttempted": "Checked all 7 users in the list — all show 'No MFA' / 'Not enabled' in both card view and detail dialog"
+    }
+  ],
+  "summary": "Tested 6 assertions: 2 passed (VAL-ADMIN-003: Users List with Pagination, VAL-ADMIN-005: Edit User), 3 failed (VAL-ADMIN-004: Create User returns 500, VAL-ADMIN-006: Suspend button broken, VAL-ADMIN-007: Force Reset Password button broken), 1 blocked (VAL-ADMIN-008: no MFA-enabled users). Key findings: (1) Row action dropdown buttons are non-functional due to event propagation bug — clicking Suspend/Force Reset opens User Details instead. (2) Create User POST endpoint returns 500 from backend. (3) Edit User works correctly with pre-filled form and successful PUT."
+}

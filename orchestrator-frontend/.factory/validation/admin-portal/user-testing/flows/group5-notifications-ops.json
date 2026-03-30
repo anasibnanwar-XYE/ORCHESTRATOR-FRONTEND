@@ -1,0 +1,131 @@
+{
+  "groupId": "group5-notifications-ops",
+  "testedAt": "2026-03-30T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": {
+      "email": "validation.admin@example.com",
+      "companyCode": "MOCK"
+    },
+    "browserSession": "304a7ae37667__g5"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-018",
+      "title": "Changelog Management Lists Entries",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Navigate to /admin/changelog",
+          "expected": "Changelog entries listed with version, date, content preview",
+          "observed": "Page renders with heading 'Changelog' and description 'Product updates and release notes', but shows empty state: 'No entries yet' with message 'Check back after the next release.'"
+        },
+        {
+          "action": "Check for changelog entries",
+          "expected": "List of entries with version, date, content preview",
+          "observed": "Empty list — no changelog entries exist in the system. Page displays informational text: 'Changelog entries are managed by the platform team. Contact your superadmin to publish or update entries.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-018-changelog-page.png"],
+        "consoleErrors": "none",
+        "network": "Page loaded successfully, no API errors"
+      },
+      "issues": "Changelog list is empty — no entries have been created in the backend. The page structure renders correctly (heading, description, info message, empty state) but there are no entries to display. This is likely a data issue (no seed data) rather than a UI bug. The page correctly shows an empty state instead of a broken view."
+    },
+    {
+      "id": "VAL-ADMIN-019",
+      "title": "Create Changelog Entry",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/changelog and look for create/edit/delete buttons",
+          "expected": "No create/edit/delete buttons for tenant admin (read-only)",
+          "observed": "No create, edit, or delete buttons present. Only a 'Refresh changelog' button exists. Page displays: 'Changelog entries are managed by the platform team. Contact your superadmin to publish or update entries.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-019-changelog-no-create-button.png"],
+        "consoleErrors": "none",
+        "network": "Page loaded successfully"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-020",
+      "title": "WhatsNew Banner Displays for Unread Changelog",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Login as admin and check hub page for WhatsNew indicator",
+          "expected": "WhatsNew banner or indicator shown, clicking opens changelog",
+          "observed": "No WhatsNew indicator, banner, or unread badge visible on the hub page after login. Hub shows standard portal cards (Admin, Accounting, Sales, Factory) with no notification indicators."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-020-hub-after-login.png"],
+        "consoleErrors": "none",
+        "network": "No errors"
+      },
+      "issues": "No WhatsNew banner or indicator found anywhere on the hub or admin pages. Since no changelog entries exist in the system, there may be no 'unread' entries to trigger the banner. The feature may not be implemented or may require actual changelog entries to test."
+    },
+    {
+      "id": "VAL-ADMIN-021",
+      "title": "Notifications Page Lists System Notifications",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Navigate to /admin/notifications",
+          "expected": "Notifications render with timestamp, type, message, read/unread status",
+          "observed": "Page shows a 'Send Notification' form (compose UI) with recipient selector, subject, body fields, and a 'Sent This Session' section showing '0 sent'. This is a notification composition page, NOT a notifications list page. There is no list of received system notifications with timestamps, types, or read/unread status."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-021-notifications-page.png"],
+        "consoleErrors": "none",
+        "network": "Page loaded successfully"
+      },
+      "issues": "The /admin/notifications page is a 'Send Notification' compose form rather than a notifications list/inbox. It allows sending notifications to users but does not display a list of system notifications with timestamp, type, message, and read/unread status as expected by the assertion. The assertion expects a notifications inbox/list view, but the page provides only a compose interface."
+    },
+    {
+      "id": "VAL-ADMIN-028",
+      "title": "Tenant Runtime View Shows Active Tenants",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Navigate to /admin/tenant-runtime",
+          "expected": "Active tenants with resource usage, connection status render",
+          "observed": "Page renders with 'Tenant Runtime' heading. Shows 'Runtime Metrics' section with error: 'Failed to load runtime metrics.' and a Retry button. Shows 'Security Policy' section with session timeout (60 min), password min length (10), max login attempts (5), password complexity (Uppercase, Numbers, Symbols), MFA required (Disabled). No active tenants, resource usage, or connection status data displayed."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-028-tenant-runtime.png"],
+        "consoleErrors": "none",
+        "network": "Runtime metrics API call failed — 'Failed to load runtime metrics' displayed"
+      },
+      "issues": "Runtime Metrics section shows 'Failed to load runtime metrics' error. The Security Policy section renders correctly with policy values. No tenant list, resource usage, or connection status is displayed. The page may not be designed to show a tenant list (it's in the admin portal, not superadmin) — it shows the current tenant's runtime info. The backend endpoint for runtime metrics may not exist or may be returning an error."
+    },
+    {
+      "id": "VAL-ADMIN-029",
+      "title": "Operations Control Panel",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Navigate to /admin/operations",
+          "expected": "Operational controls (cache clear, job triggers, health checks) render with action buttons",
+          "observed": "Page renders as an operations dashboard/overview, NOT a control panel. Shows: Revenue run rate (₹1180.00), Fulfilment SLA (0.0%), Dealer coverage (3), Order Pipeline (0 orders, 0 dispatch, 0 delivery), Workforce Pulse (headcount, joiners, suspended — all '—'), and Quick Actions (Manage Users, View Approvals, Manage Roles, Settings buttons). No cache clear, job trigger, or health check controls present."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/group5/VAL-ADMIN-029-operations.png"],
+        "consoleErrors": "none",
+        "network": "Page loaded successfully"
+      },
+      "issues": "The /admin/operations page is an operational dashboard showing KPIs and metrics rather than a control panel with operational controls (cache clear, job triggers, health checks). The page shows revenue, fulfilment SLA, dealer coverage, order pipeline, and workforce data. The Quick Actions are navigation links (Manage Users, View Approvals, Manage Roles, Settings) rather than operational control buttons. The assertion expects cache clear, job triggers, and health check controls which do not exist on this page."
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 6 assertions: 1 passed, 5 failed. VAL-ADMIN-019 passed — changelog is correctly read-only for tenant admin (no create/edit/delete buttons). VAL-ADMIN-018 failed due to empty changelog (no seed data). VAL-ADMIN-020 failed — no WhatsNew indicator found (may require actual changelog entries). VAL-ADMIN-021 failed — page is a 'Send Notification' compose form, not a notifications inbox/list. VAL-ADMIN-028 failed — runtime metrics failed to load, no tenant list shown. VAL-ADMIN-029 failed — page is an operational dashboard with KPIs, not a control panel with cache clear/job triggers/health checks."
+}

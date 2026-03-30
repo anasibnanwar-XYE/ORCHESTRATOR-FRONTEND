@@ -95,6 +95,68 @@ agent-browser validators MUST simulate real human behavior, not just test predef
 - Session keepalive: check network tab for periodic /auth/me requests while logged in
 - Command palette: Ctrl+K (not Cmd+K on Linux) to open
 
+## Flow Validator Guidance: Browser — Admin Portal Assertions (admin-portal milestone)
+
+### Isolation Rules
+- All 30 admin-portal assertions use agent-browser with admin login
+- Credentials: validation.admin@example.com / Validation1!cc18570e52fe48dd / company code: MOCK
+- Each subagent MUST use its own agent-browser session (session name includes group ID)
+- Read-only assertions (dashboard views, lists) can run in parallel
+- Mutating assertions (create user, approve/reject) should be grouped together
+- Do NOT delete or modify shared test data that other subagents depend on
+
+### Concurrency
+- Max 5 concurrent subagents (per Validation Concurrency section above)
+- 5 groups of ~6 assertions each, all running in parallel
+
+### Shared State to Avoid
+- Do NOT log out while another subagent is testing authenticated pages
+- Do NOT modify the admin user's own profile or MFA settings
+- Do NOT delete users that other subagents may be viewing
+- If creating test data, use unique names to avoid collisions
+
+### Assertion Groupings (5 groups for parallel execution)
+
+**Group 1 — Dashboard & Quick Actions (read-only):**
+- VAL-ADMIN-001: Dashboard KPI Cards
+- VAL-ADMIN-002: Dashboard Quick Actions Navigation
+- VAL-ADMIN-022: Orchestrator Dashboard Admin Tab
+- VAL-ADMIN-023: Orchestrator Dashboard Factory Tab
+- VAL-ADMIN-024: Orchestrator Dashboard Finance Tab
+- VAL-ADMIN-030: Admin Pages Responsive at 768px
+
+**Group 2 — Users CRUD (mutating):**
+- VAL-ADMIN-003: Users List with Pagination
+- VAL-ADMIN-004: Create User Form Validates and Submits
+- VAL-ADMIN-005: Edit User Updates Fields
+- VAL-ADMIN-006: Suspend User Changes Status
+- VAL-ADMIN-007: Force Password Reset Triggers Flag
+- VAL-ADMIN-008: Disable MFA for User
+
+**Group 3 — Roles, Companies, Settings (mostly read-only):**
+- VAL-ADMIN-009: Roles List with Permissions
+- VAL-ADMIN-010: Create Role with Permissions
+- VAL-ADMIN-011: Companies List Shows Active Tenants
+- VAL-ADMIN-012: Company Detail Shows Full Information
+- VAL-ADMIN-013: Settings Page Renders Configuration Sections
+- VAL-ADMIN-025: Portal Insights Dashboard View
+
+**Group 4 — Approvals & Exports (mutating):**
+- VAL-ADMIN-014: Approval Queue Shows Pending Items
+- VAL-ADMIN-015: Approve Action Processes Approval
+- VAL-ADMIN-016: Reject Action with Reason
+- VAL-ADMIN-017: Export Approvals Tab Shows Export Requests
+- VAL-ADMIN-026: Audit Trail Lists Business Events
+- VAL-ADMIN-027: Audit Trail ML Events Tab
+
+**Group 5 — Notifications, Changelog, Operations (mixed):**
+- VAL-ADMIN-018: Changelog Management Lists Entries
+- VAL-ADMIN-019: Create Changelog Entry (may be read-only for admin)
+- VAL-ADMIN-020: WhatsNew Banner Displays for Unread Changelog
+- VAL-ADMIN-021: Notifications Page Lists System Notifications
+- VAL-ADMIN-028: Tenant Runtime View Shows Active Tenants
+- VAL-ADMIN-029: Operations Control Panel
+
 ## Known Testing Constraints
 
 - HR/Payroll module is on hold - skip any HR/payroll testing
