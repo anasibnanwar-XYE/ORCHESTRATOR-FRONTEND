@@ -20,6 +20,7 @@ dist-ssr/
 # Environment files
 .env.local
 .env.*.local
+.env.test
 
 # Type generation
 src/lib/client/__generated__/

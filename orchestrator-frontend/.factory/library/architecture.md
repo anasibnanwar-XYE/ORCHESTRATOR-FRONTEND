@@ -5,7 +5,7 @@
 Multi-portal ERP frontend serving 6 user roles through portal-isolated views. React SPA with Vite dev server proxying to Spring Boot backend.
 
 ```
-Browser/Electron → Vite (3002) → Proxy → Spring Boot API (8081) → PostgreSQL (5433)
+Browser/Electron → Vite (3002) → Proxy → Spring Boot API (8081) → PostgreSQL
 ```
 
 ## Portal Architecture
@@ -19,82 +19,61 @@ Browser/Electron → Vite (3002) → Proxy → Spring Boot API (8081) → Postgr
 | Dealer | `/dealer/*` | ROLE_DEALER | DealerLayout |
 | Superadmin | `/superadmin/*` | ROLE_SUPER_ADMIN | SuperadminLayout |
 
+## Admin Portal Routes (Current)
+
+| Route | Page | API Endpoints |
+|---|---|---|
+| `/admin` | AdminDashboardPage | GET /portal/dashboard |
+| `/admin/users` | UsersPage | GET/POST/PUT/DELETE /admin/users, PATCH suspend/unsuspend/mfa |
+| `/admin/roles` | RolesPage | GET /admin/roles, GET /admin/roles/{key} |
+| `/admin/approvals` | ApprovalsPage | GET /admin/approvals, POST/PUT approve/reject endpoints |
+| `/admin/notifications` | NotificationsPage | POST /admin/notify, GET /admin/users |
+| `/admin/changelog` | ChangelogPage | GET /changelog, GET /changelog/latest-highlighted |
+| `/admin/audit-trail` | AuditTrailPage | GET /admin/audit/events, GET /accounting/audit/events |
+| `/admin/settings` | SettingsPage | GET /admin/settings (read-only for ROLE_ADMIN) |
+| `/admin/finance` | FinanceSupportPage | GET /portal/finance/ledger,invoices,aging |
+| `/admin/support` | SupportTicketsPage | GET/POST /portal/support/tickets |
+
 ## Auth Flow
 
-1. User hits `/login` → enters email + password + companyCode
-2. Backend returns JWT access + refresh tokens + session info
-3. If `mfaRequired` → redirect to `/mfa` for TOTP verification
-4. If `mustChangePassword` → redirect to `/change-password`
-5. On success → redirect to portal hub or default portal
-6. Company switch: uses `POST /auth/refresh-token` with new companyCode (NOT /multi-company/companies/switch)
-7. 4-minute keepalive interval refreshes session
+1. POST /auth/login → JWT tokens (unwrapped response)
+2. If mfaRequired → /mfa page
+3. If mustChangePassword → /change-password
+4. GET /auth/me → session bootstrap (roles, permissions, modules)
+5. Auto refresh via POST /auth/refresh-token
+6. 4-minute keepalive via GET /auth/me
 
 ## Code Organization
 
 ```
 src/
-├── App.tsx              # Main router (43KB - all routes defined here)
-├── main.tsx             # React entry point
-├── components/
-│   ├── ui/              # Shared UI components (design system)
-│   ├── CommandPalette.tsx
-│   ├── CompanySwitcher.tsx
-│   └── ErrorBoundary.tsx
-├── context/
-│   └── AuthContext.tsx   # Auth state, session management
-├── hooks/
-│   └── useTheme.ts      # Dark/light mode toggle
-├── layouts/
-│   ├── AdminLayout.tsx
-│   ├── AccountingLayout.tsx
-│   ├── SalesLayout.tsx
-│   ├── FactoryLayout.tsx
-│   ├── DealerLayout.tsx
-│   └── SuperadminLayout.tsx
-├── lib/
-│   ├── api.ts           # Axios instance, interceptors, auth headers
-│   ├── authApi.ts       # Auth endpoints
-│   ├── adminApi.ts      # Admin + orchestrator + changelog APIs
-│   ├── accountingApi.ts # All accounting endpoints
-│   └── error-resolver.ts
-├── pages/
-│   ├── auth/            # Login, MFA, password flows, portal hub
-│   ├── admin/           # Admin portal pages
-│   ├── accounting/      # Accounting portal pages
-│   ├── sales/           # Sales portal pages
-│   ├── factory/         # Factory portal pages
-│   ├── dealer/          # Dealer portal pages
-│   └── superadmin/      # Superadmin portal pages
-├── styles/
-│   └── variables.css    # CSS custom properties (colors, spacing, shadows)
-└── types/
-    └── index.ts         # All TypeScript interfaces
+├── App.tsx              # Main router (all routes)
+├── components/ui/       # Shared component library (60+ components)
+├── context/AuthContext   # Auth state, tokens, session
+├── hooks/               # useTheme, useApiQuery, useBackgroundFetch
+├── layouts/             # Portal layouts (use shared Sidebar component)
+├── lib/                 # API layer (axios + typed functions)
+├── pages/               # Portal pages organized by role
+├── styles/              # CSS variables (design tokens)
+└── types/               # TypeScript interfaces
 ```
 
 ## Design System
 
-68+ reusable components in reference at `FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/components/ui/`.
-Production components in `src/components/ui/`. Key components:
-- DataTable (with mobile card renderer)
-- Modal (auto bottom-sheet on mobile)
-- Drawer, BottomSheet
-- Button, Input, Select, Checkbox, Radio, Switch
-- Badge, Tabs, Tooltip, Toast
-- Sidebar, TopBar, Breadcrumb, PageHeader
-- StatCard, EmptyState, Skeleton, Loader
-- ResponsiveContainer, ResponsiveGrid, Stack
+Shared components in `src/components/ui/`:
+- Layout: Sidebar, PageHeader, Breadcrumb, TopBar, ResponsiveContainer
+- Data: DataTable (with mobileCardRenderer), StatCard, Badge, EmptyState
+- Forms: Input, Select, Combobox, Checkbox, Radio, Switch, RoleSelector
+- Feedback: Toast, Skeleton, Loader, ProgressBar, Alert
+- Overlay: Modal, Drawer, BottomSheet, ConfirmDialog, DropdownMenu
+- Navigation: Tabs, Accordion, Stepper
+
+CSS variables define colors, spacing, shadows, border-radius in `styles/variables.css`. Dark mode switches variables via `.dark` class on html.
 
 ## Data Flow
 
 1. Pages call API functions from `src/lib/`
-2. API functions use shared axios instance with auth interceptors
-3. Response data stored in component state (useState)
-4. No global state management beyond AuthContext
-5. No caching layer (SWR/React Query) - currently manual useEffect fetching
-
-## Key Invariants
-
-- Company context enforced by JWT claims + X-Company-Code/X-Company-Id headers
-- Portal isolation via route guards (RequireAuth, RequirePortal, RequireNonSuperadmin)
-- Module gating via `enabledModules` from auth session
-- Role hierarchy: SUPER_ADMIN > ADMIN (backend-enforced)
+2. Axios instance adds auth headers via interceptors
+3. 401 responses trigger automatic token refresh
+4. Response data stored in component state (useState/useReducer)
+5. No global cache — manual useEffect fetching per page

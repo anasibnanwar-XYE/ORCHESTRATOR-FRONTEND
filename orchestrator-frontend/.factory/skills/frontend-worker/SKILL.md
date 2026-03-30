@@ -1,6 +1,6 @@
 ---
 name: frontend-worker
-description: Implements frontend features for the ERP multi-portal application
+description: Implements frontend features for the ERP admin portal — UI polish, API integration, design unification, responsive fixes
 ---
 
 # Frontend Worker
@@ -9,11 +9,11 @@ NOTE: Startup and cleanup are handled by `worker-base`. This skill defines the W
 
 ## When to Use This Skill
 
-Any frontend implementation feature: page builds, component work, API integration, responsiveness fixes, design system bridging, UX improvements, cleanup, or test writing.
+Any frontend implementation feature: page polish, component unification, API integration fixes, responsive/dark mode fixes, design system adoption, UX improvements, or test writing.
 
 ## Required Skills
 
-- `frontend-design` — Invoke FIRST before any UI implementation. This skill focuses on design quality, visual hierarchy, composition, and user experience. Use it for ALL page builds, component work, and UX improvements. The design bar is set by the login page (AuthLayout.tsx) — typography-driven, minimal, deliberate, no visual clutter.
+- `frontend-skill` — Invoke FIRST before any UI implementation. Provides guidance on visual composition, hierarchy, spacing, and quality. The design bar is set by the existing auth pages (AuthLayout.tsx) — typography-driven, minimal, deliberate.
 - `agent-browser` — For manual verification of UI changes. Invoke after implementation to verify pages render correctly, flows work end-to-end, responsive behavior is correct, and visual quality meets standards.
 
 ## Work Procedure
@@ -21,135 +21,105 @@ Any frontend implementation feature: page builds, component work, API integratio
 ### 1. Read Context First (MANDATORY)
 
 Before writing ANY code:
-- Read `.factory/library/api-mismatches.md` — critical API path/shape issues
-- Read `.factory/library/rbac.md` — role boundaries for the portal you're working on
 - Read `.factory/library/architecture.md` — code organization and patterns
 - Read the feature description carefully — it contains expected behavior and verification steps
-- Read the **DesignSystemBoard.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/DesignSystemBoard.tsx` — this is the GOLD STANDARD for layout, visual style, and hierarchy
-- Read the **ComponentShowcase.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/ComponentShowcase.tsx` — this shows ALL available components and how they look
-- Check `src/components/ui/` for already-bridged components. If a component exists in the design system but NOT in production, **bridge it first** (copy from design system, adapt imports) before using it
-- **NEVER build custom markup when a design system component exists.** Reuse StatCard, ApprovalCard, AuditLog, Timeline, LedgerCard, BarChart, Changelog, etc. Adapt labels/data but keep the component's design
+- Read `src/components/ui/index.ts` to know what shared components exist
+- Check `src/components/ui/` for available components before building anything custom
+- **NEVER build custom markup when a shared component exists.** Use StatCard, EmptyState, PageHeader, Badge, DataTable, Drawer, etc.
 
-### 2. Verify Backend Contracts (Use codebase-scout-assistant)
-
-For ANY API integration work, spawn **parallel `codebase-scout-assistant` subagents** via the Task tool to investigate the backend. Do NOT read backend files yourself — delegate to scouts for speed.
-
-**How to investigate backend:**
-- Spawn a `codebase-scout-assistant` with a prompt like: "Read the controller at /home/realnigga/Desktop/Mission-control/erp-domain/src/main/java/com/bigbrightpaints/erp/modules/{module}/controller/{Controller}.java. List all endpoints with HTTP method, path, @PreAuthorize, request/response DTOs."
-- Spawn multiple scouts in parallel if you need to check multiple modules
-- Also check `/home/realnigga/Desktop/Mission-control/openapi.json` for request/response shapes
-- Do NOT trust frontend docs — backend code is the source of truth
-- Test the endpoint with curl through the proxy: `curl -s http://localhost:3002/api/v1/...`
-
-**When an API call fails (404, 400, 500, unexpected response):**
-1. Immediately spawn parallel codebase-scout-assistants to read the relevant backend controllers
-2. The backend has changed significantly — many frontend pages have UI for features that no longer exist
-3. If the backend endpoint is gone or changed, fix the frontend to match reality
-4. If the entire feature's backend support is gone, return to orchestrator
-
-### 3. Invoke frontend-skill (MANDATORY for UI work)
+### 2. Invoke frontend-skill (MANDATORY for UI work)
 
 Before implementing any UI:
 - Invoke the `frontend-skill` via the Skill tool
 - Follow its guidance for composition, hierarchy, spacing, and visual quality
-- Ensure the result feels modern, clean, and human-designed — NOT AI-generated or cluttered
+- Ensure the result feels clean and production-grade
 
-### 4. Write Tests First (TDD)
+### 3. Write Tests First (TDD)
 
 - Write failing unit tests BEFORE implementation
 - Tests go in co-located `__tests__/` directories
 - Use Vitest + React Testing Library
 - Cover: rendering, user interactions, API call verification, error states, loading states, empty states
+- Mock API calls with vitest mocks (vi.mock)
 
-### 5. Implement
+### 4. Implement
 
 - Follow existing patterns in the codebase
-- Use design system components from `src/components/ui/` — never create one-off UI
-- Use CSS variables (`var(--color-*)`) — never hardcode hex colors
+- Use shared components from `src/components/ui/` — import from `@/components/ui`
+- Use CSS variables (`var(--color-*)`) — NEVER hardcode hex colors or use raw Tailwind color classes
 - Use DataTable for all tabular data with `mobileCardRenderer` for mobile
 - Use responsive Tailwind classes (`sm:`, `md:`, `lg:`)
-- Ensure all forms use `grid-cols-1 sm:grid-cols-2` (never fixed grid-cols-2)
-- Add proper empty states, loading states, and error states
-- Add tooltips for non-obvious actions
-- Add helper text for form fields with non-obvious constraints
-- Ensure destructive actions require confirmation dialogs
-- Background sync: implement stale-while-revalidate where appropriate
+- Forms: `grid-cols-1 sm:grid-cols-2` (never fixed grid-cols-2)
+- Add proper empty states (EmptyState component), loading states (Skeleton), and error states
+- Destructive actions require ConfirmDialog
+- 204 endpoints: check HTTP status (response.status === 204 or response.status < 300), NOT response.data.success
 
-### 6. Manual Verification (MANDATORY — Comprehensive)
+### 5. Manual Verification (MANDATORY)
 
-Use `agent-browser` to verify ALL of the following (not just flows):
+Use `agent-browser` to verify:
 
 **Functional:**
-- Page loads without errors (check browser console)
+- Page loads without console errors
 - Data displays correctly from real backend
-- Key user flows work end-to-end (CRUD, status transitions, etc.)
+- Key user flows work end-to-end
 
 **Visual Quality:**
-- Consistent use of design system components (Badge, Button, DataTable, etc.)
-- No hardcoded hex colors — all colors from CSS variables
+- Consistent use of design system components
+- No hardcoded hex colors
 - Proper spacing and typography
-- Empty states, loading states, error states all present and well-designed
-- Tooltips on non-obvious actions
-- Confirmation dialogs on destructive actions
+- Empty, loading, error states present
 
 **Responsiveness:**
-- Desktop (1366px+) renders correctly
-- Tablet (768px) adapts layout properly
-- Mobile (375px) uses card layouts for tables, single-column forms
-- No horizontal overflow at any breakpoint
-- Sidebar collapses on mobile
+- Desktop (1440px) renders correctly
+- Tablet (768px) adapts layout
+- Mobile (375px) uses card layouts, single-column forms
 
-**Consistency:**
-- Badge styles match other portals
-- Table patterns match other portals
-- Modal/drawer behavior matches other portals
-- Button hierarchy (primary/secondary/ghost/danger) is correct
+**Dark Mode:**
+- Toggle to dark mode — all colors switch correctly
+- No hardcoded colors visible
 
-Each verification = one `interactiveChecks` entry with full action sequence and outcome.
+Each verification = one `interactiveChecks` entry.
 
-### 7. Run Validators
+### 6. Run Validators
 
 ```bash
 cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend
-npx tsc --noEmit          # Must pass clean
-bun run test --run        # Must pass
+npx tsc --noEmit
+bun run test --run
 ```
 
-### 8. Commit
+Both must pass clean.
+
+### 7. Commit
 
 - Small, logical commits
-- Format: `fix(portal): description` or `feat(portal): description`
+- Format: `fix(admin): description` or `feat(admin): description`
 - Stage only files you changed
 
 ## Example Handoff
 
 ```json
 {
-  "salientSummary": "Fixed credit request API paths in salesApi.ts from /sales/credit-requests to /credit/limit-requests, redesigned SalesCreditRequestsPage with frontend-skill for clean visual hierarchy, added mobile card renderer, verified all flows end-to-end with agent-browser at 3 breakpoints.",
-  "whatWasImplemented": "Corrected 4 API endpoint paths for credit limit requests (list, create, approve, reject) to match backend /credit/limit-requests. Updated TypeScript types to match backend CreditLimitRequestDto. Redesigned page layout using frontend-skill guidance — clean stat cards, consistent Badge usage, proper empty state. Added responsive mobile card layout. Added toast feedback for approve/reject. Added confirmation dialog for reject action.",
+  "salientSummary": "Fixed 204 response handling for deleteUser/suspendUser/unsuspendUser/disableUserMfa in adminApi.ts. All four methods now check response.status instead of response.data.success. Updated UsersPage to handle 204 correctly. Verified full user lifecycle (create→suspend→unsuspend→delete) via agent-browser.",
+  "whatWasImplemented": "Updated deleteUser, suspendUser, unsuspendUser, disableUserMfa API functions to handle 204 No Content responses correctly by checking response.status < 300 instead of response.data.success. Updated UsersPage action handlers to work with the new response handling. Added tests for each 204 scenario.",
   "whatWasLeftUndone": "",
   "verification": {
     "commandsRun": [
       {"command": "npx tsc --noEmit", "exitCode": 0, "observation": "No type errors"},
-      {"command": "bun run test --run", "exitCode": 0, "observation": "14 tests passed"},
-      {"command": "curl -s -X POST http://localhost:3002/api/v1/auth/login -H 'Content-Type: application/json' -d '{...}' | head -c 80", "exitCode": 0, "observation": "Login successful"}
+      {"command": "bun run test --run", "exitCode": 0, "observation": "All tests passed"}
     ],
     "interactiveChecks": [
-      {"action": "Navigated to /sales/credit-requests at 1366px with sales user", "observed": "Page loads with DataTable showing credit requests. Stat cards show pending/approved/rejected counts. Badge styles consistent with other portals. No console errors."},
-      {"action": "Created new credit request, verified form validation and submission", "observed": "Form requires amount and reason. POST goes to /credit/limit-requests (correct). Success toast shown. Table refreshes."},
-      {"action": "Resized to 768px tablet width", "observed": "Layout adapts. Table still readable. Sidebar collapsed to hamburger. No overflow."},
-      {"action": "Resized to 375px mobile width", "observed": "DataTable switches to card layout. Each card shows dealer, amount, status badge. Touch targets 44px+. No horizontal scroll."},
-      {"action": "Tested empty state by filtering to no results", "observed": "EmptyState component renders with icon, message, and 'Create Request' CTA."},
-      {"action": "Tested dark mode toggle", "observed": "All colors switch correctly. No hardcoded hex visible. Badges, cards, table all use CSS variables."}
+      {"action": "Navigated to /admin/users, suspended a user via dropdown", "observed": "PATCH /admin/users/{id}/suspend returned 204. Toast 'User suspended' shown. Status badge changed to Suspended."},
+      {"action": "Unsuspended the same user", "observed": "PATCH returned 204. Status reverted to Active."},
+      {"action": "Deleted a test user", "observed": "DELETE returned 204. User removed from list. No console errors."},
+      {"action": "Tested at 375px mobile", "observed": "Cards render, actions dropdown works, no overflow."}
     ]
   },
   "tests": {
     "added": [
-      {"file": "src/pages/sales/__tests__/SalesCreditRequestsPage.test.tsx", "cases": [
-        {"name": "renders credit requests table", "verifies": "DataTable renders with correct columns"},
-        {"name": "creates new credit request", "verifies": "Form calls /credit/limit-requests POST"},
-        {"name": "shows empty state", "verifies": "EmptyState renders when no data"},
-        {"name": "responsive mobile layout", "verifies": "Card renderer active at narrow width"}
+      {"file": "src/lib/__tests__/adminApi.test.ts", "cases": [
+        {"name": "deleteUser handles 204", "verifies": "No JSON parsing on 204 response"},
+        {"name": "suspendUser handles 204", "verifies": "Returns success on 204 status"}
       ]}
     ]
   },
@@ -159,10 +129,9 @@ bun run test --run        # Must pass
 
 ## When to Return to Orchestrator
 
-- Backend endpoint does not exist or returns unexpected shape not in api-mismatches.md
-- Feature requires changes to multiple portals simultaneously (scope too broad)
-- RBAC boundary unclear — cannot determine which roles should see what
+- Backend endpoint does not exist or returns unexpected shape
+- Feature requires changes to multiple portals simultaneously
+- RBAC boundary unclear
 - Backend returns 500 errors consistently (backend bug)
-- Feature depends on HR/Payroll module (on hold — do not implement)
+- Feature depends on HR/Payroll module (out of scope)
 - Design system component needed but doesn't exist and is too complex to create inline
-- Any backend contract confusion that reading the controller code doesn't resolve

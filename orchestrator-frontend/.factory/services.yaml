@@ -10,7 +10,7 @@ services:
   backend:
     start: echo "Backend is managed by Docker - do NOT start/stop"
     stop: echo "Backend is managed by Docker - do NOT stop"
-    healthcheck: curl -sf http://localhost:8081/api/v1/auth/me -o /dev/null -w '%{http_code}' | grep -q '401\|403'
+    healthcheck: curl -sf http://localhost:8081/swagger-ui/index.html -o /dev/null
     port: 8081
     depends_on: []
 
