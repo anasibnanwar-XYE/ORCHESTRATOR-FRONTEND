@@ -80,10 +80,10 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8081',
+        target: 'http://100.109.241.47:8081',
         changeOrigin: true,
         headers: {
-          Origin: 'http://localhost:8081',
+          Origin: 'http://100.109.241.47:8081',
         },
       },
     },

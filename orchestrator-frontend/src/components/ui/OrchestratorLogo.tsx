@@ -1,7 +1,8 @@
 import { clsx } from 'clsx';
 
 interface OrchestratorLogoProps {
-  size?: number;
+  /** Fixed px number OR a CSS value string (e.g. "clamp(18px, 1.67vw, 22px)") */
+  size?: number | string;
   variant?: 'mark' | 'full' | 'wordmark';
   animated?: boolean;
   className?: string;
@@ -21,10 +22,18 @@ export function OrchestratorLogo({
   animated = false,
   className,
 }: OrchestratorLogoProps) {
+  const isString = typeof size === 'string';
+  // For string sizes, use CSS calc() to derive font-size proportionally.
+  // For number sizes, 0.7× gives readable text (e.g. size=20 → 14px).
+  const textSize = isString ? `calc(${size} * 0.7)` : (size as number) * 0.7;
+  const svgSize = isString ? undefined : (size as number);
+  const svgStyle = isString ? { width: size, height: size } : undefined;
+
   const mark = (
     <svg
-      width={size}
-      height={size}
+      width={svgSize}
+      height={svgSize}
+      style={svgStyle}
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -55,11 +64,8 @@ export function OrchestratorLogo({
   if (variant === 'wordmark') {
     return (
       <span
-        className={clsx(
-          'inline-flex items-center select-none',
-          className,
-        )}
-        style={{ fontSize: size * 0.48, lineHeight: 1 }}
+        className={clsx('inline-flex items-center select-none', className)}
+        style={{ fontSize: textSize, lineHeight: 1 }}
       >
         <span className="font-semibold tracking-tight text-[var(--color-text-primary)]">
           Orchestrator
@@ -69,11 +75,11 @@ export function OrchestratorLogo({
   }
 
   return (
-    <span className={clsx('inline-flex items-center gap-2.5 select-none', className)}>
+    <span className={clsx('inline-flex items-center gap-2 select-none', className)}>
       {mark}
       <span
         className="font-semibold tracking-tight text-[var(--color-text-primary)]"
-        style={{ fontSize: size * 0.48, lineHeight: 1 }}
+        style={{ fontSize: textSize, lineHeight: 1 }}
       >
         Orchestrator
       </span>

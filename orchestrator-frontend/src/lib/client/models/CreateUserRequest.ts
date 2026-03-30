@@ -6,7 +6,7 @@ export type CreateUserRequest = {
     email: string;
     password?: string;
     displayName: string;
-    companyIds: Array<number>;
+    companyId: number;
     roles: Array<string>;
 };
 

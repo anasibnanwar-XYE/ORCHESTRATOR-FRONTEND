@@ -50,6 +50,7 @@ export { DateRangePicker, type DateRangePickerProps, type DateRange } from './Da
 export { FilterBuilder, type FilterBuilderProps, type FilterRule, type FilterField } from './FilterBuilder';
 export { FileUpload, type FileUploadProps } from './FileUpload';
 export { MultiSelect, type MultiSelectProps, type MultiSelectOption } from './MultiSelect';
+export { RoleSelector, type RoleSelectorProps, type RoleSelectorOption } from './RoleSelector';
 export { Stepper, type StepperProps, type Step } from './Stepper';
 export { Timeline, type TimelineProps, type TimelineItemProps } from './Timeline';
 export { TreeView, type TreeViewProps, type TreeNode } from './TreeView';

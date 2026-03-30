@@ -60,14 +60,16 @@
    email: string;
    displayName: string;
    roles: string[];
-   companyIds: number[];
+   companyId: number | null;
  }
+
+type RoleOptionSource = Role & Partial<{ roleKey: string; code: string }>;
  
  const initialForm: UserFormData = {
    email: '',
    displayName: '',
    roles: [],
-   companyIds: [],
+   companyId: null,
  };
  
  // ─────────────────────────────────────────────────────────────────────────────
@@ -81,6 +83,32 @@
      .toLowerCase()
      .replace(/\b\w/g, (c) => c.toUpperCase());
  }
+
+function getRoleOptionValue(role: RoleOptionSource): string | null {
+  const explicitValue = [role.key, role.roleKey, role.code].find(
+    (candidate): candidate is string => typeof candidate === 'string' && candidate.trim().length > 0,
+  );
+
+  if (explicitValue) return explicitValue.trim();
+
+  if (typeof role.name === 'string' && /^[A-Z][A-Z0-9_]*$/.test(role.name.trim())) {
+    return role.name.trim();
+  }
+
+  return null;
+}
+
+function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
+  if (
+    typeof role.name === 'string' &&
+    role.name.trim().length > 0 &&
+    role.name.trim() !== value
+  ) {
+    return role.name.trim();
+  }
+
+  return formatRole(value);
+}
  
  function formatDate(iso?: string): string {
    if (!iso) return '—';
@@ -358,13 +386,8 @@
    const [errors, setErrors] = useState<Partial<UserFormData & { email: string; displayName: string }>>({});
    const [isSubmitting, setIsSubmitting] = useState(false);
  
-   // Reset form when modal opens/closes
-   useEffect(() => {
-     if (isOpen) {
-       setForm(initialData ?? initialForm);
-       setErrors({});
-     }
-   }, [isOpen, initialData]);
+   // No useEffect reset needed — parent conditionally renders this component,
+  // so each open creates a fresh instance with correct useState initializers.
  
    const validate = (): boolean => {
      const newErrors: typeof errors = {};
@@ -387,9 +410,23 @@
      }
    };
  
-   const roleOptions = roles
-     .filter((r) => !hideSuperAdmin || r.key !== 'ROLE_SUPER_ADMIN')
-     .map((r) => ({ value: r.key, label: r.name || formatRole(r.key) }));
+  const roleOptions = Array.from(
+    roles
+      .reduce((options, role) => {
+        const value = getRoleOptionValue(role as RoleOptionSource);
+        if (!value || (hideSuperAdmin && value === 'ROLE_SUPER_ADMIN') || options.has(value)) {
+          return options;
+        }
+
+        options.set(value, {
+          value,
+          label: getRoleOptionLabel(role as RoleOptionSource, value),
+        });
+
+        return options;
+      }, new Map<string, { value: string; label: string }>())
+      .values(),
+  );
    const companyOptions = companies.map((c) => ({
      value: String(c.id),
      label: c.name,
@@ -436,12 +473,23 @@
            value={form.roles}
            onChange={(newRoles) => setForm((f) => ({ ...f, roles: newRoles }))}
          />
-         <MultiSelect
-           label="Companies"
-           options={companyOptions}
-           value={form.companyIds.map(String)}
-           onChange={(ids) => setForm((f) => ({ ...f, companyIds: ids.map(Number) }))}
-         />
+         <div className="space-y-1.5">
+           <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
+             Company
+           </label>
+           <select
+             value={form.companyId ?? ''}
+             onChange={(e) => setForm((f) => ({ ...f, companyId: e.target.value ? Number(e.target.value) : null }))}
+             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-2 text-[13px] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-active)]"
+           >
+             <option value="">Select a company</option>
+             {companyOptions.map((opt) => (
+               <option key={opt.value} value={opt.value}>
+                 {opt.label}
+               </option>
+             ))}
+           </select>
+         </div>
        </div>
      </Modal>
    );
@@ -585,11 +633,15 @@
    // ─── Create User ──────────────────────────────────────────────────────────
  
    const handleCreateUser = async (data: UserFormData) => {
+     if (!data.companyId) {
+       toastError('Validation error', 'Please select a company.');
+       throw new Error('Company is required');
+     }
      const payload: CreateUserRequest = {
        email: data.email,
        displayName: data.displayName,
        roles: data.roles,
-       companyIds: data.companyIds,
+       companyId: data.companyId,
      };
      try {
        await adminApi.createUser(payload);
@@ -605,10 +657,14 @@
  
    const handleUpdateUser = async (data: UserFormData) => {
      if (!editingUser) return;
+     if (!data.companyId) {
+       toastError('Validation error', 'Please select a company.');
+       throw new Error('Company is required');
+     }
      const payload: UpdateUserRequest = {
        displayName: data.displayName,
        roles: data.roles,
-       companyIds: data.companyIds,
+       companyId: data.companyId,
      };
      try {
        await adminApi.updateUser(editingUser.id, payload);
@@ -760,9 +816,9 @@
          email: editingUser.email,
          displayName: editingUser.displayName,
          roles: editingUser.roles,
-         companyIds: companies
+         companyId: companies
            .filter((c) => editingUser.companies.includes(c.code))
-           .map((c) => c.id),
+           .map((c) => c.id)[0] ?? null,
        }
      : undefined;
  
@@ -949,29 +1005,33 @@
        />
  
        {/* ── Create User Modal ────────────────────────────────────────── */}
-       <UserFormModal
-         isOpen={showCreateModal}
-         onClose={() => setShowCreateModal(false)}
-         onSubmit={handleCreateUser}
-         roles={roles}
-         companies={companies}
-         title="Create User"
-         submitLabel="Create User"
-         hideSuperAdmin={!isSuperAdmin}
-       />
+       {showCreateModal && (
+         <UserFormModal
+           isOpen
+           onClose={() => setShowCreateModal(false)}
+           onSubmit={handleCreateUser}
+           roles={roles}
+           companies={companies}
+           title="Create User"
+           submitLabel="Create User"
+           hideSuperAdmin={!isSuperAdmin}
+         />
+       )}
  
        {/* ── Edit User Modal ──────────────────────────────────────────── */}
-       <UserFormModal
-         isOpen={editingUser !== null}
-         onClose={() => setEditingUser(null)}
-         onSubmit={handleUpdateUser}
-         roles={roles}
-         companies={companies}
-         initialData={editingForm}
-         title="Edit User"
-         submitLabel="Save Changes"
-         hideSuperAdmin={!isSuperAdmin}
-       />
+       {editingUser !== null && (
+         <UserFormModal
+           isOpen
+           onClose={() => setEditingUser(null)}
+           onSubmit={handleUpdateUser}
+           roles={roles}
+           companies={companies}
+           initialData={editingForm}
+           title="Edit User"
+           submitLabel="Save Changes"
+           hideSuperAdmin={!isSuperAdmin}
+         />
+       )}
  
        {/* ── Confirm Dialogs ──────────────────────────────────────────── */}
        {activeDialog && (

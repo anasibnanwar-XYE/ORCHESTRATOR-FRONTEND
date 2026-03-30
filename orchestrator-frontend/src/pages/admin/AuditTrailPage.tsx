@@ -1,13 +1,10 @@
 /**
  * AuditTrailPage
  *
- * Paginated, filterable audit trail with three tabs:
+ * Paginated, filterable audit trail with two tabs:
  *  - Business Events: BusinessAuditEventResponse (occurredAt, actorIdentifier, action, entityType, entityId, status, module)
  *    GET /api/v1/audit/business-events  (wrapped in ApiResponse<PageResponse<...>>)
  *    NOTE: May return 500 if audit private key is not configured on the backend — handled gracefully.
- *
- *  - ML Events: MlInteractionEventResponse (occurredAt, actorIdentifier, action, interactionType, status, module)
- *    GET /api/v1/audit/ml-events  (wrapped in ApiResponse<PageResponse<...>>)
  *
  *  - Accounting: AccountingAuditTrailEntryDto (timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, ...)
  *    GET /api/v1/accounting/audit-trail  (wrapped in ApiResponse<PageResponse<...>>)
@@ -23,7 +20,6 @@ import {
   Clock,
   User,
   Activity,
-  Cpu,
   ServerCrash,
   BookOpen,
 } from 'lucide-react';
@@ -33,7 +29,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { auditApi } from '@/lib/adminApi';
-import type { BusinessEvent, MlEvent, AccountingAuditTrailEntry, AuditEventFilters, PageResponse } from '@/types';
+import type { BusinessEvent, AccountingAuditTrailEntry, AuditEventFilters, PageResponse } from '@/types';
 
 const PAGE_SIZE = 20;
 
@@ -50,15 +46,6 @@ function formatTimestamp(ts: string): string {
  * Backend statuses: INFO, SUCCESS, FAILURE, WARNING (and anything else)
  */
 function businessStatusVariant(s?: string): 'success' | 'danger' | 'warning' | 'default' {
-  if (!s) return 'default';
-  const upper = s.toUpperCase();
-  if (upper === 'SUCCESS') return 'success';
-  if (upper === 'FAILURE' || upper === 'ERROR') return 'danger';
-  if (upper === 'WARNING') return 'warning';
-  return 'default';
-}
-
-function mlStatusVariant(s?: string): 'success' | 'danger' | 'warning' | 'default' {
   if (!s) return 'default';
   const upper = s.toUpperCase();
   if (upper === 'SUCCESS') return 'success';
@@ -344,169 +331,6 @@ function BusinessEventsTab() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ML Events Tab
-// Fields: id, occurredAt, actorIdentifier, action, interactionType, module, status, payload
-// ─────────────────────────────────────────────────────────────────────────────
-
-function MlEventsTab() {
-  const [data, setData] = useState<PageResponse<MlEvent> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-
-  const load = useCallback(async (p = 0) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await auditApi.getMlEvents({ page: p, size: PAGE_SIZE });
-      setData(result);
-    } catch {
-      setError('Failed to load ML events.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(page); }, [load, page]);
-
-  const columns: Column<MlEvent>[] = [
-    {
-      id: 'timestamp',
-      header: 'Timestamp',
-      accessor: (event) => (
-        <div className="flex items-center gap-1.5 text-[12px] tabular-nums text-[var(--color-text-tertiary)] whitespace-nowrap">
-          <Clock size={12} className="shrink-0" />
-          {formatTimestamp(event.occurredAt)}
-        </div>
-      ),
-    },
-    {
-      id: 'actor',
-      header: 'Actor',
-      accessor: (event) => (
-        <div className="flex items-center gap-1.5">
-          <User size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
-          <span className="text-[13px] text-[var(--color-text-primary)]">
-            {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: 'action',
-      header: 'Action',
-      accessor: (event) => (
-        <code className="text-[12px] font-mono text-[var(--color-text-secondary)] bg-[var(--color-surface-tertiary)] px-1.5 py-0.5 rounded">
-          {event.action}
-        </code>
-      ),
-    },
-    {
-      id: 'interaction',
-      header: 'Type',
-      accessor: (event) => (
-        <span className="text-[13px] text-[var(--color-text-secondary)]">
-          {event.interactionType || '—'}
-        </span>
-      ),
-      hideOnMobile: true,
-    },
-    {
-      id: 'module',
-      header: 'Module',
-      accessor: (event) => (
-        event.module ? (
-          <Badge variant="default">{event.module}</Badge>
-        ) : (
-          <span className="text-[12px] text-[var(--color-text-tertiary)]">—</span>
-        )
-      ),
-      hideOnMobile: true,
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      accessor: (event) =>
-        event.status ? (
-          <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
-        ) : null,
-    },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => void load(page)}
-          className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
-        >
-          <RefreshCcw size={13} />
-          Refresh
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="p-3 animate-pulse bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl h-16" />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
-          <AlertCircle size={16} className="shrink-0" />
-          <span>{error}</span>
-          <button type="button" onClick={() => void load(page)} className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80">
-            <RefreshCcw size={13} /> Retry
-          </button>
-        </div>
-      ) : !data || data.content.length === 0 ? (
-        <div className="text-center py-12">
-          <Cpu size={32} className="mx-auto mb-3 text-[var(--color-text-tertiary)]" />
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">No ML events recorded yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <DataTable
-            columns={columns}
-            data={data.content}
-            keyExtractor={(event) => String(event.id)}
-            pageSize={PAGE_SIZE}
-            pageSizeOptions={[PAGE_SIZE]}
-            emptyMessage="No ML events found."
-            mobileCardRenderer={(event) => (
-              <div className="p-3">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <code className="text-[12px] font-mono text-[var(--color-text-primary)]">{event.action}</code>
-                  {event.status && (
-                    <Badge variant={mlStatusVariant(event.status)}>{event.status}</Badge>
-                  )}
-                </div>
-                <p className="text-[13px] text-[var(--color-text-primary)] mb-1">
-                  {event.actorIdentifier || `User #${event.actorUserId ?? '—'}`}
-                </p>
-                <p className="text-[12px] text-[var(--color-text-tertiary)]">
-                  {event.interactionType && `${event.interactionType} · `}
-                  {formatTimestamp(event.occurredAt)}
-                </p>
-              </div>
-            )}
-          />
-
-          <Pagination
-            page={page}
-            totalPages={data.totalPages}
-            totalElements={data.totalElements}
-            size={PAGE_SIZE}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Accounting Audit Trail Tab
 // Fields: id, timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, sensitiveOperation
 // GET /api/v1/accounting/audit-trail
@@ -736,7 +560,6 @@ function AccountingAuditTab() {
 
 const TABS = [
   { label: 'Business Events', value: 'business' },
-  { label: 'ML Events', value: 'ml' },
   { label: 'Accounting', value: 'accounting' },
 ];
 
@@ -748,7 +571,7 @@ export function AuditTrailPage() {
       <div>
         <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">Audit Trail</h1>
         <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-          Tenant-scoped log of business events, AI model interactions, and accounting operations.
+          Tenant-scoped log of business events and accounting operations.
         </p>
       </div>
 
@@ -756,7 +579,6 @@ export function AuditTrailPage() {
 
       <div>
         {activeTab === 'business' && <BusinessEventsTab />}
-        {activeTab === 'ml' && <MlEventsTab />}
         {activeTab === 'accounting' && <AccountingAuditTab />}
       </div>
     </div>

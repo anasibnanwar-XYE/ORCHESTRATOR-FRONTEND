@@ -61,12 +61,17 @@ describe('ForgotPasswordPage — rendering', () => {
     expect(screen.getByLabelText(/work email/i)).toBeInTheDocument();
   });
 
+  it('renders company code input', () => {
+    renderPage();
+    expect(screen.getByLabelText(/company code/i)).toBeInTheDocument();
+  });
+
   it('renders send reset link button', () => {
     renderPage();
     expect(screen.getByRole('button', { name: /send reset link/i })).toBeInTheDocument();
   });
 
-  it('send button is disabled when email is empty', () => {
+  it('send button is disabled when fields are empty', () => {
     renderPage();
     expect(screen.getByRole('button', { name: /send reset link/i })).toBeDisabled();
   });
@@ -77,9 +82,8 @@ describe('ForgotPasswordPage — email enumeration prevention', () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'existing@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'existing@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -95,9 +99,8 @@ describe('ForgotPasswordPage — email enumeration prevention', () => {
     vi.mocked(authApi.forgotPassword).mockRejectedValue(new Error('Email not found'));
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'nonexistent@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'nonexistent@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -113,9 +116,8 @@ describe('ForgotPasswordPage — email enumeration prevention', () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'test@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'test@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -142,9 +144,8 @@ describe('ForgotPasswordPage — controlled persistence failure (VAL-AUTH-012)',
     vi.mocked(authApi.forgotPassword).mockRejectedValue(persistenceErr);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -177,9 +178,8 @@ describe('ForgotPasswordPage — controlled persistence failure (VAL-AUTH-012)',
     vi.mocked(authApi.forgotPassword).mockRejectedValue(serverErr);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -199,9 +199,8 @@ describe('ForgotPasswordPage — controlled persistence failure (VAL-AUTH-012)',
     vi.mocked(authApi.forgotPassword).mockResolvedValueOnce(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -225,9 +224,8 @@ describe('ForgotPasswordPage — controlled persistence failure (VAL-AUTH-012)',
     vi.mocked(authApi.forgotPassword).mockRejectedValue(new Error('Network Error'));
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'nonexistent@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'nonexistent@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -245,9 +243,8 @@ describe('ForgotPasswordPage — canonical path (VAL-AUTH-011)', () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -255,34 +252,32 @@ describe('ForgotPasswordPage — canonical path (VAL-AUTH-011)', () => {
 
     // Must call forgotPassword (the canonical path) — the retired superadmin alias
     // POST /api/v1/auth/password/forgot/superadmin must never be called
-    expect(authApi.forgotPassword).toHaveBeenCalledWith({ email: 'user@company.com' });
+    expect(authApi.forgotPassword).toHaveBeenCalledWith({ email: 'user@company.com', companyCode: 'ACME' });
     expect(authApi.forgotPassword).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('ForgotPasswordPage — submission', () => {
-  it('calls forgotPassword with entered email', async () => {
+  it('calls forgotPassword with email and companyCode', async () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
     });
 
-    expect(authApi.forgotPassword).toHaveBeenCalledWith({ email: 'user@company.com' });
+    expect(authApi.forgotPassword).toHaveBeenCalledWith({ email: 'user@company.com', companyCode: 'ACME' });
   });
 
   it('shows check email confirmation after submit', async () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));
@@ -297,9 +292,8 @@ describe('ForgotPasswordPage — submission', () => {
     vi.mocked(authApi.forgotPassword).mockResolvedValue(undefined);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/work email/i), {
-      target: { value: 'user@company.com' },
-    });
+    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(/company code/i), { target: { value: 'ACME' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /send reset link/i }));

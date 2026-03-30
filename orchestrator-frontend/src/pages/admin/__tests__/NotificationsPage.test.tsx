@@ -156,19 +156,19 @@
      });
    });
 
-   it('shows empty sent history initially', async () => {
+   it('shows the compose form heading', async () => {
      (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
      renderPage();
      await waitFor(() => {
-       expect(screen.queryByText(/no notifications sent yet/i)).not.toBeNull();
+       expect(screen.queryByText(/Compose/i)).not.toBeNull();
      });
    });
 
-   it('shows sent history section header', async () => {
+   it('shows the send notification button', async () => {
      (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
      renderPage();
      await waitFor(() => {
-       expect(screen.queryByText(/sent this session/i)).not.toBeNull();
+       expect(screen.queryAllByText(/send notification/i).length).toBeGreaterThan(0);
      });
    });
 

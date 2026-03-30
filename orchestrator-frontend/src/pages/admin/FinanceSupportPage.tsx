@@ -411,6 +411,24 @@ function InvoicesTab({ invoices, isLoading }: { invoices: FinanceInvoice[]; isLo
 }
 
 function AgingTab({ aging, isLoading }: { aging: FinanceAging | null; isLoading: boolean }) {
+  const total = aging?.totalOutstanding || 0;
+
+  const bucketData = useMemo(() => {
+    const buckets = aging?.buckets || [];
+    if (!total) return buckets.map((bucket) => ({ ...bucket, percent: 0 }));
+    return buckets.map((bucket) => ({
+      ...bucket,
+      percent: Math.round((bucket.amount / total) * 100),
+    }));
+  }, [aging?.buckets, total]);
+
+  const maxBucket = useMemo(() => {
+    return bucketData.reduce(
+      (max, bucket) => (bucket.amount > max.amount ? bucket : max),
+      bucketData[0] || { amount: 0 },
+    );
+  }, [bucketData]);
+
   if (!aging && !isLoading) {
     return (
       <EmptyState
@@ -420,23 +438,6 @@ function AgingTab({ aging, isLoading }: { aging: FinanceAging | null; isLoading:
       />
     );
   }
-
-  const buckets = aging?.buckets || [];
-  const total = aging?.totalOutstanding || 0;
-
-  // Calculate percentages for each bucket
-  const bucketData = useMemo(() => {
-    if (!total) return buckets.map(b => ({ ...b, percent: 0 }));
-    return buckets.map(b => ({
-      ...b,
-      percent: total > 0 ? Math.round((b.amount / total) * 100) : 0
-    }));
-  }, [buckets, total]);
-
-  // Find the largest bucket for visual emphasis
-  const maxBucket = useMemo(() => {
-    return bucketData.reduce((max, b) => b.amount > max.amount ? b : max, bucketData[0] || { amount: 0 });
-  }, [bucketData]);
 
   return (
     <div className="space-y-4">

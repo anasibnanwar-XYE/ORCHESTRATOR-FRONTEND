@@ -33,12 +33,25 @@ export function DropdownMenu({ trigger, items, onSelect, align = 'right', classN
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const top = rect.bottom + window.scrollY + 6;
-    setMenuStyle(
-      align === 'right'
-        ? { position: 'absolute', top, left: rect.right + window.scrollX, transform: 'translateX(-100%)' }
-        : { position: 'absolute', top, left: rect.left + window.scrollX },
-    );
+    const MENU_WIDTH = 188;
+    const MARGIN = 8;
+    const vw = window.innerWidth;
+    const top = rect.bottom + 6;
+
+    let left: number;
+    if (align === 'right') {
+      // Right-align with trigger, but clamp so menu never overflows the viewport
+      left = rect.right - MENU_WIDTH;
+      if (left < MARGIN) left = MARGIN;
+      if (left + MENU_WIDTH > vw - MARGIN) left = vw - MENU_WIDTH - MARGIN;
+    } else {
+      left = rect.left;
+      if (left + MENU_WIDTH > vw - MARGIN) left = vw - MENU_WIDTH - MARGIN;
+      if (left < MARGIN) left = MARGIN;
+    }
+
+    // Use position:fixed — viewport-relative, works correctly when portalled
+    setMenuStyle({ position: 'fixed', top, left, width: MENU_WIDTH });
   }, [align]);
 
   useEffect(() => {

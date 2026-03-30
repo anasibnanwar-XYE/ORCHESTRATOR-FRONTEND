@@ -59,8 +59,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
    }),
  }));
  
- import { UsersPage } from '../UsersPage';
+import { UsersPage } from '../UsersPage';
  import { adminApi } from '@/lib/adminApi';
+import type { Role } from '@/types';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Fixtures
@@ -93,6 +94,11 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
    { key: 'ROLE_ADMIN', name: 'Administrator', permissions: [], isSystem: true, createdAt: '', updatedAt: '' },
    { key: 'ROLE_USER', name: 'User', permissions: [], isSystem: true, createdAt: '', updatedAt: '' },
  ];
+
+const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
+  { name: 'ROLE_ADMIN', permissions: [], isSystem: true, createdAt: '', updatedAt: '' },
+  { name: 'ROLE_USER', permissions: [], isSystem: true, createdAt: '', updatedAt: '' },
+];
  
  const mockCompanies = [
    { id: 1, code: 'COMP1', name: 'Company 1', isActive: true, createdAt: '', updatedAt: '' },
@@ -203,6 +209,57 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
        expect(addBtn).not.toBeNull();
      });
    });
+
+  it('create user role selection stays isolated when role keys are omitted by the API', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRolesWithoutKeys);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByText(/add user/i));
+
+    const adminCheckbox = (await screen.findByLabelText('Admin')) as HTMLInputElement;
+    const userCheckbox = screen.getByLabelText('User') as HTMLInputElement;
+
+    fireEvent.click(adminCheckbox);
+
+    expect(adminCheckbox.checked).toBe(true);
+    expect(userCheckbox.checked).toBe(false);
+  });
+
+  it('edit user role selection keeps the existing role mapping when role keys are omitted by the API', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRolesWithoutKeys);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+    });
+
+    const aliceRow = screen.getAllByText('Alice Smith')[0];
+    fireEvent.click(aliceRow.closest('tr') ?? aliceRow);
+
+    const editUserButton = await screen.findByRole('button', { name: /edit user/i });
+    fireEvent.click(editUserButton);
+
+    const adminCheckbox = (await screen.findByLabelText('Admin')) as HTMLInputElement;
+    const userCheckbox = screen.getByLabelText('User') as HTMLInputElement;
+
+    expect(adminCheckbox.checked).toBe(true);
+    expect(userCheckbox.checked).toBe(false);
+
+    fireEvent.click(userCheckbox);
+
+    expect(adminCheckbox.checked).toBe(true);
+    expect(userCheckbox.checked).toBe(true);
+  });
  
    it('shows error state on API failure', async () => {
      (adminApi.getUsers as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));

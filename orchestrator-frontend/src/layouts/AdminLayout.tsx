@@ -13,32 +13,27 @@
  */
 
 import { useMemo, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import {
   Menu,
-  X,
   Sun,
   Moon,
-  ChevronLeft,
-  LayoutGrid,
-  CheckSquare,
+  LayoutDashboard,
+  CheckCircle2,
   Users,
-  Shield,
-  Settings,
+  KeyRound,
+  SlidersHorizontal,
   Bell,
-  BookOpen,
-  ClipboardList,
-  Ticket,
-  Banknote,
-  type LucideIcon,
+  History,
+  FileSearch,
+  HelpCircle,
+  Landmark,
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { ProfileMenu } from '@/components/ui/ProfileMenu';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
-import { MobileSidebar } from '@/components/ui/Sidebar';
+import { Sidebar, MobileSidebar, type SidebarNavGroup } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { resolvePortalAccess, shouldShowHub, isModuleEnabled } from '@/lib/portal-routing';
 import { useBreadcrumbs } from './useBreadcrumbs';
@@ -49,64 +44,49 @@ import { CommandPaletteButton } from '@/components/CommandPalette';
 // Navigation config
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface NavItem {
-  label: string;
-  to: string;
-  icon: LucideIcon;
-  end?: boolean;
-  /** Optional module key — item is hidden if this module is disabled */
-  module?: string;
-}
-
-interface NavGroup {
-  label?: string;
-  items: NavItem[];
-}
-
-/** Primary nav groups — rendered in order with optional section labels */
-const NAV_GROUPS: NavGroup[] = [
+const NAV_GROUPS: SidebarNavGroup[] = [
   {
     items: [
-      { label: 'Dashboard', to: '/admin', icon: LayoutGrid, end: true },
+      { id: 'dashboard', label: 'Dashboard', to: '/admin', icon: LayoutDashboard, end: true },
     ],
   },
   {
     label: 'Management',
     items: [
-      { label: 'Users', to: '/admin/users', icon: Users },
-      { label: 'Roles', to: '/admin/roles', icon: Shield },
+      { id: 'users', label: 'Users', to: '/admin/users', icon: Users },
+      { id: 'roles', label: 'Roles', to: '/admin/roles', icon: KeyRound },
     ],
   },
   {
     label: 'Workflows',
     items: [
-      { label: 'Approvals', to: '/admin/approvals', icon: CheckSquare },
-      { label: 'Notifications', to: '/admin/notifications', icon: Bell },
-      { label: 'Changelog', to: '/admin/changelog', icon: BookOpen },
+      { id: 'approvals', label: 'Approvals', to: '/admin/approvals', icon: CheckCircle2 },
+      { id: 'notifications', label: 'Notifications', to: '/admin/notifications', icon: Bell },
+      { id: 'changelog', label: 'Changelog', to: '/admin/changelog', icon: History },
     ],
   },
   {
     label: 'Analytics',
     items: [
-      { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
+      { id: 'audit-trail', label: 'Audit Trail', to: '/admin/audit-trail', icon: FileSearch },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { label: 'Dealer Finance', to: '/admin/finance', icon: Banknote },
+      { id: 'finance', label: 'Dealer Finance', to: '/admin/finance', icon: Landmark },
     ],
   },
   {
     label: 'Support',
     items: [
-      { label: 'Tickets', to: '/admin/support', icon: Ticket },
+      { id: 'support', label: 'Tickets', to: '/admin/support', icon: HelpCircle },
     ],
   },
   {
     label: 'System',
     items: [
-      { label: 'Settings', to: '/admin/settings', icon: Settings },
+      { id: 'settings', label: 'Settings', to: '/admin/settings', icon: SlidersHorizontal },
     ],
   },
 ];
@@ -127,164 +107,85 @@ const ROUTE_LABELS: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sidebar content (shared between desktop and mobile drawer)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function NavItemLink({
-  item,
-  onNavClick,
-}: {
-  item: NavItem;
-  onNavClick?: () => void;
-}) {
-  return (
-    <NavLink
-      to={item.to}
-      end={item.end}
-      onClick={onNavClick}
-      className={({ isActive }) =>
-        clsx(
-          'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
-          isActive
-            ? 'bg-[var(--color-neutral-900)] dark:bg-white/15 text-white'
-            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
-        )
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <item.icon
-            size={15}
-            className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
-          />
-          {item.label}
-        </>
-      )}
-    </NavLink>
-  );
-}
-
-function SidebarContent({
-  showBackToHub,
-  enabledModules,
-  onNavClick,
-}: {
-  showBackToHub: boolean;
-  enabledModules: string[];
-  onNavClick?: () => void;
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Brand */}
-      <div className="px-4 py-5 border-b border-[var(--color-border-subtle)]">
-        <OrchestratorLogo size={20} variant="full" />
-        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-          Admin
-        </p>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto no-scrollbar" aria-label="Admin navigation">
-        {/* Back to hub */}
-        {showBackToHub && (
-          <button
-            type="button"
-            onClick={() => {
-              onNavClick?.();
-              navigate('/hub');
-            }}
-            className="w-full flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
-          >
-            <ChevronLeft size={14} />
-            All portals
-          </button>
-        )}
-
-        {NAV_GROUPS.map((group, groupIdx) => {
-          // Filter out items whose module is disabled
-          const visibleItems = group.items.filter(
-            (item) => !item.module || isModuleEnabled(enabledModules, item.module)
-          );
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div
-              key={groupIdx}
-              className={clsx(
-                'space-y-0.5',
-                groupIdx > 0 && 'mt-4 pt-3 border-t border-[var(--color-border-subtle)]',
-              )}
-            >
-              {group.label && (
-                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-                  {group.label}
-                </p>
-              )}
-              {visibleItems.map((item) => (
-                <NavItemLink key={item.to} item={item} onNavClick={onNavClick} />
-              ))}
-            </div>
-          );
-        })}
-      </nav>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Layout
 // ─────────────────────────────────────────────────────────────────────────────
+
+const COLLAPSED_KEY = 'orchestrator-admin-sidebar-collapsed';
 
 export function AdminLayout() {
   const { user, signOut, enabledModules } = useAuth();
   const { toggle, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === 'true'
+  );
   const navigate = useNavigate();
 
   const access = useMemo(() => resolvePortalAccess(user), [user]);
   const showBackToHub = useMemo(() => shouldShowHub(access), [access]);
-
   const breadcrumbs = useBreadcrumbs('/admin', 'Admin', ROUTE_LABELS);
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-[var(--color-surface-secondary)]">
-      {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:flex-col w-[220px] shrink-0 border-r border-[var(--color-border-default)] bg-[var(--color-surface-primary)]">
-        <SidebarContent showBackToHub={showBackToHub} enabledModules={enabledModules} />
-      </aside>
+  const handleCollapse = (v: boolean) => {
+    setCollapsed(v);
+    localStorage.setItem(COLLAPSED_KEY, String(v));
+  };
 
-      {/* ── Mobile Drawer ────────────────────────────────────────────── */}
+  // Filter out items whose module is disabled
+  const visibleGroups: SidebarNavGroup[] = useMemo(
+    () =>
+      NAV_GROUPS.map((g) => ({
+        ...g,
+        items: g.items.filter(
+          (item) => !('module' in item) || isModuleEnabled(enabledModules, (item as { module?: string }).module ?? '')
+        ),
+      })).filter((g) => g.items.length > 0),
+    [enabledModules]
+  );
+
+  return (
+    <div className="flex h-screen bg-[var(--color-surface-secondary)]" style={{ overflow: 'clip' }}>
+
+      {/* ── Desktop Sidebar ────────────────────────────────────────── */}
+      <div className="hidden lg:block shrink-0 h-full">
+        <Sidebar
+          portalName="Admin"
+          groups={visibleGroups}
+          collapsed={collapsed}
+          onCollapsedChange={handleCollapse}
+          showBackToHub={showBackToHub}
+          onBackToHub={() => navigate('/hub')}
+          onSignOut={signOut}
+        />
+      </div>
+
+      {/* ── Mobile Drawer ─────────────────────────────────────────── */}
       <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <div className="flex flex-col w-[min(280px,80vw)] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
-            <OrchestratorLogo size={18} variant="full" />
-            <button
-              type="button"
-              onClick={() => setMobileOpen(false)}
-              className="p-1.5 rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
-              aria-label="Close menu"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <SidebarContent
-              showBackToHub={showBackToHub}
-              enabledModules={enabledModules}
-              onNavClick={() => setMobileOpen(false)}
-            />
-          </div>
+        <div className="h-full" style={{ width: 'min(260px, 82vw)' }}>
+          <Sidebar
+            portalName="Admin"
+            groups={visibleGroups}
+            collapsed={false}
+            onCollapsedChange={() => {}}
+            showBackToHub={showBackToHub}
+            onBackToHub={() => { navigate('/hub'); setMobileOpen(false); }}
+            onSignOut={() => { signOut(); setMobileOpen(false); }}
+            onNavClick={() => setMobileOpen(false)}
+          />
         </div>
       </MobileSidebar>
 
-      {/* ── Main ────────────────────────────────────────────────────── */}
+      {/* ── Main ──────────────────────────────────────────────────── */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Header */}
-        <header className="shrink-0 h-12 flex items-center justify-between px-4 gap-3 bg-[var(--color-surface-primary)] border-b border-[var(--color-border-default)]">
+
+        {/* Top bar */}
+        <header
+          className="shrink-0 h-12 flex items-center justify-between gap-3 bg-[var(--color-surface-primary)] border-b border-[var(--color-border-default)]"
+          style={{
+            paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+            paddingRight: 'max(1rem, env(safe-area-inset-right))',
+          }}
+        >
           <div className="flex items-center gap-3 min-w-0">
-            {/* Hamburger — mobile only */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -296,33 +197,22 @@ export function AdminLayout() {
             <Breadcrumb items={breadcrumbs} />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Command palette button */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <CommandPaletteButton />
-
-            {/* Company switcher — hidden on mobile to reduce header crowding */}
             <span className="hidden sm:block">
               <AdminCompanySwitcher />
             </span>
-
-            {/* Theme toggle */}
             <button
               type="button"
               onClick={toggle}
               className="p-2 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-
-            {/* Profile menu */}
             {user && (
               <ProfileMenu
-                user={{
-                  displayName: user.displayName,
-                  email: user.email,
-                  role: user.roles[0] ?? '',
-                }}
+                user={{ displayName: user.displayName, email: user.email, role: user.roles[0] ?? '' }}
                 onLogout={signOut}
                 onProfile={() => navigate('/profile')}
               />
@@ -332,7 +222,10 @@ export function AdminLayout() {
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-[1600px] p-4 sm:p-6">
+          <div
+            className="mx-auto max-w-[1600px]"
+            style={{ padding: 'clamp(16px, 2.08vw, 24px) max(clamp(16px, 2.08vw, 24px), env(safe-area-inset-right)) max(clamp(16px, 2.08vw, 24px), env(safe-area-inset-bottom))' }}
+          >
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

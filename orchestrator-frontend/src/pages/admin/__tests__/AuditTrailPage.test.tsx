@@ -9,7 +9,7 @@
 vi.mock('lucide-react', () => {
   const M = () => null;
   return {
-    List: M, Cpu: M, Search: M, Filter: M, RefreshCcw: M, AlertCircle: M,
+    List: M, Search: M, Filter: M, RefreshCcw: M, AlertCircle: M,
     ChevronLeft: M, ChevronRight: M, ChevronDown: M, X: M, ArrowUpDown: M,
     ArrowUp: M, ArrowDown: M, Clock: M, User: M, Activity: M, FileText: M,
     MoreHorizontal: M, ServerCrash: M, BookOpen: M,
@@ -19,7 +19,6 @@ vi.mock('lucide-react', () => {
  vi.mock('@/lib/adminApi', () => ({
    auditApi: {
      getBusinessEvents: vi.fn(),
-     getMlEvents: vi.fn(),
      getAccountingAuditTrail: vi.fn(),
    },
  }));
@@ -31,7 +30,7 @@ vi.mock('lucide-react', () => {
  
  import { AuditTrailPage } from '../AuditTrailPage';
  import { auditApi } from '@/lib/adminApi';
-import type { BusinessEvent, MlEvent, AccountingAuditTrailEntry, PageResponse } from '@/types';
+import type { BusinessEvent, AccountingAuditTrailEntry, PageResponse } from '@/types';
  
 const mockBusinessEvents: PageResponse<BusinessEvent> = {
   content: [
@@ -57,25 +56,6 @@ const mockBusinessEvents: PageResponse<BusinessEvent> = {
     },
   ],
   totalElements: 2,
-  totalPages: 1,
-  page: 0,
-  size: 20,
-};
-
-const mockMlEvents: PageResponse<MlEvent> = {
-  content: [
-    {
-      id: 1,
-      occurredAt: '2024-03-01T10:05:00Z',
-      actorIdentifier: 'system@example.com',
-      action: 'INFERENCE',
-      interactionType: 'CREDIT_RISK',
-      module: 'ML',
-      status: 'SUCCESS',
-      payload: '{"dealerId": 123}',
-    },
-  ],
-  totalElements: 1,
   totalPages: 1,
   page: 0,
   size: 20,
@@ -128,7 +108,6 @@ const mockAccountingAuditTrail: PageResponse<AccountingAuditTrailEntry> = {
    beforeEach(() => {
      vi.resetAllMocks();
      vi.mocked(auditApi.getBusinessEvents).mockResolvedValue(mockBusinessEvents);
-     vi.mocked(auditApi.getMlEvents).mockResolvedValue(mockMlEvents);
      vi.mocked(auditApi.getAccountingAuditTrail).mockResolvedValue(mockAccountingAuditTrail);
    });
  
@@ -146,11 +125,10 @@ const mockAccountingAuditTrail: PageResponse<AccountingAuditTrailEntry> = {
      });
    });
 
-   it('shows all three tabs', async () => {
+   it('shows both tabs', async () => {
      renderPage();
      await waitFor(() => {
        expect(screen.getByText('Business Events')).toBeInTheDocument();
-       expect(screen.getByText('ML Events')).toBeInTheDocument();
        expect(screen.getByText('Accounting')).toBeInTheDocument();
      });
    });
@@ -179,18 +157,6 @@ const mockAccountingAuditTrail: PageResponse<AccountingAuditTrailEntry> = {
      });
    });
  
-   it('can switch to ML Events tab', async () => {
-     renderPage();
-     await waitFor(() => {
-       expect(screen.getByText('ML Events')).toBeInTheDocument();
-     });
-     fireEvent.click(screen.getByText('ML Events'));
-     await waitFor(() => {
-       const allMatches = screen.getAllByText(/credit-risk-v2|INFERENCE/i);
-       expect(allMatches.length).toBeGreaterThan(0);
-     });
-   });
-
    it('can switch to Accounting tab and shows accounting data', async () => {
      renderPage();
      await waitFor(() => {

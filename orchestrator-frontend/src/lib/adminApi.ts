@@ -192,6 +192,16 @@ export const adminApi = {
     }
   },
 
+  async updateUserStatus(userId: number, enabled: boolean): Promise<void> {
+    const response = await apiRequest.put<ApiResponse<void>>(
+      `/admin/users/${userId}/status`,
+      { enabled }
+    );
+    if (!response.data.success) {
+      throw new Error(response.data.message);
+    }
+  },
+
   async suspendUser(id: number): Promise<void> {
     const response = await apiRequest.patch<ApiResponse<void>>(`/admin/users/${id}/suspend`);
     if (!response.data.success) {

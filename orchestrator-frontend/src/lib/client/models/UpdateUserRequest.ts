@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type UpdateUserRequest = {
     displayName: string;
-    companyIds?: Array<number>;
+    companyId: number;
     roles?: Array<string>;
     enabled?: boolean;
 };

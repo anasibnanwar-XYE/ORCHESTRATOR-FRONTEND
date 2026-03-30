@@ -136,26 +136,22 @@ export function MfaPage() {
   return (
     <AuthLayout>
       <div>
-        <header style={{ marginBottom: 30 }}>
-          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'inherit' }}>
-            Two-factor verification
-          </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-tertiary)', fontSize: 13, fontFamily: 'inherit' }}>
+        <header style={{ marginBottom: 'clamp(20px, 2.08vw, 30px)' }}>
+          <h2 className="lp-form-title">Two-factor verification</h2>
+          <p className="lp-form-subtitle">
             {useRecoveryCode
               ? 'Enter one of your recovery codes'
               : 'Enter the 6-digit code from your authenticator app'}
           </p>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
-            for <span style={{ fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{pendingState.email}</span>
+          <p style={{ margin: '2px 0 0', fontSize: 'clamp(0.6875rem, 0.83vw, 0.75rem)', color: '#a3a3a3' }}>
+            for <span style={{ fontWeight: 500, color: '#737373' }}>{pendingState.email}</span>
           </p>
         </header>
 
-        <div style={{ display: 'grid', gap: 17 }}>
+        <div className="lp-form-grid">
           {!useRecoveryCode ? (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <label htmlFor="mfa-code" style={{ color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
-                Verification code
-              </label>
+            <div className="lp-label">
+              <label htmlFor="mfa-code">Verification code</label>
               <input
                 ref={codeInputRef}
                 id="mfa-code"
@@ -168,18 +164,22 @@ export function MfaPage() {
                 disabled={isLoading}
                 placeholder="000000"
                 className="lp-input"
-                style={{ textAlign: 'center', fontSize: 22, fontFamily: 'monospace', letterSpacing: '0.4em', height: 56 }}
+                style={{
+                  textAlign: 'center',
+                  fontSize: 'clamp(1.25rem, 1.53vw, 1.375rem)',
+                  fontFamily: 'ui-monospace, monospace',
+                  letterSpacing: '0.4em',
+                  height: 'clamp(48px, 3.89vw, 56px)',
+                }}
                 aria-label="6-digit verification code"
               />
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
+              <p style={{ margin: 0, fontSize: 'clamp(0.6875rem, 0.76vw, 0.6875rem)', color: '#a3a3a3' }}>
                 Open your authenticator app to find the 6-digit code
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <label htmlFor="mfa-recovery-code" style={{ color: 'var(--color-text-primary)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
-                Recovery code
-              </label>
+            <div className="lp-label">
+              <label htmlFor="mfa-recovery-code">Recovery code</label>
               <input
                 ref={recoveryInputRef}
                 id="mfa-recovery-code"
@@ -190,7 +190,7 @@ export function MfaPage() {
                 disabled={isLoading}
                 placeholder="xxxx-xxxx-xxxx"
                 className="lp-input"
-                style={{ textAlign: 'center', fontFamily: 'monospace', letterSpacing: '0.1em' }}
+                style={{ textAlign: 'center', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.1em' }}
                 aria-label="Recovery code"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && recoveryCode.trim() && !isLoading) {
@@ -198,7 +198,7 @@ export function MfaPage() {
                   }
                 }}
               />
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-neutral-400)', fontFamily: 'inherit' }}>
+              <p style={{ margin: 0, fontSize: 'clamp(0.6875rem, 0.76vw, 0.6875rem)', color: '#a3a3a3' }}>
                 Each recovery code can only be used once
               </p>
             </div>
@@ -220,12 +220,7 @@ export function MfaPage() {
             )}
           </button>
 
-          <button
-            type="button"
-            className="lp-btn-ghost"
-            onClick={handleToggleMode}
-            disabled={isLoading}
-          >
+          <button type="button" className="lp-btn-ghost" onClick={handleToggleMode} disabled={isLoading}>
             {useRecoveryCode ? 'Use authenticator app instead' : 'Use a recovery code instead'}
           </button>
 

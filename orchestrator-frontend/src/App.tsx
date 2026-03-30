@@ -364,6 +364,13 @@ const AdminUsersPage = lazy(() =>
    }))
  );
 
+ /** Component showcase — dev/design reference only */
+ const AdminComponentShowcasePage = lazy(() =>
+   import('@/pages/admin/ComponentShowcasePage').then((m) => ({
+     default: m.ComponentShowcasePage,
+   }))
+ );
+
  /** Portal Insights — used by superadmin */
  const AdminPortalInsightsPage = lazy(() =>
    import('@/pages/admin/PortalInsightsPage').then((m) => ({
@@ -877,6 +884,8 @@ function AppRouter() {
             <Route path="audit-trail" element={<AdminAuditTrailPage />} />
             <Route path="finance" element={<AdminFinanceSupportPage />} />
             <Route path="support" element={<AdminSupportTicketsPage />} />
+            {/* Dev-only: component showcase — not in production nav */}
+            <Route path="components" element={<AdminComponentShowcasePage />} />
             <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 

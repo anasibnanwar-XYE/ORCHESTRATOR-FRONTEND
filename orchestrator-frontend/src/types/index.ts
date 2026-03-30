@@ -1274,6 +1274,7 @@ export interface RefreshTokenRequest {
 
 export interface ForgotPasswordRequest {
   email: string;
+  companyCode: string;
 }
 
 export interface ResetPasswordRequest {
@@ -1351,13 +1352,13 @@ export interface CreateUserRequest {
   displayName: string;
   roles: string[];
   password?: string;
-  companyIds: number[];
+  companyId: number;
 }
 
 export interface UpdateUserRequest {
-  displayName?: string;
-  roles?: string[];
-  companyIds?: number[];
+  displayName: string;
+  roles: string[];
+  companyId: number;
   enabled?: boolean;
 }
 
