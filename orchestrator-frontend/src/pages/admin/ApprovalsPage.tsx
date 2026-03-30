@@ -25,7 +25,6 @@
  import { clsx } from 'clsx';
  import { Badge } from '@/components/ui/Badge';
  import { Button } from '@/components/ui/Button';
- import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
  import { Modal } from '@/components/ui/Modal';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { useToast } from '@/components/ui/Toast';
@@ -255,6 +254,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    const [error, setError] = useState<string | null>(null);
    const [pendingAction, setPendingAction] = useState<ActionState | null>(null);
    const [isActing, setIsActing] = useState(false);
+   const [approveReason, setApproveReason] = useState('');
+   const [approveReasonError, setApproveReasonError] = useState<string | null>(null);
    const [rejectReason, setRejectReason] = useState('');
    const [rejectReasonError, setRejectReasonError] = useState<string | null>(null);
  
@@ -276,6 +277,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    // ── Action handlers ────────────────────────────────────────────────────────
  
    const handleApprove = useCallback((item: ApprovalItem) => {
+     setApproveReason('');
+     setApproveReasonError(null);
      setPendingAction({ item, action: 'approve' });
    }, []);
  
@@ -293,6 +296,14 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      if (!pendingAction) return;
      const { item, action } = pendingAction;
  
+     // Validate approval reason
+     if (action === 'approve') {
+       if (!approveReason.trim()) {
+         setApproveReasonError('Please provide a reason for approval.');
+         return;
+       }
+     }
+ 
      // Validate rejection reason
      if (action === 'reject') {
        if (!rejectReason.trim()) {
@@ -304,9 +315,10 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      setIsActing(true);
      try {
        if (action === 'approve') {
+         const reason = approveReason.trim();
          switch (item.originType) {
            case 'CREDIT_REQUEST':
-             await adminApi.approveCreditRequest(item.id, { reason: '' });
+             await adminApi.approveCreditRequest(item.id, { reason });
              break;
            case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
              await adminApi.approveCreditOverride(item.id);
@@ -315,13 +327,13 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
              await adminApi.approvePayroll(item.id);
              break;
            case 'PERIOD_CLOSE_REQUEST':
-             await adminApi.approvePeriodClose(item.id);
+             await adminApi.approvePeriodClose(item.id, { note: reason });
              break;
            case 'EXPORT_REQUEST':
-             await adminApi.approveExport(item.id);
+             await adminApi.approveExport(item.id, { reason });
              break;
            default:
-             await adminApi.approveCreditRequest(item.id, { reason: '' });
+             await adminApi.approveCreditRequest(item.id, { reason });
          }
          success('Approved successfully.');
        } else {
@@ -345,6 +357,8 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
          success('Rejected successfully.');
        }
        setPendingAction(null);
+       setApproveReason('');
+       setApproveReasonError(null);
        setRejectReason('');
        setRejectReasonError(null);
        // Reload to remove the acted-upon item
@@ -355,11 +369,13 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      } finally {
        setIsActing(false);
      }
-   }, [pendingAction, rejectReason, success, toastError, load]);
+   }, [pendingAction, approveReason, rejectReason, success, toastError, load]);
  
    const handleCancel = useCallback(() => {
      if (!isActing) {
        setPendingAction(null);
+       setApproveReason('');
+       setApproveReasonError(null);
        setRejectReason('');
        setRejectReasonError(null);
      }
@@ -455,18 +471,72 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
          </div>
        )}
  
-       {/* Approve confirmation dialog */}
+       {/* Approve dialog with required reason textarea */}
        {pendingAction && pendingAction.action === 'approve' && (
-         <ConfirmDialog
+         <Modal
            isOpen
+           onClose={handleCancel}
            title={`Approve ${getTypeLabel(pendingAction.item.originType)}`}
-           message={`Are you sure you want to approve "${pendingAction.item.reference || pendingAction.item.publicId}"? This action cannot be undone.`}
-           confirmLabel="Approve"
-           variant="default"
-           isLoading={isActing}
-           onConfirm={handleConfirm}
-           onCancel={handleCancel}
-         />
+           size="sm"
+           footer={
+             <>
+               <Button
+                 variant="secondary"
+                 size="sm"
+                 onClick={handleCancel}
+                 disabled={isActing}
+               >
+                 Cancel
+               </Button>
+               <Button
+                 variant="primary"
+                 size="sm"
+                 onClick={handleConfirm}
+                 isLoading={isActing}
+               >
+                 Approve
+               </Button>
+             </>
+           }
+         >
+           <div className="space-y-4">
+             <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
+               You are approving{' '}
+               <span className="font-medium text-[var(--color-text-primary)]">
+                 "{pendingAction.item.reference || pendingAction.item.publicId}"
+               </span>
+               . This action cannot be undone.
+             </p>
+             <div className="space-y-1.5">
+               <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
+                 Reason for approval <span className="text-[var(--color-error)]">*</span>
+               </label>
+               <textarea
+                 value={approveReason}
+                 onChange={(e) => {
+                   setApproveReason(e.target.value);
+                   if (e.target.value.trim()) setApproveReasonError(null);
+                 }}
+                 placeholder="Enter approval reason..."
+                 rows={4}
+                 disabled={isActing}
+                 className={clsx(
+                   'w-full rounded-lg border px-3 py-2',
+                   'text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-primary)]',
+                   'placeholder:text-[var(--color-text-tertiary)] resize-none',
+                   'focus:outline-none focus:ring-1',
+                   approveReasonError
+                     ? 'border-[var(--color-error)] focus:ring-[var(--color-error)]'
+                     : 'border-[var(--color-border-default)] focus:ring-[var(--color-neutral-900)]',
+                   isActing && 'opacity-60 cursor-not-allowed',
+                 )}
+               />
+               {approveReasonError && (
+                 <p className="text-[11px] text-[var(--color-error)]">{approveReasonError}</p>
+               )}
+             </div>
+           </div>
+         </Modal>
        )}
  
        {/* Reject dialog with required reason textarea */}

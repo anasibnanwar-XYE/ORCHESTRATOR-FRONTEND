@@ -149,9 +149,10 @@ export const adminApi = {
   //       there is no /admin/exports/pending endpoint.
   // ─────────────────────────────────────────────────────────────────────────
 
-  async approveExport(id: number): Promise<ExportRequestDto> {
+  async approveExport(id: number, data?: { reason?: string }): Promise<ExportRequestDto> {
     const response = await apiRequest.put<ApiResponse<ExportRequestDto>>(
-      `/admin/exports/${id}/approve`
+      `/admin/exports/${id}/approve`,
+      data
     );
     return response.data.data;
   },

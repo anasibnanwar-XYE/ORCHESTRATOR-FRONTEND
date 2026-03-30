@@ -21,7 +21,7 @@
      CheckSquare: M, XCircle: M, CheckCircle: M, Clock: M, AlertCircle: M,
      RefreshCcw: M, ChevronDown: M, AlertTriangle: M, Info: M,
      ArrowUpDown: M, ArrowUp: M, ArrowDown: M, ChevronLeft: M, ChevronRight: M,
-     Search: M, MoreHorizontal: M, X: M, FileCheck: M,
+     Search: M, MoreHorizontal: M, X: M, FileCheck: M, Loader2: M,
    };
  });
  
@@ -162,7 +162,7 @@ const mockApprovals = {
      });
    });
  
-   it('opens confirmation dialog on approve click', async () => {
+   it('opens approve dialog with reason textarea on approve click', async () => {
      (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('CR-2024-001').length).toBeGreaterThan(0));
@@ -170,23 +170,57 @@ const mockApprovals = {
      if (approveBtns.length > 0) {
        fireEvent.click(approveBtns[0]);
        await waitFor(() => {
-         const confirmBtns = screen.queryAllByText(/confirm|approve/i);
-         expect(confirmBtns.length).toBeGreaterThan(0);
+         // Modal should open with reason textarea
+         const textarea = screen.queryByPlaceholderText(/enter approval reason/i);
+         expect(textarea).not.toBeNull();
        });
      }
    });
- 
-   it('calls approveCreditRequest on confirm', async () => {
+
+   it('approve dialog blocks empty reason submission', async () => {
      (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
-     (adminApi.approveCreditRequest as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
      renderPage();
      await waitFor(() => expect(screen.queryAllByText('CR-2024-001').length).toBeGreaterThan(0));
      const approveBtns = screen.queryAllByText(/^approve$/i);
      if (approveBtns.length > 0) {
        fireEvent.click(approveBtns[0]);
        await waitFor(() => {
-         const allBtns = screen.queryAllByRole("button", { name: /^Approve$/ }); const confirmBtn = allBtns[allBtns.length - 1];
-         if (confirmBtn) fireEvent.click(confirmBtn);
+         expect(screen.queryByPlaceholderText(/enter approval reason/i)).not.toBeNull();
+       });
+       // Click approve without filling reason — should show error
+       const allBtns = screen.queryAllByRole('button', { name: /^Approve$/i });
+       const confirmBtn = allBtns[allBtns.length - 1];
+       if (confirmBtn) fireEvent.click(confirmBtn);
+       await waitFor(() => {
+         const errorMsg = screen.queryAllByText(/please provide a reason for approval/i);
+         expect(errorMsg.length).toBeGreaterThan(0);
+       });
+       // approveCreditRequest should NOT have been called
+       expect(adminApi.approveCreditRequest as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+     }
+   });
+
+   it('calls approveCreditRequest with reason on confirm', async () => {
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValue(mockApprovals);
+     (adminApi.approveCreditRequest as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockApprovals).mockResolvedValueOnce({ creditRequests: [], payrollRuns: [], exportRequests: [], periodCloseRequests: [] });
+     renderPage();
+     await waitFor(() => expect(screen.queryAllByText('CR-2024-001').length).toBeGreaterThan(0));
+     const approveBtns = screen.queryAllByText(/^approve$/i);
+     if (approveBtns.length > 0) {
+       fireEvent.click(approveBtns[0]);
+       await waitFor(() => {
+         expect(screen.queryByPlaceholderText(/enter approval reason/i)).not.toBeNull();
+       });
+       // Fill in the reason
+       const textarea = screen.getByPlaceholderText(/enter approval reason/i);
+       fireEvent.change(textarea, { target: { value: 'Approved after review' } });
+       // Click approve
+       const allBtns = screen.queryAllByRole('button', { name: /^Approve$/i });
+       const confirmBtn = allBtns[allBtns.length - 1];
+       if (confirmBtn) fireEvent.click(confirmBtn);
+       await waitFor(() => {
+         expect(adminApi.approveCreditRequest as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(1, { reason: 'Approved after review' });
        });
      }
    });
@@ -246,15 +280,19 @@ const mockApprovals = {
     (adminApi.getApprovals as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockApprovals).mockResolvedValueOnce({ creditRequests: [], payrollRuns: [], exportRequests: [], periodCloseRequests: [] });
     renderPage();
     await waitFor(() => expect(screen.queryAllByText('CR-2024-001').length).toBeGreaterThan(0));
-    // Verify approve button leads to the correct API call
+    // Verify approve button opens dialog with reason textarea
     const approveBtns = screen.queryAllByText(/^approve$/i);
     if (approveBtns.length > 0) {
       fireEvent.click(approveBtns[0]);
-      // Confirmation dialog opens
+      // Approve dialog with reason textarea opens
       await waitFor(() => {
-        const confirmBtns = screen.queryAllByRole('button', { name: /approve/i });
-        expect(confirmBtns.length).toBeGreaterThan(0);
+        expect(screen.queryByPlaceholderText(/enter approval reason/i)).not.toBeNull();
       });
+      // Fill in the reason and confirm
+      const textarea = screen.getByPlaceholderText(/enter approval reason/i);
+      fireEvent.change(textarea, { target: { value: 'Approved' } });
+      const confirmBtns = screen.queryAllByRole('button', { name: /approve/i });
+      expect(confirmBtns.length).toBeGreaterThan(0);
     }
   });
  });
