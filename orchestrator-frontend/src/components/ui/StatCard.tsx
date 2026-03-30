@@ -17,10 +17,13 @@ export function StatCard({ label, value, change, className, icon, detail, sparkl
   const isPositive = change && change.value >= 0;
 
   return (
-    <div className={clsx(
-      'p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl',
-      className,
-    )}>
+    <div
+      data-testid="stat-card"
+      className={clsx(
+        'p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl',
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className={clsx(
           'font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]',

@@ -73,7 +73,7 @@ export function AdminDashboardPage() {
         title={greeting}
         description="Platform overview and operational status."
         breadcrumb={
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+          <p data-testid="dashboard-date" className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
             {new Date().toLocaleDateString('en-IN', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
             })}
@@ -85,7 +85,7 @@ export function AdminDashboardPage() {
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl space-y-2">
+            <div key={i} data-testid="stat-skeleton" className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl space-y-2">
               <Skeleton height={10} width="55%" />
               <Skeleton height={28} width="45%" />
               <Skeleton height={10} width="70%" />
@@ -93,12 +93,13 @@ export function AdminDashboardPage() {
           ))}
         </div>
       ) : error ? (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
+        <div role="alert" className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
           <AlertCircle size={15} strokeWidth={1.75} className="shrink-0" />
           <span>{error}</span>
           <button
             type="button"
             onClick={load}
+            aria-label="Retry loading dashboard"
             className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80"
           >
             <RefreshCcw size={13} strokeWidth={1.75} />
