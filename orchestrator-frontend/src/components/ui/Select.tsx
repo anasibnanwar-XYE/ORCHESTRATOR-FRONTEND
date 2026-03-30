@@ -1,4 +1,4 @@
-import { forwardRef, type SelectHTMLAttributes } from 'react';
+import { forwardRef, type SelectHTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -11,6 +11,8 @@ interface SelectOption {
 
 interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   label?: string;
+  /** Icon rendered before the label text (e.g. a lucide-react icon element) */
+  labelIcon?: ReactNode;
   error?: string;
   hint?: string;
   options: SelectOption[];
@@ -30,6 +32,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {
       label,
+      labelIcon,
       error,
       hint,
       options,
@@ -48,8 +51,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="block text-[13px] font-medium text-[var(--color-text-primary)]"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
           >
+            {labelIcon && (
+              <span className="text-[var(--color-text-tertiary)] shrink-0">{labelIcon}</span>
+            )}
             {label}
           </label>
         )}

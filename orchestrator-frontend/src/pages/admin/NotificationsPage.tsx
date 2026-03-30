@@ -7,10 +7,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
+  AlertTriangle,
   Bell,
   Send,
   Users,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '@/components/ui/Button';
@@ -46,21 +48,25 @@ export function NotificationsPage() {
   const [subject, setSubject] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sentPulse, setSentPulse] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await adminApi.getUsers();
       // Cast to our local type
       setUsers(
         (data as unknown as AdminUser[]).filter((u) => u.enabled !== false)
       );
-    } catch {
-      // Non-blocking, still show the form
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load users';
+      setLoadError(msg);
+      toastError('Failed to load users', msg);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toastError]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -116,9 +122,30 @@ export function NotificationsPage() {
                 </label>
                 <Skeleton height={36} />
               </div>
+            ) : loadError ? (
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-primary)]">
+                  <Users size={13} />
+                  Recipient
+                </label>
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--color-error-border)] bg-[var(--color-surface-primary)] px-3 py-2.5">
+                  <AlertTriangle size={14} className="text-[var(--color-error-icon)] shrink-0" />
+                  <span className="text-[13px] text-[var(--color-error)]">{loadError}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={load}
+                    className="ml-auto shrink-0"
+                  >
+                    <RefreshCw size={13} className="mr-1" /> Retry
+                  </Button>
+                </div>
+              </div>
             ) : (
               <Select
                 label="Recipient"
+                labelIcon={<Users size={13} />}
                 value={String(selectedUserId)}
                 onChange={(e) =>
                   setSelectedUserId(e.target.value ? Number(e.target.value) : '')

@@ -7,8 +7,12 @@
   *  - Subject input is present
   *  - Message textarea is present
   *  - Send button calls adminApi.sendNotification with correct payload
-  *  - Sent history shows after successful send
   *  - Handles empty user list gracefully
+  *  - Error handling: shows error state when getUsers fails
+  *  - Error handling: shows toast on send failure
+  *  - Retry button retries loading users
+  *  - Send button disabled until recipient AND body filled
+  *  - Select component renders labelIcon (Users icon)
   */
 
  import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -18,9 +22,9 @@
  vi.mock('lucide-react', () => {
    const M = () => null;
    return {
-     Bell: M, Send: M, AlertCircle: M, Users: M, X: M, Check: M,
-     ChevronDown: M, Search: M,
-     CheckCircle2: M, AlertTriangle: M, Info: M,
+     AlertTriangle: M, Bell: M, Send: M, AlertCircle: M, Users: M, X: M,
+     Check: M, ChevronDown: M, Search: M, RefreshCw: M,
+     CheckCircle2: M, Info: M, Loader2: M,
    };
  });
 
@@ -31,11 +35,14 @@
    },
  }));
 
+ const mockToastSuccess = vi.fn();
+ const mockToastError = vi.fn();
+
  vi.mock('@/components/ui/Toast', () => ({
    useToast: () => ({
      toast: vi.fn(),
-     success: vi.fn(),
-     error: vi.fn(),
+     success: mockToastSuccess,
+     error: mockToastError,
      warning: vi.fn(),
      info: vi.fn(),
      dismiss: vi.fn(),
@@ -203,5 +210,189 @@
        expect(label).not.toBeNull();
        expect(label?.tagName).toBe('LABEL');
      });
+   });
+
+   // ── Error handling tests ──────────────────────────────────────────────
+
+   it('shows error state when getUsers fails', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockRejectedValue(
+       new Error('Network error')
+     );
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getByText('Network error')).not.toBeNull();
+     });
+     // Should show retry button
+     expect(screen.getByText(/retry/i)).not.toBeNull();
+   });
+
+   it('shows toast error when getUsers fails', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockRejectedValue(
+       new Error('Network error')
+     );
+     renderPage();
+     await waitFor(() => {
+       expect(mockToastError).toHaveBeenCalledWith('Failed to load users', 'Network error');
+     });
+   });
+
+   it('retry button re-calls getUsers on click', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>)
+       .mockRejectedValueOnce(new Error('Network error'))
+       .mockResolvedValueOnce(mockUsers);
+     renderPage();
+
+     // Wait for error state
+     await waitFor(() => {
+       expect(screen.getByText(/retry/i)).not.toBeNull();
+     });
+
+     // Click retry
+     await act(async () => {
+       fireEvent.click(screen.getByText(/retry/i));
+     });
+
+     // getUsers should have been called twice
+     await waitFor(() => {
+       expect(adminApi.getUsers).toHaveBeenCalledTimes(2);
+     });
+   });
+
+   it('shows toast error when sendNotification fails', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     (adminApi.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+       new Error('Server error')
+     );
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // Fill the form
+     fireEvent.change(document.querySelector('select')!, { target: { value: '1' } });
+     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'Hello' } });
+
+     // Submit
+     await act(async () => {
+       fireEvent.submit(document.querySelector('form')!);
+     });
+
+     await waitFor(() => {
+       expect(mockToastError).toHaveBeenCalledWith('Failed to send', 'Server error');
+     });
+   });
+
+   // ── Disabled state tests ─────────────────────────────────────────────
+
+   it('send button is disabled when no recipient selected', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // Fill only body (no recipient)
+     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'Hello' } });
+
+     const btn = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+     expect(btn.disabled).toBe(true);
+   });
+
+   it('send button is disabled when body is empty', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // Select recipient but leave body empty
+     fireEvent.change(document.querySelector('select')!, { target: { value: '1' } });
+
+     const btn = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+     expect(btn.disabled).toBe(true);
+   });
+
+   it('send button is enabled when recipient AND body are filled', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // Fill both
+     fireEvent.change(document.querySelector('select')!, { target: { value: '1' } });
+     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'Hello' } });
+
+     const btn = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+     expect(btn.disabled).toBe(false);
+   });
+
+   // ── Form reset after send ────────────────────────────────────────────
+
+   it('resets form and shows success toast after successful send', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     (adminApi.sendNotification as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // Fill form
+     fireEvent.change(document.querySelector('select')!, { target: { value: '1' } });
+     fireEvent.change(document.querySelector('input[type="text"]')!, { target: { value: 'Test' } });
+     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'Body' } });
+
+     // Submit
+     await act(async () => {
+       fireEvent.submit(document.querySelector('form')!);
+     });
+
+     await waitFor(() => {
+       expect(mockToastSuccess).toHaveBeenCalledWith(
+         'Notification sent',
+         expect.stringContaining('Alice')
+       );
+     });
+
+     // Form should be reset
+     expect((document.querySelector('textarea') as HTMLTextAreaElement).value).toBe('');
+     expect((document.querySelector('input[type="text"]') as HTMLInputElement).value).toBe('');
+   });
+
+   // ── Character counter ────────────────────────────────────────────────
+
+   it('shows character counter for body textarea', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+
+     await waitFor(() => {
+       expect(screen.getByText('0 characters')).not.toBeNull();
+     });
+
+     fireEvent.change(document.querySelector('textarea')!, { target: { value: 'Hello' } });
+     expect(screen.getByText('5 characters')).not.toBeNull();
+   });
+
+   // ── Select labelIcon ─────────────────────────────────────────────────
+
+   it('Select recipient label has icon prefix from labelIcon prop', async () => {
+     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+     renderPage();
+
+     await waitFor(() => {
+       expect(document.querySelector('select')).not.toBeNull();
+     });
+
+     // The Select label should have an icon span wrapper
+     const recipientLabel = screen.getByText('Recipient');
+     expect(recipientLabel).not.toBeNull();
+     // Label should use flex layout with gap (the enhanced Select renders icon in a span sibling)
+     expect(recipientLabel.className).toContain('flex');
+     expect(recipientLabel.className).toContain('items-center');
    });
  });
