@@ -11,21 +11,32 @@
   *  3. Quick-action buttons — New Journal, Record Receipt, View Reports
   *
   * Data sources:
-  *  - GET /api/v1/accounting/reports/income-statement/hierarchy → Revenue, Expenses, Net Profit
-  *  - GET /api/v1/accounting/reports/aging/receivables         → Outstanding Receivables
-  *  - GET /api/v1/accounting/journals?size=5                   → Recent Journals
+  *  - GET /api/v1/accounting/trial-balance/as-of  → KPI data (receivables, payables, revenue)
+  *  - GET /api/v1/accounting/periods              → Current period status KPI
+  *  - GET /api/v1/accounting/journals?size=5      → Recent Journals
+  *  - GET /api/v1/reports/balance-warnings        → Reconciliation warnings
+  *  - GET /api/v1/accounting/reconciliation/discrepancies → Active discrepancies
   */
  
  import { useEffect, useState, useCallback } from 'react';
  import { useNavigate } from 'react-router-dom';
- import { BookOpen, Receipt, BarChart3, ChevronRight, AlertCircle, RefreshCcw } from 'lucide-react';
+ import { BookOpen, Receipt, BarChart3, ChevronRight, AlertCircle, AlertTriangle } from 'lucide-react';
  import { clsx } from 'clsx';
  import { format, parseISO } from 'date-fns';
  import { Button } from '@/components/ui/Button';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { EmptyState } from '@/components/ui/EmptyState';
  import { Badge } from '@/components/ui/Badge';
- import { accountingApi, type JournalListItem, type IncomeStatementHierarchy, type AgedReceivablesReport } from '@/lib/accountingApi';
+ import {
+   accountingApi,
+   reportsApi,
+   bankReconciliationApi,
+   type JournalListItem,
+   type TrialBalanceSnapshot,
+   type AccountingPeriodDto,
+   type BalanceWarningDto,
+   type ReconciliationDiscrepancyDto,
+ } from '@/lib/accountingApi';
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -221,61 +232,211 @@
  }
  
  // ─────────────────────────────────────────────────────────────────────────────
- // Dashboard Error State
+ // Reconciliation Warnings Widget
  // ─────────────────────────────────────────────────────────────────────────────
- 
- function DashboardError({ onRetry }: { onRetry: () => void }) {
+
+ interface ReconciliationWarningsProps {
+   balanceWarnings: BalanceWarningDto[];
+   discrepancies: ReconciliationDiscrepancyDto[];
+   isLoading: boolean;
+   onViewAll: () => void;
+ }
+
+ function ReconciliationWarnings({
+   balanceWarnings,
+   discrepancies,
+   isLoading,
+   onViewAll,
+ }: ReconciliationWarningsProps) {
+   const hasWarnings = balanceWarnings.length > 0 || discrepancies.length > 0;
+   const openDiscrepancies = discrepancies.filter((d) => d.status !== 'RESOLVED').length;
+
    return (
-     <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-       <AlertCircle size={32} className="text-[var(--color-text-tertiary)]" />
-       <div>
-         <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-           Couldn't load dashboard
-         </p>
-         <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-           There was a problem fetching financial data.
-         </p>
+     <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden">
+       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-subtle)]">
+         <div className="flex items-center gap-2">
+           <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+             Reconciliation Warnings
+           </h2>
+           {!isLoading && hasWarnings && (
+             <Badge variant="warning">
+               {balanceWarnings.length + openDiscrepancies}
+             </Badge>
+           )}
+         </div>
+         <button
+           type="button"
+           onClick={onViewAll}
+           className="text-[12px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors flex items-center gap-1"
+         >
+           View reconciliation
+           <ChevronRight size={12} />
+         </button>
        </div>
-       <Button variant="secondary" size="sm" leftIcon={<RefreshCcw />} onClick={onRetry}>
-         Try again
-       </Button>
+
+       {isLoading && (
+         <div className="p-4 space-y-2">
+           {Array.from({ length: 3 }).map((_, i) => (
+             <Skeleton key={i} height={32} />
+           ))}
+         </div>
+       )}
+
+       {!isLoading && !hasWarnings && (
+         <div className="px-4 py-6 flex items-center gap-3">
+           <div className="h-8 w-8 rounded-full bg-[var(--color-surface-secondary)] flex items-center justify-center shrink-0">
+             <AlertTriangle size={15} className="text-green-600" />
+           </div>
+           <div>
+             <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+               All clear
+             </p>
+             <p className="text-[11px] text-[var(--color-text-tertiary)]">
+               No unresolved reconciliation issues detected.
+             </p>
+           </div>
+         </div>
+       )}
+
+       {!isLoading && hasWarnings && (
+         <div className="divide-y divide-[var(--color-border-subtle)]">
+           {/* Balance warnings (max 3 shown) */}
+           {balanceWarnings.slice(0, 3).map((w) => (
+             <div key={w.accountId} className="flex items-start gap-3 px-4 py-3">
+               <div className={clsx(
+                 'mt-0.5 h-5 w-5 rounded-full flex items-center justify-center shrink-0',
+                 w.severity === 'HIGH'
+                   ? 'bg-red-50 dark:bg-red-950/30'
+                   : w.severity === 'MEDIUM'
+                     ? 'bg-amber-50 dark:bg-amber-950/30'
+                     : 'bg-yellow-50 dark:bg-yellow-950/30',
+               )}>
+                 <AlertTriangle size={11} className={clsx(
+                   w.severity === 'HIGH'
+                     ? 'text-red-600'
+                     : w.severity === 'MEDIUM'
+                       ? 'text-amber-600'
+                       : 'text-yellow-600',
+                 )} />
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="text-[12px] font-medium text-[var(--color-text-primary)] truncate">
+                   <span className="tabular-nums text-[var(--color-text-tertiary)] mr-1.5">
+                     {w.accountCode}
+                   </span>
+                   {w.accountName}
+                 </p>
+                 <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5 line-clamp-1">
+                   {w.reason}
+                 </p>
+               </div>
+               <Badge variant={w.severity === 'HIGH' ? 'danger' : w.severity === 'MEDIUM' ? 'warning' : 'default'}>
+                 {w.severity.charAt(0) + w.severity.slice(1).toLowerCase()}
+               </Badge>
+             </div>
+           ))}
+
+           {/* Open discrepancies summary */}
+           {openDiscrepancies > 0 && (
+             <div className="flex items-start gap-3 px-4 py-3">
+               <div className="mt-0.5 h-5 w-5 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center shrink-0">
+                 <AlertCircle size={11} className="text-orange-600" />
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="text-[12px] font-medium text-[var(--color-text-primary)]">
+                   {openDiscrepancies} open {openDiscrepancies === 1 ? 'discrepancy' : 'discrepancies'}
+                 </p>
+                 <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
+                   Require resolution before period close.
+                 </p>
+               </div>
+               <Badge variant="warning">Open</Badge>
+             </div>
+           )}
+
+           {/* More hint */}
+           {balanceWarnings.length > 3 && (
+             <div className="px-4 py-2.5">
+               <button
+                 type="button"
+                 onClick={onViewAll}
+                 className="text-[11px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+               >
+                 +{balanceWarnings.length - 3} more warning{balanceWarnings.length - 3 > 1 ? 's' : ''}
+               </button>
+             </div>
+           )}
+         </div>
+       )}
      </div>
    );
  }
- 
+
  // ─────────────────────────────────────────────────────────────────────────────
  // Main Page
  // ─────────────────────────────────────────────────────────────────────────────
  
+ // ─────────────────────────────────────────────────────────────────────────────
+ // KPI computation helpers
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ function computeKpisFromTrialBalance(tb: TrialBalanceSnapshot) {
+   let totalReceivables = 0;
+   let totalPayables = 0;
+   let totalRevenue = 0;
+   for (const entry of tb.entries) {
+     const net = entry.debit - entry.credit;
+     if (entry.accountType === 'ASSET' && net > 0) {
+       totalReceivables += net;
+     } else if (entry.accountType === 'LIABILITY' && net < 0) {
+       totalPayables += Math.abs(net);
+     } else if (entry.accountType === 'REVENUE' && entry.credit > entry.debit) {
+       totalRevenue += entry.credit - entry.debit;
+     }
+   }
+   return { totalReceivables, totalPayables, totalRevenue };
+ }
+
+ function getCurrentPeriod(periods: AccountingPeriodDto[]): AccountingPeriodDto | null {
+   // prefer OPEN, else most recent
+   const open = periods.find((p) => p.status === 'OPEN');
+   if (open) return open;
+   return periods.length > 0 ? periods[0] : null;
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Main Page
+ // ─────────────────────────────────────────────────────────────────────────────
+
  export function AccountingDashboardPage() {
    const navigate = useNavigate();
- 
+
    const [kpiLoading, setKpiLoading] = useState(true);
-   const [kpiError, setKpiError] = useState(false);
    const [journalsLoading, setJournalsLoading] = useState(true);
    const [journalsError, setJournalsError] = useState(false);
- 
-   const [incomeStatement, setIncomeStatement] = useState<IncomeStatementHierarchy | null>(null);
-   const [receivables, setReceivables] = useState<AgedReceivablesReport | null>(null);
+   const [warningsLoading, setWarningsLoading] = useState(true);
+
+   const [trialBalance, setTrialBalance] = useState<TrialBalanceSnapshot | null>(null);
+   const [periods, setPeriods] = useState<AccountingPeriodDto[]>([]);
    const [journals, setJournals] = useState<JournalListItem[]>([]);
- 
+   const [balanceWarnings, setBalanceWarnings] = useState<BalanceWarningDto[]>([]);
+   const [discrepancies, setDiscrepancies] = useState<ReconciliationDiscrepancyDto[]>([]);
+
    const loadKpis = useCallback(async () => {
      setKpiLoading(true);
-     setKpiError(false);
      try {
-       const [incomeData, receivablesData] = await Promise.all([
-         accountingApi.getIncomeStatement(),
-         accountingApi.getAgedReceivables(),
+       const today = new Date().toISOString().split('T')[0];
+       const [tbData, periodsData] = await Promise.all([
+         accountingApi.getTrialBalance(today).catch(() => null),
+         accountingApi.getPeriods().catch(() => [] as AccountingPeriodDto[]),
        ]);
-       setIncomeStatement(incomeData);
-       setReceivables(receivablesData);
-     } catch {
-       setKpiError(true);
+       setTrialBalance(tbData);
+       setPeriods(periodsData);
      } finally {
        setKpiLoading(false);
      }
    }, []);
- 
+
    const loadJournals = useCallback(async () => {
      setJournalsLoading(true);
      setJournalsError(false);
@@ -288,28 +449,34 @@
        setJournalsLoading(false);
      }
    }, []);
- 
+
+   const loadWarnings = useCallback(async () => {
+     setWarningsLoading(true);
+     try {
+       const [warningsData, discrepanciesData] = await Promise.all([
+         reportsApi.getBalanceWarnings().catch(() => [] as BalanceWarningDto[]),
+         bankReconciliationApi.listDiscrepancies({ status: 'OPEN' }).catch(() => [] as ReconciliationDiscrepancyDto[]),
+       ]);
+       setBalanceWarnings(warningsData);
+       setDiscrepancies(discrepanciesData);
+     } finally {
+       setWarningsLoading(false);
+     }
+   }, []);
+
    useEffect(() => {
      void loadKpis();
      void loadJournals();
-   }, [loadKpis, loadJournals]);
- 
-   const handleRetry = useCallback(() => {
-     void loadKpis();
-     void loadJournals();
-   }, [loadKpis, loadJournals]);
- 
-   // If KPIs errored, show full-page error
-   if (!kpiLoading && kpiError) {
-     return <DashboardError onRetry={handleRetry} />;
-   }
- 
-   const netProfit = incomeStatement?.netIncome ?? 0;
- 
+     void loadWarnings();
+   }, [loadKpis, loadJournals, loadWarnings]);
+
+   const kpis = trialBalance ? computeKpisFromTrialBalance(trialBalance) : null;
+   const currentPeriod = getCurrentPeriod(periods);
+
    return (
      <div className="space-y-6">
        {/* Page Header */}
-       <div className="flex items-start justify-between">
+       <div className="flex items-start justify-between flex-wrap gap-3">
          <div>
            <h1 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
              Overview
@@ -346,50 +513,56 @@
            </Button>
          </div>
        </div>
- 
+
        {/* KPI Cards */}
        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
          <KpiCard
-           label="Revenue"
-           value={incomeStatement ? formatINR(incomeStatement.totalRevenue) : '—'}
-           description="Current period total"
-           onClick={() => navigate('/accounting/reports')}
-           isLoading={kpiLoading}
-         />
-         <KpiCard
-           label="Expenses"
-           value={incomeStatement ? formatINR(incomeStatement.totalExpenses) : '—'}
-           description="Operating expenses"
-           onClick={() => navigate('/accounting/reports')}
-           isLoading={kpiLoading}
-         />
-         <KpiCard
-           label="Net Profit"
-           value={incomeStatement ? formatINR(netProfit) : '—'}
-           description="Revenue minus expenses"
-           onClick={() => navigate('/accounting/reports')}
-           isLoading={kpiLoading}
-           isNegative={netProfit < 0}
-         />
-         <KpiCard
-           label="Outstanding Receivables"
-          value={receivables ? formatINR(receivables.grandTotal) : '—'}
-           description="Total unpaid invoices"
+           label="Total Receivables"
+           value={kpis ? formatINR(kpis.totalReceivables) : '—'}
+           description="Outstanding customer balances"
            onClick={() => navigate('/accounting/dealers')}
+           isLoading={kpiLoading}
+         />
+         <KpiCard
+           label="Total Payables"
+           value={kpis ? formatINR(kpis.totalPayables) : '—'}
+           description="Outstanding supplier balances"
+           onClick={() => navigate('/accounting/suppliers')}
+           isLoading={kpiLoading}
+           isNegative={false}
+         />
+         <KpiCard
+           label="Revenue"
+           value={kpis ? formatINR(kpis.totalRevenue) : '—'}
+           description="Period revenue total"
+           onClick={() => navigate('/accounting/reports')}
+           isLoading={kpiLoading}
+         />
+         <KpiCard
+           label="Period Status"
+           value={currentPeriod ? currentPeriod.label ?? `${currentPeriod.year}/${currentPeriod.month}` : '—'}
+           description={currentPeriod ? currentPeriod.status : 'No active period'}
+           onClick={() => navigate('/accounting/periods')}
            isLoading={kpiLoading}
          />
        </div>
  
        {/* Main content grid */}
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-         {/* Recent Journals — takes 2/3 width on desktop */}
-         <div className="lg:col-span-2">
+         {/* Left column — journals + warnings */}
+         <div className="lg:col-span-2 space-y-4">
            <RecentJournals
              journals={journals}
              isLoading={journalsLoading}
              hasError={journalsError}
              onRowClick={(id) => navigate(`/accounting/journals/${id}`)}
              onViewAll={() => navigate('/accounting/journals')}
+           />
+           <ReconciliationWarnings
+             balanceWarnings={balanceWarnings}
+             discrepancies={discrepancies}
+             isLoading={warningsLoading}
+             onViewAll={() => navigate('/accounting/bank-reconciliation')}
            />
          </div>
  
@@ -423,19 +596,17 @@
              </div>
            </div>
  
-           {/* Financials summary card */}
-           {!kpiLoading && incomeStatement && (
+           {/* Trial balance summary card */}
+           {!kpiLoading && kpis && (
              <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)] mb-3">
-                 Income summary
+                 Balance summary
                </p>
                <div className="space-y-2">
                  {[
-                   { label: 'Gross Revenue', value: incomeStatement.totalRevenue },
-                   { label: 'Cost of Goods', value: incomeStatement.totalCogs, negative: false },
-                   { label: 'Gross Profit', value: incomeStatement.grossProfit },
-                   { label: 'Operating Expenses', value: incomeStatement.totalExpenses, negative: false },
-                   { label: 'Net Income', value: incomeStatement.netIncome, bold: true },
+                   { label: 'Total Receivables', value: kpis.totalReceivables },
+                   { label: 'Total Payables', value: kpis.totalPayables },
+                   { label: 'Revenue', value: kpis.totalRevenue, bold: true },
                  ].map(({ label, value, bold }) => (
                    <div key={label} className="flex items-center justify-between gap-3">
                      <span className={clsx(

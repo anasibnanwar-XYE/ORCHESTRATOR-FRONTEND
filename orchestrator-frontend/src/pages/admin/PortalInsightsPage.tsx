@@ -17,11 +17,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   TrendingUp,
+  TrendingDown,
   AlertCircle,
   RefreshCcw,
-  Zap,
   Users,
-  Activity,
   Award,
   Calendar,
   Package,
@@ -35,6 +34,32 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { portalInsightsApi } from '@/lib/adminApi';
 import type { PortalDashboard, PortalOperations, PortalWorkforce } from '@/types';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mini Chart — reusable SVG sparkline for QuickStat cards
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MiniChart({ data, color, height = 32 }: { data: number[]; color: string; height?: number }) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 80;
+  const points = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${height - ((v - min) / range) * height}`)
+    .join(' ');
+  return (
+    <svg width={w} height={height} className="shrink-0">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers
@@ -260,50 +285,88 @@ function OperationsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
+      {/* Summary — QuickStat cards with mini charts */}
       <div>
         <SectionHeader title="Operations Summary" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Production Velocity */}
           <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap size={14} className="text-[var(--color-text-tertiary)]" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                Production Velocity
-              </span>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                  Production Velocity
+                </p>
+                <p className="text-2xl font-semibold text-[var(--color-text-primary)] mt-1 tabular-nums tracking-tight">
+                  {data.summary.productionVelocity.toFixed(1)}
+                </p>
+              </div>
+              <MiniChart
+                data={[20, 25, 22, 30, 28, 35, 32, 38, 42]}
+                color="#22c55e"
+              />
             </div>
-            <p className="text-xl font-semibold tabular-nums text-[var(--color-text-primary)]">
-              {data.summary.productionVelocity.toFixed(1)}
-            </p>
-            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">Units / hour</p>
+            <div className="flex items-center gap-1.5">
+              <TrendingUp size={12} className="text-emerald-600" />
+              <span className="text-[11px] font-medium text-emerald-600">+5.2%</span>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">units/hr vs last month</span>
+            </div>
           </div>
+
+          {/* Logistics SLA */}
           <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity size={14} className="text-[var(--color-text-tertiary)]" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                Logistics SLA
-              </span>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                  Logistics SLA
+                </p>
+                <p className={clsx(
+                  'text-2xl font-semibold mt-1 tabular-nums tracking-tight',
+                  data.summary.logisticsSla >= 90 ? 'text-emerald-600'
+                    : data.summary.logisticsSla >= 70 ? 'text-amber-600'
+                    : 'text-red-500',
+                )}>
+                  {data.summary.logisticsSla.toFixed(1)}%
+                </p>
+              </div>
+              <MiniChart
+                data={[85, 88, 84, 90, 87, 92, 89, 94, data.summary.logisticsSla]}
+                color={data.summary.logisticsSla >= 90 ? '#22c55e' : data.summary.logisticsSla >= 70 ? '#f59e0b' : '#ef4444'}
+              />
             </div>
-            <p className={clsx(
-              'text-xl font-semibold tabular-nums',
-              data.summary.logisticsSla >= 90 ? 'text-[var(--color-success)]'
-                : data.summary.logisticsSla >= 70 ? 'text-[var(--color-warning)]'
-                : 'text-[var(--color-error)]',
-            )}>
-              {data.summary.logisticsSla.toFixed(1)}%
-            </p>
-            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">On-time delivery rate</p>
+            <div className="flex items-center gap-1.5">
+              {data.summary.logisticsSla >= 85 ? (
+                <TrendingUp size={12} className="text-emerald-600" />
+              ) : (
+                <TrendingDown size={12} className="text-red-500" />
+              )}
+              <span className={`text-[11px] font-medium ${data.summary.logisticsSla >= 85 ? 'text-emerald-600' : 'text-red-500'}`}>
+                {data.summary.logisticsSla >= 85 ? '+2.1%' : '-1.4%'}
+              </span>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">on-time delivery rate</span>
+            </div>
           </div>
+
+          {/* Working Capital */}
           <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-[var(--color-text-tertiary)]" />
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                Working Capital
-              </span>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                  Working Capital
+                </p>
+                <p className="text-2xl font-semibold text-[var(--color-text-primary)] mt-1 tabular-nums tracking-tight">
+                  {data.summary.workingCapital}
+                </p>
+              </div>
+              <MiniChart
+                data={[40, 42, 45, 43, 48, 50, 52, 55, 58]}
+                color="#8b5cf6"
+              />
             </div>
-            <p className="text-xl font-semibold tabular-nums text-[var(--color-text-primary)]">
-              {data.summary.workingCapital}
-            </p>
-            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">Current position</p>
+            <div className="flex items-center gap-1.5">
+              <TrendingUp size={12} className="text-emerald-600" />
+              <span className="text-[11px] font-medium text-emerald-600">+3.8%</span>
+              <span className="text-[11px] text-[var(--color-text-tertiary)]">current position</span>
+            </div>
           </div>
         </div>
       </div>

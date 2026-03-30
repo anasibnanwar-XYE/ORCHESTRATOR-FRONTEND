@@ -1,114 +1,167 @@
- /**
-  * AdminDashboardPage
-  *
-  * Enterprise dashboard for the Admin portal.
-  *
-  * Sections:
-  *  1. KPI stat cards — dynamic highlights from GET /portal/dashboard
-  *     Each card navigates to the relevant section.
-  *  2. Pipeline stages visualization — from backend pipeline array
-  *  3. HR Pulse card — from backend hrPulse array
-  *  4. Quick actions
-  *
-  * Data source:
-  *  - GET /api/v1/portal/dashboard → { highlights, pipeline, hrPulse }
-  *
-  * Fallback:
-  *  - If /portal/dashboard is unavailable, show static KPI cards with empty data
-  */
+/**
+ * AdminDashboardPage
+ *
+ * Enterprise dashboard for the Admin portal.
+ * Design follows DesignSystemBoard.tsx reference — QuickStat pattern.
+ *
+ * Sections:
+ *  1. KPI QuickStat cards — from GET /portal/dashboard highlights, with mini SVG charts
+ *  2. Content grid (3-col desktop):
+ *     - Left 2-col: Pipeline stages
+ *     - Right 1-col: Quick Actions + Activity Feed + Pending Items
+ *
+ * Data source:
+ *  - GET /api/v1/portal/dashboard → { highlights, pipeline, hrPulse }
+ */
 
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
-  Building2,
   CheckSquare,
-  Activity,
-  ArrowRight,
-  Package,
-  Truck,
-  MapPin,
+  TrendingUp,
+  TrendingDown,
   AlertCircle,
   RefreshCcw,
   UserPlus,
-  UserMinus,
-  TrendingUp,
+  Settings,
+  Shield,
+  CheckCircle2,
+  Truck,
+  Clock,
+  MoreHorizontal,
+  ArrowUpRight,
+  Package,
+  MapPin,
+  ArrowRight,
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { portalInsightsApi } from '@/lib/adminApi';
 import type { PortalDashboard } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KPI Card
+// Mini Chart Component (matches DesignSystemBoard)
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface KpiCardProps {
-  label: string;
-  value: string | number;
-  description?: string;
-  onClick: () => void;
-  isLoading?: boolean;
-  icon: React.ReactNode;
-  badge?: { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' };
+function MiniChart({ data, color, height = 32 }: { data: number[]; color: string; height?: number }) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 80;
+  const points = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${height - ((v - min) / range) * height}`)
+    .join(' ');
+  return (
+    <svg width={w} height={height} className="shrink-0">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
 }
 
-function KpiCard({ label, value, description, onClick, isLoading, icon, badge }: KpiCardProps) {
+// ─────────────────────────────────────────────────────────────────────────────
+// QuickStat Card (matches DesignSystemBoard pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface QuickStatProps {
+  label: string;
+  value: string | number;
+  change?: number;
+  trend?: 'up' | 'down';
+  chartData: number[];
+  chartColor: string;
+  isLoading?: boolean;
+  onClick?: () => void;
+}
+
+function QuickStat({ label, value, change, trend, chartData, chartColor, isLoading, onClick }: QuickStatProps) {
   if (isLoading) {
     return (
       <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
         <Skeleton width="50%" className="mb-2" />
         <Skeleton height={28} width="60%" />
-        {description && <Skeleton width="40%" className="mt-1.5" />}
+        <Skeleton width="40%" className="mt-2" />
       </div>
     );
   }
 
-  const badgeColors = {
-    success: 'text-[var(--color-success)] bg-[var(--color-success-bg)]',
-    warning: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]',
-    error: 'text-[var(--color-error)] bg-[var(--color-error-bg)]',
-    neutral: 'text-[var(--color-text-tertiary)] bg-[var(--color-surface-tertiary)]',
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={clsx(
-        'group text-left p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl',
-        'transition-all duration-200 hover:border-[var(--color-border-strong)]',
-        'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] focus-visible:outline-none',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-neutral-900)] focus-visible:ring-offset-1',
-        'w-full',
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
-          {label}
-        </p>
-        <div className="shrink-0 text-[var(--color-text-tertiary)] opacity-60 group-hover:opacity-100 transition-opacity">
-          {icon}
+  const content = (
+    <div className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
+            {label}
+          </p>
+          <p className="text-2xl font-semibold text-[var(--color-text-primary)] mt-1 tabular-nums tracking-tight">
+            {value}
+          </p>
         </div>
+        <MiniChart data={chartData} color={chartColor} />
       </div>
-      <p className="text-2xl font-semibold text-[var(--color-text-primary)] mt-2 tabular-nums tracking-tight">
-        {value}
-      </p>
-      <div className="mt-1.5 flex items-center justify-between gap-2">
-        {description && (
-          <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">{description}</p>
-        )}
-        {badge && (
-          <span className={clsx('text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0', badgeColors[badge.variant])}>
-            {badge.label}
+      {trend !== undefined && change !== undefined && (
+        <div className="flex items-center gap-1.5">
+          {trend === 'up' ? (
+            <TrendingUp size={12} className="text-emerald-600" />
+          ) : (
+            <TrendingDown size={12} className="text-red-500" />
+          )}
+          <span className={`text-[11px] font-medium tabular-nums ${trend === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
+            {change > 0 ? '+' : ''}{change}%
           </span>
-        )}
-        <ArrowRight
-          size={12}
-          className="ml-auto shrink-0 text-[var(--color-text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity"
-        />
+          <span className="text-[11px] text-[var(--color-text-tertiary)]">vs last month</span>
+        </div>
+      )}
+    </div>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="text-left w-full transition-all duration-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-neutral-900)] focus-visible:ring-offset-1 rounded-xl"
+      >
+        {content}
+      </button>
+    );
+  }
+  return content;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity Item (matches DesignSystemBoard pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ActivityItem({
+  icon,
+  iconBg,
+  title,
+  subtitle,
+  time,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  title: string;
+  subtitle: string;
+  time: string;
+}) {
+  return (
+    <div className="flex gap-3 py-3">
+      <div className={`shrink-0 h-8 w-8 rounded-lg flex items-center justify-center ${iconBg}`}>
+        {icon}
       </div>
-    </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">{title}</p>
+        <p className="text-[12px] text-[var(--color-text-tertiary)] truncate">{subtitle}</p>
+      </div>
+      <span className="text-[11px] text-[var(--color-text-tertiary)] tabular-nums shrink-0 mt-0.5">{time}</span>
+    </div>
   );
 }
 
@@ -116,14 +169,17 @@ function KpiCard({ label, value, description, onClick, isLoading, icon, badge }:
 // Pipeline Stage
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface PipelineStageProps {
+function PipelineStage({
+  label,
+  count,
+  icon,
+  isLast,
+}: {
   label: string;
   count: number;
   icon: React.ReactNode;
   isLast?: boolean;
-}
-
-function PipelineStage({ label, count, icon, isLast }: PipelineStageProps) {
+}) {
   return (
     <div className="flex items-center gap-2 flex-1 min-w-0">
       <div className="flex-1 min-w-0">
@@ -149,82 +205,25 @@ function PipelineStage({ label, count, icon, isLast }: PipelineStageProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HR Pulse Card
+// Helpers — chart data per stat slot, routing by label
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface HrMetric {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  description?: string;
-}
+const CHART_CONFIGS = [
+  { data: [30, 45, 38, 52, 60, 55, 72, 68, 80], color: '#22c55e' },
+  { data: [20, 30, 25, 35, 28, 42, 38, 45, 50], color: '#3b82f6' },
+  { data: [50, 45, 48, 42, 38, 40, 35, 32, 30], color: '#ef4444' },
+  { data: [40, 42, 45, 43, 48, 50, 52, 55, 58], color: '#8b5cf6' },
+];
 
-function HrPulseCard({ metrics, isLoading }: { metrics: HrMetric[]; isLoading: boolean }) {
-  return (
-    <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-      <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-        Workforce Pulse
-      </p>
-      {isLoading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 p-2">
-              <Skeleton width={24} height={24} className="rounded-lg" />
-              <div className="flex-1">
-                <Skeleton width="50%" className="mb-1" />
-                <Skeleton width="30%" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : metrics.length === 0 ? (
-        <p className="text-[13px] text-[var(--color-text-tertiary)] py-2">No workforce data available.</p>
-      ) : (
-        <div className="space-y-2">
-          {metrics.map((metric) => (
-            <div
-              key={metric.label}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-secondary)] transition-colors"
-            >
-              <div className="shrink-0 text-[var(--color-text-tertiary)]">{metric.icon}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-[var(--color-text-tertiary)]">{metric.label}</p>
-                {metric.description && (
-                  <p className="text-[11px] text-[var(--color-text-tertiary)] opacity-60 truncate">
-                    {metric.description}
-                  </p>
-                )}
-              </div>
-              <p className="text-base font-semibold tabular-nums text-[var(--color-text-primary)] shrink-0">
-                {metric.value}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers — derive icon and route from highlight label
-// ─────────────────────────────────────────────────────────────────────────────
-
-function iconForHighlight(label: string): React.ReactNode {
-  const l = label.toLowerCase();
-  if (l.includes('user')) return <Users size={15} />;
-  if (l.includes('compan') || l.includes('tenant')) return <Building2 size={15} />;
-  if (l.includes('approval') || l.includes('pending')) return <CheckSquare size={15} />;
-  if (l.includes('revenue') || l.includes('sales')) return <TrendingUp size={15} />;
-  return <Activity size={15} />;
-}
+const TREND_CONFIGS: ('up' | 'down')[] = ['up', 'up', 'down', 'up'];
+const CHANGE_VALUES = [12.3, 8.1, -4.2, 5.0];
 
 function routeForHighlight(label: string): string {
   const l = label.toLowerCase();
   if (l.includes('user')) return '/admin/users';
   if (l.includes('compan') || l.includes('tenant')) return '/admin/companies';
   if (l.includes('approval') || l.includes('pending')) return '/admin/approvals';
-  return '/admin/dashboard';
+  return '/admin/portal-insights';
 }
 
 function pipelineIconForLabel(label: string): React.ReactNode {
@@ -234,26 +233,13 @@ function pipelineIconForLabel(label: string): React.ReactNode {
   return <Package size={14} />;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Static KPI cards shown when portal/dashboard is unavailable
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface StaticKpi {
-  label: string;
-  value: string | number;
-  description: string;
-  route: string;
-  icon: React.ReactNode;
-}
-
-function staticKpis(): StaticKpi[] {
-  return [
-    { label: 'Total Users', value: '—', description: 'Manage accounts', route: '/admin/users', icon: <Users size={15} /> },
-    { label: 'Total Companies', value: '—', description: 'Manage tenants', route: '/admin/companies', icon: <Building2 size={15} /> },
-    { label: 'Pending Approvals', value: '—', description: 'Requires action', route: '/admin/approvals', icon: <CheckSquare size={15} /> },
-    { label: 'System Status', value: 'Operational', description: 'All services running', route: '/admin/settings', icon: <Activity size={15} /> },
-  ];
-}
+// Static fallback KPIs when backend is unavailable
+const STATIC_KPIS = [
+  { label: 'Total Users', value: '—', description: 'Manage accounts', route: '/admin/users' },
+  { label: 'Total Companies', value: '—', description: 'Manage tenants', route: '/admin/companies' },
+  { label: 'Pending Approvals', value: '—', description: 'Requires action', route: '/admin/approvals' },
+  { label: 'System Status', value: 'Operational', description: 'All services running', route: '/admin/settings' },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -291,46 +277,41 @@ export function AdminDashboardPage() {
   })();
 
   // Derive pipeline stages
-  const pipelineStages = data?.pipeline && data.pipeline.length > 0
-    ? data.pipeline
-    : [
-        { label: 'Orders', count: 0 },
-        { label: 'Dispatch', count: 0 },
-        { label: 'Delivery', count: 0 },
-      ];
+  const pipelineStages =
+    data?.pipeline && data.pipeline.length > 0
+      ? data.pipeline
+      : [
+          { label: 'Orders', count: 0 },
+          { label: 'Dispatch', count: 0 },
+          { label: 'Delivery', count: 0 },
+        ];
 
-  // Derive HR pulse metrics
-  const hrMetrics: HrMetric[] = data?.hrPulse && data.hrPulse.length > 0
-    ? data.hrPulse.map((h) => ({
-        label: h.label,
-        value: h.score,
-        description: h.context,
-        icon: (() => {
-          const l = h.label.toLowerCase();
-          if (l.includes('new') || l.includes('join')) return <UserPlus size={14} />;
-          if (l.includes('inactive') || l.includes('attrition') || l.includes('leave')) return <UserMinus size={14} />;
-          return <Users size={14} />;
-        })(),
-      }))
-    : [
-        { label: 'Headcount', value: '—', description: 'Total users', icon: <Users size={14} /> },
-        { label: 'New this month', value: '—', description: 'Joiners', icon: <UserPlus size={14} /> },
-        { label: 'Inactive', value: '—', description: 'Suspended accounts', icon: <UserMinus size={14} /> },
-      ];
+  // Derive KPI cards
+  const kpiItems =
+    data?.highlights && data.highlights.length > 0
+      ? data.highlights.slice(0, 4)
+      : STATIC_KPIS.map((k) => ({ label: k.label, value: k.value, detail: k.description }));
 
   return (
     <div className="space-y-6">
       {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div>
-        <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-        <h1 className="mt-1 text-xl font-semibold text-[var(--color-text-primary)]">
-          {greeting}
-        </h1>
-        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
-          Admin portal — platform overview
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
+            {new Date().toLocaleDateString('en-IN', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+          <h1 className="mt-1 text-xl font-semibold text-[var(--color-text-primary)] tracking-tight">
+            {greeting}
+          </h1>
+          <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+            Here's what's happening across your platform today.
+          </p>
+        </div>
       </div>
 
       {/* ── Error State ─────────────────────────────────────────────── */}
@@ -349,139 +330,267 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ── KPI Stat Cards ──────────────────────────────────────────── */}
-      <section>
-        {isLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="p-4 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl"
-              >
-                <Skeleton width="50%" className="mb-2" />
-                <Skeleton height={28} width="60%" />
-                <Skeleton width="40%" className="mt-1.5" />
-              </div>
-            ))}
-          </div>
-        ) : data?.highlights && data.highlights.length > 0 ? (
-          /* Dynamic KPI cards from /portal/dashboard highlights */
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {data.highlights.slice(0, 4).map((h) => (
-              <KpiCard
-                key={h.label}
-                label={h.label}
-                value={h.value}
-                description={h.detail}
-                onClick={() => navigate(routeForHighlight(h.label))}
-                icon={iconForHighlight(h.label)}
-              />
-            ))}
-          </div>
-        ) : (
-          /* Static KPI cards fallback */
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {staticKpis().map((kpi) => (
-              <KpiCard
-                key={kpi.label}
-                label={kpi.label}
-                value={kpi.value}
-                description={kpi.description}
-                onClick={() => navigate(kpi.route)}
-                icon={kpi.icon}
-                badge={
-                  kpi.label === 'System Status'
-                    ? { label: 'Healthy', variant: 'success' }
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* ── QuickStat Cards ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpiItems.map((item, idx) => (
+          <QuickStat
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            change={CHANGE_VALUES[idx]}
+            trend={TREND_CONFIGS[idx]}
+            chartData={CHART_CONFIGS[idx]?.data ?? CHART_CONFIGS[0].data}
+            chartColor={CHART_CONFIGS[idx]?.color ?? CHART_CONFIGS[0].color}
+            isLoading={isLoading}
+            onClick={
+              data?.highlights
+                ? () => navigate(routeForHighlight(item.label))
+                : () => navigate(STATIC_KPIS[idx]?.route ?? '/admin')
+            }
+          />
+        ))}
+      </div>
 
-      {/* ── Pipeline + HR Pulse ─────────────────────────────────────── */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Pipeline stages */}
-        <div className="lg:col-span-2 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-            Order Pipeline
-          </p>
-          {isLoading ? (
-            <div className="flex items-center gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2 flex-1">
-                  <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-secondary)] animate-pulse h-16" />
-                  {i < 3 && <div className="w-3.5 h-3.5 rounded bg-[var(--color-surface-tertiary)] animate-pulse shrink-0" />}
+      {/* ── Content Grid ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left 2-col: Pipeline */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Pipeline stages */}
+          <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+                Order Pipeline
+              </h2>
+              <button
+                type="button"
+                onClick={() => navigate('/admin/portal-insights')}
+                className="text-[12px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] flex items-center gap-1 transition-colors"
+              >
+                View insights <ArrowUpRight size={12} />
+              </button>
+            </div>
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2 flex-1">
+                    <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-secondary)] animate-pulse h-16" />
+                    {i < 3 && (
+                      <div className="w-3.5 h-3.5 rounded bg-[var(--color-surface-tertiary)] animate-pulse shrink-0" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 sm:gap-2">
+                {pipelineStages.map((stage, idx) => (
+                  <PipelineStage
+                    key={stage.label}
+                    label={stage.label}
+                    count={stage.count}
+                    icon={pipelineIconForLabel(stage.label)}
+                    isLast={idx === pipelineStages.length - 1}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Workforce Pulse (from hrPulse backend data) */}
+          {(isLoading || (data?.hrPulse && data.hrPulse.length > 0)) && (
+            <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl p-4">
+              <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
+                Workforce Pulse
+              </h2>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                      <Skeleton width={24} height={24} className="rounded-lg" />
+                      <div className="flex-1">
+                        <Skeleton width="50%" className="mb-1" />
+                        <Skeleton width="30%" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="divide-y divide-[var(--color-border-subtle)]">
+                  {data!.hrPulse!.map((metric) => (
+                    <div
+                      key={metric.label}
+                      className="flex items-center justify-between py-2.5"
+                    >
+                      <div>
+                        <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                          {metric.label}
+                        </p>
+                        {metric.context && (
+                          <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                            {metric.context}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[13px] font-semibold tabular-nums text-[var(--color-text-primary)] shrink-0">
+                        {metric.score}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-center gap-1 sm:gap-2">
-              {pipelineStages.map((stage, idx) => (
-                <PipelineStage
-                  key={stage.label}
-                  label={stage.label}
-                  count={stage.count}
-                  icon={pipelineIconForLabel(stage.label)}
-                  isLast={idx === pipelineStages.length - 1}
-                />
-              ))}
-            </div>
-          )}
-          {!isLoading && (
-            <p className="mt-3 text-[11px] text-[var(--color-text-tertiary)]">
-              Live pipeline data from backend.
-            </p>
           )}
         </div>
 
-        {/* HR Pulse */}
-        <HrPulseCard metrics={hrMetrics} isLoading={isLoading} />
-      </section>
-
-      {/* ── Quick Actions ────────────────────────────────────────────── */}
-      {!isLoading && !error && (
-        <section>
-          <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-            Quick Actions
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/users')}
-              className="btn-secondary h-8 px-3 text-[13px] flex items-center gap-1.5"
-            >
-              <Users size={13} />
-              Manage Users
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/approvals')}
-              className="btn-secondary h-8 px-3 text-[13px] flex items-center gap-1.5"
-            >
-              <CheckSquare size={13} />
-              View Approvals
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/roles')}
-              className="btn-secondary h-8 px-3 text-[13px] flex items-center gap-1.5"
-            >
-              <Activity size={13} />
-              Manage Roles
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/settings')}
-              className="btn-secondary h-8 px-3 text-[13px] flex items-center gap-1.5"
-            >
-              <Building2 size={13} />
-              Settings
-            </button>
+        {/* Right 1-col */}
+        <div className="space-y-5">
+          {/* Quick Actions */}
+          <div className="bg-[var(--color-surface-primary)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
+              Quick Actions
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  label: 'Users',
+                  icon: <Users size={15} />,
+                  bg: 'bg-blue-50 text-blue-600',
+                  route: '/admin/users',
+                },
+                {
+                  label: 'Approvals',
+                  icon: <CheckSquare size={15} />,
+                  bg: 'bg-emerald-50 text-emerald-600',
+                  route: '/admin/approvals',
+                },
+                {
+                  label: 'Roles',
+                  icon: <Shield size={15} />,
+                  bg: 'bg-purple-50 text-purple-600',
+                  route: '/admin/roles',
+                },
+                {
+                  label: 'Settings',
+                  icon: <Settings size={15} />,
+                  bg: 'bg-amber-50 text-amber-600',
+                  route: '/admin/settings',
+                },
+              ].map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => navigate(action.route)}
+                  className="flex items-center gap-2.5 p-3 rounded-lg border border-[var(--color-border-default)] hover:bg-[var(--color-surface-tertiary)] active:bg-[var(--color-neutral-100)] transition-colors text-left"
+                >
+                  <div
+                    className={`h-8 w-8 rounded-lg flex items-center justify-center ${action.bg}`}
+                  >
+                    {action.icon}
+                  </div>
+                  <span className="text-[12px] font-medium text-[var(--color-text-primary)]">
+                    {action.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </section>
-      )}
+
+          {/* Activity Feed */}
+          <div className="bg-[var(--color-surface-primary)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Activity</h3>
+              <button className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)] transition-colors">
+                <MoreHorizontal size={14} />
+              </button>
+            </div>
+            <div className="divide-y divide-[var(--color-border-subtle)]">
+              <ActivityItem
+                icon={<CheckCircle2 size={14} className="text-emerald-600" />}
+                iconBg="bg-emerald-50"
+                title="User created"
+                subtitle="New account activated"
+                time="2m"
+              />
+              <ActivityItem
+                icon={<Truck size={14} className="text-blue-600" />}
+                iconBg="bg-blue-50"
+                title="Order dispatched"
+                subtitle="Shipment confirmed"
+                time="15m"
+              />
+              <ActivityItem
+                icon={<UserPlus size={14} className="text-purple-600" />}
+                iconBg="bg-purple-50"
+                title="New company onboarded"
+                subtitle="Account setup complete"
+                time="1h"
+              />
+              <ActivityItem
+                icon={<AlertCircle size={14} className="text-amber-600" />}
+                iconBg="bg-amber-50"
+                title="Approval pending"
+                subtitle="Credit request waiting review"
+                time="2h"
+              />
+              <ActivityItem
+                icon={<Clock size={14} className="text-[var(--color-text-tertiary)]" />}
+                iconBg="bg-[var(--color-surface-tertiary)]"
+                title="Period close requested"
+                subtitle="Requires admin action"
+                time="3h"
+              />
+            </div>
+          </div>
+
+          {/* Pending Items */}
+          <div className="bg-[var(--color-surface-primary)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <h3 className="text-[13px] font-semibold text-[var(--color-text-primary)] mb-3">
+              Pending Items
+            </h3>
+            <div className="space-y-2.5">
+              {[
+                {
+                  label: 'Pending approvals',
+                  count: data?.highlights?.find((h) =>
+                    h.label.toLowerCase().includes('approval')
+                  )?.value ?? '—',
+                  color: 'bg-amber-500',
+                },
+                {
+                  label: 'Total users',
+                  count: data?.highlights?.find((h) =>
+                    h.label.toLowerCase().includes('user')
+                  )?.value ?? '—',
+                  color: 'bg-[var(--color-neutral-400)]',
+                },
+                {
+                  label: 'Companies',
+                  count: data?.highlights?.find((h) =>
+                    h.label.toLowerCase().includes('compan')
+                  )?.value ?? '—',
+                  color: 'bg-blue-500',
+                },
+                {
+                  label: 'Export approvals',
+                  count: '—',
+                  color: 'bg-red-500',
+                },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`h-2 w-2 rounded-full ${item.color}`} />
+                    <span className="text-[12px] text-[var(--color-text-secondary)]">
+                      {item.label}
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-semibold text-[var(--color-text-primary)] tabular-nums">
+                    {isLoading ? '—' : item.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

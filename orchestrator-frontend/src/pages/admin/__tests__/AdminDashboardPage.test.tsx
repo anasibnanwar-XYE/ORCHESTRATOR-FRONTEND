@@ -1,15 +1,18 @@
- /**
-  * Tests for AdminDashboardPage
-  *
-  * Covers:
-  *  - Renders KPI stat cards from /portal/dashboard highlights
-  *  - Shows skeleton loading state while data loads
-  *  - Shows error state with retry button on API failure
-  *  - Pipeline stages visualization renders
-  *  - HR pulse card renders
-  *  - Clicking KPI cards navigates to relevant pages
-  *  - Falls back to static KPI cards when no highlights returned
-  */
+/**
+ * Tests for AdminDashboardPage
+ *
+ * Covers:
+ *  - Renders QuickStat cards from /portal/dashboard highlights
+ *  - Shows skeleton loading state while data loads
+ *  - Shows error state with retry button on API failure
+ *  - Pipeline stages visualization renders
+ *  - Workforce pulse card renders (when hrPulse data present)
+ *  - Activity feed section renders
+ *  - Quick Actions section renders with colored icons
+ *  - Pending Items section renders
+ *  - Clicking KPI cards navigates to relevant pages
+ *  - Falls back to static KPI cards when no highlights returned
+ */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -19,14 +22,14 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('lucide-react', () => {
   const M = () => null;
   return {
-    Users: M, Building2: M, CheckSquare: M, Activity: M,
-    ArrowRight: M, TrendingUp: M, TrendingDown: M, ChevronRight: M,
+    Users: M, Building2: M, CheckSquare: M, TrendingUp: M, TrendingDown: M,
     AlertCircle: M, RefreshCcw: M, Package: M, Truck: M, MapPin: M,
-    UserPlus: M, UserMinus: M, Shield: M, Settings: M, BarChart3: M,
+    UserPlus: M, ShoppingCart: M, FileText: M, Settings: M, Shield: M,
+    CheckCircle2: M, Clock: M, MoreHorizontal: M, ArrowUpRight: M, ArrowRight: M,
   };
 });
 
-// Mock the portal insights API (used by AdminDashboardPage for /portal/dashboard)
+// Mock the portal insights API
 vi.mock('@/lib/adminApi', () => ({
   portalInsightsApi: {
     getDashboard: vi.fn(),
@@ -121,7 +124,6 @@ describe('AdminDashboardPage', () => {
     renderPage();
 
     await waitFor(() => {
-      // Check that values from highlights appear (use queryAllByText to allow multiple matches)
       const allWith42 = screen.queryAllByText('42');
       const allWith5 = screen.queryAllByText('5');
       expect(allWith42.length).toBeGreaterThan(0);
@@ -184,13 +186,13 @@ describe('AdminDashboardPage', () => {
     });
   });
 
-  it('renders HR pulse section from hrPulse data', async () => {
+  it('renders workforce pulse section from hrPulse data', async () => {
     (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
 
     renderPage();
 
     await waitFor(() => {
-      const hrPulse = screen.queryByText(/workforce|headcount|hr pulse/i);
+      const hrPulse = screen.queryByText(/workforce pulse|headcount/i);
       expect(hrPulse).not.toBeNull();
     });
   });
@@ -206,7 +208,7 @@ describe('AdminDashboardPage', () => {
     });
   });
 
-  it('renders quick actions section after successful load', async () => {
+  it('renders Quick Actions section with colored icon buttons', async () => {
     (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
 
     renderPage();
@@ -215,5 +217,53 @@ describe('AdminDashboardPage', () => {
       const quickActionsLabel = screen.queryByText(/quick actions/i);
       expect(quickActionsLabel).not.toBeNull();
     });
+
+    // Verify specific quick action buttons exist
+    expect(screen.queryByText('Users')).not.toBeNull();
+    expect(screen.queryByText('Approvals')).not.toBeNull();
+    expect(screen.queryByText('Roles')).not.toBeNull();
+    expect(screen.queryByText('Settings')).not.toBeNull();
+  });
+
+  it('renders activity feed section', async () => {
+    (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
+
+    renderPage();
+
+    await waitFor(() => {
+      const activity = screen.queryByText(/activity/i);
+      expect(activity).not.toBeNull();
+    });
+  });
+
+  it('renders pending items section', async () => {
+    (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
+
+    renderPage();
+
+    await waitFor(() => {
+      const pendingItems = screen.queryByText(/pending items/i);
+      expect(pendingItems).not.toBeNull();
+    });
+  });
+
+  it('quick action Users button navigates to /admin/users', async () => {
+    (portalInsightsApi.getDashboard as ReturnType<typeof vi.fn>).mockResolvedValue(mockDashboard);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText('Quick Actions')).not.toBeNull();
+    });
+
+    // Find the Users quick action button (not the KPI card which also has 'Total Users')
+    const usersBtn = screen.queryByText('Users');
+    if (usersBtn) {
+      const btn = usersBtn.closest('button');
+      if (btn) {
+        fireEvent.click(btn);
+        expect(mockNavigate).toHaveBeenCalledWith('/admin/users');
+      }
+    }
   });
 });

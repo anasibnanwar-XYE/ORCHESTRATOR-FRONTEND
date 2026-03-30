@@ -33,7 +33,6 @@ import {
   GitBranch,
   ClipboardList,
   LineChart,
-  Server,
   type LucideIcon,
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -97,7 +96,6 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Orchestrator', to: '/admin/orchestrator', icon: GitBranch },
       { label: 'Portal Insights', to: '/admin/portal-insights', icon: LineChart },
       { label: 'Audit Trail', to: '/admin/audit-trail', icon: ClipboardList },
-      { label: 'Tenant Runtime', to: '/admin/tenant-runtime', icon: Server },
       { label: 'Operations', to: '/admin/operations', icon: BarChart3 },
     ],
   },
@@ -124,7 +122,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/admin/portal-insights': 'Portal Insights',
   '/admin/insights': 'Portal Insights',
   '/admin/audit-trail': 'Audit Trail',
-  '/admin/tenant-runtime': 'Tenant Runtime',
   new: 'New',
   edit: 'Edit',
 };
@@ -149,7 +146,7 @@ function NavItemLink({
         clsx(
           'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
           isActive
-            ? 'bg-[var(--color-primary-600)] text-white'
+            ? 'bg-[var(--color-neutral-900)] text-white'
             : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
         )
       }

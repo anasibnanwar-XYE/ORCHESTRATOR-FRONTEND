@@ -379,12 +379,7 @@ const AdminUsersPage = lazy(() =>
      default: m.OperationsControlPage,
    }))
  );
- /** Admin portal — Tenant Runtime */
- const AdminTenantRuntimePage = lazy(() =>
-   import('@/pages/admin/TenantRuntimePage').then((m) => ({
-     default: m.TenantRuntimePage,
-   }))
- );
+
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Lazy-loaded Superadmin portal pages
@@ -887,7 +882,8 @@ function AppRouter() {
            <Route path="portal-insights" element={<AdminPortalInsightsPage />} />
            {/* /admin/insights is an alias for /admin/portal-insights */}
            <Route path="insights" element={<AdminPortalInsightsPage />} />
-           <Route path="tenant-runtime" element={<AdminTenantRuntimePage />} />
+           {/* /admin/operations shows portal insights (operations tab) */}
+           <Route path="operations" element={<AdminPortalInsightsPage />} />
            <Route path="*" element={<AdminDashboardPage />} />
           </Route>
 

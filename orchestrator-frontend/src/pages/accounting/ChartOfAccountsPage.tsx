@@ -25,6 +25,7 @@
    RefreshCcw,
    X,
    Calendar,
+   Filter,
  } from 'lucide-react';
  import { clsx } from 'clsx';
  import { format, parseISO } from 'date-fns';
@@ -192,6 +193,24 @@ const ACCOUNT_TYPES: AccountType[] = [
  }
 
  // ─────────────────────────────────────────────────────────────────────────────
+ // Account Type Filter Tabs
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ type TypeFilter = AccountType | 'ALL';
+
+ const TYPE_FILTER_OPTIONS: { value: TypeFilter; label: string }[] = [
+   { value: 'ALL', label: 'All' },
+   { value: 'ASSET', label: 'Assets' },
+   { value: 'LIABILITY', label: 'Liabilities' },
+   { value: 'EQUITY', label: 'Equity' },
+   { value: 'REVENUE', label: 'Revenue' },
+   { value: 'EXPENSE', label: 'Expenses' },
+   { value: 'COGS', label: 'COGS' },
+   { value: 'OTHER_INCOME', label: 'Other Income' },
+   { value: 'OTHER_EXPENSE', label: 'Other Expense' },
+ ];
+
+ // ─────────────────────────────────────────────────────────────────────────────
  // Account Tree Panel
  // ─────────────────────────────────────────────────────────────────────────────
 
@@ -199,6 +218,8 @@ const ACCOUNT_TYPES: AccountType[] = [
    tree: AccountTreeNode[];
    isLoading: boolean;
    selectedId: number | null;
+   typeFilter: TypeFilter;
+   onTypeFilterChange: (type: TypeFilter) => void;
    onSelect: (node: AccountTreeNode) => void;
    onCreateNew: () => void;
  }
@@ -207,6 +228,8 @@ const ACCOUNT_TYPES: AccountType[] = [
    tree,
    isLoading,
    selectedId,
+   typeFilter,
+   onTypeFilterChange,
    onSelect,
    onCreateNew,
  }: AccountTreePanelProps) {
@@ -219,6 +242,28 @@ const ACCOUNT_TYPES: AccountType[] = [
          <Button variant="secondary" size="sm" leftIcon={<Plus />} onClick={onCreateNew}>
            New
          </Button>
+       </div>
+
+       {/* Type filter bar */}
+       <div className="px-2 py-2 border-b border-[var(--color-border-subtle)] overflow-x-auto">
+         <div className="flex items-center gap-1 min-w-max">
+           <Filter size={11} className="text-[var(--color-text-tertiary)] ml-1 shrink-0" />
+           {TYPE_FILTER_OPTIONS.map((opt) => (
+             <button
+               key={opt.value}
+               type="button"
+               onClick={() => onTypeFilterChange(opt.value)}
+               className={clsx(
+                 'px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors',
+                 typeFilter === opt.value
+                   ? 'bg-[var(--color-neutral-900)] text-[var(--color-text-inverse)]'
+                   : 'text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)]',
+               )}
+             >
+               {opt.label}
+             </button>
+           ))}
+         </div>
        </div>
 
        <div className="flex-1 overflow-y-auto p-2">
@@ -692,13 +737,16 @@ const ACCOUNT_TYPES: AccountType[] = [
    const [treeError, setTreeError] = useState(false);
    const [selectedNode, setSelectedNode] = useState<AccountTreeNode | null>(null);
    const [createModalOpen, setCreateModalOpen] = useState(false);
+   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
 
-   const loadTree = useCallback(async () => {
+   const loadTree = useCallback(async (filter: TypeFilter) => {
      setTreeLoading(true);
      setTreeError(false);
      try {
        const [treeData, flatData] = await Promise.all([
-         accountingApi.getAccountTree(),
+         filter === 'ALL'
+           ? accountingApi.getAccountTree()
+           : accountingApi.getAccountTreeByType(filter),
          accountingApi.getAccounts(),
        ]);
        setTree(treeData);
@@ -711,16 +759,23 @@ const ACCOUNT_TYPES: AccountType[] = [
    }, []);
 
    useEffect(() => {
-     void loadTree();
-   }, [loadTree]);
+     void loadTree(typeFilter);
+   }, [loadTree, typeFilter]);
+
+   const handleTypeFilterChange = useCallback(
+     (newFilter: TypeFilter) => {
+       setTypeFilter(newFilter);
+       setSelectedNode(null);
+     },
+     []
+   );
 
    const handleAccountCreated = useCallback(
      (newAccount: AccountDto) => {
        setFlatAccounts((prev) => [...prev, newAccount]);
-       // Reload tree to reflect hierarchy
-       void loadTree();
+       void loadTree(typeFilter);
      },
-     [loadTree]
+     [loadTree, typeFilter]
    );
 
    const handleNodeSelect = useCallback((node: AccountTreeNode) => {
@@ -737,7 +792,7 @@ const ACCOUNT_TYPES: AccountType[] = [
          <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
            Couldn't load chart of accounts
          </p>
-         <Button variant="secondary" size="sm" leftIcon={<RefreshCcw />} onClick={loadTree}>
+         <Button variant="secondary" size="sm" leftIcon={<RefreshCcw />} onClick={() => void loadTree(typeFilter)}>
            Try again
          </Button>
        </div>
@@ -759,6 +814,8 @@ const ACCOUNT_TYPES: AccountType[] = [
            tree={tree}
            isLoading={treeLoading}
            selectedId={selectedNode?.id ?? null}
+           typeFilter={typeFilter}
+           onTypeFilterChange={handleTypeFilterChange}
            onSelect={handleNodeSelect}
            onCreateNew={() => setCreateModalOpen(true)}
          />

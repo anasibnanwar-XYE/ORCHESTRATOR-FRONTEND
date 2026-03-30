@@ -941,6 +941,31 @@ export interface PurchaseRef {
  // Extended API methods (operations pages)
  // ─────────────────────────────────────────────────────────────────────────────
 
+ // ─────────────────────────────────────────────────────────────────────────────
+ // Balance Warning types (for accounting dashboard)
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** BalanceWarningDto — returned by GET /api/v1/reports/balance-warnings */
+ export interface BalanceWarningDto {
+   accountId: number;
+   accountCode: string;
+   accountName: string;
+   balance: number;
+   severity: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+   reason: string;
+ }
+
+ /** Extended accounting API with balance warnings */
+ export const reportsApi = {
+   /** GET /api/v1/reports/balance-warnings — list accounts with unusual balances */
+   async getBalanceWarnings(): Promise<BalanceWarningDto[]> {
+     const response = await apiRequest.get<ApiResponse<BalanceWarningDto[]>>(
+       '/reports/balance-warnings'
+     );
+     return response.data.data;
+   },
+ };
+
  /** Bank Reconciliation Session API methods */
  export const bankReconciliationApi = {
    /**

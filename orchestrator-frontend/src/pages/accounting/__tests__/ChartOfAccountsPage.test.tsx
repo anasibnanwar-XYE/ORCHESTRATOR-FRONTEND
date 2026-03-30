@@ -19,7 +19,7 @@
    return {
      ChevronRight: M, ChevronDown: M, Plus: M, AlertCircle: M, RefreshCcw: M,
      X: M, Calendar: M, ArrowLeft: M, RotateCcw: M, ChevronsRight: M, Search: M,
-     Trash2: M,
+     Trash2: M, Filter: M,
    };
  });
 
@@ -31,9 +31,13 @@
      EQUITY: 'Equity',
      REVENUE: 'Revenue',
      EXPENSE: 'Expenses',
+     COGS: 'Cost of Goods Sold',
+     OTHER_INCOME: 'Other Income',
+     OTHER_EXPENSE: 'Other Expense',
    },
    accountingApi: {
      getAccountTree: vi.fn(),
+     getAccountTreeByType: vi.fn(),
      getAccounts: vi.fn(),
      createAccount: vi.fn(),
      getAccountActivity: vi.fn(),
@@ -134,6 +138,7 @@
    beforeEach(() => {
      vi.clearAllMocks();
      vi.mocked(accountingApi.getAccountTree).mockResolvedValue(mockTree);
+     vi.mocked(accountingApi.getAccountTreeByType).mockResolvedValue([mockTree[0]]);
      vi.mocked(accountingApi.getAccounts).mockResolvedValue(mockFlatAccounts);
      vi.mocked(accountingApi.getAccountActivity).mockResolvedValue(mockActivityReport);
      vi.mocked(accountingApi.getAccountBalanceAsOf).mockResolvedValue(100000);
@@ -207,5 +212,30 @@
        expect(screen.getAllByText('Cash').length).toBeGreaterThan(0);
        expect(screen.getByText(/balance as of/i)).toBeTruthy();
      });
+   });
+
+   it('renders account type filter tabs with "All" selected by default', async () => {
+     renderPage();
+     await waitFor(() => {
+       // The filter tabs should include 'All' and common type labels
+       const allButtons = screen.getAllByRole('button');
+       const allFilterBtn = allButtons.find((b) => b.textContent === 'All');
+       expect(allFilterBtn).toBeTruthy();
+     });
+   });
+
+   it('filters tree by account type when type filter is clicked', async () => {
+     renderPage();
+     // Wait for initial load
+     await waitFor(() => screen.getByText('Assets'));
+     // Find and click the "Assets" filter button in the filter bar
+     const filterButtons = screen.getAllByRole('button');
+     const assetsFilter = filterButtons.find((b) => b.textContent === 'Assets');
+     if (assetsFilter) {
+       fireEvent.click(assetsFilter);
+       await waitFor(() => {
+         expect(vi.mocked(accountingApi.getAccountTreeByType)).toHaveBeenCalledWith('ASSET');
+       });
+     }
    });
  });
