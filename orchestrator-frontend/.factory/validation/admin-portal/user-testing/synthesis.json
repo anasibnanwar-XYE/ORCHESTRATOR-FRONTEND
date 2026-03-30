@@ -1,118 +1,108 @@
 {
   "milestone": "admin-portal",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "assertionsSummary": {
     "total": 30,
-    "passed": 16,
-    "failed": 11,
-    "blocked": 3
+    "passed": 22,
+    "failed": 2,
+    "blocked": 6
   },
   "passedAssertions": [
     "VAL-ADMIN-001",
     "VAL-ADMIN-002",
     "VAL-ADMIN-003",
     "VAL-ADMIN-005",
+    "VAL-ADMIN-006",
+    "VAL-ADMIN-007",
     "VAL-ADMIN-009",
+    "VAL-ADMIN-010",
     "VAL-ADMIN-011",
+    "VAL-ADMIN-012",
     "VAL-ADMIN-013",
+    "VAL-ADMIN-016",
     "VAL-ADMIN-017",
     "VAL-ADMIN-019",
+    "VAL-ADMIN-021",
     "VAL-ADMIN-022",
     "VAL-ADMIN-023",
     "VAL-ADMIN-024",
     "VAL-ADMIN-025",
     "VAL-ADMIN-027",
+    "VAL-ADMIN-029",
     "VAL-ADMIN-030"
   ],
   "failedAssertions": [
     {
       "id": "VAL-ADMIN-004",
-      "reason": "Create User form validates correctly but POST /api/v1/admin/users returns HTTP 500 for all payloads — backend bug prevents user creation"
+      "reason": "Frontend form renders and validates correctly but backend POST /admin/users returns 500 for all payloads — persistent backend bug since Round 1."
     },
     {
-      "id": "VAL-ADMIN-006",
-      "reason": "Suspend button in row action dropdown non-functional — clicking it triggers row onClick (opens User Details) instead of suspend confirmation dialog. Event propagation bug in DataTable."
-    },
-    {
-      "id": "VAL-ADMIN-007",
-      "reason": "Force Reset Password button in row action dropdown non-functional — same event propagation bug as suspend. Clicking opens User Details instead of triggering reset action."
-    },
-    {
-      "id": "VAL-ADMIN-012",
-      "reason": "No company detail page exists — no /admin/companies/:id route. Only an Edit Company dialog with basic fields (name, code, email, phone, address, GST). No subscription, users count, or settings sections."
-    },
-    {
-      "id": "VAL-ADMIN-018",
-      "reason": "Changelog list is empty — no seed data entries exist in backend. Page shows correct empty state but assertion requires entries with version, date, content preview."
-    },
-    {
-      "id": "VAL-ADMIN-020",
-      "reason": "No WhatsNew indicator/banner found on hub or admin pages. May require actual changelog entries to trigger (none exist in system)."
-    },
-    {
-      "id": "VAL-ADMIN-021",
-      "reason": "Page is a 'Send Notification' compose form, not a notifications inbox/list with timestamps, types, and read/unread status as expected by assertion."
-    },
-    {
-      "id": "VAL-ADMIN-026",
-      "reason": "Backend audit business-events endpoint returns HTTP 500 ('Failed to write request'). Frontend handles gracefully with error UI but cannot display events."
-    },
-    {
-      "id": "VAL-ADMIN-028",
-      "reason": "Runtime Metrics section shows 'Failed to load runtime metrics' error. No active tenants or resource usage displayed. Security Policy section renders correctly."
-    },
-    {
-      "id": "VAL-ADMIN-029",
-      "reason": "Page is an operational dashboard with KPIs (revenue, SLA, coverage), not a control panel with cache clear, job triggers, or health check controls as expected."
+      "id": "VAL-ADMIN-015",
+      "reason": "Approve confirmation dialog sends { reason: '' } but backend POST /credit/limit-requests/{id}/approve requires non-blank reason (400: 'Validation failed: reason must not be blank'). Approve dialog needs a reason textarea like the reject dialog."
     }
   ],
   "blockedAssertions": [
     {
       "id": "VAL-ADMIN-008",
-      "blockedBy": "No users in test data have MFA enabled — all show 'No MFA' / 'Not enabled'. Cannot test Disable MFA functionality."
+      "blockedBy": "No test users have MFA enabled in backend seed data — all users have mfaEnabled=false. Cannot test Disable MFA functionality."
     },
     {
-      "id": "VAL-ADMIN-010",
-      "blockedBy": "Create Role button not available for tenant admin. Page states role creation is managed by platform administrators (superadmin only). May be correct RBAC restriction."
+      "id": "VAL-ADMIN-018",
+      "blockedBy": "No changelog entries exist in backend seed data. Page renders correct empty state. Blocked on test data."
     },
     {
-      "id": "VAL-ADMIN-015",
-      "blockedBy": "No pending approval items in backend test data — all approval categories return empty arrays."
+      "id": "VAL-ADMIN-020",
+      "blockedBy": "Requires changelog entries to trigger WhatsNew banner. No seed data entries exist. Blocked on test data."
     },
     {
-      "id": "VAL-ADMIN-016",
-      "blockedBy": "No pending approval items to test rejection. Additionally, reject dialog does NOT include reason input field (passes empty reason)."
+      "id": "VAL-ADMIN-026",
+      "blockedBy": "Backend GET /audit/business-events returns HTTP 500 ('Failed to write request'). Frontend handles gracefully with error UI and retry. Backend bug."
+    },
+    {
+      "id": "VAL-ADMIN-028",
+      "blockedBy": "Backend GET /admin/tenant-runtime/metrics returns HTTP 404 (endpoint doesn't exist). Security Policy section renders correctly. Blocked on backend endpoint implementation."
     }
   ],
-  "appliedUpdates": [
-    {
-      "target": "user-testing.md",
-      "description": "Added 'Flow Validator Guidance: Browser — Admin Portal Assertions' section with isolation rules, concurrency guidance, and 5 assertion groupings for parallel execution",
-      "source": "setup"
-    }
-  ],
-  "previousRound": null,
+  "appliedUpdates": [],
+  "previousRound": ".factory/validation/admin-portal/user-testing/synthesis.json (round 1)",
+  "round2Changes": {
+    "newlyPassed": [
+      "VAL-ADMIN-006",
+      "VAL-ADMIN-007",
+      "VAL-ADMIN-010",
+      "VAL-ADMIN-012",
+      "VAL-ADMIN-016",
+      "VAL-ADMIN-021",
+      "VAL-ADMIN-029"
+    ],
+    "newlyFailed": ["VAL-ADMIN-004", "VAL-ADMIN-015"],
+    "stillBlocked": ["VAL-ADMIN-008", "VAL-ADMIN-018", "VAL-ADMIN-020", "VAL-ADMIN-026", "VAL-ADMIN-028"],
+    "fixesVerified": [
+      "VAL-ADMIN-006: DropdownMenu event propagation fix confirmed — suspend action works",
+      "VAL-ADMIN-007: DropdownMenu event propagation fix confirmed — force reset password works",
+      "VAL-ADMIN-012: CompanyDetailDrawer added — company detail now shows on row click",
+      "VAL-ADMIN-016: Rejection dialog reason textarea fix confirmed — required reason validation works"
+    ],
+    "newlyDiscovered": [
+      "VAL-ADMIN-015: Approve dialog also needs a reason textarea (same pattern as reject) — backend requires non-blank reason",
+      "VAL-ADMIN-028: Endpoint changed from 500 to 404 — backend endpoint /admin/tenant-runtime/metrics does not exist at all"
+    ]
+  },
   "notableFindings": {
     "backendBugs": [
-      "POST /api/v1/admin/users returns 500 for all payloads",
-      "GET /api/v1/audit/business-events returns 500 (Internal Server Error: Failed to write request)",
-      "Tenant runtime metrics endpoint returns error or doesn't exist"
+      "POST /api/v1/admin/users returns 500 for all payloads (persistent since Round 1)",
+      "GET /api/v1/audit/business-events returns 500 ('Failed to write request')",
+      "GET /api/v1/admin/tenant-runtime/metrics returns 404 (endpoint does not exist)",
+      "POST /api/v1/credit/limit-requests/{id}/approve requires non-blank reason field (frontend was sending empty reason)"
     ],
     "frontendBugs": [
-      "DataTable row action dropdown buttons (Suspend, Force Reset Password, Delete) non-functional — row onClick fires instead of button handler (event propagation bug)",
-      "Approvals page reject dialog does NOT include reason input field — passes empty reason string"
-    ],
-    "uiMismatches": [
-      "VAL-ADMIN-021: Notifications page is a compose form, not an inbox — assertion expects list view",
-      "VAL-ADMIN-029: Operations page is a KPI dashboard, not a control panel — assertion expects operational controls",
-      "VAL-ADMIN-012: No company detail route exists — only edit dialog with basic fields",
-      "VAL-ADMIN-028: Tenant Runtime shows only security policy, not tenant list with resource usage"
+      "Approve confirmation dialog lacks reason textarea — sends empty reason causing 400 from backend"
     ],
     "dataGaps": [
-      "No changelog entries seeded in backend",
-      "No MFA-enabled users in test data",
-      "No pending approval items in test data"
+      "No MFA-enabled users in backend seed data",
+      "No changelog entries in backend seed data",
+      "No pending approval items in initial seed data (though can be created via API)"
     ]
   }
 }

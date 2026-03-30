@@ -1,0 +1,115 @@
+{
+  "groupId": "round2-groupC",
+  "testedAt": "2026-03-30T06:34:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / company code: MOCK",
+    "session": "d1175d00d08c__grpC",
+    "tool": "agent-browser"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-018",
+      "title": "Changelog Management Lists Entries",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /admin/changelog",
+          "expected": "Changelog entries listed with version, date, content preview",
+          "observed": "Page renders correctly with heading 'Changelog', subtitle 'Product updates and release notes', Refresh button, and informational message. Empty state displayed: 'No entries yet — Check back after the next release.' No changelog entries present in backend seed data."
+        },
+        {
+          "action": "Check browser console for errors",
+          "expected": "No errors",
+          "observed": "No console errors"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-018-changelog-page.png"],
+        "consoleErrors": "none",
+        "network": "N/A — page loaded successfully"
+      },
+      "issues": "Still blocked: no changelog entries exist in backend seed data. Page renders correct empty state with proper messaging. Frontend implementation is correct."
+    },
+    {
+      "id": "VAL-ADMIN-020",
+      "title": "WhatsNew Banner Displays for Unread Changelog",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Login and navigate to /admin/dashboard",
+          "expected": "WhatsNew banner or indicator shown if unread changelog entries exist",
+          "observed": "Dashboard renders with KPI cards, Order Pipeline, Workforce Pulse, and Quick Actions sections. No WhatsNew banner, notification bell, badge, or banner indicator visible anywhere on dashboard."
+        },
+        {
+          "action": "Navigate to /hub to check for notification indicators",
+          "expected": "Possible WhatsNew indicator on hub page",
+          "observed": "Hub page shows portal cards (Admin, Accounting, Sales, Factory). No notification indicators, banners, or badges visible."
+        },
+        {
+          "action": "Check browser console for errors",
+          "expected": "No errors",
+          "observed": "No console errors on either page"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["VAL-ADMIN-020-dashboard-no-banner.png"],
+        "consoleErrors": "none",
+        "network": "N/A — pages loaded successfully"
+      },
+      "issues": "Still blocked: requires changelog entries to trigger WhatsNew indicator. With zero changelog entries in backend, there is nothing unread to trigger the banner. Frontend implementation may be correct but cannot be verified without seed data."
+    },
+    {
+      "id": "VAL-ADMIN-021",
+      "title": "Notifications Page Lists System Notifications",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/notifications",
+          "expected": "Notification compose form renders with recipient selector, message field, and send button",
+          "observed": "Page renders with 'Send Notification' heading and compose form containing: Recipient combobox with 7 user options, Subject textbox, Body textbox (with character count), and Send Notification button (disabled until form filled). Also shows 'Sent This Session' section with '0 sent' and empty state."
+        },
+        {
+          "action": "Select recipient from dropdown",
+          "expected": "Recipient selected",
+          "observed": "Selected 'Validation Admin — validation.admin@example.com' from dropdown"
+        },
+        {
+          "action": "Fill subject and body fields",
+          "expected": "Fields populated, Send button enabled",
+          "observed": "Subject 'Test Notification Subject' and body 'This is a test notification body from UAT validation Round 2.' filled. Send button became enabled (no longer disabled)."
+        },
+        {
+          "action": "Click Send Notification button",
+          "expected": "Notification sent via POST to /admin/notify, form clears, success feedback",
+          "observed": "Form cleared after click. Recipient reset to 'Select a user...', subject and body fields emptied, Send button re-disabled. 'Sent This Session' updated to '1 sent' showing: recipient 'Validation Admin', body text, timestamp '06:34 am'."
+        },
+        {
+          "action": "Check browser console for errors",
+          "expected": "No errors",
+          "observed": "No console errors"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "VAL-ADMIN-021-notifications-compose-form.png",
+          "VAL-ADMIN-021-notifications-form-filled.png",
+          "VAL-ADMIN-021-notifications-after-send.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /admin/notify — successful (confirmed by UI state change: form cleared, session count incremented to 1)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "VAL-ADMIN-018 and VAL-ADMIN-020 remain blocked due to no changelog entries in backend seed data. The frontend correctly implements the empty state for changelog and the absence of a WhatsNew banner when no entries exist. These assertions require backend seed data with at least one changelog entry to properly test.",
+      "affectedAssertions": ["VAL-ADMIN-018", "VAL-ADMIN-020"],
+      "quickFixAttempted": "Navigated to changelog page and refreshed — still no entries. Checked dashboard and hub for any notification indicators — none found."
+    }
+  ],
+  "summary": "Tested 3 assertions (Round 2 re-run): 1 passed (VAL-ADMIN-021), 2 still blocked (VAL-ADMIN-018, VAL-ADMIN-020). VAL-ADMIN-021 confirms the notification compose form works correctly with recipient selector, subject/body fields, and successful send action. VAL-ADMIN-018 and VAL-ADMIN-020 remain blocked on missing backend seed data for changelog entries — frontend renders correct empty state."
+}

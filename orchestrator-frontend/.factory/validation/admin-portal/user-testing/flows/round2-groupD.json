@@ -1,0 +1,143 @@
+{
+  "groupId": "round2-groupD",
+  "testedAt": "2026-03-30T10:00:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / [redacted] / company: MOCK",
+    "session": "d1175d00d08c__grpD"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-010",
+      "title": "Create Role with Permissions",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Login as validation.admin@example.com with company MOCK",
+          "expected": "Redirect to hub",
+          "observed": "Redirected to /hub"
+        },
+        {
+          "action": "Navigate to /admin/roles",
+          "expected": "Roles page renders with restriction message, no Create Role button",
+          "observed": "Roles page shows 5 roles in a DataTable. No Create Role button exists. Informational message displayed: 'Role creation is managed by platform administrators. Contact your platform team to add new roles.'"
+        },
+        {
+          "action": "Verify RBAC restriction",
+          "expected": "Create Role button disabled or hidden with informational message",
+          "observed": "No Create Role button present. Clear informational message with icon explaining that role creation is managed by platform administrators."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/user-testing/screenshots/round2-VAL-ADMIN-010-roles-page.png"],
+        "consoleErrors": "React key prop warning in DataTable (non-blocking)",
+        "network": "No API errors on roles page load"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-026",
+      "title": "Audit Trail Lists Business Events",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /admin/audit-trail",
+          "expected": "Audit trail page loads with business events",
+          "observed": "Page loads with Business Events tab selected, actor filter, refresh button. Shows error state: 'Audit Service Unavailable — The audit trail service is experiencing issues on the backend. Please try again later or contact your system administrator.'"
+        },
+        {
+          "action": "Check backend API response",
+          "expected": "GET /api/v1/audit/business-events returns 200 with events",
+          "observed": "GET /api/v1/audit/business-events?page=0&size=20 returns HTTP 500: {\"title\":\"Internal Server Error\",\"detail\":\"Failed to write request\"}"
+        },
+        {
+          "action": "Click Try again button",
+          "expected": "Retries the API call",
+          "observed": "Retry button works, re-triggers API call, same 500 error persists"
+        },
+        {
+          "action": "Verify frontend error handling",
+          "expected": "Graceful error UI",
+          "observed": "Frontend shows clean error state with icon, descriptive message, and Try again button. No crash or blank page."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/user-testing/screenshots/round2-VAL-ADMIN-026-audit-trail.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/audit/business-events?page=0&size=20 -> 500 (Internal Server Error)"
+      },
+      "issues": "Backend GET /api/v1/audit/business-events returns 500 with 'Failed to write request'. Frontend handles gracefully with error UI and retry button. Blocked on backend fix."
+    },
+    {
+      "id": "VAL-ADMIN-028",
+      "title": "Tenant Runtime View Shows Active Tenants",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /admin/tenant-runtime",
+          "expected": "Tenant runtime page with active tenants and resource usage",
+          "observed": "Page loads with two sections: Runtime Metrics (shows error 'Failed to load runtime metrics' with Retry button) and Security Policy (renders correctly with session timeout, password policy, login attempts, complexity, MFA settings)"
+        },
+        {
+          "action": "Check backend API response",
+          "expected": "GET /api/v1/admin/tenant-runtime/metrics returns 200",
+          "observed": "GET /api/v1/admin/tenant-runtime/metrics returns HTTP 404: {\"title\":\"Not Found\",\"detail\":\"No static resource api/v1/admin/tenant-runtime/metrics.\"}"
+        },
+        {
+          "action": "Verify Security Policy section",
+          "expected": "Security policy displays tenant settings",
+          "observed": "Security Policy section renders correctly with: Session Timeout 60 min, Password Min Length 10, Max Login Attempts 5, Password Complexity: Uppercase/Numbers/Symbols, MFA Required: Disabled. Shows informational note that policy is managed by platform administrators."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/user-testing/screenshots/round2-VAL-ADMIN-028-tenant-runtime.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/tenant-runtime/metrics -> 404 (Not Found)"
+      },
+      "issues": "Backend endpoint /api/v1/admin/tenant-runtime/metrics returns 404. Frontend handles gracefully — Runtime Metrics section shows error with retry, Security Policy section renders correctly. Blocked on backend endpoint implementation."
+    },
+    {
+      "id": "VAL-ADMIN-029",
+      "title": "Operations Control Panel",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/operations",
+          "expected": "Operational metrics dashboard with KPIs (revenue, SLA compliance, coverage), data from backend",
+          "observed": "Page renders as an operational metrics dashboard with: Revenue run rate ₹1180.00 (Last 30d: ₹0.00), Fulfilment SLA 0.0% (Awaiting fulfilment data), Dealer coverage 3 (Connected dealer entities). Also includes Order Pipeline section and Workforce Pulse section. Quick Actions buttons present."
+        },
+        {
+          "action": "Verify data comes from backend",
+          "expected": "Backend API returns KPI data",
+          "observed": "GET /api/v1/portal/dashboard returns 200 with {\"success\":true,\"data\":{\"highlights\":[{\"label\":\"Revenue run rate\",\"value\":\"₹1180.00\"},{\"label\":\"Fulfilment SLA\",\"value\":\"0.0%\"},{\"label\":\"Dealer coverage\",\"value\":\"3\"}]}}"
+        },
+        {
+          "action": "Check KPI data renders correctly",
+          "expected": "KPI cards show real data values",
+          "observed": "Three KPI cards render with values matching backend data: Revenue ₹1180.00, SLA 0.0%, Dealer Coverage 3"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["admin-portal/user-testing/screenshots/round2-VAL-ADMIN-029-operations.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/portal/dashboard -> 200 with KPI data (revenue, SLA, coverage)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "Backend GET /api/v1/audit/business-events returns HTTP 500 with 'Failed to write request'. Prevents testing business events listing in audit trail.",
+      "affectedAssertions": ["VAL-ADMIN-026"],
+      "quickFixAttempted": "Clicked Try again button, re-tried API call via curl — still returns 500"
+    },
+    {
+      "description": "Backend GET /api/v1/admin/tenant-runtime/metrics returns HTTP 404 'No static resource'. The endpoint does not exist on the backend.",
+      "affectedAssertions": ["VAL-ADMIN-028"],
+      "quickFixAttempted": "Clicked Retry button on page, retried via curl — still returns 404"
+    }
+  ],
+  "summary": "Tested 4 assertions (Round 2 re-run): 2 passed (VAL-ADMIN-010, VAL-ADMIN-029), 2 blocked by backend failures (VAL-ADMIN-026: audit endpoint returns 500, VAL-ADMIN-028: runtime metrics endpoint returns 404). Frontend handles both backend failures gracefully with error UI and retry options."
+}

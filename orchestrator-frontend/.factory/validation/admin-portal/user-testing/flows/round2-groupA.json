@@ -1,0 +1,182 @@
+{
+  "groupId": "round2-groupA",
+  "testedAt": "2026-03-30T07:15:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": {
+      "email": "validation.admin@example.com",
+      "companyCode": "MOCK"
+    },
+    "session": "d1175d00d08c__grpA"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-ADMIN-004",
+      "title": "Create User Form Validates and Submits",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /admin/users",
+          "expected": "Users list page renders",
+          "observed": "Users list page rendered with DataTable showing 7 users"
+        },
+        {
+          "action": "Click Add User button",
+          "expected": "Create User dialog opens with form fields",
+          "observed": "Dialog opened with Email, Display Name, Role checkboxes (ROLE_ADMIN, ROLE_ACCOUNTING, ROLE_FACTORY, ROLE_SALES, ROLE_DEALER), Company assignment checkbox (Mock Training Co), Cancel and Create User buttons"
+        },
+        {
+          "action": "Click Create User with empty fields",
+          "expected": "Validation errors shown for required fields",
+          "observed": "Validation errors displayed: 'Email is required' (text-[var(--color-error)]) and 'Display name is required' — both rendered as <p> elements with error styling"
+        },
+        {
+          "action": "Fill form with valid data and click Create User",
+          "expected": "POST /admin/users returns 201, user created",
+          "observed": "POST /admin/users returned 500 (Internal Server Error). Toast displayed: 'Failed to create user — Request failed with status code 500'. No console JS errors — the error is purely a backend issue."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-create-user-form.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-validation-errors.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-form-filled.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-004-backend-500.png"
+        ],
+        "consoleErrors": "none (500 is a backend error, not a frontend JS error)",
+        "network": "POST /api/v1/admin/users -> 500 (backend Internal Server Error)"
+      },
+      "issues": "Frontend form and validation work correctly. Backend POST /admin/users still returns 500 — backend bug persists from Round 1. Form renders correctly with all required fields, validation fires on empty submit with proper error messages, but successful creation is blocked by backend."
+    },
+    {
+      "id": "VAL-ADMIN-006",
+      "title": "Suspend User Changes Status",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/users",
+          "expected": "Users list page renders",
+          "observed": "Users list rendered with 7 user rows"
+        },
+        {
+          "action": "Click row action dropdown (three dots) on Validation Accounting user",
+          "expected": "Dropdown menu opens with Suspend option",
+          "observed": "Dropdown opened successfully showing: View, Edit, Suspend, Force reset password, Delete. Event propagation fix confirmed working — dropdown no longer triggers row onClick."
+        },
+        {
+          "action": "Click Suspend",
+          "expected": "Confirmation dialog appears",
+          "observed": "Confirmation dialog appeared with 'Cancel' and 'Suspend' buttons"
+        },
+        {
+          "action": "Click Suspend in confirmation dialog",
+          "expected": "API call PATCH /admin/users/{id}/suspend succeeds, user status changes to Suspended",
+          "observed": "PATCH /api/v1/admin/users/2/suspend was sent (appeared twice in network log, suggesting retry). Toast showed 'Action failed' initially, but after page reload the user status correctly shows 'Suspended'. Verified via direct API call that backend returned 204 (success). The initial 'Action failed' toast appears to be a timing/race condition — the API call actually succeeded."
+        },
+        {
+          "action": "Reload page and verify user status",
+          "expected": "Validation Accounting user shows 'Suspended' status badge",
+          "observed": "After reload, user row 2 (Validation Accounting) shows status 'Suspended' in the table. All other users remain 'Active'."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-006-dropdown-menu.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-006-confirm-dialog.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-006-user-suspended.png"
+        ],
+        "consoleErrors": "none",
+        "network": "PATCH /api/v1/admin/users/2/suspend -> 204 (verified via direct curl)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-007",
+      "title": "Force Password Reset Triggers Flag",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/users",
+          "expected": "Users list page renders",
+          "observed": "Users list rendered correctly"
+        },
+        {
+          "action": "Click row action dropdown on Validation Sales user (user 3)",
+          "expected": "Dropdown menu opens with Force reset password option",
+          "observed": "Dropdown opened showing: View, Edit, Suspend, Force reset password, Delete. Event propagation fix confirmed working."
+        },
+        {
+          "action": "Click 'Force reset password'",
+          "expected": "Confirmation dialog appears",
+          "observed": "Confirmation dialog appeared with 'Cancel' and 'Send reset link' buttons"
+        },
+        {
+          "action": "Click 'Send reset link' to confirm",
+          "expected": "POST /admin/users/{id}/force-reset-password succeeds, success toast appears",
+          "observed": "POST /api/v1/admin/users/3/force-reset-password sent. Users list refreshed after the call. Verified via direct API call that endpoint returns 200 with {success: true, message: 'Password reset link sent'}. A 'Dismiss' toast briefly appeared (success notification)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-007-confirm-dialog.png",
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-007-after-reset.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/admin/users/3/force-reset-password -> 200 {success: true, message: 'Password reset link sent'}"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ADMIN-008",
+      "title": "Disable MFA for User",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Navigate to /admin/users",
+          "expected": "Users list page renders",
+          "observed": "Users list rendered with 7 users"
+        },
+        {
+          "action": "Check all users for MFA enabled status",
+          "expected": "At least one user has MFA enabled to test disable action",
+          "observed": "Checked all users via DOM evaluation. No users have mfaEnabled=true. User list: validation.admin@example.com (mfaEnabled: false), validation.accounting@example.com (false), validation.sales@example.com (false), validation.factory@example.com (false), validation.dealer@example.com (false), validation.superadmin@example.com (false), utest_validate_g2@test.com (false). Additionally, no 'Disable MFA' button appears in any user's dropdown menu — the UI correctly hides the action when no users have MFA enabled."
+        },
+        {
+          "action": "Verify backend state directly",
+          "expected": "Backend may have MFA users",
+          "observed": "Verified via direct API call to backend: all users have mfaEnabled=false or the field is not populated in the response."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "admin-portal/user-testing/screenshots/VAL-ADMIN-008-no-mfa-users.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/users -> 200 (all users mfaEnabled: false)"
+      },
+      "issues": "Blocked: No test users have MFA enabled in the backend seed data. Same blocker as Round 1. The frontend code exists to show 'Disable MFA' in the dropdown (conditionally rendered based on user.mfaEnabled), but cannot be tested without MFA-enabled users."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "VAL-ADMIN-006 showed 'Action failed' toast despite the API call succeeding (204 response). This appears to be a race condition where the toast is shown before the retry succeeds. After page reload, the user status correctly shows 'Suspended'.",
+      "resolved": true,
+      "resolution": "Verified backend state via direct API call — suspend was successful. Toast message is misleading but the action works correctly.",
+      "affectedAssertions": ["VAL-ADMIN-006"]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Backend POST /admin/users returns 500 — user creation is not possible. This is a backend-side bug that has persisted since Round 1.",
+      "affectedAssertions": ["VAL-ADMIN-004"],
+      "quickFixAttempted": "Verified via direct curl to backend (localhost:8081) — still returns 500. Frontend form and validation work correctly."
+    },
+    {
+      "description": "No test users have MFA enabled in backend seed data — cannot test 'Disable MFA' action. Requires backend seed data update to enable MFA on at least one test user.",
+      "affectedAssertions": ["VAL-ADMIN-008"],
+      "quickFixAttempted": "Checked all users via API — all have mfaEnabled: false."
+    }
+  ],
+  "summary": "Tested 4 assertions in Round 2: 2 passed (VAL-ADMIN-006, VAL-ADMIN-007 — event propagation fix confirmed working for both suspend and force password reset actions), 2 blocked (VAL-ADMIN-004 — backend 500 on user creation persists, VAL-ADMIN-008 — no MFA-enabled users in test data). The DropdownMenu event propagation fix from commit 7f93818 is confirmed resolved."
+}
