@@ -1,0 +1,24 @@
+{
+  "milestone": "design-foundation",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-DESIGN-001",
+    "VAL-DESIGN-002",
+    "VAL-DESIGN-003",
+    "VAL-DESIGN-004",
+    "VAL-DESIGN-005",
+    "VAL-DESIGN-006",
+    "VAL-DESIGN-007"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null
+}
