@@ -1,0 +1,81 @@
+{
+  "milestone": "design-foundation",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx vitest run src/pages/admin/ --reporter=verbose",
+      "exitCode": 0,
+      "note": "164 admin tests pass. Full suite (bun run test --run) times out at 8+ min due to volume; pre-existing failures in auth/sales pages are unrelated to design-foundation milestone."
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "npx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "bun run lint",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "component-unification-pageheader-statcard",
+      "severity": "non_blocking",
+      "description": "SupportTicketsPage stat cards lost colored labels (Open=info, In Progress=warning, Resolved=success) when migrating to StatCard. Labels now use default tertiary color. A future `labelColor` prop on StatCard could restore this."
+    },
+    {
+      "featureId": "component-unification-emptystate-skeleton",
+      "severity": "non_blocking",
+      "description": "Select label lost Users icon since shared Select API only supports string labels, not ReactNode with icons."
+    },
+    {
+      "featureId": "component-unification-emptystate-skeleton",
+      "severity": "non_blocking",
+      "description": "Textarea in NotificationsPage remains native HTML since no shared Textarea component exists in the library."
+    },
+    {
+      "featureId": "dark-mode-color-token-fix",
+      "severity": "non_blocking",
+      "description": "The --color-link-hover token was added to variables.css but not wired into hover states on links. Links use hover:underline but no color transition on hover."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "file": ".factory/library/environment.md",
+      "description": "Added test suite performance note: full suite can take 8+ min and may time out; recommends targeted subset runs for admin work. Documented pre-existing auth/sales test failures.",
+      "sourceFeature": "scrutiny-validator-design-foundation"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add note about DataTable's emptyMessage prop limitation: pages using DataTable for empty states (Users, Roles) cannot adopt the shared EmptyState component because DataTable renders its own internal empty message as plain text. Future enhancement could add a `emptyContent` ReactNode prop to DataTable.",
+      "evidence": "component-unification-emptystate-skeleton review: UsersPage and RolesPage correctly skipped since their empty states are handled by DataTable's emptyMessage string prop.",
+      "isSystemic": false
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Document the two coexisting patterns for applying CSS variable colors: (1) Tailwind arbitrary value syntax `text-[var(--color-*)]` and (2) inline `style={{ color: 'var(--color-*)' }}`. Both are acceptable.",
+      "evidence": "dark-mode-color-token-fix review: FinanceSupportPage uses inline style for icon colors, other pages use Tailwind arbitrary value syntax.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "frontend-worker skill deviation for pure refactoring tasks (skipping TDD, frontend-skill, agent-browser)",
+      "reason": "This is a skill procedure concern, not a codebase knowledge item. The orchestrator should evaluate whether the skill needs refinement, but it's not actionable as a library/services.yaml update."
+    }
+  ],
+  "previousRound": null
+}

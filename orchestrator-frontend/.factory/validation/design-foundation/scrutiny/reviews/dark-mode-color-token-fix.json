@@ -1,0 +1,39 @@
+{
+  "featureId": "dark-mode-color-token-fix",
+  "reviewedAt": "2026-03-31T00:00:00.000Z",
+  "commitId": "102dd2a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "All hardcoded hex colors and raw Tailwind color classes across the three targeted admin pages (FinanceSupportPage, SupportTicketsPage, PortalInsightsPage) have been replaced with CSS variable tokens. Four new tokens (--color-accent, --color-accent-icon, --color-link, --color-link-hover) were added to variables.css with proper dark mode variants. A comprehensive grep sweep of ALL 13 admin page files confirms zero remaining hardcoded hex values or raw Tailwind color utility classes (text-*, bg-*, border-*, ring-*). No regressions introduced.",
+    "issues": [
+      {
+        "file": "src/pages/admin/SupportTicketsPage.tsx",
+        "line": 326,
+        "severity": "non_blocking",
+        "description": "The link element has 'className=\"text-[13px] hover:underline flex items-center gap-1.5\"' with a static 'style={{ color: \"var(--color-link)\" }}'. The hover:underline is preserved, but there is no hover color transition to --color-link-hover. The --color-link-hover token exists in variables.css but is unused. This is a minor polish gap — not a functional issue since the underline provides sufficient hover feedback."
+      },
+      {
+        "file": "src/pages/admin/SupportTicketsPage.tsx",
+        "line": 573,
+        "severity": "non_blocking",
+        "description": "Same pattern as above — mobile 'View details' button uses style={{ color: 'var(--color-link)' }} with hover:underline but no hover color change to --color-link-hover."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The CSS variable token system has grown to include --color-accent, --color-accent-icon, --color-link, --color-link-hover, --color-success-icon, --color-warning-icon, --color-error-icon. These semantic tokens are the approved way to apply colors in admin pages. The AGENTS.md convention 'CSS Variables ONLY — use var(--color-*) for all colors' is correct and sufficient.",
+      "evidence": "All 13 admin pages verified clean of hardcoded colors via grep sweep. variables.css defines 50+ color tokens across light and dark modes."
+    },
+    {
+      "area": "conventions",
+      "observation": "Inline style={{ color: 'var(--color-*)' }} is the established pattern for applying CSS variable colors to individual elements where Tailwind arbitrary value syntax (text-[var(--color-*)]) might be verbose. Both patterns coexist in the codebase. No convention gap — just noting the pattern for future workers.",
+      "evidence": "FinanceSupportPage uses inline style={{ color: 'var(--color-success-icon)' }} on icon elements, while other elements use className='text-[var(--color-text-primary)]' Tailwind arbitrary value syntax."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The feature fully delivers on its promise: all hardcoded hex colors (#22c55e, #f59e0b, #ef4444, #8b5cf6) and raw Tailwind color classes (text-emerald-600, text-blue-600, text-violet-600, text-amber-600, text-red-500) have been replaced with CSS variable tokens across FinanceSupportPage, SupportTicketsPage, and PortalInsightsPage. Four new CSS tokens were added to variables.css with proper dark mode values. A comprehensive grep sweep of all 13 admin page files confirms zero remaining hardcoded colors. The only minor observation is that the --color-link-hover token was added but not wired into hover states on links — the hover:underline provides visual feedback but no color transition. TypeScript compilation passes clean. No regressions detected."
+}

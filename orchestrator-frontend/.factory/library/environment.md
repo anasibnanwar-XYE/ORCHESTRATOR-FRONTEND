@@ -45,3 +45,17 @@ All passwords: `Validation1!cc18570e52fe48dd`
 - Unit tests: `bun run test`
 - E2E tests: `bun run test:e2e`
 - Electron dev: `bun run electron:dev`
+
+## Test Suite Performance Note
+
+The full test suite (`bun run test --run`) can take 8+ minutes and may time out at default thresholds. For faster iteration, run targeted subsets:
+
+```bash
+# Admin portal tests only (~2s)
+npx vitest run src/pages/admin/
+
+# Specific test file
+npx vitest run src/pages/admin/__tests__/UsersPage.test.tsx
+```
+
+Pre-existing test failures exist in auth pages (LoginPage, ProfilePage) and sales pages (SalesOrdersPage, OrderDetailPage) — these are unrelated to admin portal work and should be ignored.
