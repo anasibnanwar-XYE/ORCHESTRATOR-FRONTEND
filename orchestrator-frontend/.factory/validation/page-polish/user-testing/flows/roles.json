@@ -1,0 +1,115 @@
+{
+  "groupId": "roles",
+  "testedAt": "2026-03-31T01:12:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": {
+      "email": "validation.admin@example.com",
+      "company": "MOCK"
+    },
+    "backendApi": "http://localhost:8081",
+    "browserSession": "5454ff6692d9__g4"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-ROLES-001",
+      "title": "Roles list loads with DataTable",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/roles",
+          "expected": "Page loads with DataTable showing roles",
+          "observed": "Page loaded successfully with DataTable showing 5 roles"
+        },
+        {
+          "action": "Verify API call GET /api/v1/admin/roles",
+          "expected": "Returns 200 with roles data",
+          "observed": "GET /api/v1/admin/roles returns 200 with { success: true, data: [5 role objects] }. Response includes ROLE_ADMIN, ROLE_ACCOUNTING, ROLE_FACTORY, ROLE_SALES, ROLE_DEALER with permissions arrays."
+        },
+        {
+          "action": "Check DataTable columns",
+          "expected": "Role, Key, Permissions, Description columns visible",
+          "observed": "DataTable shows 4 columns: Role (with name + System badge for admin), Key (ROLE_ADMIN etc), Permissions (count), Description"
+        },
+        {
+          "action": "Verify role data in table",
+          "expected": "5 roles displayed with correct data",
+          "observed": "5 roles visible: Administrator (ROLE_ADMIN, 7 perms), Accounting (ROLE_ACCOUNTING, 3 perms), Factory (ROLE_FACTORY, 3 perms), Sales (ROLE_SALES, 1 perm), Dealer portal (ROLE_DEALER, 1 perm). Pagination shows '1–5 of 5'."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/roles/VAL-ROLES-001-roles-page.png",
+          "page-polish/roles/VAL-ROLES-001-roles-annotated.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/roles → 200 (verified via browser fetch with auth token)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ROLES-002",
+      "title": "Role detail opens on row click",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click 'View role details' button on Administrator row",
+          "expected": "Detail drawer/panel opens",
+          "observed": "Drawer dialog opened with heading 'Administrator' and subtitle 'ROLE_ADMIN'"
+        },
+        {
+          "action": "Verify drawer contents",
+          "expected": "Shows role name, key, description, permissions list, dates",
+          "observed": "Drawer shows: role name 'Administrator', key 'ROLE_ADMIN', System badge, Description section ('Administrator'), Permissions section (7 permissions: portal:factory, dispatch.confirm, payroll.run, factory.dispatch, portal:accounting, portal:dealer, portal:sales). Dates section conditionally renders (none present for this role data)."
+        },
+        {
+          "action": "Click 'Close panel' button",
+          "expected": "Drawer closes",
+          "observed": "Drawer closed successfully. Dialog element no longer present in accessibility tree."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/roles/VAL-ROLES-002-detail-drawer.png"
+        ],
+        "consoleErrors": "none",
+        "network": "no additional API calls (drawer uses cached data)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-ROLES-003",
+      "title": "Roles search filters table",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Type 'Admin' in search input",
+          "expected": "Table filters to show only matching roles",
+          "observed": "Table filtered to 1 role: Administrator (ROLE_ADMIN). Pagination shows '1–1 of 1'."
+        },
+        {
+          "action": "Clear and type 'FACTORY' in search input",
+          "expected": "Table filters by key matching FACTORY",
+          "observed": "Table filtered to 1 role: Factory (ROLE_FACTORY). Pagination shows '1–1 of 1'. Search works by role key."
+        },
+        {
+          "action": "Clear search input",
+          "expected": "All roles restored",
+          "observed": "All 5 roles restored. Pagination shows '1–5 of 5'."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/roles/VAL-ROLES-003-search-filtered.png"
+        ],
+        "consoleErrors": "none",
+        "network": "no API calls (client-side filtering)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all 3 passed. Roles page loads with real backend data via GET /api/v1/admin/roles → 200. DataTable displays Role, Key, Permissions, Description columns with 5 roles. Detail drawer opens on row click showing role name, key, description, permissions list. Close button works. Search filters by role name and key correctly; clearing restores all roles. No console errors observed."
+}

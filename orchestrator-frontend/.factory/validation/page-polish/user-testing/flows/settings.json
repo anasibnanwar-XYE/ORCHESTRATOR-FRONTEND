@@ -1,0 +1,77 @@
+{
+  "groupId": "settings",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "loginEmail": "validation.admin@example.com",
+    "company": "MOCK",
+    "browserSession": "5454ff6692d9__g5"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-SET-001",
+      "title": "Settings page loads system configuration",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Navigate to /admin/settings",
+          "expected": "Settings page loads with GET /api/v1/admin/settings returning 200",
+          "observed": "Page loaded successfully. GET /api/v1/admin/settings returned 200 with valid JSON data. Four XHR requests to /api/v1/admin/settings were observed in network log."
+        },
+        {
+          "action": "Verify sections display: General, Approvals, Email, Advanced",
+          "expected": "All four sections visible with populated values",
+          "observed": "All four sections (General, Approvals, Email, Advanced) are displayed with correct section headers and descriptions."
+        },
+        {
+          "action": "Check field values are populated",
+          "expected": "Fields show values from API response (company name, timezone, currency, SMTP settings, etc.)",
+          "observed": "BUG: Most field values display '—' (dash fallback) instead of actual API data. The API returns data with different field names than the frontend expects. API fields: autoApprovalEnabled, periodLockEnforced, exportApprovalRequired, mailEnabled, mailFromAddress, allowedOrigins. Frontend expects: autoApproveThreshold, periodLockEnabled, emailNotifications, smtpFromEmail, corsAllowedOrigins, companyName, currency, timezone, dateFormat. Only the boolean toggles for 'Export Approval Required: Disabled' and 'Period Lock: Disabled' render (though Period Lock should show 'Enabled' since API returns periodLockEnforced=true)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/settings/VAL-SET-001-settings-page.png",
+          "page-polish/settings/VAL-SET-001-settings-full.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/settings → 200 (verified via curl). API response: { success: true, data: { allowedOrigins: ['http://localhost:3002'], autoApprovalEnabled: true, periodLockEnforced: true, exportApprovalRequired: false, mailEnabled: true, mailFromAddress: 'noreply@bigbrightpaints.com', ... } }"
+      },
+      "issues": "Field name mismatch between backend API response and frontend types. Backend returns camelCase fields (periodLockEnforced, autoApprovalEnabled, mailEnabled, mailFromAddress, allowedOrigins) but frontend expects different names (periodLockEnabled, autoApproveThreshold, emailNotifications, smtpFromEmail, corsAllowedOrigins). Additionally, the API does not return companyName, currency, timezone, or dateFormat fields, so General section fields all show '—'."
+    },
+    {
+      "id": "VAL-SET-002",
+      "title": "Settings is read-only for admin",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Check for edit buttons, input fields, or save buttons",
+          "expected": "No edit buttons, input fields, or save buttons visible on the page",
+          "observed": "No edit buttons, no input fields (0 found), no save/submit/update/edit/modify buttons found. Only navigation buttons (sidebar, profile menu, theme toggle) present."
+        },
+        {
+          "action": "Verify read-only notice with Lock icon is displayed",
+          "expected": "Read-only notice with Lock icon visible",
+          "observed": "Read-only notice displayed: 'Global settings are managed by platform administrators. Contact your platform team to change these values.' with Lock icon (svg.lucide-lock) present."
+        },
+        {
+          "action": "Verify no PUT/PATCH requests fired",
+          "expected": "No PUT or PATCH network requests made",
+          "observed": "No PUT or PATCH requests found in network log. Only GET requests observed."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/settings/VAL-SET-002-read-only-notice.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No PUT/PATCH requests observed"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 2 assertions: 1 passed (VAL-SET-002: read-only mode works correctly), 1 failed (VAL-SET-001: settings page loads but most field values show '—' due to field name mismatch between backend API response and frontend type mapping). The API returns 200 with valid data but the frontend expects different field names."
+}

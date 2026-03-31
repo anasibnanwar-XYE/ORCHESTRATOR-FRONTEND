@@ -1,0 +1,201 @@
+{
+  "groupId": "dashboard",
+  "testedAt": "2026-03-31T06:22:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "loginCredentials": "validation.admin@example.com / *** / MOCK",
+    "backendApi": "http://localhost:8081",
+    "browserSession": "5454ff6692d9__g1"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-DASH-001",
+      "title": "Dashboard loads with real data from /portal/dashboard",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Login with test credentials and navigate to /admin",
+          "expected": "GET /api/v1/portal/dashboard called, 4 stat cards with non-empty label, value, optional detail",
+          "observed": "GET /api/v1/portal/dashboard called and returned 200. Only 3 stat cards rendered (Revenue run rate: ₹1180.00, Fulfilment SLA: 0.0%, Dealer coverage: 2). API returns only 3 highlights; 4th card does not exist in API response."
+        },
+        {
+          "action": "Check for undefined/null values and skeleton placeholders",
+          "expected": "No undefined, null, or skeleton placeholders after 5s",
+          "observed": "No undefined, null, or skeleton placeholders found. All 3 rendered cards have valid label, value, and detail."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["page-polish/dashboard/VAL-DASH-001-dashboard-loaded.png"],
+        "consoleErrors": "none (no console.error entries)",
+        "network": "GET /api/v1/portal/dashboard → 200 (response: {highlights: [3 items], pipeline: [], hrPulse: []})"
+      },
+      "issues": "Only 3 stat cards rendered instead of required 4. Backend API returns only 3 highlight items. The frontend code uses highlights.slice(0, 4) so it correctly renders up to 4, but the backend only provides 3."
+    },
+    {
+      "id": "VAL-DASH-002",
+      "title": "Stat cards render exactly 4 highlight metrics",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Count stat cards on dashboard",
+          "expected": "Exactly 4 stat cards in a responsive grid, each with sparkline SVG, label, and value",
+          "observed": "Only 3 stat cards rendered: Revenue run rate (₹1180.00), Fulfilment SLA (0.0%), Dealer coverage (2). Grid uses 'grid grid-cols-2 lg:grid-cols-4' which supports 4 cards, but only 3 data-testid=stat-card elements exist."
+        },
+        {
+          "action": "Verify each card has sparkline SVG, label, and value",
+          "expected": "Each card has decorative sparkline SVG, label, and value",
+          "observed": "All 3 rendered cards have sparkline SVG (viewBox=0 0 100 100 with path elements), label, and value. Sparklines use decorative shapes with gradient fills."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["page-polish/dashboard/VAL-DASH-002-annotated.png"]
+      },
+      "issues": "Only 3 stat cards rendered instead of 4. Backend API returns 3 highlights. The grid layout class correctly supports 4 columns at lg breakpoint."
+    },
+    {
+      "id": "VAL-DASH-003",
+      "title": "Dashboard displays correct greeting and date",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Check page header greeting",
+          "expected": "Time-of-day greeting matching current hour",
+          "observed": "Greeting shows 'Good morning' — current hour is 6 (before 12), which is correct for morning greeting."
+        },
+        {
+          "action": "Check date display",
+          "expected": "Today's date displayed",
+          "observed": "Date shows 'Tuesday, 31 March 2026' matching current date."
+        },
+        {
+          "action": "Check subtitle text",
+          "expected": "Subtitle reads 'Platform overview and operational status.'",
+          "observed": "Subtitle reads 'Platform overview and operational status.'"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["page-polish/dashboard/VAL-DASH-003-greeting-date.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DASH-004",
+      "title": "Quick access cards navigate to correct pages",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Verify 6 quick-access cards present",
+          "expected": "6 cards: Users, Roles, Approvals, Audit Trail, Changelog, Settings",
+          "observed": "6 quick-access cards present: Users, Roles, Approvals, Audit Trail, Changelog, Settings — each with description text."
+        },
+        {
+          "action": "Click Users card",
+          "expected": "Navigate to /admin/users",
+          "observed": "Navigated to http://localhost:3002/admin/users"
+        },
+        {
+          "action": "Click Roles card",
+          "expected": "Navigate to /admin/roles",
+          "observed": "Navigated to http://localhost:3002/admin/roles"
+        },
+        {
+          "action": "Click Approvals card",
+          "expected": "Navigate to /admin/approvals",
+          "observed": "Navigated to http://localhost:3002/admin/approvals"
+        },
+        {
+          "action": "Click Audit Trail card",
+          "expected": "Navigate to /admin/audit-trail",
+          "observed": "Navigated to http://localhost:3002/admin/audit-trail"
+        },
+        {
+          "action": "Click Changelog card",
+          "expected": "Navigate to /admin/changelog",
+          "observed": "Navigated to http://localhost:3002/admin/changelog"
+        },
+        {
+          "action": "Click Settings card",
+          "expected": "Navigate to /admin/settings",
+          "observed": "Navigated to http://localhost:3002/admin/settings"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["page-polish/dashboard/VAL-DASH-004-quick-access-cards.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DASH-005",
+      "title": "Dashboard error state shows retry button",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Attempt to trigger API failure",
+          "expected": "Error banner with 'Failed to load dashboard data.' and Retry button",
+          "observed": "Dashboard loads successfully (API returns 200). Cannot simulate API failure in live environment without network interception."
+        },
+        {
+          "action": "Review error state code in AdminDashboardPage.tsx",
+          "expected": "Error UI exists with AlertCircle icon, error text, and Retry button",
+          "observed": "Code review confirms error state exists: role='alert' div with AlertCircle icon, error message, and Retry button with onClick={load}. Error handling is implemented correctly in code."
+        }
+      ],
+      "evidence": {
+        "screenshots": ["page-polish/dashboard/VAL-DASH-005-no-error-state.png"],
+        "network": "GET /api/v1/portal/dashboard → 200 (success, no error to trigger)"
+      },
+      "issues": "Cannot simulate API failure in live environment without network interception. The error state code exists and looks correct but could not be tested against a real failing API."
+    },
+    {
+      "id": "VAL-DASH-006",
+      "title": "No console errors on dashboard load",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Clear errors, reload /admin, wait for full load, check console errors",
+          "expected": "Zero console.error entries after full load",
+          "observed": "agent-browser errors command returned no output (empty). No console.error entries found. Console shows only debug/info/warning messages from Vite HMR and React Router future flags."
+        }
+      ],
+      "evidence": {
+        "consoleErrors": "none (no console.error entries; only debug [vite], info [React DevTools], and warning [React Router future flags])",
+        "screenshots": ["page-polish/dashboard/VAL-DASH-006-dashboard-loaded.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DASH-007",
+      "title": "Dashboard responsive layout at all breakpoints",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Set viewport to 375px (mobile)",
+          "expected": "Stat cards in 2-col grid, quick-access single column, sidebar hidden, hamburger visible",
+          "observed": "Stat cards in 2-col grid (grid-cols-2), quick-access single column (grid-cols-1), sidebar hidden (class 'hidden lg:block'), hamburger visible ('Open menu' button found). No horizontal scroll (scrollWidth=375, clientWidth=375)."
+        },
+        {
+          "action": "Set viewport to 768px (tablet)",
+          "expected": "2-col grids, sidebar hidden",
+          "observed": "Stat cards in 2-col grid (grid-cols-2, lg breakpoint not reached), quick-access in 2-col grid (sm:grid-cols-2 active), sidebar hidden (display: none for hidden lg:block), hamburger visible ('Open menu' button found). No horizontal scroll."
+        },
+        {
+          "action": "Set viewport to 1440px (desktop)",
+          "expected": "4-col stat grid, sidebar visible",
+          "observed": "Stat grid class includes 'lg:grid-cols-4' (4-column layout active), sidebar visible (display: block for lg:block), only 3 stat cards present (API limitation, not layout). No horizontal scroll (scrollWidth=1440, clientWidth=1440)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/dashboard/VAL-DASH-007-mobile-375px.png",
+          "page-polish/dashboard/VAL-DASH-007-tablet-768px.png",
+          "page-polish/dashboard/VAL-DASH-007-desktop-1440px.png"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 7 assertions: 4 passed, 2 failed, 1 blocked. VAL-DASH-001 and VAL-DASH-002 fail because the backend API returns only 3 highlight items instead of the required 4. The frontend correctly renders all available data and supports a 4-column grid layout, but the backend only provides 3 metrics (Revenue run rate, Fulfilment SLA, Dealer coverage). VAL-DASH-005 is blocked because the dashboard API always returns 200 — error state cannot be triggered without network interception. All other assertions pass: greeting and date are correct, all 6 quick access cards navigate correctly, no console errors, and responsive layout works at all breakpoints."
+}

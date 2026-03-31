@@ -1,0 +1,148 @@
+{
+  "groupId": "notifications",
+  "testedAt": "2026-03-31T00:00:00.000Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "loginCredentials": "validation.admin@example.com / MOCK",
+    "backendApi": "http://localhost:8081 (proxied via Vite)",
+    "browserSession": "5454ff6692d9__g2"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-NOTIF-001",
+      "title": "Notification form renders with all fields",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/notifications",
+          "expected": "Notification form displayed with Recipient dropdown, Subject input, Body textarea with char counter, Send button (disabled until filled)",
+          "observed": "Form rendered with all required fields: Recipient combobox with 8 user options, Subject textbox, Body textarea, '0 characters' counter, disabled Send Notification button"
+        },
+        {
+          "action": "Check Recipient dropdown populated from GET /admin/users",
+          "expected": "Dropdown shows users from API",
+          "observed": "Combobox contains 8 user options populated from GET /api/v1/admin/users (verified via performance API: status 200)"
+        },
+        {
+          "action": "Check Subject input exists",
+          "expected": "Subject textbox present",
+          "observed": "Subject textbox present with placeholder 'Subject...'"
+        },
+        {
+          "action": "Check Body textarea with char counter",
+          "expected": "Body textarea with character counter",
+          "observed": "Body textarea present with placeholder 'Enter your message here...' and '0 characters' counter displayed below"
+        },
+        {
+          "action": "Check Send button disabled until filled",
+          "expected": "Send button initially disabled",
+          "observed": "Send Notification button is disabled"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/notifications/VAL-NOTIF-001-initial-page.png",
+          "page-polish/notifications/VAL-NOTIF-001-annotated.png"
+        ],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/users → 200 (verified via performance API)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NOTIF-002",
+      "title": "Send notification E2E",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Select recipient from dropdown",
+          "expected": "Recipient selected",
+          "observed": "Selected 'Validation Admin — validation.admin@example.com' via combobox"
+        },
+        {
+          "action": "Enter subject",
+          "expected": "Subject field populated",
+          "observed": "Filled 'Test Notification Subject' in Subject textbox"
+        },
+        {
+          "action": "Enter body",
+          "expected": "Body field populated",
+          "observed": "Filled 'Test notification body for validation' in Body textarea"
+        },
+        {
+          "action": "Click 'Send Notification'",
+          "expected": "POST /admin/notify returns 200, toast 'Notification sent', form resets",
+          "observed": "POST /api/v1/admin/notify returned 200 (verified via performance API, duration 39ms). Form reset to initial state: recipient back to 'Select a user...', subject/body empty, char counter '0 characters', Send button disabled."
+        },
+        {
+          "action": "Check for toast message",
+          "expected": "Toast 'Notification sent' appears",
+          "observed": "Toast appeared and auto-dismissed before DOM inspection. Form reset confirms successful submission."
+        },
+        {
+          "action": "Verify form reset",
+          "expected": "All fields cleared, Send button disabled",
+          "observed": "Recipient reset to 'Select a user...' (selected), Subject empty, Body empty, char counter '0 characters', Send button disabled"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/notifications/VAL-NOTIF-002-form-filled.png",
+          "page-polish/notifications/VAL-NOTIF-002-form-reset.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/admin/notify → 200 (verified via performance API)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NOTIF-003",
+      "title": "Send button disabled without required fields",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Verify Send button disabled with empty form",
+          "expected": "Button disabled when no recipient and no body",
+          "observed": "Send Notification button is [disabled] on initial empty form load"
+        },
+        {
+          "action": "Select recipient only, leave body empty",
+          "expected": "Button still disabled",
+          "observed": "Selected 'Validation Admin' as recipient, Send Notification button remains [disabled]"
+        },
+        {
+          "action": "Fill body with recipient selected",
+          "expected": "Button becomes enabled when both recipient and body are filled",
+          "observed": "After filling body textarea, Send Notification button is enabled (no [disabled] attribute)"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/notifications/VAL-NOTIF-003-empty-form-disabled.png",
+          "page-polish/notifications/VAL-NOTIF-003-recipient-only-disabled.png",
+          "page-polish/notifications/VAL-NOTIF-003-all-fields-filled-enabled.png"
+        ],
+        "consoleErrors": "none",
+        "network": "N/A"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Native HTML select/combobox interaction via agent-browser click on option elements timed out. Had to use JavaScript eval to set select value programmatically.",
+      "resolved": true,
+      "resolution": "Used document.querySelector('select').value with change event dispatch to select recipient",
+      "affectedAssertions": ["VAL-NOTIF-002", "VAL-NOTIF-003"]
+    },
+    {
+      "description": "Toast notification auto-dismissed before DOM inspection could capture its text content. Could not directly verify 'Notification sent' text in toast.",
+      "resolved": true,
+      "resolution": "Verified toast indirectly via successful POST response (200) and form reset behavior, which are the primary indicators of successful submission",
+      "affectedAssertions": ["VAL-NOTIF-002"]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 3 assertions: all 3 passed. Notification form renders correctly with all fields (recipient dropdown populated from API, subject input, body textarea with char counter, disabled send button). Send notification E2E works: POST /api/v1/admin/notify returns 200, form resets after send. Send button correctly disabled when required fields are empty, enables only when both recipient and body are filled."
+}

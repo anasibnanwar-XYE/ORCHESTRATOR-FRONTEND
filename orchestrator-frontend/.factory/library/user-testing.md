@@ -34,3 +34,30 @@ Credentials are stored in `.env.test` (gitignored). Source it before testing: `s
 - Test user creation should use unique emails with timestamps to avoid conflicts
 - After creating test users, clean up (delete) them to avoid polluting the user list
 - Approvals depend on backend state — may have 0 pending items; test empty state in that case
+- Dashboard API (/portal/dashboard) returns only 3 highlights by default — this is a backend data issue, not frontend
+- Settings API field names differ from frontend types: API uses periodLockEnforced/autoApprovalEnabled/mailEnabled/mailFromAddress/allowedOrigins, frontend expects periodLockEnabled/autoApproveThreshold/emailNotifications/smtpFromEmail/corsAllowedOrigins
+- Changelog API may return empty results — test data may need seeding via superadmin POST /api/v1/superadmin/changelog
+- Combobox/Select interaction via agent-browser: native click on option elements may time out; use JS eval to set value programmatically as fallback
+- Toast notifications auto-dismiss quickly — verify success indirectly via API response status and form reset behavior
+
+## Flow Validator Guidance: agent-browser
+
+### Isolation Rules
+- Each validator uses its own agent-browser session (unique session ID)
+- All validators share the same admin credentials and backend
+- Read-only page checks (dashboard, roles, changelog, settings) can run concurrently without conflict
+- Write operations (send notification) should be isolated — only one validator per group should mutate data
+- Validators should NOT delete or modify shared test data created by other validators
+- Each validator should navigate independently and not depend on another validator's browser state
+
+### Boundaries
+- App URL: http://localhost:3002
+- Login credentials: source `.env.test` for email/password/company
+- Do NOT access pages outside the admin portal (/admin/*)
+- Do NOT test pages from future milestones (api-integration, responsive-final)
+- Screenshots saved to evidence directory per group
+
+### Shared State Concerns
+- Notification sending (VAL-NOTIF-002) creates a real notification — only the notifications group should do this
+- Dashboard data is read-only and shared — safe for concurrent access
+- Roles, changelog, settings are read-only admin pages — safe for concurrent access
