@@ -283,6 +283,35 @@ function permKey(perm: unknown, index: number): string {
          }
          onRowClick={(r) => setSelectedRole(r)}
          emptyMessage="No roles configured yet"
+         mobileCardRenderer={(r) => (
+           <div className="flex items-start justify-between gap-3">
+             <div className="min-w-0 flex-1">
+               <div className="flex items-center gap-2 flex-wrap">
+                 <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{r.name}</span>
+                 {r.isSystem && (
+                   <Badge variant="default" className="text-[10px]">
+                     <Lock size={9} className="mr-1" />
+                     System
+                   </Badge>
+                 )}
+               </div>
+               <p className="text-[11px] font-mono text-[var(--color-text-tertiary)] mt-0.5">{r.key}</p>
+               {r.description && (
+                 <p className="text-[11px] text-[var(--color-text-tertiary)] mt-1 line-clamp-2">{r.description}</p>
+               )}
+               <p className="text-[11px] text-[var(--color-text-secondary)] mt-1">
+                 {r.permissions.length} permission{r.permissions.length !== 1 ? 's' : ''}
+               </p>
+             </div>
+             <button
+               onClick={(e) => { e.stopPropagation(); setSelectedRole(r); }}
+               className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors shrink-0"
+               aria-label="View role details"
+             >
+               <ChevronRight size={14} />
+             </button>
+           </div>
+         )}
          rowActions={(r) => (
            <button
              onClick={(e) => { e.stopPropagation(); setSelectedRole(r); }}

@@ -311,4 +311,21 @@
        expect(screen.queryByText('Custom Role')).toBeNull();
      });
    });
+
+   it('provides mobileCardRenderer showing role name, key, and permissions count', async () => {
+     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+     renderPage();
+     await waitFor(() => {
+       expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+     });
+
+     // The mobile card renderer renders role keys as font-mono text
+     // In both desktop table and mobile cards, the key should be present
+     expect(screen.getAllByText('ROLE_ADMIN').length).toBeGreaterThan(0);
+     expect(screen.getAllByText('ROLE_CUSTOM').length).toBeGreaterThan(0);
+
+     // The mobile card renderer shows permissions count as "N permissions"
+     expect(screen.getAllByText(/3 permissions/).length).toBeGreaterThan(0);
+     expect(screen.getAllByText(/1 permission$/).length).toBeGreaterThan(0);
+   });
  });
