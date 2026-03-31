@@ -1,0 +1,162 @@
+{
+  "groupId": "support",
+  "testedAt": "2026-03-31T11:42:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": {
+      "email": "validation.admin@example.com",
+      "company": "MOCK"
+    },
+    "session": "098c9f33b2c2__support"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-SUPPORT-001",
+      "title": "Support tickets list loads",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/support",
+          "expected": "Page loads with stat cards, DataTable, and Create ticket button",
+          "observed": "Page loaded successfully with stat cards (Total: 2, Open: 2, In Progress: 0, Resolved: 0), DataTable with 2 ticket rows, and 'Create ticket' button visible"
+        },
+        {
+          "action": "Verify API response via curl GET /api/v1/portal/support/tickets",
+          "expected": "200 response with ticket data",
+          "observed": "GET /api/v1/portal/support/tickets returned 200 with { success: true, data: { tickets: [...] } } containing 2 tickets"
+        },
+        {
+          "action": "Check console errors",
+          "expected": "No console errors",
+          "observed": "No console errors"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["api-integration/support/VAL-SUPPORT-001-page-load.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/portal/support/tickets -> 200 (verified via direct curl)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-002",
+      "title": "Create ticket E2E",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click 'Create ticket' button",
+          "expected": "Modal opens with Subject, Category, Priority, Description fields",
+          "observed": "Modal opened with Subject textbox, Category combobox (Support/Bug Report/Feature Request), Priority combobox (Low/Medium/High/Critical), Description textarea, Cancel and Create ticket buttons"
+        },
+        {
+          "action": "Fill Subject with 'E2E Test Ticket 1774937465'",
+          "expected": "Subject field populated",
+          "observed": "Subject field populated successfully"
+        },
+        {
+          "action": "Set Category to BUG via JS eval (native click timed out on option element)",
+          "expected": "Category set to Bug Report",
+          "observed": "Category set to BUG via programmatic select value change"
+        },
+        {
+          "action": "Fill Description with test content",
+          "expected": "Description field populated",
+          "observed": "Description field populated successfully"
+        },
+        {
+          "action": "Click 'Create ticket' submit button",
+          "expected": "POST /portal/support/tickets returns 200/201, toast confirms, ticket appears in list",
+          "observed": "Modal closed, stat cards updated to Total: 3 / Open: 3, new ticket 'E2E Test Ticket 1774937465' appeared as first row in DataTable with Bug Report category and Open status"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-integration/support/VAL-SUPPORT-002-form-filled.png",
+          "api-integration/support/VAL-SUPPORT-002-after-submit.png"
+        ],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/portal/support/tickets -> success (ticket appeared in list, stat cards incremented)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-003",
+      "title": "Ticket detail drawer",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click on ticket row (E2E Test Ticket 1774937465)",
+          "expected": "Drawer opens with subject, publicId, status badge, category, description, dates",
+          "observed": "Drawer/dialog opened showing: heading 'E2E Test Ticket 1774937465', paragraph 'Ticket #7162ec71-6e42-42d9-ad82-58e757c98501', status badge 'Open', category 'Bug Report', description text, Created date 'Today, 11:42 am', Company 'MOCK', Requester email, Updated date"
+        },
+        {
+          "action": "Verify drawer content completeness",
+          "expected": "Subject, publicId, status badge, category, description, dates all visible",
+          "observed": "All required fields present: subject (heading), publicId (#7162ec71-...), status badge (Open), category (Bug Report), description (full text), created/updated dates, company, requester"
+        },
+        {
+          "action": "Click 'Close panel' button",
+          "expected": "Drawer closes",
+          "observed": "Drawer closed successfully (document.querySelectorAll('[role=dialog]').length === 0)"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-integration/support/VAL-SUPPORT-003-drawer-open.png",
+          "api-integration/support/VAL-SUPPORT-003-drawer-closed.png"
+        ],
+        "consoleErrors": "none",
+        "network": "n/a (no additional network calls)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-004",
+      "title": "Create ticket form validation",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open create ticket dialog and submit with empty fields",
+          "expected": "Validation errors appear for subject and description, no POST fired",
+          "observed": "Validation errors displayed: 'Subject is required' and 'Description is required'. No POST request captured."
+        },
+        {
+          "action": "Fill subject with 'ab' (2 chars) and description with 'ab' (2 chars), then submit",
+          "expected": "Min-length validation errors shown",
+          "observed": "Validation errors: 'Subject must be at least 3 characters' and 'Description must be at least 10 characters'. No POST request fired."
+        },
+        {
+          "action": "Verify no POST requests were made during validation testing",
+          "expected": "Zero POST requests to /portal/support/tickets",
+          "observed": "Network request log shows no captured requests to support endpoints"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-integration/support/VAL-SUPPORT-004-empty-submit.png",
+          "api-integration/support/VAL-SUPPORT-004-min-length-errors.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No POST requests fired (verified via network request log)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Native click on combobox/option elements timed out when trying to select 'Bug Report' category. The combobox uses a custom select component that doesn't respond to native Playwright click events on option elements.",
+      "resolved": true,
+      "resolution": "Used JS eval to programmatically set the select value via HTMLSelectElement.prototype.value setter and dispatched 'change' event. This worked reliably.",
+      "affectedAssertions": ["VAL-SUPPORT-002"]
+    },
+    {
+      "description": "Network request tracking was not available when browser session started before navigation. The agent-browser network tracking only captures requests made after the route is set up.",
+      "resolved": true,
+      "resolution": "Used direct curl API calls to verify backend responses, and verified frontend behavior through page state changes (stat cards, table rows) instead of network interception.",
+      "affectedAssertions": ["VAL-SUPPORT-001", "VAL-SUPPORT-002"]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 4 assertions: all 4 passed. VAL-SUPPORT-001 (list loads) confirmed with API returning 200 and stat cards/DataTable rendering. VAL-SUPPORT-002 (create ticket) confirmed with ticket created, stat cards updated, and new ticket appearing in list. VAL-SUPPORT-003 (detail drawer) confirmed with all fields visible and close button working. VAL-SUPPORT-004 (form validation) confirmed with required field errors, min-length errors, and no POST fired on invalid submissions."
+}

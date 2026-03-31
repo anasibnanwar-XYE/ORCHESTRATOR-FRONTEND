@@ -1,0 +1,198 @@
+{
+  "groupId": "audit-group",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / MOCK",
+    "session": "52eafd188d99__u3",
+    "page": "/admin/audit-trail"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-AUDIT-001",
+      "title": "Business events tab loads with paginated data",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to /admin/audit-trail",
+          "expected": "Page loads with Business Events tab active",
+          "observed": "Page loaded with Business Events tab active, heading 'Audit Trail' and subtitle visible"
+        },
+        {
+          "action": "Verify API call fires",
+          "expected": "GET /api/v1/admin/audit/events fires and returns 200",
+          "observed": "GET /api/v1/admin/audit/events?page=0&size=20 returned 200 (verified via performance entries)"
+        },
+        {
+          "action": "Verify DataTable columns",
+          "expected": "Columns: Timestamp, Actor, Action, Entity, Module, Status",
+          "observed": "DataTable shows exactly those 6 columns: Timestamp, Actor, Action, Entity, Module, Status"
+        },
+        {
+          "action": "Verify data rows render",
+          "expected": "Table shows data rows with values",
+          "observed": "20 rows visible with events like LOGIN_SUCCESS, USER_DELETED, PASSWORD_RESET_REQUESTED, USER_CREATED, etc."
+        },
+        {
+          "action": "Verify pagination shows page info",
+          "expected": "Pagination shows page info",
+          "observed": "Pagination shows '1 / 6' and '1–20 of 117' (total varies slightly with concurrent logins)"
+        },
+        {
+          "action": "Check console errors",
+          "expected": "No console errors",
+          "observed": "No console errors detected"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["audit/VAL-AUDIT-001-audit-trail-page.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/audit/events?page=0&size=20 → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUDIT-002",
+      "title": "Accounting tab loads or shows graceful error",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Click 'Accounting' tab",
+          "expected": "Accounting tab activates, API call fires",
+          "observed": "Clicked Accounting tab, tab activated"
+        },
+        {
+          "action": "Verify API call fires",
+          "expected": "GET /api/v1/accounting/audit/events fires",
+          "observed": "GET /api/v1/accounting/audit/events?page=0&size=20 returned 200 (verified via performance entries)"
+        },
+        {
+          "action": "Verify table renders accounting entries",
+          "expected": "Table with accounting entries on success",
+          "observed": "DataTable shows 14 rows of accounting entries with columns: Timestamp, Actor, Action, Entity, Reference, Sensitive. Entries include JOURNAL_ENTRY#1 through JOURNAL_ENTRY#14 with system actor and MOCK-SALE/MOCK-COGS/MOCK-PO references."
+        },
+        {
+          "action": "Verify no crash",
+          "expected": "Page renders without crash",
+          "observed": "Page renders cleanly with data, pagination shows '1 / 1' and '1–14 of 14'"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["audit/VAL-AUDIT-002-accounting-tab.png"],
+        "network": "GET /api/v1/accounting/audit/events?page=0&size=20 → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUDIT-003",
+      "title": "Pagination works",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Check initial page state (page 1)",
+          "expected": "On page 1, previous button disabled",
+          "observed": "Page 1 shows '1 / 6', previous button disabled, next button enabled"
+        },
+        {
+          "action": "Click next page button",
+          "expected": "Navigate to page 2, data changes, page indicator updates",
+          "observed": "Page 2 shows '2 / 6', '21–40 of 118', different data rows (ACCESS_DENIED events visible). Previous button now enabled."
+        },
+        {
+          "action": "Click previous page button",
+          "expected": "Navigate back to page 1, previous button disabled again",
+          "observed": "Returned to page 1 showing '1 / 6', '1–20 of 118', previous button disabled"
+        },
+        {
+          "action": "Navigate to last page (page 7)",
+          "expected": "On last page, next button disabled",
+          "observed": "Navigated to last page (7 / 7), showing '121–125 of 125'. Previous button enabled, next button disabled."
+        },
+        {
+          "action": "Verify API calls for all pages",
+          "expected": "Each page change fires API call with correct page param",
+          "observed": "API calls verified: page=0 through page=6 all returned 200"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["audit/VAL-AUDIT-003-page1.png", "audit/VAL-AUDIT-003-page2.png", "audit/VAL-AUDIT-003-last-page.png"],
+        "network": "GET /api/v1/admin/audit/events?page=0&size=20 → 200, page=1 → 200, page=2 → 200, page=3 → 200, page=4 → 200, page=5 → 200, page=6 → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUDIT-004",
+      "title": "Actor filter narrows results",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Check unfiltered total",
+          "expected": "All events shown",
+          "observed": "Initial state: '1–20 of 127' total events"
+        },
+        {
+          "action": "Type actor identifier in filter input",
+          "expected": "After debounce, API re-fires with actor param",
+          "observed": "Typed 'val-e2e-1774937474@test.com' in filter. API fired with actor param: GET /api/v1/admin/audit/events?actor=val-e2e-1774937474@test.com&page=0&size=20 → 200"
+        },
+        {
+          "action": "Verify filtered results show only matching events",
+          "expected": "Table shows only matching events",
+          "observed": "Results narrowed to '1–3 of 3'. All 3 visible rows have actor 'val-e2e-1774937474@test.com' with PASSWORD_RESET_REQUESTED actions."
+        },
+        {
+          "action": "Clear filter to restore all events",
+          "expected": "All events restored",
+          "observed": "Cleared filter input. After debounce, results restored to '1–20 of 127'"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["audit/VAL-AUDIT-004-filtered-results.png"],
+        "network": "GET /api/v1/admin/audit/events?actor=val-e2e-1774937474@test.com&page=0&size=20 → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-AUDIT-005",
+      "title": "Audit trail responsive layout",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Set viewport to 375px",
+          "expected": "Mobile layout renders",
+          "observed": "Set viewport to 375x812. Page re-rendered with card-based mobile layout."
+        },
+        {
+          "action": "Verify DataTable uses mobile card renderer",
+          "expected": "Cards instead of table rows",
+          "observed": "DataTable switched to card renderer — each event shows as a card with action code (e.g., USER_CREATED, LOGIN_SUCCESS), status text (SUCCESS/FAILURE), actor email, and timestamp."
+        },
+        {
+          "action": "Verify filter input accessible",
+          "expected": "Filter input visible and interactable",
+          "observed": "Textbox 'Filter by actor...' visible at ref @e3"
+        },
+        {
+          "action": "Verify refresh button accessible",
+          "expected": "Refresh button visible and interactable",
+          "observed": "Refresh button visible at ref @e4"
+        },
+        {
+          "action": "Check for horizontal overflow",
+          "expected": "No horizontal overflow (scrollWidth <= clientWidth)",
+          "observed": "scrollWidth=375, clientWidth=375 — no horizontal overflow"
+        }
+      ],
+      "evidence": {
+        "screenshots": ["audit/VAL-AUDIT-005-mobile-375px.png"],
+        "consoleErrors": "none",
+        "network": "N/A (no additional API calls for viewport change)"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 5 assertions: all 5 passed. Business Events tab loads with paginated data, Accounting tab loads successfully with journal entry data, pagination works correctly (next/previous buttons enable/disable properly, data changes between pages), actor filter narrows results correctly with API actor param, and responsive layout at 375px uses card renderer with no horizontal overflow."
+}

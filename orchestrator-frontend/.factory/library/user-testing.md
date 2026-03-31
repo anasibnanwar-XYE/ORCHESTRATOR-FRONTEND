@@ -61,3 +61,40 @@ Credentials are stored in `.env.test` (gitignored). Source it before testing: `s
 - Notification sending (VAL-NOTIF-002) creates a real notification — only the notifications group should do this
 - Dashboard data is read-only and shared — safe for concurrent access
 - Roles, changelog, settings are read-only admin pages — safe for concurrent access
+
+## Flow Validator Guidance: api-integration (agent-browser)
+
+### Assertion Groups for Concurrency
+
+**Group 1: Users (read-heavy + write)** — VAL-USERS-001 through VAL-USERS-012
+- Navigates to /admin/users, loads user list, performs create/edit/suspend/unsuspend/delete
+- Creates test users with unique emails (val-e2e-{timestamp}@test.com)
+- MUST clean up test users after testing (delete them)
+- Mutates user data — serialize with other write groups
+
+**Group 2: Approvals (read + write)** — VAL-APPR-001 through VAL-APPR-008
+- Navigates to /admin/approvals, loads pending items
+- May approve/reject items — this mutates backend state
+- If no pending items, tests empty state instead
+- Serialize with other write groups
+
+**Group 3: Audit Trail (read-only)** — VAL-AUDIT-001 through VAL-AUDIT-005
+- Navigates to /admin/audit-trail, reads events
+- Tests pagination and actor filter
+- No data mutation — safe for concurrent execution
+
+**Group 4: Finance (read-only after select)** — VAL-FIN-001 through VAL-FIN-005
+- Navigates to /admin/finance, selects dealer, reads ledger/invoices/aging
+- No data mutation beyond selecting dealer — safe for concurrent execution
+
+**Group 5: Support Tickets (read + write)** — VAL-SUPPORT-001 through VAL-SUPPORT-004
+- Navigates to /admin/support, loads tickets
+- Creates test tickets — mutate operation
+- Safe to run concurrently with read-only groups
+
+### Concurrency Plan
+- Max 5 concurrent validators
+- Groups 1 & 2 (write-heavy) can run concurrently since they touch different data
+- Groups 3 & 4 (read-only) can always run concurrently
+- Group 5 (write) can run with all others
+- All 5 groups can safely run simultaneously

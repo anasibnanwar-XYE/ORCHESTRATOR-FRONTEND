@@ -1,0 +1,76 @@
+{
+  "milestone": "api-integration",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 35,
+    "passed": 33,
+    "failed": 2,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-USERS-001",
+    "VAL-USERS-003",
+    "VAL-USERS-005",
+    "VAL-USERS-006",
+    "VAL-USERS-007",
+    "VAL-USERS-008",
+    "VAL-USERS-009",
+    "VAL-USERS-010",
+    "VAL-USERS-011",
+    "VAL-USERS-012",
+    "VAL-APPR-001",
+    "VAL-APPR-002",
+    "VAL-APPR-003",
+    "VAL-APPR-004",
+    "VAL-APPR-005",
+    "VAL-APPR-006",
+    "VAL-APPR-007",
+    "VAL-APPR-008",
+    "VAL-AUDIT-001",
+    "VAL-AUDIT-002",
+    "VAL-AUDIT-003",
+    "VAL-AUDIT-004",
+    "VAL-AUDIT-005",
+    "VAL-SET-001",
+    "VAL-FIN-001",
+    "VAL-FIN-002",
+    "VAL-FIN-003",
+    "VAL-FIN-004",
+    "VAL-FIN-005",
+    "VAL-SUPPORT-001",
+    "VAL-SUPPORT-002",
+    "VAL-SUPPORT-003",
+    "VAL-SUPPORT-004"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-USERS-002",
+      "reason": "Frontend sends companyId in CreateUserRequest payload but backend rejects with 400 'Unrecognized field companyId'. Create works via curl without companyId. Frontend needs to omit companyId from POST payload."
+    },
+    {
+      "id": "VAL-USERS-004",
+      "reason": "Frontend sends companyId in UpdateUserRequest payload but backend rejects with 400. Edit works via curl without companyId. Frontend needs to omit companyId from PUT payload."
+    }
+  ],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "frictions": [
+    {
+      "description": "Dropdown menu items could not be clicked via agent-browser click @ref — timed out consistently. Used JS eval to find and click buttons by text content as workaround.",
+      "affectedGroups": ["users-group"],
+      "resolution": "Used agent-browser eval workaround"
+    },
+    {
+      "description": "Combobox/Select dropdown click sometimes doesn't open on first click via agent-browser — used JS eval to programmatically set values.",
+      "affectedGroups": ["finance", "support"],
+      "resolution": "Used JS eval workaround"
+    },
+    {
+      "description": "Network request log shows duplicate entries (6-17x per request) — likely React StrictMode double-rendering in dev mode plus Vite HMR.",
+      "affectedGroups": ["users-group"],
+      "resolution": "Used presence/absence of requests rather than exact count"
+    }
+  ]
+}

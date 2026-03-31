@@ -1,0 +1,87 @@
+{
+  "groupId": "support-group",
+  "testedAt": "2026-03-31T12:45:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / company MOCK",
+    "agentBrowserSession": "52eafd188d99__u5",
+    "page": "/admin/support"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-SUPPORT-001",
+      "title": "Support tickets list loads",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/support", "expected": "Page loads with stat cards, DataTable, and Create ticket button", "observed": "Page loaded successfully" },
+        { "action": "Check stat cards", "expected": "Stat cards for Total, Open, In Progress, Resolved visible", "observed": "Total: 3, Open: 3, In Progress: 0, Resolved: 0 — all visible" },
+        { "action": "Check DataTable", "expected": "DataTable with ticket rows showing subject, category, status, priority, created date", "observed": "3 ticket rows rendered with all columns" },
+        { "action": "Check Create ticket button", "expected": "Create ticket button visible", "observed": "Create ticket button present" },
+        { "action": "Check network requests", "expected": "GET /api/v1/portal/support/tickets returns 200", "observed": "GET http://localhost:3002/api/v1/portal/support/tickets fired and completed (duration ~15-31ms)" }
+      ],
+      "evidence": {
+        "screenshots": ["api-integration/user-testing/evidence/support/VAL-SUPPORT-001-support-page.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/portal/support/tickets → 200 (fast, ~15-31ms)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-002",
+      "title": "Create ticket E2E",
+      "status": "pass",
+      "steps": [
+        { "action": "Click 'Create ticket' button", "expected": "Create ticket dialog opens", "observed": "Dialog opened with Subject, Category, Priority, Description fields" },
+        { "action": "Fill Subject with 'VAL-SUPPORT-002 E2E Test Ticket'", "expected": "Subject field populated", "observed": "Subject field populated" },
+        { "action": "Select Category 'Bug Report'", "expected": "Category set to Bug Report", "observed": "Category dropdown changed to Bug Report" },
+        { "action": "Fill Description with test content (>10 chars)", "expected": "Description field populated", "observed": "Description field populated" },
+        { "action": "Click 'Create ticket' submit button", "expected": "POST /portal/support/tickets returns 200/201, toast shown, dialog closes, new ticket in list", "observed": "POST fired, dialog closed, stat cards updated (Total: 4, Open: 4), new ticket 'VAL-SUPPORT-002 E2E Test Ticket' appeared as first row" }
+      ],
+      "evidence": {
+        "screenshots": ["api-integration/user-testing/evidence/support/VAL-SUPPORT-002-ticket-created.png"],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/portal/support/tickets → 200 (followed by GET refresh)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-003",
+      "title": "Ticket detail drawer",
+      "status": "pass",
+      "steps": [
+        { "action": "Click on ticket row (Bug Report cell of first ticket)", "expected": "Drawer/dialog opens with ticket details", "observed": "Dialog opened with title 'VAL-SUPPORT-002 E2E Test Ticket'" },
+        { "action": "Verify drawer content", "expected": "Shows subject, publicId, status badge, category, description, dates", "observed": "Subject: 'VAL-SUPPORT-002 E2E Test Ticket', publicId: '#ded3e4d1-a4bc-4cd3-91f9-e31df2fb6ad8', Status badge: 'Open', Category: 'Bug Report', Description present, Created: 'Today, 12:45 pm', Updated: 'Today, 12:45 pm', Company: MOCK, Requester: validation.admin@example.com" },
+        { "action": "Click Close panel button", "expected": "Drawer closes", "observed": "Drawer closed, returned to ticket list view" }
+      ],
+      "evidence": {
+        "screenshots": ["api-integration/user-testing/evidence/support/VAL-SUPPORT-003-ticket-drawer.png"],
+        "consoleErrors": "none",
+        "network": "N/A (drawer uses existing data, no additional API call)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SUPPORT-004",
+      "title": "Create ticket form validation",
+      "status": "pass",
+      "steps": [
+        { "action": "Click 'Create ticket' button", "expected": "Dialog opens", "observed": "Dialog opened with empty form" },
+        { "action": "Submit empty form", "expected": "Validation errors for subject and description, no POST fired", "observed": "'Subject is required' and 'Description is required' error messages appeared, no POST request fired" },
+        { "action": "Fill subject with 'ab' (2 chars, min 3) and description with 'short' (5 chars, min 10)", "expected": "Min-length validation errors shown, no POST fired", "observed": "'Subject must be at least 3 characters' and 'Description must be at least 10 characters' errors appeared, no POST request fired" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "api-integration/user-testing/evidence/support/VAL-SUPPORT-004-empty-validation.png",
+          "api-integration/user-testing/evidence/support/VAL-SUPPORT-004-min-length-validation.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No POST requests fired during validation testing"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 4 assertions: all 4 passed. Support Tickets page loads correctly with stat cards and DataTable. Create ticket flow works E2E with POST returning success. Ticket detail drawer shows all required fields (subject, publicId, status badge, category, description, dates) and close button works. Form validation correctly blocks submission on empty fields and short inputs with appropriate error messages."
+}

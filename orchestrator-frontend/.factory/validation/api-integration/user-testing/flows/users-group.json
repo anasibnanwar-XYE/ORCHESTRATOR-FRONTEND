@@ -1,0 +1,225 @@
+{
+  "groupId": "users-group",
+  "testedAt": "2026-03-31T07:35:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / MOCK",
+    "agentBrowserSession": "52eafd188d99__u1",
+    "testUserId": 18,
+    "testUserEmail": "val-e2e-1774941475@test.com"
+  },
+  "toolsUsed": ["agent-browser", "curl"],
+  "assertions": [
+    {
+      "id": "VAL-USERS-001",
+      "title": "Users list loads with real users",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin/users", "expected": "DataTable renders with user rows", "observed": "DataTable renders 8-9 rows with display name, email, role badges (Admin, Sales, Accounting, etc.), and Active status badges" },
+        { "action": "Verify GET /api/v1/admin/users network call", "expected": "GET request returns 200", "observed": "GET /api/v1/admin/users fired on page load (confirmed via network requests)" },
+        { "action": "Check console errors", "expected": "No errors", "observed": "No console errors on page load" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-001-users-page-loaded.png"],
+        "consoleErrors": "none",
+        "network": "GET /api/v1/admin/users → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-002",
+      "title": "Create user E2E",
+      "status": "fail",
+      "steps": [
+        { "action": "Click 'Add User' button", "expected": "Create User modal opens", "observed": "Modal opens with Email, Display Name, Role checkboxes, Company dropdown" },
+        { "action": "Fill form with val-e2e-{timestamp}@test.com, 'E2E Test User', Sales role, Mock Training Co", "expected": "Fields populated", "observed": "Fields populated correctly" },
+        { "action": "Click 'Create User'", "expected": "POST /api/v1/admin/users returns 200/201, toast 'User created'", "observed": "POST /api/v1/admin/users returns 400 — backend rejects payload with 'Unrecognized field companyId'" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-002-create-form-filled.png", "users/VAL-USERS-002-after-create.png"],
+        "consoleErrors": "Request failed with status code 400",
+        "network": "POST /api/v1/admin/users → 400 (backend rejects companyId field)"
+      },
+      "issues": "Frontend sends companyId in CreateUserRequest payload but backend's CreateUserRequest DTO only accepts email, displayName, roles. The companyId field causes a 400 'Unrecognized field' error. Create user via curl without companyId works fine and returns 200/201."
+    },
+    {
+      "id": "VAL-USERS-003",
+      "title": "Create user form validation",
+      "status": "pass",
+      "steps": [
+        { "action": "Open Create User modal and submit empty form", "expected": "Inline errors appear", "observed": "Errors shown: 'Email is required', 'Display name is required', 'Please select at least one role.', 'Please select a company.'" },
+        { "action": "Enter invalid email 'invalid-email'", "expected": "'Enter a valid email' error", "observed": "'Enter a valid email address' shown below email field" },
+        { "action": "Check network for POST request", "expected": "No POST request made", "observed": "No POST request captured — validation prevents submission" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-003-empty-form-validation.png", "users/VAL-USERS-003-invalid-email.png"],
+        "network": "no POST"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-004",
+      "title": "Edit user persists changes",
+      "status": "fail",
+      "steps": [
+        { "action": "Open actions dropdown → Edit on test user (ID 18)", "expected": "Edit modal opens with pre-populated data", "observed": "Edit modal opens with email, display name, role (Sales checked), company (Mock Training Co selected)" },
+        { "action": "Change display name to 'E2E Test User Edited'", "expected": "Field updated", "observed": "Field updated" },
+        { "action": "Click 'Save Changes'", "expected": "PUT /api/v1/admin/users/18 returns 200, toast confirms", "observed": "PUT /api/v1/admin/users/18 returns 400 — backend rejects payload with 'Unrecognized field companyId'" },
+        { "action": "Update user via curl (without companyId)", "expected": "PUT returns 200", "observed": "curl PUT without companyId returns 200, name updated to 'E2E Test User Edited'" },
+        { "action": "Reload page and verify", "expected": "Updated name visible", "observed": "'E2E Test User Edited' visible in user list" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-004-edit-form.png", "users/VAL-USERS-004-after-edit.png"],
+        "network": "PUT /api/v1/admin/users/18 → 400 (frontend); curl PUT → 200"
+      },
+      "issues": "Same as VAL-USERS-002: Frontend sends companyId in UpdateUserRequest payload but backend only accepts displayName and roles. The edit form opens correctly, pre-populates data, and the UI flow works up to the API call."
+    },
+    {
+      "id": "VAL-USERS-005",
+      "title": "Suspend and unsuspend user",
+      "status": "pass",
+      "steps": [
+        { "action": "Open actions dropdown for test user → click Suspend", "expected": "Confirmation dialog appears", "observed": "ConfirmDialog with 'Cancel' and 'Suspend' buttons appears" },
+        { "action": "Click 'Suspend' to confirm", "expected": "PATCH /suspend returns 204, status changes to 'Suspended'", "observed": "PATCH /api/v1/admin/users/18/suspend sent successfully, status badge changes to 'Suspended' (red)" },
+        { "action": "Open actions dropdown for suspended user → click Unsuspend", "expected": "Confirmation dialog with 'Unsuspend'", "observed": "ConfirmDialog with 'Cancel' and 'Unsuspend' buttons appears" },
+        { "action": "Click 'Unsuspend' to confirm", "expected": "PATCH /unsuspend returns 204, status reverts to 'Active'", "observed": "PATCH /api/v1/admin/users/18/unsuspend sent successfully, status badge reverts to 'Active' (green)" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-005-suspend-confirm.png", "users/VAL-USERS-005-unsuspend-confirm.png", "users/VAL-USERS-005-after-unsuspend.png"],
+        "consoleErrors": "none",
+        "network": "PATCH /api/v1/admin/users/18/suspend → 204, PATCH /api/v1/admin/users/18/unsuspend → 204"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-006",
+      "title": "Force reset password",
+      "status": "pass",
+      "steps": [
+        { "action": "Open actions dropdown → click 'Force reset password'", "expected": "Confirmation dialog appears", "observed": "ConfirmDialog with 'Cancel' and 'Send reset link' buttons appears" },
+        { "action": "Click 'Send reset link'", "expected": "POST /force-reset-password returns 200, toast 'Password reset sent'", "observed": "POST /api/v1/admin/users/18/force-reset-password sent successfully. Toast appears: 'Password reset sent — A reset link has been sent to val-e2e-1774941475@test.com.'" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-006-force-reset-confirm.png", "users/VAL-USERS-006-after-force-reset.png"],
+        "consoleErrors": "none",
+        "network": "POST /api/v1/admin/users/18/force-reset-password → 200"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-007",
+      "title": "Delete user removes from list",
+      "status": "pass",
+      "steps": [
+        { "action": "Open actions dropdown for test user → click Delete", "expected": "Danger confirmation dialog with 'This cannot be undone'", "observed": "ConfirmDialog shows 'Are you sure you want to permanently delete E2E Test User Edited? This cannot be undone.' with red 'Delete' button" },
+        { "action": "Click 'Delete' to confirm", "expected": "DELETE /api/v1/admin/users/18 returns 204, user disappears from list", "observed": "DELETE /api/v1/admin/users/18 sent successfully. User list refreshes, test user removed. Row count drops from 9 to 8." }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-007-delete-dialog.png", "users/VAL-USERS-007-after-delete.png"],
+        "consoleErrors": "none",
+        "network": "DELETE /api/v1/admin/users/18 → 204, followed by GET /api/v1/admin/users → 200 (refresh)"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-008",
+      "title": "User detail modal",
+      "status": "pass",
+      "steps": [
+        { "action": "Click a user row (E2E Test User Edited)", "expected": "Detail modal opens", "observed": "Modal opens with avatar (initials 'ET'), display name, email, status, role, company, MFA status, created date" },
+        { "action": "Check modal content", "expected": "Shows avatar, display name, email, status, roles, company, MFA status, created date", "observed": "All fields present: avatar 'ET', name 'E2E Test User Edited', email 'val-e2e-1774941475@test.com', Status 'Active', Role 'Sales', Company 'MOCK', MFA 'Disabled', created date visible" },
+        { "action": "Click Close", "expected": "Modal dismisses", "observed": "Modal closes on clicking Close button" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-008-detail-modal.png"],
+        "consoleErrors": "none",
+        "network": "n/a"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-009",
+      "title": "User actions dropdown shows correct items",
+      "status": "pass",
+      "steps": [
+        { "action": "Open dropdown for active non-MFA user (E2E Test User)", "expected": "View, Edit, Suspend, Force reset, Delete (no Disable MFA)", "observed": "View, Edit, Suspend, Force reset password, Delete shown. No 'Disable MFA' item." },
+        { "action": "Open dropdown for active MFA-enabled user (Validation MFA Admin)", "expected": "View, Edit, Suspend, Force reset, Disable MFA, Delete (red)", "observed": "View, Edit, Suspend, Force reset password, Disable MFA, Delete shown" },
+        { "action": "Open dropdown for suspended user", "expected": "'Unsuspend' instead of 'Suspend'", "observed": "When test user was suspended, dropdown showed 'Unsuspend' instead of 'Suspend'" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-009-actions-non-mfa-user.png", "users/VAL-USERS-009-mfa-user-dropdown.png", "users/VAL-USERS-009-suspended-user-dropdown.png"],
+        "consoleErrors": "none",
+        "network": "n/a"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-010",
+      "title": "Search/filter users",
+      "status": "pass",
+      "steps": [
+        { "action": "Type 'MFA' in search input", "expected": "Table filters to show only matching users", "observed": "Table filters to 1 row showing 'Validation MFA Admin'" },
+        { "action": "Check network requests", "expected": "No additional API calls", "observed": "No API requests captured — client-side filtering" },
+        { "action": "Clear search input", "expected": "All users restored", "observed": "All 9 rows restored" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-010-search-filtered.png"],
+        "consoleErrors": "none",
+        "network": "no additional API calls"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-011",
+      "title": "Destructive actions require confirmation",
+      "status": "pass",
+      "steps": [
+        { "action": "Click Delete on test user", "expected": "Danger confirmation dialog with 'This cannot be undone'", "observed": "ConfirmDialog appears: 'Are you sure you want to permanently delete E2E Test User Edited? This cannot be undone.' with red Delete button" },
+        { "action": "Click Cancel on Delete dialog", "expected": "Dialog dismisses without DELETE request", "observed": "Dialog dismissed, no DELETE request captured" },
+        { "action": "Click Suspend on test user", "expected": "Confirmation dialog appears", "observed": "ConfirmDialog appears with 'Cancel' and 'Suspend' buttons" },
+        { "action": "Click Cancel on Suspend dialog", "expected": "Dialog dismisses without PATCH request", "observed": "Dialog dismissed, no PATCH request captured" },
+        { "action": "Click 'Disable MFA' on MFA user", "expected": "Confirmation dialog appears", "observed": "ConfirmDialog appears with 'Cancel' and 'Disable MFA' buttons" },
+        { "action": "Click Cancel on Disable MFA dialog", "expected": "Dialog dismisses without PATCH request", "observed": "Dialog dismissed, no PATCH request captured" },
+        { "action": "Click 'Force reset password' on test user", "expected": "Confirmation dialog appears", "observed": "ConfirmDialog appears with 'Cancel' and 'Send reset link' buttons" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-011-delete-confirm.png", "users/VAL-USERS-011-suspend-confirm-cancel.png", "users/VAL-USERS-011-disable-mfa-confirm.png"],
+        "consoleErrors": "none",
+        "network": "no requests on cancel for Delete, Suspend, Disable MFA"
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-USERS-012",
+      "title": "Users page mobile card layout",
+      "status": "pass",
+      "steps": [
+        { "action": "Set viewport to 375x812", "expected": "DataTable switches to card layout", "observed": "Mobile card layout activated — 9 cards rendered with custom mobileCardRenderer (confirmed via DOM eval)" },
+        { "action": "Check card content", "expected": "Cards show avatar, name, email, status badge, role badges, actions dropdown", "observed": "Cards contain: avatar (initials), display name, email, Active/Suspended status badge, role badges, MFA status, action button" },
+        { "action": "Check for horizontal overflow", "expected": "No horizontal overflow", "observed": "scrollWidth (375) === clientWidth (375) — no horizontal overflow" }
+      ],
+      "evidence": {
+        "screenshots": ["users/VAL-USERS-012-mobile-375px.png", "users/VAL-USERS-012-mobile-cards-content.png"],
+        "consoleErrors": "none",
+        "network": "n/a"
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "Dropdown menu items (View, Edit, Suspend, etc.) could not be clicked via agent-browser click @ref — timed out consistently. Had to use JS eval to find and click buttons by text content.",
+      "resolved": true,
+      "resolution": "Used agent-browser eval 'document.querySelectorAll(\"button\").forEach(b => { if (b.textContent.trim() === \"Button Text\") b.click(); })' as workaround",
+      "affectedAssertions": ["VAL-USERS-004", "VAL-USERS-005", "VAL-USERS-006", "VAL-USERS-007", "VAL-USERS-009", "VAL-USERS-011"]
+    },
+    {
+      "description": "Network request log shows duplicate entries — each request appears 6-17 times. This is likely due to React StrictMode double-rendering in dev mode and the Vite HMR connection.",
+      "resolved": true,
+      "resolution": "Used presence/absence of requests rather than exact count for verification",
+      "affectedAssertions": ["VAL-USERS-001", "VAL-USERS-002", "VAL-USERS-004", "VAL-USERS-005", "VAL-USERS-006", "VAL-USERS-007"]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 12 assertions: 10 passed, 2 failed. VAL-USERS-002 (Create user) and VAL-USERS-004 (Edit user) fail because the frontend sends a companyId field in the API payload that the backend's DTO does not accept, resulting in a 400 error. The underlying API works correctly when called without companyId (verified via curl). All other assertions (list load, form validation, suspend/unsuspend, force reset, delete, detail modal, action dropdown, search/filter, confirmation dialogs, mobile layout) pass successfully."
+}
