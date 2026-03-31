@@ -674,9 +674,11 @@ export const adminSupportApi = {
 
   /** Create a new support ticket */
   async createTicket(request: CreateTicketRequest): Promise<SupportTicketResponse> {
+    // Backend only accepts subject, category, description — strip extra fields
+    const { subject, category, description } = request;
     const response = await apiRequest.post<ApiResponse<SupportTicketResponse>>(
       '/portal/support/tickets',
-      request
+      { subject, category, description }
     );
     return response.data.data;
   },

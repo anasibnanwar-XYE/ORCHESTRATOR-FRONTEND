@@ -30,7 +30,7 @@ export { Avatar } from './Avatar';
 export { ProfileMenu } from './ProfileMenu';
 export { PageHeader } from './PageHeader';
 export { Breadcrumb } from './Breadcrumb';
-export { StatCard } from './StatCard';
+export { StatCard, type StatCardVariant } from './StatCard';
 export { LedgerCard } from './LedgerCard';
 export { EmptyState } from './EmptyState';
 export { Loader, PageLoader, WelcomeLoader } from './Loader';

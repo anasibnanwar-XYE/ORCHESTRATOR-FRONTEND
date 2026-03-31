@@ -411,4 +411,158 @@ describe('SupportTicketsPage', () => {
       expect(statusElements.length).toBeGreaterThan(0);
     });
   });
+
+  it('shows validation errors for empty subject and description', async () => {
+    (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    renderPage();
+
+    await waitFor(() => {
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
+    });
+
+    // Open modal
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create support ticket')).toBeDefined();
+    });
+
+    // Try to submit empty form — click the "Create ticket" button inside the modal footer
+    const submitBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(submitBtns[submitBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Subject is required')).toBeDefined();
+      expect(screen.getByText('Description is required')).toBeDefined();
+    });
+
+    // No API call should be made
+    expect(adminSupportApi.createTicket).not.toHaveBeenCalled();
+  });
+
+  it('shows min-length validation errors for short inputs', async () => {
+    (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    renderPage();
+
+    await waitFor(() => {
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
+    });
+
+    // Open modal
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create support ticket')).toBeDefined();
+    });
+
+    // Type short values
+    const subjectInput = screen.getByPlaceholderText('Brief summary of the issue');
+    fireEvent.change(subjectInput, { target: { value: 'AB' } });
+
+    const descriptionInput = screen.getByPlaceholderText('Provide detailed information about the issue...');
+    fireEvent.change(descriptionInput, { target: { value: 'Too short' } });
+
+    // Submit
+    const submitBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(submitBtns[submitBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Subject must be at least 3 characters')).toBeDefined();
+      expect(screen.getByText('Description must be at least 10 characters')).toBeDefined();
+    });
+
+    expect(adminSupportApi.createTicket).not.toHaveBeenCalled();
+  });
+
+  it('creates ticket successfully and shows toast', async () => {
+    (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (adminSupportApi.createTicket as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 10,
+      publicId: 'TKT-010',
+      subject: 'Test ticket',
+      description: 'Test description for the ticket',
+      status: 'OPEN',
+      category: 'BUG',
+      priority: 'MEDIUM',
+      requesterEmail: 'user@test.com',
+      companyCode: 'TEST',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      resolvedAt: null,
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(adminSupportApi.listTickets).toHaveBeenCalled();
+    });
+
+    // Open modal
+    const createBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(createBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Create support ticket')).toBeDefined();
+    });
+
+    // Fill out the form
+    const subjectInput = screen.getByPlaceholderText('Brief summary of the issue');
+    fireEvent.change(subjectInput, { target: { value: 'Test ticket' } });
+
+    const descriptionInput = screen.getByPlaceholderText('Provide detailed information about the issue...');
+    fireEvent.change(descriptionInput, { target: { value: 'Test description for the ticket' } });
+
+    // Submit
+    const submitBtns = screen.getAllByText('Create ticket');
+    fireEvent.click(submitBtns[submitBtns.length - 1]);
+
+    await waitFor(() => {
+      expect(adminSupportApi.createTicket).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: 'Test ticket',
+          description: 'Test description for the ticket',
+          category: 'SUPPORT',
+          priority: 'MEDIUM',
+        })
+      );
+      expect(mockToastFns.success).toHaveBeenCalledWith(
+        'Ticket created',
+        'Ticket #TKT-010 has been submitted'
+      );
+    });
+  });
+
+  it('opens ticket detail drawer on row click and shows full info', async () => {
+    (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Login issues').length).toBeGreaterThan(0);
+    });
+
+    // Click on first ticket
+    fireEvent.click(screen.getAllByText('Login issues')[0]);
+
+    await waitFor(() => {
+      // Drawer should show ticket details
+      expect(screen.getByText('Ticket #TKT-001')).toBeDefined();
+      expect(screen.getByText('Description')).toBeDefined();
+      expect(screen.getByText('Cannot login to the portal since this morning')).toBeDefined();
+      expect(screen.getByText('Company')).toBeDefined();
+      expect(screen.getByText('ACME')).toBeDefined();
+      expect(screen.getByText('Requester')).toBeDefined();
+    });
+  });
+
+  it('stat cards render with 4 items (Total, Open, In Progress, Resolved)', async () => {
+    (adminSupportApi.listTickets as ReturnType<typeof vi.fn>).mockResolvedValue(mockTickets);
+    const { container } = renderPage();
+
+    await waitFor(() => {
+      const statCards = container.querySelectorAll('[data-testid="stat-card"]');
+      expect(statCards.length).toBe(4);
+    });
+  });
 });

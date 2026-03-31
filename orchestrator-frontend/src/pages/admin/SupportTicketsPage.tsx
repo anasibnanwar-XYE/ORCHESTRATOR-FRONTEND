@@ -38,10 +38,24 @@ type TicketCategory = 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '—';
+function formatDate(dateValue: string | number): string {
+  if (!dateValue && dateValue !== 0) return '—';
   try {
-    const date = new Date(dateStr);
+    // Backend may return Unix epoch seconds (number or numeric string) or ISO string
+    let date: Date;
+    const numVal = typeof dateValue === 'number' ? dateValue : Number(dateValue);
+    if (!isNaN(numVal) && numVal > 0 && numVal < 1e12) {
+      // Epoch seconds (< 1e12 distinguishes seconds from milliseconds)
+      date = new Date(numVal * 1000);
+    } else if (!isNaN(numVal) && numVal >= 1e12) {
+      // Epoch milliseconds
+      date = new Date(numVal);
+    } else {
+      date = new Date(dateValue);
+    }
+
+    if (isNaN(date.getTime())) return String(dateValue);
+
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -59,7 +73,7 @@ function formatDate(dateStr: string): string {
       });
     }
   } catch {
-    return dateStr;
+    return String(dateValue);
   }
 }
 
@@ -187,7 +201,10 @@ function CreateTicketModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateTi
           label="Subject"
           placeholder="Brief summary of the issue"
           value={form.subject}
-          onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+          onChange={(e) => {
+            setForm((f) => ({ ...f, subject: e.target.value }));
+            if (errors.subject) setErrors((prev) => ({ ...prev, subject: undefined }));
+          }}
           error={errors.subject}
           disabled={isSubmitting}
         />
@@ -213,15 +230,18 @@ function CreateTicketModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateTi
           </label>
           <textarea
             value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, description: e.target.value }));
+              if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
+            }}
             placeholder="Provide detailed information about the issue..."
             disabled={isSubmitting}
             className={clsx(
-              'w-full h-28 px-3 py-2.5 text-[13px] bg-[var(--color-surface-secondary)]',
+              'w-full h-28 px-3 py-2.5 text-[13px] text-[var(--color-text-primary)] bg-[var(--color-surface-secondary)]',
               'border rounded-lg resize-none',
               'focus:outline-none focus:border-[var(--color-neutral-300)]',
               'placeholder:text-[var(--color-text-tertiary)]',
-              errors.description && 'border-[var(--color-error-border)]'
+              errors.description ? 'border-[var(--color-error-border)]' : 'border-[var(--color-border-default)]'
             )}
           />
           {errors.description && (
@@ -324,8 +344,7 @@ function TicketDetailDrawer({ ticket, onClose }: TicketDetailDrawerProps) {
                 href={(ticket as unknown as { githubIssueUrl?: string }).githubIssueUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[13px] hover:underline flex items-center gap-1.5"
-                style={{ color: 'var(--color-link)' }}
+                className="text-[13px] link-color hover:underline flex items-center gap-1.5"
               >
                 #{((ticket as unknown as { githubIssueNumber?: number }).githubIssueNumber)} on GitHub
                 <ArrowUpRight size={12} />
@@ -513,9 +532,9 @@ export function SupportTicketsPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Total" value={stats.total} />
-        <StatCard label="Open" value={stats.open} />
-        <StatCard label="In Progress" value={stats.inProgress} />
-        <StatCard label="Resolved" value={stats.resolved} />
+        <StatCard label="Open" value={stats.open} variant="info" />
+        <StatCard label="In Progress" value={stats.inProgress} variant="warning" />
+        <StatCard label="Resolved" value={stats.resolved} variant="success" />
       </div>
 
       {/* Error State */}
@@ -571,8 +590,7 @@ export function SupportTicketsPage() {
                     e.stopPropagation();
                     setSelectedTicket(row);
                   }}
-                  className="text-[11px] hover:underline"
-                  style={{ color: 'var(--color-link)' }}
+                  className="text-[11px] link-color hover:underline"
                 >
                   View details
                 </button>

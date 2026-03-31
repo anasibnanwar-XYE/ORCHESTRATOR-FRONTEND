@@ -95,6 +95,14 @@
 }
 
 @layer utilities {
+  /* Semantic link color with hover state using CSS variable tokens */
+  .link-color {
+    color: var(--color-link);
+  }
+  .link-color:hover {
+    color: var(--color-link-hover);
+  }
+
   .text-balance {
     text-wrap: balance;
   }
