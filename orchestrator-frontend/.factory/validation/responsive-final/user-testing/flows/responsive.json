@@ -1,0 +1,86 @@
+{
+  "groupId": "responsive",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd",
+    "viewport": "375x667"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-RESP-001",
+      "title": "No horizontal scrollbar on any admin page at 375px",
+      "status": "pass",
+      "steps": [
+        { "action": "Check Dashboard at 375px", "expected": "scrollWidth <= clientWidth", "observed": "No horizontal overflow, scrollWidth=375, clientWidth=375" },
+        { "action": "Check Users at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Roles at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Approvals at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Audit Trail at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Finance at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Support at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Changelog at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Notifications at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" },
+        { "action": "Check Settings at 375px", "expected": "No horizontal overflow", "observed": "No horizontal overflow" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/responsive/dashboard-mobile.png",
+          "responsive-final/responsive/users-mobile.png",
+          "responsive-final/responsive/roles-mobile.png",
+          "responsive-final/responsive/approvals-mobile.png",
+          "responsive-final/responsive/audit-trail-mobile.png",
+          "responsive-final/responsive/finance-mobile.png",
+          "responsive-final/responsive/support-mobile.png",
+          "responsive-final/responsive/changelog-mobile.png",
+          "responsive-final/responsive/notifications-mobile.png",
+          "responsive-final/responsive/settings-mobile.png"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-RESP-002",
+      "title": "DataTable pages show card layout on mobile",
+      "status": "pass",
+      "steps": [
+        { "action": "Check Users page at 375px", "expected": "Card-based layout instead of table rows", "observed": "Users shown as cards with avatar, name, email, status, actions" },
+        { "action": "Check Audit Trail at 375px", "expected": "Card layout", "observed": "Audit events shown as cards" },
+        { "action": "Check Finance ledger at 375px", "expected": "Card layout", "observed": "Ledger entries shown as cards" },
+        { "action": "Check Support at 375px", "expected": "Card layout", "observed": "Tickets shown as cards" },
+        { "action": "Check Roles at 375px", "expected": "Card layout", "observed": "Roles shown as cards" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/responsive/users-mobile.png",
+          "responsive-final/responsive/audit-trail-mobile.png",
+          "responsive-final/responsive/finance-ledger-cards.png",
+          "responsive-final/responsive/support-mobile.png",
+          "responsive-final/responsive/roles-mobile.png"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-RESP-003",
+      "title": "Forms single-column on mobile",
+      "status": "pass",
+      "steps": [
+        { "action": "Open Notifications form at 375px", "expected": "Single-column layout", "observed": "Form uses single column" },
+        { "action": "Open Users create modal at 375px", "expected": "Single-column layout", "observed": "Modal form uses single column" },
+        { "action": "Open Support create form at 375px", "expected": "Single-column layout", "observed": "Form uses single column" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/responsive/notifications-form.png",
+          "responsive-final/responsive/users-create-modal.png"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 3 responsive assertions: All passed. No horizontal overflow on any admin page at 375px, DataTable pages correctly show card layouts on mobile, forms use single-column layout at mobile viewport."
+}

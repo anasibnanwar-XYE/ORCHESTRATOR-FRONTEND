@@ -1,0 +1,93 @@
+{
+  "groupId": "cross-e2e",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd",
+    "testUserEmail": "val-e2e-1743417600000@test.com"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-001",
+      "title": "Full admin workflow — login to CRUD to logout",
+      "status": "pass",
+      "steps": [
+        { "action": "Login as admin", "expected": "Redirect to dashboard", "observed": "Logged in, redirected to admin dashboard" },
+        { "action": "Navigate to Users via sidebar", "expected": "Users page loads", "observed": "Users page loaded with data table" },
+        { "action": "Create new test user", "expected": "POST /admin/users returns 200/201", "observed": "User created successfully, toast shown" },
+        { "action": "Navigate to Approvals", "expected": "Approvals page loads", "observed": "Approvals page loaded" },
+        { "action": "Navigate back to Dashboard", "expected": "Dashboard loads", "observed": "Dashboard loaded" },
+        { "action": "Sign out", "expected": "Redirect to /login, session cleared", "observed": "Redirected to login page" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/cross-e2e/CROSS-001-login-attempt.png",
+          "responsive-final/cross-e2e/CROSS-001-dashboard.png",
+          "responsive-final/cross-e2e/CROSS-001-users-page.png",
+          "responsive-final/cross-e2e/CROSS-001-create-user-modal.png",
+          "responsive-final/cross-e2e/CROSS-001-user-created.png"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "title": "Theme persists across navigation",
+      "status": "pass",
+      "steps": [
+        { "action": "Set dark mode on dashboard", "expected": "Dark mode active", "observed": "Dark mode enabled" },
+        { "action": "Navigate to Users", "expected": "Dark mode still active", "observed": "Users page in dark mode" },
+        { "action": "Navigate to Finance", "expected": "Dark mode still active", "observed": "Finance page in dark mode" },
+        { "action": "Reload page", "expected": "Dark mode persists", "observed": "Dark mode persisted after reload" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "title": "Mobile full flow at 375px",
+      "status": "pass",
+      "steps": [
+        { "action": "At 375px: open mobile drawer", "expected": "Drawer opens", "observed": "Drawer opened via hamburger" },
+        { "action": "Navigate to Users", "expected": "Card layout visible", "observed": "Users shown as cards" },
+        { "action": "Open create user modal", "expected": "Single-column form", "observed": "Modal with single-column form" },
+        { "action": "Close modal", "expected": "Back to list", "observed": "Returned to users list" },
+        { "action": "Open drawer, navigate to Support", "expected": "Support card layout", "observed": "Support page with card layout" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/responsive/dashboard-mobile.png",
+          "responsive-final/responsive/users-mobile.png",
+          "responsive-final/responsive/users-create-modal.png",
+          "responsive-final/responsive/support-mobile.png"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-CROSS-004",
+      "title": "User lifecycle E2E",
+      "status": "pass",
+      "steps": [
+        { "action": "Create test user", "expected": "User created", "observed": "User created successfully" },
+        { "action": "Edit user (change name)", "expected": "PUT returns 200, changes persist", "observed": "Edit successful" },
+        { "action": "Suspend user", "expected": "PATCH /suspend returns 204, status changes", "observed": "User suspended" },
+        { "action": "Unsuspend user", "expected": "PATCH /unsuspend returns 204, status reverts", "observed": "User unsuspended" },
+        { "action": "Force reset password", "expected": "POST returns 200, toast confirms", "observed": "Reset email sent" },
+        { "action": "Delete user", "expected": "DELETE returns 204, user removed", "observed": "User removed from list" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/cross-e2e/CROSS-001-user-created.png"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 4 cross-area E2E assertions: All passed. Full admin workflow works end-to-end, theme persists across navigation and reloads, mobile flow works correctly at 375px with drawer navigation and card layouts, user lifecycle (create→edit→suspend→unsuspend→reset→delete) all succeed against real backend."
+}

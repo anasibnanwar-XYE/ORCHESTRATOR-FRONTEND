@@ -1,0 +1,102 @@
+{
+  "groupId": "nav-shell",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd",
+    "viewport": "1440x900"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-NAV-001",
+      "title": "Sidebar displays all navigation groups and items",
+      "status": "pass",
+      "steps": [
+        { "action": "Login and navigate to admin dashboard", "expected": "Sidebar visible with all navigation items", "observed": "Sidebar displays Dashboard, Management (Users/Roles), Workflows (Approvals/Notifications/Changelog), Analytics (Audit Trail), Finance (Dealer Finance), Support (Tickets), System (Settings)" }
+      ],
+      "evidence": {
+        "screenshots": ["responsive-final/nav-shell/VAL-NAV-001-dashboard.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-002",
+      "title": "All sidebar links navigate correctly",
+      "status": "pass",
+      "steps": [
+        { "action": "Click Dashboard sidebar link", "expected": "Navigate to /admin", "observed": "Navigated to /admin" },
+        { "action": "Click Users sidebar link", "expected": "Navigate to /admin/users", "observed": "Navigated to /admin/users" },
+        { "action": "Click Roles sidebar link", "expected": "Navigate to /admin/roles", "observed": "Navigated to /admin/roles" },
+        { "action": "Click Approvals sidebar link", "expected": "Navigate to /admin/approvals", "observed": "Navigated to /admin/approvals" },
+        { "action": "Click Notifications sidebar link", "expected": "Navigate to /admin/notifications", "observed": "Navigated to /admin/notifications" },
+        { "action": "Click Changelog sidebar link", "expected": "Navigate to /admin/changelog", "observed": "Navigated to /admin/changelog" },
+        { "action": "Click Audit Trail sidebar link", "expected": "Navigate to /admin/audit-trail", "observed": "Navigated to /admin/audit-trail" },
+        { "action": "Click Dealer Finance sidebar link", "expected": "Navigate to /admin/finance", "observed": "Navigated to /admin/finance" },
+        { "action": "Click Tickets sidebar link", "expected": "Navigate to /admin/support", "observed": "Navigated to /admin/support" },
+        { "action": "Click Settings sidebar link", "expected": "Navigate to /admin/settings", "observed": "Navigated to /admin/settings" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-003",
+      "title": "Active sidebar item highlighted",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to different pages via sidebar", "expected": "Active item has distinct visual state", "observed": "Active sidebar item shows highlighted state with different background color" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-004",
+      "title": "Sidebar collapse/expand on desktop",
+      "status": "pass",
+      "steps": [
+        { "action": "Click collapse toggle", "expected": "Sidebar reduces to 52px width, labels hidden", "observed": "Sidebar collapsed successfully" },
+        { "action": "Click expand toggle", "expected": "Sidebar expands to 220px with labels", "observed": "Sidebar expanded successfully" },
+        { "action": "Reload page", "expected": "State persists from localStorage", "observed": "Sidebar state persisted after reload" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-005",
+      "title": "Mobile sidebar drawer at 375px",
+      "status": "pass",
+      "steps": [
+        { "action": "Set viewport to 375px", "expected": "Sidebar hidden, hamburger visible", "observed": "Hamburger menu visible at mobile viewport" },
+        { "action": "Click hamburger", "expected": "Slide-in drawer opens", "observed": "Mobile drawer opened with navigation items" },
+        { "action": "Click nav item", "expected": "Drawer closes", "observed": "Drawer closed after navigation" }
+      ],
+      "evidence": {
+        "screenshots": ["responsive-final/responsive/dashboard-mobile.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-006",
+      "title": "Breadcrumbs update per route",
+      "status": "pass",
+      "steps": [
+        { "action": "Navigate to /admin", "expected": "Breadcrumb shows 'Admin'", "observed": "Breadcrumb displayed correctly" },
+        { "action": "Navigate to /admin/users", "expected": "Breadcrumb shows 'Admin > Users'", "observed": "Breadcrumb showed Admin > Users" },
+        { "action": "Click root breadcrumb", "expected": "Navigate to /admin", "observed": "Navigation successful" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 6 navigation assertions: All passed. Sidebar displays all groups/items correctly, links navigate properly, active state highlighted, collapse/expand works with persistence, mobile drawer functions correctly, breadcrumbs update per route."
+}

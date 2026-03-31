@@ -1,0 +1,94 @@
+{
+  "groupId": "shell-features",
+  "testedAt": "2026-03-31T12:00:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / Validation1!cc18570e52fe48dd",
+    "viewport": "1440x900"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-NAV-007",
+      "title": "Theme toggle and persistence",
+      "status": "pass",
+      "steps": [
+        { "action": "Click theme toggle (Moon icon)", "expected": "Switch to dark mode", "observed": "Dark mode activated, html element has 'dark' class" },
+        { "action": "Reload page", "expected": "Dark mode persists", "observed": "Dark mode persisted after reload" },
+        { "action": "Click theme toggle (Sun icon)", "expected": "Switch to light mode", "observed": "Light mode activated" },
+        { "action": "Reload page", "expected": "Light mode persists", "observed": "Light mode persisted after reload" }
+      ],
+      "evidence": {
+        "screenshots": [
+          "responsive-final/shell-features/VAL-NAV-007-dark-mode.png",
+          "responsive-final/shell-features/VAL-NAV-007-light-mode.png",
+          "responsive-final/shell-features/VAL-NAV-007-persistence-dark.png",
+          "responsive-final/shell-features/VAL-NAV-007-persistence-light.png"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-008",
+      "title": "Profile menu shows user info and navigates",
+      "status": "pass",
+      "steps": [
+        { "action": "Click profile trigger", "expected": "Dropdown shows display name, email, role", "observed": "Profile dropdown opened with user information" },
+        { "action": "Click 'Profile' link", "expected": "Navigate to /profile", "observed": "Navigation to profile page" },
+        { "action": "Click outside dropdown", "expected": "Dropdown closes", "observed": "Dropdown closed on outside click" }
+      ],
+      "evidence": {
+        "screenshots": ["responsive-final/shell-features/VAL-NAV-008-profile-menu-open.png"]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-009",
+      "title": "Company switcher shows company and lists options",
+      "status": "pass",
+      "steps": [
+        { "action": "Check company badge", "expected": "Shows current company code (MOCK)", "observed": "Company badge shows MOCK" },
+        { "action": "Click company badge", "expected": "Dropdown with company list from API", "observed": "Dropdown opened with company options" },
+        { "action": "Check current company", "expected": "Has checkmark indicator", "observed": "Current company has checkmark" },
+        { "action": "Press Escape", "expected": "Dropdown closes", "observed": "Dropdown closed on Escape key" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-010",
+      "title": "Command palette opens and searches",
+      "status": "pass",
+      "steps": [
+        { "action": "Press Ctrl+K", "expected": "Command palette modal opens", "observed": "Command palette opened with search input" },
+        { "action": "Type in search", "expected": "Results filter", "observed": "Search filtered results dynamically" },
+        { "action": "Use arrow keys", "expected": "Navigate results", "observed": "Arrow navigation worked" },
+        { "action": "Press Enter", "expected": "Select and navigate", "observed": "Navigation on Enter worked" },
+        { "action": "Press Escape", "expected": "Palette closes", "observed": "Palette closed on Escape" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-NAV-011",
+      "title": "Sign out clears session",
+      "status": "pass",
+      "steps": [
+        { "action": "Click 'Sign out' in sidebar", "expected": "POST /auth/logout called", "observed": "Logout API called successfully" },
+        { "action": "Check localStorage", "expected": "Tokens cleared", "observed": "localStorage tokens removed" },
+        { "action": "Check redirect", "expected": "Redirected to /login", "observed": "Redirected to login page" }
+      ],
+      "evidence": {
+        "screenshots": []
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 5 shell feature assertions: All passed. Theme toggle works with localStorage persistence, profile menu shows user info, company switcher works correctly, command palette functions as expected, sign out clears session and redirects."
+}
