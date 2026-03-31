@@ -36,6 +36,19 @@ vi.mock('@/components/ui/OrchestratorLogo', () => ({
 }));
 
 vi.mock('@/components/ui/Sidebar', () => ({
+  Sidebar: ({ groups, onSignOut }: { groups: Array<{ label?: string; items: Array<{ id: string; label: string; to: string; icon: React.ComponentType }> }>; onSignOut: () => void }) => (
+    <nav>
+      {groups.map((g: { label?: string; items: Array<{ id: string; label: string; to: string; icon: React.ComponentType }> }, i: number) => (
+        <div key={i}>
+          {g.label && <p>{g.label}</p>}
+          {g.items.map((item: { id: string; label: string; to: string }) => (
+            <a key={item.id} href={item.to} role="link" aria-label={item.label}>{item.label}</a>
+          ))}
+        </div>
+      ))}
+      <button onClick={onSignOut}>Sign out</button>
+    </nav>
+  ),
   MobileSidebar: ({
     children,
     isOpen,
@@ -73,36 +86,45 @@ function renderWithRoute(element: React.ReactNode, initialEntry: string) {
 }
 
 describe('portal governance navigation layouts', () => {
-  it('admin sidebar includes all expected nav items including Analytics & Ops group', () => {
+  it('admin sidebar includes all expected nav items', () => {
     mockUserRoles = ['ROLE_ADMIN'];
     renderWithRoute(<AdminLayout />, '/admin');
 
-    // Core nav items
+    // Dashboard (no group label)
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+
+    // Management group
     expect(screen.getByRole('link', { name: 'Users' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Roles' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Companies' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+
+    // Workflows group
     expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Notifications' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Changelog' })).toBeInTheDocument();
 
-    // Analytics & Ops group — tenant-scoped analytics accessible to admin
-    expect(screen.getByRole('link', { name: 'Orchestrator' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Portal Insights' })).toBeInTheDocument();
+    // Analytics group
     expect(screen.getByRole('link', { name: 'Audit Trail' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Tenant Runtime' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Operations' })).toBeInTheDocument();
+
+    // Finance group
+    expect(screen.getByRole('link', { name: 'Dealer Finance' })).toBeInTheDocument();
+
+    // Support group
+    expect(screen.getByRole('link', { name: 'Tickets' })).toBeInTheDocument();
+
+    // System group
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('shows logical nav groups (Management, Workflows, Analytics & Ops, System)', () => {
+  it('shows logical nav groups (Management, Workflows, Analytics, Finance, Support, System)', () => {
     mockUserRoles = ['ROLE_ADMIN'];
     renderWithRoute(<AdminLayout />, '/admin');
 
     // Group headings
     expect(screen.getByText('Management')).toBeInTheDocument();
     expect(screen.getByText('Workflows')).toBeInTheDocument();
-    expect(screen.getByText('Analytics & Ops')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Finance')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
     expect(screen.getByText('System')).toBeInTheDocument();
   });
 
