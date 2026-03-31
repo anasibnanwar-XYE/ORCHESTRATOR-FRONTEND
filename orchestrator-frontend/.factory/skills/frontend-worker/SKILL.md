@@ -55,7 +55,7 @@ Before editing, verify that your plan keeps these invariants true:
 - Sales may read invoice/dispatch only from current-order context; dispatch confirm belongs to Factory; approvals belong to Admin/Accounting
 - remove non-canonical routes instead of hiding them behind dead navigation
 
-If the canonical docs and the live local backend disagree in a way that changes ownership or route scope, return to the orchestrator.
+If the canonical docs and the live remote backend disagree in a way that changes ownership or route scope, return to the orchestrator.
 
 ### 3. Invoke design skills before implementation
 
@@ -88,15 +88,15 @@ Implementation rules:
 - do not hardcode colors; use CSS variables
 - prefer dedicated canonical routes over modal-only substitutes when the contract requires a route
 - remove obsolete routes/components/endpoints rather than leaving dead paths behind
-- keep all Sales/Dealer writes compatible with the local backend on `127.0.0.1:8081`
+- keep all Sales/Dealer writes compatible with the remote backend on `100.109.241.47:8081`
 - for real writes, use unique timestamped test data so validation runs do not collide
 
-### 6. Verify against the local backend
+### 6. Verify against the primary remote backend
 
-Use the local runtime described in `.factory/services.yaml` and `.factory/library/environment.md`.
+Use the primary remote runtime described in `.factory/services.yaml` and `.factory/library/environment.md`.
 
 For any feature that touches API flows:
-- ensure the local backend is running on `127.0.0.1:8081`
+- ensure the remote backend at `100.109.241.47:8081` is reachable through the configured frontend proxy
 - verify real request paths and status codes in the browser
 - confirm no retired or non-canonical endpoints are called when the contract forbids them
 
@@ -217,7 +217,7 @@ If the feature description asks for Figma publishing:
 Return to the orchestrator if any of these happens:
 - canonical docs and the live backend disagree about route ownership or endpoint family
 - the feature needs backend code changes or schema changes
-- the local backend reset/runtime is unavailable or broken
+- the remote backend is unavailable or its contract no longer matches the mission-critical flows
 - the feature would require modifying other portals beyond a minimal shared shell dependency
 - a required canonical endpoint is missing and there is no approved fallback contract
 - Figma publishing is required but blocked by auth, plan access, or tool failure

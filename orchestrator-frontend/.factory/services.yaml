@@ -8,9 +8,9 @@ commands:
 
 services:
   backend:
-    start: . "/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local" && ERP_VALIDATION_SEED_PASSWORD="$VALIDATION_SHARED_PASSWORD" ERP_SEED_MOCK_ADMIN_PASSWORD="$VALIDATION_SHARED_PASSWORD" bash "/Users/anas/Documents/FACTORY/bigbrightpaints-erp/scripts/reset_final_validation_runtime.sh"
-    stop: docker rm -f erp_domain_app erp_db erp_rabbit erp_mailhog >/dev/null 2>&1 || true
-    healthcheck: sh -c 'status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8081/api/v1/auth/me); [ "$status" = "401" ] || [ "$status" = "403" ]'
+    start: echo "Remote backend is managed externally at http://100.109.241.47:8081"
+    stop: echo "Remote backend is managed externally at http://100.109.241.47:8081"
+    healthcheck: sh -c 'status=$(curl -s -o /dev/null -w "%{http_code}" http://100.109.241.47:8081/api/v1/auth/me); [ "$status" = "401" ] || [ "$status" = "403" ]'
     port: 8081
     depends_on: []
 

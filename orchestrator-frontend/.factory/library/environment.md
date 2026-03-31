@@ -13,8 +13,9 @@ Environment variables, local runtime details, external dependencies, and setup n
 - Backend repo: `/Users/anas/Documents/FACTORY/bigbrightpaints-erp`
 - Canonical docs root: `/Users/anas/Documents/FACTORY/bigbrightpaints-erp/docs`
 - Frontend app URL: `http://127.0.0.1:3002`
-- Local backend app URL: `http://127.0.0.1:8081`
-- Local backend management URL: `http://127.0.0.1:9090`
+- Primary remote backend app URL: `http://100.109.241.47:8081`
+- Local fallback backend app URL: `http://127.0.0.1:8081`
+- Local fallback backend management URL: `http://127.0.0.1:9090`
 
 ## Local Runtime Ports
 
@@ -62,7 +63,7 @@ This file stores local validation emails and the shared validation password. It 
 
 ## Backend Startup / Reset
 
-Preferred local backend reset/runtime command:
+Optional local fallback backend reset/runtime command:
 
 ```bash
 . "/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local" && \
@@ -80,19 +81,19 @@ What this does:
 
 ## Readiness Notes
 
-Use the app port, not actuator alone, as the primary readiness signal:
+Use the remote app port, not actuator alone, as the primary readiness signal:
 
 ```bash
-curl -i http://127.0.0.1:8081/api/v1/auth/me
+curl -i http://100.109.241.47:8081/api/v1/auth/me
 ```
 
 Expected ready-state response without auth: `401` or `403`.
 
-The management port may report `DOWN` even when the application is usable for frontend validation. Treat `9090` as supporting evidence only.
+If the remote backend is unavailable, the local fallback backend on `127.0.0.1:8081` may be used only after orchestrator approval. The local management port `9090` may report `DOWN` even when the fallback app is usable, so treat it as supporting evidence only.
 
 ## CORS / Proxy Notes
 
-- For this mission, the frontend should proxy `/api` to `http://127.0.0.1:8081`
+- For this mission, the frontend should proxy `/api` to `http://100.109.241.47:8081`
 - `X-Company-Code` is the canonical tenant header
 - `X-Company-Id` is legacy drift and should be removed from Sales + Dealer flows
 

@@ -10,7 +10,8 @@ Validation surface notes, runtime setup, and concurrency guidance for the Sales 
 
 ### Primary surface
 - Browser UI on `http://127.0.0.1:3002`
-- Local backend on `http://127.0.0.1:8081`
+- Primary remote backend on `http://100.109.241.47:8081`
+- Local fallback backend on `http://127.0.0.1:8081`
 - Tool: `agent-browser`
 
 ### Automated surface
@@ -56,11 +57,11 @@ Do not copy secrets into committed files.
 
 ## Setup Sequence
 
-1. Start/reset local backend through the `backend` service in `.factory/services.yaml`
+1. Confirm the remote backend through the `backend` service healthcheck in `.factory/services.yaml`
 2. Start frontend through the `frontend` service in `.factory/services.yaml`
 3. Source `.env.validation.local` before Playwright or any scripted browser flow
 4. Confirm readiness:
-   - `http://127.0.0.1:8081/api/v1/auth/me` returns `401` or `403`
+   - `http://100.109.241.47:8081/api/v1/auth/me` returns `401` or `403`
    - `http://127.0.0.1:3002/login` loads successfully
 
 ## Assertion Grouping Guidance
@@ -142,5 +143,5 @@ Record created references/public IDs in the worker handoff so later validators o
 ## Known Runtime Constraints
 
 - The management port `9090` may report `DOWN` even when the app on `8081` is usable.
-- The local backend reset script rebuilds runtime state; do not run it mid-validation unless you want a fresh dataset.
+- The remote backend is the primary validation target for this mission. The local Colima backend remains a fallback runtime only and should not be used mid-validation unless the orchestrator explicitly switches targets.
 - Current checked-in Playwright auth helpers were known to drift before milestone 1; once fixed, workers should keep Playwright aligned with visible labels and canonical routes.

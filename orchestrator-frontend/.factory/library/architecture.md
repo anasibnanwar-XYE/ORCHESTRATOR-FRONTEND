@@ -18,7 +18,7 @@ Runtime topology:
 Browser / Electron  -->  Vite dev server (:3002)  --proxy /api-->  Backend (:8081)  -->  PostgreSQL
 ```
 
-Local backend runtime: `127.0.0.1:8081` via Colima-backed Docker.
+Primary backend runtime for this mission: `100.109.241.47:8081`. A local Colima-backed backend at `127.0.0.1:8081` remains available as fallback only.
 
 The app is organized as a multi-portal shell where a user's role determines which portal(s) they see. The hub page (`/hub`) is the multi-portal picker for users with more than one portal assignment (e.g., ROLE_ADMIN inherits admin + accounting + sales + factory). Single-portal users (ROLE_SALES, ROLE_DEALER) bypass the hub and land directly in their portal.
 
@@ -313,7 +313,7 @@ Located in `src/components/ui/`. Components most relevant to Sales/Dealer pages:
 
 ### 7.1 Vite Proxy Hardcoded to Remote IP
 
-`vite.config.ts` proxies `/api` to `http://100.109.241.47:8081` with a hardcoded `Origin` header. The local backend is now available at `127.0.0.1:8081` via Colima. Milestone 1 must align this proxy target. Until then, workers must verify which backend they are hitting.
+`vite.config.ts` must keep `/api` aligned to the remote backend at `http://100.109.241.47:8081` for this mission. A local Colima backend exists as fallback only, so workers must not accidentally switch traffic back to `127.0.0.1:8081` without orchestrator approval.
 
 ### 7.2 Sales API -- Missing Single Order GET
 
@@ -381,7 +381,7 @@ The generated OpenAPI client in `src/lib/client/` provides typed service classes
 
 ### 8.1 Local Backend Runtime
 
-The local backend runs at `127.0.0.1:8081` via Colima-backed Docker. Workers can validate API calls against this instance. The Vite dev proxy must be aligned to this target (see drift note 7.1). After proxy alignment, all `/api` requests from the browser will route to the local backend.
+The primary backend for validation runs at `100.109.241.47:8081`. Workers should validate browser and Playwright traffic against that remote runtime. A local Colima-backed backend at `127.0.0.1:8081` remains fallback-only and should be used only if the orchestrator explicitly changes runtime targeting.
 
 ### 8.2 Playwright Validation
 
