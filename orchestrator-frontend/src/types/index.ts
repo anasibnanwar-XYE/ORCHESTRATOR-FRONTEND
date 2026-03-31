@@ -1238,11 +1238,7 @@ export interface LoginResponse {
  */
 export type AuthResult = LoginResponse & { user: User };
 
-/** @deprecated Use LoginRequest with mfaCode/recoveryCode instead */
-export interface MfaVerifyRequest {
-  code: string;
-  tempToken: string;
-}
+// MfaVerifyRequest removed — deprecated; use LoginRequest with mfaCode/recoveryCode instead.
 
 /**
  * Response from POST /auth/mfa/setup.
@@ -1734,23 +1730,10 @@ export interface ApiErrorBody {
    storageConsumption: number;
  }
  
-/** Support ticket (cross-tenant) */
-export interface SupportTicket {
-  id: string;
-  tenantName?: string;
-  tenantCode?: string;
-  subject: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-  createdAt: string;
-  updatedAt?: string;
-  description?: string;
-  responses?: Array<{ author: string; message: string; createdAt: string }>;
-}
-
 /**
  * SupportTicketResponse — ticket record matching backend SupportTicketResponse DTO.
  * Used by /api/v1/support/tickets (list) and /api/v1/support/tickets/{ticketId} (detail).
+ * This is the single canonical support ticket type with id: number.
  */
 export interface SupportTicketResponse {
   id: number;
@@ -1775,13 +1758,18 @@ export interface SupportTicketResponse {
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }
 
+/**
+ * @deprecated Use SupportTicketResponse directly. Alias kept for backward compatibility.
+ */
+export type SupportTicket = SupportTicketResponse;
+
 /** Response from GET /api/v1/support/tickets */
 export interface SupportTicketListResponse {
   tickets: SupportTicketResponse[];
 }
 
 /** Ticket priority levels */
-export type TicketPriority = SupportTicket['priority'];
+export type TicketPriority = NonNullable<SupportTicketResponse['priority']>;
 
 /** Ticket response/message in a conversation thread */
 export interface TicketResponse {
@@ -1814,9 +1802,8 @@ export interface TicketStatusHistory {
   reason?: string;
 }
 
-/** Full ticket detail (extended SupportTicket for detail view) */
-export interface SupportTicketDetail extends SupportTicket {
-  description: string;
+/** Full ticket detail (extended SupportTicketResponse for detail view) */
+export interface SupportTicketDetail extends SupportTicketResponse {
   assignedAgent?: string;
   responses: TicketResponse[];
   attachments: TicketAttachment[];
@@ -2102,6 +2089,55 @@ export interface RawMaterialIntakeRequest {
   expiryDate?: string;
   manufacturingDate?: string;
   notes?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Finance Support Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Ledger entry from GET /api/v1/portal/finance/ledger */
+export interface LedgerEntry {
+  date: string;
+  reference: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+/** Invoice from GET /api/v1/portal/finance/invoices */
+export interface FinanceInvoice {
+  id: number;
+  invoiceNumber: string;
+  issueDate: string;
+  dueDate: string;
+  totalAmount: number;
+  outstandingAmount: number;
+  status: string;
+}
+
+/** Aging bucket in finance aging report */
+export interface AgingBucket {
+  label: string;
+  fromDays: number;
+  toDays: number;
+  amount: number;
+}
+
+/** Finance aging report from GET /api/v1/portal/finance/aging */
+export interface FinanceAging {
+  dealerId: number;
+  dealerName: string;
+  totalOutstanding: number;
+  buckets: AgingBucket[];
+}
+
+/** Request body for creating a support ticket in admin portal */
+export interface CreateTicketRequest {
+  subject: string;
+  description: string;
+  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }
 
  // ─────────────────────────────────────────────────────────────────────────────

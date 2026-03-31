@@ -21,9 +21,8 @@ import type {
   ChangelogEntryRequest,
   ChangelogEntryResponse,
   TenantRuntimePolicyUpdateRequest,
-} from '@/types';
-import type { ExportRequestDto, ExportRequestDecisionRequest } from '@/types';
-import type {
+  ExportRequestDto,
+  ExportRequestDecisionRequest,
   OrchestratorAdminDashboard,
   OrchestratorFactoryDashboard,
   OrchestratorFinanceDashboard,
@@ -37,6 +36,11 @@ import type {
   AuditEventFilters,
   TenantRuntimeMetrics,
   PageResponse,
+  LedgerEntry,
+  FinanceInvoice,
+  FinanceAging,
+  SupportTicketResponse,
+  CreateTicketRequest,
 } from '@/types';
 
 export const adminApi = {
@@ -523,40 +527,8 @@ export const tenantApi = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Finance Support APIs
+// Types (LedgerEntry, FinanceInvoice, AgingBucket, FinanceAging) are in @/types
 // ─────────────────────────────────────────────────────────────────────────────
-
-export interface LedgerEntry {
-  date: string;
-  reference: string;
-  description: string;
-  debit: number;
-  credit: number;
-  balance: number;
-}
-
-export interface FinanceInvoice {
-  id: number;
-  invoiceNumber: string;
-  issueDate: string;
-  dueDate: string;
-  totalAmount: number;
-  outstandingAmount: number;
-  status: string;
-}
-
-export interface AgingBucket {
-  label: string;
-  fromDays: number;
-  toDays: number;
-  amount: number;
-}
-
-export interface FinanceAging {
-  dealerId: number;
-  dealerName: string;
-  totalOutstanding: number;
-  buckets: AgingBucket[];
-}
 
 export const financeSupportApi = {
   /** Get dealer ledger entries */
@@ -586,53 +558,35 @@ export const financeSupportApi = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Support Ticket APIs (Admin Portal)
+// Types (SupportTicketResponse, CreateTicketRequest) are in @/types
 // ─────────────────────────────────────────────────────────────────────────────
-
-export interface SupportTicket {
-  id: number;
-  publicId: string;
-  subject: string;
-  description: string;
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
-  requesterEmail: string;
-  companyCode: string;
-  createdAt: string;
-  updatedAt: string;
-  resolvedAt: string | null;
-}
-
-export interface CreateTicketRequest {
-  subject: string;
-  description: string;
-  category: 'BUG' | 'FEATURE_REQUEST' | 'SUPPORT';
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-}
 
 export const adminSupportApi = {
   /** List all support tickets */
-  async listTickets(): Promise<SupportTicket[]> {
-    const response = await apiRequest.get<ApiResponse<{ tickets: SupportTicket[] }>>(
+  async listTickets(): Promise<SupportTicketResponse[]> {
+    const response = await apiRequest.get<ApiResponse<{ tickets: SupportTicketResponse[] }>>(
       '/portal/support/tickets'
     );
     return response.data.data.tickets;
   },
 
   /** Get ticket detail by ID */
-  async getTicket(ticketId: number): Promise<SupportTicket> {
-    const response = await apiRequest.get<ApiResponse<SupportTicket>>(
+  async getTicket(ticketId: number): Promise<SupportTicketResponse> {
+    const response = await apiRequest.get<ApiResponse<SupportTicketResponse>>(
       `/portal/support/tickets/${ticketId}`
     );
     return response.data.data;
   },
 
   /** Create a new support ticket */
-  async createTicket(request: CreateTicketRequest): Promise<SupportTicket> {
-    const response = await apiRequest.post<ApiResponse<SupportTicket>>(
+  async createTicket(request: CreateTicketRequest): Promise<SupportTicketResponse> {
+    const response = await apiRequest.post<ApiResponse<SupportTicketResponse>>(
       '/portal/support/tickets',
       request
     );
     return response.data.data;
   },
 };
+
+// Re-export types from @/types for backward compatibility
+export type { LedgerEntry, FinanceInvoice, AgingBucket, FinanceAging, CreateTicketRequest, SupportTicket } from '@/types';

@@ -23,7 +23,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import { adminSupportApi, type SupportTicket, type CreateTicketRequest } from '@/lib/adminApi';
+import { adminSupportApi } from '@/lib/adminApi';
+import type { SupportTicketResponse, CreateTicketRequest } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -237,7 +238,7 @@ function CreateTicketModal({ isOpen, onClose, onSubmit, isSubmitting }: CreateTi
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TicketDetailDrawerProps {
-  ticket: SupportTicket | null;
+  ticket: SupportTicketResponse | null;
   onClose: () => void;
 }
 
@@ -256,7 +257,7 @@ function TicketDetailDrawer({ ticket, onClose }: TicketDetailDrawerProps) {
         {/* Status and Priority Row */}
         <div className="flex flex-wrap items-center gap-3">
           {getStatusBadge(ticket.status)}
-          {getPriorityBadge(ticket.priority)}
+          {ticket.priority && getPriorityBadge(ticket.priority)}
           <span className="text-[11px] text-[var(--color-text-tertiary)] bg-[var(--color-surface-tertiary)] px-2 py-0.5 rounded">
             {getCategoryLabel(ticket.category)}
           </span>
@@ -357,11 +358,11 @@ export function SupportTicketsPage() {
   const { success, error: toastError } = useToast();
 
   // State
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [tickets, setTickets] = useState<SupportTicketResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicketResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Stats
@@ -409,7 +410,7 @@ export function SupportTicketsPage() {
   };
 
   // Table columns
-  const columns: Column<SupportTicket>[] = [
+  const columns: Column<SupportTicketResponse>[] = [
     {
       id: 'ticket',
       header: 'Ticket',
@@ -441,9 +442,9 @@ export function SupportTicketsPage() {
     {
       id: 'priority',
       header: 'Priority',
-      accessor: (row) => getPriorityBadge(row.priority),
+      accessor: (row) => row.priority ? getPriorityBadge(row.priority) : '—',
       sortable: true,
-      sortAccessor: (row) => row.priority,
+      sortAccessor: (row) => row.priority ?? '',
       width: '100px',
       hideOnMobile: true,
     },
@@ -458,7 +459,7 @@ export function SupportTicketsPage() {
   ];
 
   // Row actions dropdown
-  const rowActions = (ticket: SupportTicket) => (
+  const rowActions = (ticket: SupportTicketResponse) => (
     <div onClick={(e) => e.stopPropagation()}>
       <DropdownMenu
         trigger={
@@ -534,7 +535,7 @@ export function SupportTicketsPage() {
 
       {/* Tickets Table */}
       <div className="bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl">
-        <DataTable<SupportTicket>
+        <DataTable<SupportTicketResponse>
           columns={columns}
           data={tickets}
           keyExtractor={(row) => row.id}
@@ -564,7 +565,7 @@ export function SupportTicketsPage() {
                 <span className="text-[var(--color-text-tertiary)]">{formatDate(row.createdAt)}</span>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border-subtle)]">
-                {getPriorityBadge(row.priority)}
+                {row.priority ? getPriorityBadge(row.priority) : <span className="text-[11px] text-[var(--color-text-tertiary)]">—</span>}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

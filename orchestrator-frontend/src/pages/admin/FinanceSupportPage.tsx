@@ -23,7 +23,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { useToast } from '@/components/ui/Toast';
 import { salesApi } from '@/lib/salesApi';
-import { financeSupportApi, type LedgerEntry, type FinanceInvoice, type FinanceAging } from '@/lib/adminApi';
+import { financeSupportApi } from '@/lib/adminApi';
+import type { LedgerEntry, FinanceInvoice, FinanceAging } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
