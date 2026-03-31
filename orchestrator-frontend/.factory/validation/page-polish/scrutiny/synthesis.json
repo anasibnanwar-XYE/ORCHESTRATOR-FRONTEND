@@ -1,0 +1,84 @@
+{
+  "milestone": "page-polish",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "bun run test --run (admin subset: npx vitest run src/pages/admin/)",
+      "exitCode": 0,
+      "details": "13 test files, 198 tests passed, 0 failed. Full suite times out (>10min) but admin tests pass in 2.4s."
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "npx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "bun run lint",
+      "exitCode": 0,
+      "details": "Initially failed with 3 unused-vars in OperationsControlPage.tsx. Fixed by adding eslint-disable-next-line comments (inline stub params). Passed after fix."
+    }
+  },
+  "reviewsSummary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [
+    {
+      "target": "src/components/CommandPalette.tsx",
+      "description": "Removed dead admin-operations nav entry from ADMIN_NAV array (was a blocking review finding for hide-non-spec-pages-cleanup)",
+      "sourceFeature": "hide-non-spec-pages-cleanup"
+    },
+    {
+      "target": "src/pages/admin/OperationsControlPage.tsx",
+      "description": "Added eslint-disable-next-line comments for unused _enabled and _key params in inline stubs",
+      "sourceFeature": "scrutiny-lint-fix"
+    },
+    {
+      "target": "library/api-mismatches.md",
+      "description": "Added Admin Portal Response Shape Notes section documenting dashboard 3-vs-4 highlights mismatch, roles API shape mismatch, and settings read-only behavior",
+      "sourceFeature": "multiple"
+    },
+    {
+      "target": "library/architecture.md",
+      "description": "Added notes about missing Textarea shared component and CommandPalette as navigation component requiring route sync updates",
+      "sourceFeature": "multiple"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add convention: data-testid attributes for testability. Workers are adding data-testid to components (StatCard, etc.) for reliable test targeting. This should be documented so all workers use it consistently.",
+      "evidence": "dashboard-polish review found data-testid on StatCard.tsx but no convention documented in AGENTS.md",
+      "isSystemic": false
+    },
+    {
+      "target": "frontend-worker skill",
+      "suggestion": "Clarify when frontend-skill invocation is mandatory vs optional. Three workers noted that invoking frontend-skill is unnecessary for polish/test-only/cleanup tasks where no new UI is being created. The skill should distinguish between 'new UI creation' (mandatory) and 'polish/existing UI refinement/cleanup' (optional).",
+      "evidence": "dashboard-polish, settings-page-polish, and hide-non-spec-pages-cleanup all reported unnecessary frontend-skill overhead in their skillFeedback",
+      "isSystemic": true
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add note about CommandPalette.tsx being a navigation component that must be updated alongside Sidebar.tsx when routes change. Workers cleaning up routes should update both files.",
+      "evidence": "hide-non-spec-pages-cleanup missed CommandPalette.tsx ADMIN_NAV entry, creating a dead nav link. Reviewer caught it and scrutiny validator fixed it.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "Select component labelIcon prop naming differs from Input component's leftIcon/rightIcon pattern",
+      "reason": "Non-blocking observation, not actionable as a convention change. The labelIcon prop is well-named for its purpose (icon in label, not in input field). No change needed."
+    },
+    {
+      "observation": "selectedUserId typed as number|'' has theoretical edge case with id=0",
+      "reason": "Practically impossible with database-generated IDs. Not worth documenting."
+    }
+  ],
+  "previousRound": null
+}

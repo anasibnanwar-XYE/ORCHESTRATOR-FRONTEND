@@ -1,0 +1,38 @@
+{
+  "featureId": "hide-non-spec-pages-cleanup",
+  "reviewedAt": "2026-03-31T06:30:00.000Z",
+  "commitId": "4afcc8a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature successfully removed API stubs from adminApi.ts (operationsControlApi, tenantApi.getPolicy/updatePolicy, company CRUD functions), cleaned up tests, and updated page files to use inline stubs. However, a nav reference to OperationsControlPage was left in CommandPalette.tsx, which contradicts the feature requirement to 'Remove any sidebar nav references to these pages.'",
+    "issues": [
+      {
+        "file": "src/components/CommandPalette.tsx",
+        "line": 161,
+        "severity": "blocking",
+        "description": "The ADMIN_NAV array still contains { id: 'admin-operations', label: 'Operations', path: '/admin/operations', portal: 'Admin', icon: BarChart3 }. The feature description explicitly says 'Remove any sidebar nav references to these pages' referring to OperationsControlPage, TenantRuntimePage, and PortalInsightsPage. This CommandPalette entry navigates to /admin/operations which has NO route (no admin route exists for operations), creating a dead nav link. This should have been removed as part of the cleanup."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The CommandPalette.tsx component contains navigation items in ADMIN_NAV that serve a similar role to sidebar navigation. AGENTS.md mentions 'sidebar nav references' but doesn't document that CommandPalette.tsx is also a navigation component that must be updated in sync with route changes. Workers may miss this file when cleaning up nav references.",
+      "evidence": "src/components/CommandPalette.tsx:161 still has admin-operations entry after this feature removed all /admin/operations routes"
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-worker skill says to invoke frontend-skill for UI work and use agent-browser for verification. The worker correctly identified that a pure cleanup/removal feature with no UI changes doesn't need these steps, and deviated with justification. The skill should have a clause exempting pure API/route cleanup tasks from the mandatory UI skill and browser verification steps.",
+      "evidence": "Handoff skillFeedback.deviations lists skipping frontend-skill and agent-browser, both with valid reasoning that no UI work was involved. The skill's step 2 says 'MANDATORY for UI work' which is ambiguous — it could be read as 'always mandatory, for UI work' or 'mandatory only when doing UI work'."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The superadmin section in App.tsx still has routes for portal-insights, operations-control, and tenant-runtime under /superadmin/*. These use the Admin-qualified page components (AdminPortalInsightsPage, AdminOperationsControlPage). This is potentially intentional (superadmin can still access these pages even though admin cannot), but it means the page files and lazy imports in App.tsx are still needed for the superadmin portal. This nuance is not documented in AGENTS.md.",
+      "evidence": "App.tsx lines 1019-1022: <Route path=\"portal-insights\" element={<AdminPortalInsightsPage />} />, <Route path=\"operations-control\" element={<AdminOperationsControlPage />} /> under the /superadmin/* route tree. The feature only removed admin routes but kept superadmin routes, which is correct per the feature description."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The feature correctly removed non-spec API stubs from adminApi.ts, updated page files to use inline stubs, fixed tests, and confirmed no admin routes exist for the three target pages. However, the CommandPalette.tsx still contains a nav entry for /admin/operations (line 161) which is a dead link since the /admin/operations route was removed. This violates the feature requirement to 'Remove any sidebar nav references to these pages.' The issue is blocking because it leaves a broken navigation item in the command palette."
+}

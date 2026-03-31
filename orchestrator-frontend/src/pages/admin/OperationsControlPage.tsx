@@ -39,9 +39,11 @@ import { Switch } from '@/components/ui/Switch';
    async getStatus(): Promise<OperationsStatus> {
      return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
    },
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
    async setMaintenanceMode(_enabled: boolean): Promise<OperationsStatus> {
      return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
    },
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
    async toggleFeatureFlag(_key: string, _enabled: boolean): Promise<OperationsStatus> {
      return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
    },

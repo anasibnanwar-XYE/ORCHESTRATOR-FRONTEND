@@ -1,0 +1,39 @@
+{
+  "featureId": "changelog-roles-polish",
+  "reviewedAt": "2026-03-31T00:30:00.000Z",
+  "commitId": "d02a9ad",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation solidly covers all expected behaviors for both ChangelogPage and RolesPage. ChangelogPage uses Skeleton loading (not Loader2), supports expand/collapse, renders highlighted badge for isHighlighted entries, shows read-only notice, and uses PageHeader. RolesPage replaced the custom RoleDetailPanel with the shared Drawer component, added backend data mapping in adminApi.getRoles() to handle the backend's different field shape, made createdAt/updatedAt optional on the Role type, and includes DataTable with search filtering by name and key. Tests are comprehensive with 36 tests across both pages covering all key behaviors including highlighted badge, Drawer open/close/permissions, and search filtering.",
+    "issues": [
+      {
+        "file": "orchestrator-frontend/src/lib/adminApi.ts",
+        "line": 254,
+        "severity": "non_blocking",
+        "description": "Minor redundancy in data mapping: `description` is set to both `name` and `description` fields. Line 257: `name: (r.description as string) || backendName` sets name from description, but line 258: `description: (r.description as string) || undefined` also sets description from the same backend field. This means the Drawer title and the 'Description' section will often show the same text (e.g. both 'Administrator'). The backend returns only a single display-name field (description), and the code maps it to both frontend name and description. Not a bug — but the Description section in the Drawer is redundant when both fields match. Could be improved by either not showing the Description section when it equals the name, or documenting that this is expected."
+      },
+      {
+        "file": "orchestrator-frontend/src/lib/adminApi.ts",
+        "line": 240,
+        "severity": "non_blocking",
+        "description": "getRoleByKey() does not apply the same backend-to-frontend data mapping that getRoles() does. If getRoleByKey is called with a raw backend response, it would return a Role with `key` undefined (backend uses `name` as the key). Currently getRoleByKey is not used in RolesPage (roles are filtered client-side from getRoles()), so this is not blocking. But if it were called, it would produce an incorrectly shaped Role object. The mapping should be applied consistently."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Backend role API response shape differs from frontend Role type: backend returns { name: 'ROLE_ADMIN', description: 'Administrator', permissions: [{id, code, description}] } while frontend expects { key: 'ROLE_ADMIN', name: 'Administrator', permissions: ['USERS_READ'] }. This mapping is now handled in adminApi.getRoles() but is not documented anywhere. Future workers (or the superadmin portal which also calls getRoleByKey) need to be aware of this mismatch.",
+      "evidence": "adminApi.ts lines 246-269: the mapping logic with comments. Also superadminApi.ts has a getRoleByKey at line 224 that may need the same treatment."
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-worker skill should document the importance of verifying actual backend API response shapes against frontend type definitions before assuming correctness. The worker's handoff suggests this as a skill improvement: 'The frontend-worker skill should emphasize checking actual backend API response shapes against frontend types before assuming the type definitions are correct, as mismatches are common.'",
+      "evidence": "Handoff skillFeedback.suggestedChanges. This is the second feature (after notifications-page-polish) where backend response shape mismatches with frontend types required fixing."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The implementation fully covers all expected behaviors for both ChangelogPage and RolesPage polish. Skeleton loading, expand/collapse, highlighted badge, PageHeader, shared Drawer for role details, search filtering, and responsive layout are all implemented correctly. Backend data mapping is handled for the roles API. 36 tests provide comprehensive coverage. Two minor non-blocking issues noted: (1) the description field in the role Drawer may show redundant text since both name and description map from the same backend field, and (2) getRoleByKey() lacks the same backend data mapping applied to getRoles(). Shared state observations include documenting the backend role response shape mismatch and suggesting a skill improvement for API shape verification."
+}

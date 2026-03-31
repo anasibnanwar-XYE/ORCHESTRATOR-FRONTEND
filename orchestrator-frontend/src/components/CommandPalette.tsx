@@ -158,7 +158,6 @@ interface PortalNavItem {
 
 const ADMIN_NAV: PortalNavItem[] = [
   { id: 'admin-dashboard', label: 'Dashboard', path: '/admin', portal: 'Admin', icon: LayoutGrid },
-  { id: 'admin-operations', label: 'Operations', path: '/admin/operations', portal: 'Admin', icon: BarChart3 },
   { id: 'admin-approvals', label: 'Approvals', path: '/admin/approvals', portal: 'Admin', icon: CheckSquare },
   { id: 'admin-users', label: 'Users', path: '/admin/users', portal: 'Admin', icon: Users },
   { id: 'admin-roles', label: 'Roles', path: '/admin/roles', portal: 'Admin', icon: Shield },

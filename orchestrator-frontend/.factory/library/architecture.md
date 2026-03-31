@@ -66,7 +66,11 @@ Shared components in `src/components/ui/`:
 - Forms: Input, Select, Combobox, Checkbox, Radio, Switch, RoleSelector
 - Feedback: Toast, Skeleton, Loader, ProgressBar, Alert
 - Overlay: Modal, Drawer, BottomSheet, ConfirmDialog, DropdownMenu
-- Navigation: Tabs, Accordion, Stepper
+- Navigation: Tabs, Accordion, Stepper, CommandPalette
+
+**Note:** No shared Textarea component exists. Pages that need multiline input (e.g., NotificationsPage body field) use native `<textarea>` styled to match the design system. If a shared Textarea is created in the future, update NotificationsPage and other consumers.
+
+**Navigation components to update with route changes:** When adding/removing routes, update BOTH `Sidebar.tsx` (sidebar nav items) AND `CommandPalette.tsx` (ADMIN_NAV/ACCOUNTING_NAV/etc arrays). Missing one creates dead nav links.
 
 CSS variables define colors, spacing, shadows, border-radius in `styles/variables.css`. Dark mode switches variables via `.dark` class on html.
 

@@ -31,6 +31,14 @@ Critical mismatches discovered during codebase investigation. Workers MUST fix t
 | Frontend Expects | Backend Returns | Endpoint |
 |---|---|---|
 | `PageResponse<DealerDto>` | `List<DealerResponse>` (no pagination) | `GET /dealers` |
+
+### Admin Portal Response Shape Notes
+
+**GET /portal/dashboard** — Returns 3 highlight metrics (not 4). VAL-DASH-002 expects 4 stat cards but backend provides `Revenue Run Rate`, `Fulfilment SLA`, `Dealer Coverage`. Frontend correctly renders whatever the API provides.
+
+**GET /admin/roles** — Backend returns `{ name: 'ROLE_ADMIN', description: 'Administrator', permissions: [{id, code, description}] }` while frontend expects `{ key: 'ROLE_ADMIN', name: 'Administrator', permissions: ['USERS_READ'] }`. Mapping is handled in `adminApi.getRoles()`. Note: `getRoleByKey()` does NOT apply this mapping.
+
+**GET /admin/settings** — Settings is read-only for ROLE_ADMIN (editable only for ROLE_SUPER_ADMIN). Frontend correctly enforces this client-side.
 | `sku` field | `code` field | `/catalog/items` |
 | `colors[]`, `sizes[]` arrays | Single `color`, `size` values | `/catalog/items` POST |
 | Missing `itemClass` field | Required: FINISHED_GOOD, RAW_MATERIAL, PACKAGING_RAW_MATERIAL | `/catalog/items` POST |
