@@ -152,6 +152,7 @@ export const adminApi = {
 
   async createUser(data: CreateUserRequest): Promise<User> {
     // Backend rejects unrecognized field "companyId" — strip it before sending.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { companyId, ...payload } = data as CreateUserRequest & { companyId?: unknown };
     const response = await apiRequest.post<ApiResponse<User>>('/admin/users', payload);
     return response.data.data;
@@ -159,6 +160,7 @@ export const adminApi = {
 
   async updateUser(id: number, data: UpdateUserRequest): Promise<User> {
     // Backend rejects unrecognized field "companyId" — strip it before sending.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { companyId, ...payload } = data as UpdateUserRequest & { companyId?: unknown };
     const response = await apiRequest.put<ApiResponse<User>>(`/admin/users/${id}`, payload);
     return response.data.data;

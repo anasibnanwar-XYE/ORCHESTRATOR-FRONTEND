@@ -1,0 +1,31 @@
+{
+  "featureId": "dark-mode-final-verification",
+  "reviewedAt": "2026-03-31T10:20:00.000Z",
+  "commitId": "af29d755125e64022e294348074fd436d3093029",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The worker successfully identified and fixed remaining hardcoded Tailwind color classes across 7 shared UI components and global CSS that were missed by the earlier dark-mode-color-token-fix feature. All changes properly replace hardcoded colors (text-red-600, border-red-200, bg-red-50, etc.) with CSS variable tokens (var(--color-error), var(--color-error-border), var(--color-error-bg), etc.) that adapt correctly between light and dark modes. The changes are minimal, focused, and follow the project's established design token pattern.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md correctly documents the CSS variable token pattern, but could benefit from an explicit 'no hardcoded hex or Tailwind colors' rule with examples of what NOT to do (e.g., text-red-600, bg-red-500, #dc2626).",
+      "evidence": "The dark-mode-color-token-fix and dark-mode-final-verification features both found hardcoded colors in different locations - showing the pattern wasn't consistently applied initially."
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-worker skill states TDD should be used (write tests first), but for verification-only features like dark-mode-final-verification that audit and fix existing code, there are no meaningful new tests to write before code changes. The worker noted this in skillFeedback.suggestedChanges.",
+      "evidence": "Transcript shows skillFeedback.followedProcedure: true with suggested change: 'The frontend-worker skill says to write tests first (TDD), but for a verification/fix feature like dark-mode-final-verification, there aren't meaningful new tests to write before the code audit.'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The worker correctly identified that the CSS variable tokens in variables.css already define both light and dark mode values for all error-related tokens (--color-error, --color-error-bg, --color-error-border, etc.), making the fix straightforward token replacement without needing to add new CSS variables.",
+      "evidence": "Commit af29d75 shows all replaced tokens (var(--color-error), var(--color-error-border), var(--color-error-bg), var(--color-error-ring), var(--color-error-icon)) were already defined in variables.css with proper dark mode mappings."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "The dark-mode-final-verification feature is APPROVED. The worker completed a thorough audit of all admin pages in dark mode via agent-browser, discovered remaining hardcoded color classes in shared UI components that were missed by the earlier dark-mode-color-token-fix, and fixed them all. The commit af29d75 replaces hardcoded Tailwind colors in 7 files (ActionSheet, BottomNav, Combobox, DateRangePicker, MultiSelect, RichTextEditor, global.css) with CSS variable tokens. All validation assertions VAL-DARK-001 through VAL-DARK-004 are fulfilled: all admin pages are readable in dark mode, no light backgrounds leak through, sparklines/charts are visible, and form inputs adapt properly. The discovered issues noted (RoleSelector and auth pages using hardcoded colors) are correctly identified as non-blocking and outside the admin portal scope."
+}
