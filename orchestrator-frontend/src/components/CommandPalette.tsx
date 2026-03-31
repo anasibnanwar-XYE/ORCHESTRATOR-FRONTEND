@@ -41,11 +41,9 @@ import {
   Calendar,
   ShoppingCart,
   CreditCard,
-  ArrowUpCircle,
   Tag,
   FileText,
   Target,
-  RotateCcw,
   Factory,
   ClipboardList,
   Layers,
@@ -56,11 +54,11 @@ import {
   SquareStack,
   ShoppingBag,
   Clock,
+  LifeBuoy,
   User,
   LogOut,
   Sun,
   Moon,
-  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -182,13 +180,9 @@ const SALES_NAV: PortalNavItem[] = [
   { id: 'sales-dashboard', label: 'Dashboard', path: '/sales', portal: 'Sales', icon: LayoutDashboard },
   { id: 'sales-dealers', label: 'Dealers', path: '/sales/dealers', portal: 'Sales', icon: Users },
   { id: 'sales-orders', label: 'Orders', path: '/sales/orders', portal: 'Sales', icon: ShoppingCart },
-  { id: 'sales-credit-requests', label: 'Credit Requests', path: '/sales/credit-requests', portal: 'Sales', icon: CreditCard },
-  { id: 'sales-credit-overrides', label: 'Credit Overrides', path: '/sales/credit-overrides', portal: 'Sales', icon: ArrowUpCircle },
+  { id: 'sales-credit', label: 'Credit', path: '/sales/credit', portal: 'Sales', icon: CreditCard },
   { id: 'sales-promotions', label: 'Promotions', path: '/sales/promotions', portal: 'Sales', icon: Tag },
-  { id: 'sales-invoices', label: 'Invoices', path: '/sales/invoices', portal: 'Sales', icon: FileText },
-  { id: 'sales-targets', label: 'Sales Targets', path: '/sales/targets', portal: 'Sales', icon: Target },
-  { id: 'sales-dispatch', label: 'Dispatch', path: '/sales/dispatch', portal: 'Sales', icon: Truck },
-  { id: 'sales-returns', label: 'Returns', path: '/sales/returns', portal: 'Sales', icon: RotateCcw },
+  { id: 'sales-targets', label: 'Targets', path: '/sales/targets', portal: 'Sales', icon: Target },
 ];
 
 const FACTORY_NAV: PortalNavItem[] = [
@@ -206,11 +200,12 @@ const FACTORY_NAV: PortalNavItem[] = [
 
 const DEALER_NAV: PortalNavItem[] = [
   { id: 'dealer-dashboard', label: 'Dashboard', path: '/dealer', portal: 'Dealer', icon: LayoutDashboard },
-  { id: 'dealer-orders', label: 'My Orders', path: '/dealer/orders', portal: 'Dealer', icon: ShoppingBag },
+  { id: 'dealer-orders', label: 'Orders', path: '/dealer/orders', portal: 'Dealer', icon: ShoppingBag },
   { id: 'dealer-invoices', label: 'Invoices', path: '/dealer/invoices', portal: 'Dealer', icon: FileText },
   { id: 'dealer-ledger', label: 'Ledger', path: '/dealer/ledger', portal: 'Dealer', icon: BookOpen },
   { id: 'dealer-aging', label: 'Aging', path: '/dealer/aging', portal: 'Dealer', icon: Clock },
   { id: 'dealer-credit-requests', label: 'Credit Requests', path: '/dealer/credit-requests', portal: 'Dealer', icon: CreditCard },
+  { id: 'dealer-support', label: 'Support', path: '/dealer/support', portal: 'Dealer', icon: LifeBuoy },
 ];
 
 const SUPERADMIN_NAV: PortalNavItem[] = [
@@ -667,8 +662,8 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Renders a compact "⌘K" button that opens the command palette.
- * Designed to be placed in portal header bars.
+ * Renders a compact "Search ⌘K" button that opens the command palette.
+ * Designed to be placed in portal header bars. Text-only, no icons.
  */
 export function CommandPaletteButton() {
   const { open } = useCommandPalette();
@@ -679,9 +674,7 @@ export function CommandPaletteButton() {
       onClick={open}
       className={clsx(
         'flex items-center justify-center rounded-lg',
-        // Mobile: icon-only button, min 44px touch target
-        'sm:gap-1.5 sm:h-8 sm:px-2.5',
-        'h-11 w-11 sm:h-8 sm:w-auto',
+        'gap-1.5 h-8 px-2.5',
         'text-[12px] text-[var(--color-text-tertiary)]',
         'bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]',
         'hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)]',
@@ -689,9 +682,7 @@ export function CommandPaletteButton() {
       )}
       aria-label="Open command palette"
     >
-      <Zap size={14} className="sm:hidden" />
-      <Zap size={12} className="hidden sm:block" />
-      <span className="hidden sm:inline">Search</span>
+      <span>Search</span>
       <KBD className="hidden sm:inline-flex">⌘K</KBD>
     </button>
   );

@@ -178,7 +178,7 @@ test.describe('O2C: Sales order surfaces', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('O2C: Dispatch surface', () => {
-  test('sales dispatch page loads and shows "Dispatch" heading', async ({ page }) => {
+  test('sales dispatch route redirects to sales dashboard (non-canonical)', async ({ page }) => {
     const creds = resolveCredentials('sales');
     if (!creds) {
       test.skip(true, 'Skipped: VALIDATION_SALES_EMAIL or VALIDATION_SHARED_PASSWORD not set');
@@ -186,7 +186,8 @@ test.describe('O2C: Dispatch surface', () => {
     }
 
     await loginAndNavigate(page, creds, '/sales/dispatch');
-    await expectPageHeading(page, 'Dispatch');
+    // Non-canonical /sales/dispatch now redirects to /sales dashboard
+    await expect(page).toHaveURL(/\/sales(?:\/)?$/, { timeout: 10_000 });
   });
 });
 
@@ -195,7 +196,7 @@ test.describe('O2C: Dispatch surface', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('O2C: Invoice surfaces — VAL-O2C-011', () => {
-  test('sales invoices page loads and shows "Invoices" heading', async ({ page }) => {
+  test('sales invoices route redirects to sales dashboard (non-canonical)', async ({ page }) => {
     const creds = resolveCredentials('sales');
     if (!creds) {
       test.skip(true, 'Skipped: VALIDATION_SALES_EMAIL or VALIDATION_SHARED_PASSWORD not set');
@@ -203,7 +204,8 @@ test.describe('O2C: Invoice surfaces — VAL-O2C-011', () => {
     }
 
     await loginAndNavigate(page, creds, '/sales/invoices');
-    await expectPageHeading(page, 'Invoices');
+    // Non-canonical /sales/invoices now redirects to /sales dashboard
+    await expect(page).toHaveURL(/\/sales(?:\/)?$/, { timeout: 10_000 });
   });
 
   test('accounting invoices page loads and shows "Invoices" heading', async ({ page }) => {

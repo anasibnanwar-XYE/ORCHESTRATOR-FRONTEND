@@ -467,12 +467,8 @@ const SalesCreditRequestsPage = lazy(() =>
     default: m.CreditRequestsPage,
   }))
 );
-/** Sales portal — Credit Overrides */
-const SalesCreditOverridesPage = lazy(() =>
-  import('@/pages/sales/CreditOverridesPage').then((m) => ({
-    default: m.CreditOverridesPage,
-  }))
-);
+/** Sales portal — Credit Overrides (legacy, redirected to /sales/credit) */
+// const SalesCreditOverridesPage — removed, route redirects to /sales/credit
 /** Sales portal — Promotions */
 const SalesPromotionsPage = lazy(() =>
   import('@/pages/sales/PromotionsPage').then((m) => ({
@@ -485,24 +481,12 @@ const SalesTargetsPage = lazy(() =>
     default: m.SalesTargetsPage,
   }))
 );
-/** Sales portal — Dispatch */
-const SalesDispatchPage = lazy(() =>
-  import('@/pages/sales/DispatchPage').then((m) => ({
-    default: m.DispatchPage,
-  }))
-);
-/** Sales portal — Invoices */
-const SalesInvoicesPage = lazy(() =>
-  import('@/pages/sales/SalesInvoicesPage').then((m) => ({
-    default: m.SalesInvoicesPage,
-  }))
-);
-/** Sales portal — Returns */
-const SalesReturnsPage = lazy(() =>
-  import('@/pages/sales/SalesReturnsPage').then((m) => ({
-    default: m.SalesReturnsPage,
-  }))
-);
+/** Sales portal — Dispatch (legacy, redirected to /sales dashboard) */
+// const SalesDispatchPage — removed, route redirects to /sales
+/** Sales portal — Invoices (legacy standalone, redirected to /sales dashboard) */
+// const SalesInvoicesPage — removed, route redirects to /sales
+/** Sales portal — Returns (legacy, redirected to /sales dashboard) */
+// const SalesReturnsPage — removed, route redirects to /sales
 /** Factory portal — Dashboard */
 const FactoryDashboardPage = lazy(() =>
   import('@/pages/factory/FactoryDashboardPage').then((m) => ({
@@ -616,12 +600,8 @@ const CostAllocationPage = lazy(() =>
      default: m.DealerSupportTicketsPage,
    }))
  );
- /** Dealer portal — Profile */
- const DealerProfilePage = lazy(() =>
-   import('@/pages/dealer/DealerProfilePage').then((m) => ({
-     default: m.DealerProfilePage,
-   }))
- );
+ /** Dealer portal — Profile (legacy, redirected to /profile) */
+ // const DealerProfilePage — removed, route redirects to /profile
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme initialiser — applies stored theme before first paint
 // ─────────────────────────────────────────────────────────────────────────────
@@ -948,16 +928,19 @@ function AppRouter() {
             }
           >
             <Route index element={<SalesDashboardPage />} />
+            <Route path="dashboard" element={<SalesDashboardPage />} />
             <Route path="orders" element={<SalesOrdersPage />} />
             <Route path="orders/:id" element={<SalesOrderDetailPage />} />
             <Route path="dealers" element={<SalesDealersPage />} />
-            <Route path="credit-requests" element={<SalesCreditRequestsPage />} />
-            <Route path="credit-overrides" element={<SalesCreditOverridesPage />} />
+            <Route path="credit" element={<SalesCreditRequestsPage />} />
             <Route path="promotions" element={<SalesPromotionsPage />} />
             <Route path="targets" element={<SalesTargetsPage />} />
-            <Route path="dispatch" element={<SalesDispatchPage />} />
-            <Route path="invoices" element={<SalesInvoicesPage />} />
-            <Route path="returns" element={<SalesReturnsPage />} />
+            {/* Legacy redirects — non-canonical routes redirect to Sales dashboard */}
+            <Route path="credit-requests" element={<Navigate to="/sales/credit" replace />} />
+            <Route path="credit-overrides" element={<Navigate to="/sales/credit" replace />} />
+            <Route path="dispatch" element={<Navigate to="/sales" replace />} />
+            <Route path="invoices" element={<Navigate to="/sales" replace />} />
+            <Route path="returns" element={<Navigate to="/sales" replace />} />
             <Route path="*" element={<SalesDashboardPage />} />
           </Route>
 
@@ -994,13 +977,15 @@ function AppRouter() {
             }
           >
             <Route index element={<DealerDashboardPage />} />
+            <Route path="dashboard" element={<DealerDashboardPage />} />
             <Route path="orders" element={<DealerOrdersPage />} />
             <Route path="invoices" element={<DealerInvoicesPage />} />
             <Route path="ledger" element={<DealerLedgerPage />} />
             <Route path="aging" element={<DealerAgingPage />} />
             <Route path="credit-requests" element={<DealerCreditRequestsPage />} />
             <Route path="support" element={<DealerSupportTicketsPage />} />
-            <Route path="profile" element={<DealerProfilePage />} />
+            {/* Legacy redirect — /dealer/profile → shared /profile */}
+            <Route path="profile" element={<Navigate to="/profile" replace />} />
             <Route path="*" element={<DealerDashboardPage />} />
           </Route>
 

@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface BreadcrumbItem {
@@ -20,7 +19,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         return (
           <div key={item.label} className="flex items-center gap-1">
             {index > 0 && (
-              <ChevronRight size={12} className="text-[var(--color-text-tertiary)] shrink-0" />
+              <span className="text-[11px] text-[var(--color-text-tertiary)] shrink-0 select-none" aria-hidden="true">/</span>
             )}
             {isLast ? (
               <span className="text-[12px] font-medium text-[var(--color-text-primary)] truncate max-w-[200px]">

@@ -26,8 +26,8 @@ vi.mock('lucide-react', () => {
     Calendar: M, ShoppingCart: M, CreditCard: M, ArrowUpCircle: M,
     Tag: M, FileText: M, Target: M, RotateCcw: M, Factory: M,
     ClipboardList: M, Layers: M, PackageCheck: M, Box: M, FlaskConical: M,
-    Settings2: M, SquareStack: M, ShoppingBag: M, Clock: M, User: M,
-    LogOut: M, Sun: M, Moon: M, Zap: M,
+    Settings2: M, SquareStack: M, ShoppingBag: M, Clock: M, LifeBuoy: M,
+    User: M, LogOut: M, Sun: M, Moon: M, Zap: M,
   };
 });
 

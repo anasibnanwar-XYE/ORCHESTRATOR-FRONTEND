@@ -1,37 +1,21 @@
 /**
- * DealerLayout — shell for the Dealer self-service portal.
+ * DealerLayout — unified text-first shell for the Dealer self-service portal.
  *
- * Nav items:
- *  Dashboard, My Orders, Invoices, Ledger, Aging, Credit Requests, Support, Profile
+ * Canonical nav entries (no icons, no emojis, no orchestrator branding):
+ *  Dashboard, Orders, Invoices, Ledger, Aging, Credit Requests, Support
  *
  * Note: Dealers are external clients, so this portal has a simpler nav
  * and no "Back to hub" (dealers always have exactly one role).
+ * Profile is the shared /profile route, not /dealer/profile.
  */
 
-import { useMemo, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import {
-  Menu,
-  X,
-  Sun,
-  Moon,
-  ChevronLeft,
-  LayoutDashboard,
-  ShoppingBag,
-  FileText,
-  BookOpen,
-  Clock,
-  CreditCard,
-  User,
-  LifeBuoy,
-  type LucideIcon,
-} from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { ProfileMenu } from '@/components/ui/ProfileMenu';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { OrchestratorLogo } from '@/components/ui/OrchestratorLogo';
 import { MobileSidebar } from '@/components/ui/Sidebar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { resolvePortalAccess, shouldShowHub, isModuleEnabled } from '@/lib/portal-routing';
@@ -41,32 +25,29 @@ import { CommandPaletteButton } from '@/components/CommandPalette';
 interface NavItem {
   label: string;
   to: string;
-  icon: LucideIcon;
   end?: boolean;
   /** Optional module key — item is hidden if this module is disabled */
   module?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', to: '/dealer', icon: LayoutDashboard, end: true },
-  { label: 'My Orders', to: '/dealer/orders', icon: ShoppingBag },
-  { label: 'Invoices', to: '/dealer/invoices', icon: FileText },
-  { label: 'Ledger', to: '/dealer/ledger', icon: BookOpen },
-  { label: 'Aging', to: '/dealer/aging', icon: Clock },
-  { label: 'Credit Requests', to: '/dealer/credit-requests', icon: CreditCard },
-  { label: 'Support', to: '/dealer/support', icon: LifeBuoy },
-  { label: 'Profile', to: '/dealer/profile', icon: User },
+  { label: 'Dashboard', to: '/dealer', end: true },
+  { label: 'Orders', to: '/dealer/orders' },
+  { label: 'Invoices', to: '/dealer/invoices' },
+  { label: 'Ledger', to: '/dealer/ledger' },
+  { label: 'Aging', to: '/dealer/aging' },
+  { label: 'Credit Requests', to: '/dealer/credit-requests' },
+  { label: 'Support', to: '/dealer/support' },
 ];
 
 const ROUTE_LABELS: Record<string, string> = {
   '/dealer': 'Dashboard',
-  '/dealer/orders': 'My Orders',
+  '/dealer/orders': 'Orders',
   '/dealer/invoices': 'Invoices',
   '/dealer/ledger': 'Ledger',
   '/dealer/aging': 'Aging',
   '/dealer/credit-requests': 'Credit Requests',
   '/dealer/support': 'Support',
-  '/dealer/profile': 'Profile',
   new: 'New',
 };
 
@@ -89,13 +70,12 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 py-5 border-b border-[var(--color-border-subtle)]">
-        <OrchestratorLogo size={20} variant="full" />
-        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+        <p className="text-[13px] font-semibold tracking-tight text-[var(--color-text-primary)]">
           Dealer
         </p>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto no-scrollbar">
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto no-scrollbar" aria-label="Dealer navigation">
         {showBackToHub && (
           <button
             type="button"
@@ -105,7 +85,6 @@ function SidebarContent({
             }}
             className="w-full flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors mb-3"
           >
-            <ChevronLeft size={14} />
             All portals
           </button>
         )}
@@ -118,22 +97,14 @@ function SidebarContent({
             onClick={onNavClick}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-2.5 px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
+                'flex items-center px-3 h-11 sm:h-8 rounded-lg text-[13px] font-medium transition-colors duration-100',
                 isActive
                  ? 'bg-[var(--color-neutral-900)] text-white'
                   : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)]',
               )
             }
           >
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  size={15}
-                  className={isActive ? 'text-white/70' : 'text-[var(--color-text-tertiary)]'}
-                />
-                {item.label}
-              </>
-            )}
+            {item.label}
           </NavLink>
         ))}
       </nav>
@@ -146,11 +117,17 @@ export function DealerLayout() {
   const { toggle, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const access = useMemo(() => resolvePortalAccess(user), [user]);
   const showBackToHub = useMemo(() => shouldShowHub(access), [access]);
 
   const breadcrumbs = useBreadcrumbs('/dealer', 'Dealer', ROUTE_LABELS);
+
+  // Close mobile drawer on route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-surface-secondary)]">
@@ -161,14 +138,16 @@ export function DealerLayout() {
       <MobileSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)}>
         <div className="flex flex-col w-[min(280px,80vw)] h-full bg-[var(--color-surface-primary)] border-r border-[var(--color-border-default)]">
           <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--color-border-subtle)]">
-            <OrchestratorLogo size={18} variant="full" />
+            <p className="text-[13px] font-semibold tracking-tight text-[var(--color-text-primary)]">
+              Dealer
+            </p>
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="p-1.5 rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+              className="px-2.5 py-1 rounded-md text-[12px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
               aria-label="Close menu"
             >
-              <X size={16} />
+              Close
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -187,10 +166,10 @@ export function DealerLayout() {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-1.5 rounded-md text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+              className="lg:hidden px-2.5 py-1 rounded-md text-[12px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
               aria-label="Open menu"
             >
-              <Menu size={18} />
+              Menu
             </button>
             <Breadcrumb items={breadcrumbs} />
           </div>
@@ -202,10 +181,10 @@ export function DealerLayout() {
             <button
               type="button"
               onClick={toggle}
-              className="p-2 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
+              className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors"
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+              {isDark ? 'Light' : 'Dark'}
             </button>
 
             {user && (
@@ -216,14 +195,14 @@ export function DealerLayout() {
                   role: user.roles[0] ?? '',
                 }}
                 onLogout={signOut}
-                onProfile={() => navigate('/dealer/profile')}
+                onProfile={() => navigate('/profile')}
               />
             )}
           </div>
         </header>
 
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-5xl p-4 sm:p-6">
+          <div className="mx-auto max-w-7xl p-4 sm:p-6">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
