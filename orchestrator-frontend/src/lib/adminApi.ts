@@ -5,7 +5,6 @@
  */
 
 import { apiRequest } from './api';
-import { showToast } from '@/components/ui/toast-bridge';
 import type {
   ApiResponse,
   ApprovalsResponse,
@@ -37,37 +36,8 @@ import type {
   AccountingAuditTrailEntry,
   AuditEventFilters,
   TenantRuntimeMetrics,
-  TenantPolicy,
-  OperationsStatus,
   PageResponse,
 } from '@/types';
-
-const DEFAULT_TENANT_POLICY: TenantPolicy = {
-  sessionTimeoutMinutes: 60,
-  passwordMinLength: 10,
-  passwordRequireUppercase: true,
-  passwordRequireNumbers: true,
-  passwordRequireSymbols: true,
-  maxLoginAttempts: 5,
-  mfaRequired: false,
-};
-
-const DEFAULT_OPERATIONS_STATUS: OperationsStatus = {
-  maintenanceMode: false,
-  featureFlags: [],
-  cacheLastPurged: null,
-};
-
-function cloneTenantPolicy(): TenantPolicy {
-  return { ...DEFAULT_TENANT_POLICY };
-}
-
-function cloneOperationsStatus(): OperationsStatus {
-  return {
-    ...DEFAULT_OPERATIONS_STATUS,
-    featureFlags: [...DEFAULT_OPERATIONS_STATUS.featureFlags],
-  };
-}
 
 export const adminApi = {
   // ─────────────────────────────────────────────────────────────────────────
@@ -284,23 +254,6 @@ export const adminApi = {
   async getCompanies(): Promise<Company[]> {
     const response = await apiRequest.get<ApiResponse<Company[]>>('/companies');
     return response.data.data;
-  },
-
-  async createCompany(data: Partial<Company>): Promise<Company> {
-    const response = await apiRequest.post<ApiResponse<Company>>('/companies', data);
-    return response.data.data;
-  },
-
-  async updateCompany(id: number, data: Partial<Company>): Promise<Company> {
-    const response = await apiRequest.put<ApiResponse<Company>>(`/companies/${id}`, data);
-    return response.data.data;
-  },
-
-  async deleteCompany(id: number): Promise<void> {
-    const response = await apiRequest.delete<ApiResponse<void>>(`/companies/${id}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -557,19 +510,6 @@ export const tenantApi = {
     return response.data.data;
   },
 
-  async getPolicy(): Promise<TenantPolicy> {
-    return cloneTenantPolicy();
-  },
-
-  async updatePolicy(data: Partial<TenantPolicy>): Promise<TenantPolicy> {
-    void data;
-    showToast({
-      title: 'Policy updates require backend configuration',
-      type: 'info',
-    });
-    return cloneTenantPolicy();
-  },
-
   /**
    * Update tenant rate-limit / concurrency policy — PUT /admin/tenant-runtime/policy
    */
@@ -582,42 +522,7 @@ export const tenantApi = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Operations Control APIs
-// ─────────────────────────────────────────────────────────────────────────────
 
-export const operationsControlApi = {
-  async getStatus(): Promise<OperationsStatus> {
-    return cloneOperationsStatus();
-  },
-
-  async setMaintenanceMode(enabled: boolean): Promise<OperationsStatus> {
-    void enabled;
-    showToast({
-      title: 'Maintenance mode requires backend setup',
-      type: 'info',
-    });
-    return cloneOperationsStatus();
-  },
-
-  async toggleFeatureFlag(key: string, enabled: boolean): Promise<OperationsStatus> {
-    void key;
-    void enabled;
-    showToast({
-      title: 'Feature flag updates require backend setup',
-      type: 'info',
-    });
-    return cloneOperationsStatus();
-  },
-
-  async purgeCache(): Promise<OperationsStatus> {
-    showToast({
-      title: 'Cache purge requires backend setup',
-      type: 'info',
-    });
-    return cloneOperationsStatus();
-  },
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Finance Support APIs

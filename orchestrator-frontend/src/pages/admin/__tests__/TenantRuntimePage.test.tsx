@@ -17,8 +17,6 @@
  vi.mock('@/lib/adminApi', () => ({
    tenantApi: {
      getRuntimeMetrics: vi.fn(),
-     getPolicy: vi.fn(),
-     updatePolicy: vi.fn(),
    },
  }));
  
@@ -47,15 +45,7 @@
   blockedThisMinute: 0,
 };
  
- const mockPolicy = {
-   sessionTimeoutMinutes: 60,
-   passwordMinLength: 8,
-   passwordRequireUppercase: true,
-   passwordRequireNumbers: true,
-   passwordRequireSymbols: false,
-   maxLoginAttempts: 5,
-   mfaRequired: false,
- };
+
  
  function renderPage() {
    return render(
@@ -69,8 +59,6 @@
    beforeEach(() => {
      vi.resetAllMocks();
      vi.mocked(tenantApi.getRuntimeMetrics).mockResolvedValue(mockMetrics);
-     vi.mocked(tenantApi.getPolicy).mockResolvedValue(mockPolicy);
-     vi.mocked(tenantApi.updatePolicy).mockResolvedValue(mockPolicy);
    });
  
    it('renders the page heading', async () => {

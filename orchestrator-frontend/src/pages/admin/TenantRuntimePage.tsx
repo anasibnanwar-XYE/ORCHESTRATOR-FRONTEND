@@ -27,6 +27,18 @@
  import { Skeleton } from '@/components/ui/Skeleton';
  import { tenantApi } from '@/lib/adminApi';
  import type { TenantRuntimeMetrics, TenantPolicy } from '@/types';
+
+ // NOTE: tenantApi.getPolicy was removed (fully stubbed, not in backend spec).
+ // This page is kept as a file but removed from routing. Inline default preserves compilability.
+ const DEFAULT_TENANT_POLICY: TenantPolicy = {
+   sessionTimeoutMinutes: 60,
+   passwordMinLength: 10,
+   passwordRequireUppercase: true,
+   passwordRequireNumbers: true,
+   passwordRequireSymbols: true,
+   maxLoginAttempts: 5,
+   mfaRequired: false,
+ };
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -196,8 +208,7 @@
      setLoading(true);
      setError(null);
      try {
-       const result = await tenantApi.getPolicy();
-       setPolicy(result);
+       setPolicy({ ...DEFAULT_TENANT_POLICY });
      } catch {
        setError('Failed to load security policy.');
      } finally {

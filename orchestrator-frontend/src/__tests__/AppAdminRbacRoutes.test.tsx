@@ -105,15 +105,6 @@ vi.mock('@/pages/admin/SettingsPage', () => ({
   ),
 }));
 
-vi.mock('@/pages/admin/TenantRuntimePage', () => ({
-  TenantRuntimePage: () => (
-    <div>
-      <span>Tenant Runtime</span>
-      <span>Security policy is managed by platform administrators</span>
-    </div>
-  ),
-}));
-
 import App from '@/App';
 
 describe('App route RBAC moves', () => {
@@ -121,7 +112,7 @@ describe('App route RBAC moves', () => {
     vi.clearAllMocks();
   });
 
-  it('renders TenantRuntimePage at /admin/tenant-runtime for admins (tenant-scoped metrics)', async () => {
+  it('does NOT route /admin/tenant-runtime — falls through to dashboard wildcard', async () => {
     mockAuth = {
       ...mockAuth,
       user: { ...mockAuth.user, roles: ['ROLE_ADMIN'] },
@@ -131,9 +122,8 @@ describe('App route RBAC moves', () => {
     window.history.pushState({}, '', '/admin/tenant-runtime');
     render(<App />);
 
-    // Admin users can access /admin/tenant-runtime — shows tenant-scoped runtime metrics
-    expect(await screen.findByText('Tenant Runtime')).toBeInTheDocument();
-    // Should NOT show the superadmin runtime page (all-tenants view)
+    // No dedicated admin route for tenant-runtime — wildcard catches it → dashboard
+    expect(await screen.findByText('Admin dashboard page')).toBeInTheDocument();
     expect(screen.queryByText('Superadmin tenant runtime page')).not.toBeInTheDocument();
   });
 

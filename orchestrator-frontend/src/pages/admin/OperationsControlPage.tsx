@@ -31,8 +31,24 @@ import { Switch } from '@/components/ui/Switch';
  import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
  import { Badge } from '@/components/ui/Badge';
  import { useToast } from '@/components/ui/Toast';
- import { operationsControlApi } from '@/lib/adminApi';
  import type { OperationsStatus, FeatureFlag } from '@/types';
+
+ // NOTE: operationsControlApi was removed from adminApi.ts (fully stubbed/mocked, not in backend spec).
+ // This page is kept as a file but removed from routing. Inline stubs preserve compilability.
+ const operationsControlApi = {
+   async getStatus(): Promise<OperationsStatus> {
+     return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
+   },
+   async setMaintenanceMode(_enabled: boolean): Promise<OperationsStatus> {
+     return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
+   },
+   async toggleFeatureFlag(_key: string, _enabled: boolean): Promise<OperationsStatus> {
+     return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
+   },
+   async purgeCache(): Promise<OperationsStatus> {
+     return { maintenanceMode: false, featureFlags: [], cacheLastPurged: null };
+   },
+ };
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Main Page
