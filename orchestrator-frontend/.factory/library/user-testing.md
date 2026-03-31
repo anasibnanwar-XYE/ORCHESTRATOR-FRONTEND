@@ -1,100 +1,59 @@
-# User Testing
+# User Testing Documentation - Admin Portal
 
-## Validation Surface
+## Environment
 
-**Primary surface:** Web UI at `http://localhost:3002` via `agent-browser`
+### Services
+- Frontend: http://localhost:3002 (Vite dev server)
+- Backend: http://localhost:8081 (Spring Boot, Docker-managed - DO NOT STOP)
 
-**Auth flow for testing:**
-1. Navigate to http://localhost:3002/login
-2. Enter email: `$VALIDATION_ADMIN_EMAIL` (from .env.test)
-3. Enter password: `$VALIDATION_ADMIN_PASSWORD` (from .env.test)
-4. Enter company code: `$VALIDATION_ADMIN_COMPANY` (from .env.test)
-5. Submit → redirects to /hub or /admin
-
-Credentials are stored in `.env.test` (gitignored). Source it before testing: `source .env.test`
-
-**Backend:** Spring Boot on localhost:8081, proxied via Vite. All API calls go through /api/v1/* prefix.
-
-**Required services:**
-- Backend must be running on 8081 (check via services.yaml healthcheck)
-- Frontend dev server on 3002
+### Test Credentials (from environment variables)
+- Admin: `validation.admin@example.com` / `Validation1!cc18570e52fe48dd` / company `MOCK`
+- Superadmin: `validation.superadmin@example.com` / `Validation1!cc18570e52fe48dd` / `SKE`
 
 ## Validation Concurrency
 
-**Surface: agent-browser**
-- Machine: 16 CPUs, 15 GB RAM, ~10 GB available
-- App is lightweight (~200 MB dev server + ~300 MB per browser instance)
-- Max concurrent validators: **5** (5 instances = ~1.7 GB, well within 8.4 GB budget at 70%)
+Max concurrent validators: **5**
 
-## Testing Notes
-
-- Backend is REAL and responsive — tests should make actual API calls, not mock
-- 204 endpoints (suspend, unsuspend, delete, mfa/disable) will be fixed to handle no-body responses
-- Audit trail endpoints will be fixed from legacy paths to canonical paths
-- Test user creation should use unique emails with timestamps to avoid conflicts
-- After creating test users, clean up (delete) them to avoid polluting the user list
-- Approvals depend on backend state — may have 0 pending items; test empty state in that case
-- Dashboard API (/portal/dashboard) returns only 3 highlights by default — this is a backend data issue, not frontend
-- Settings API field names differ from frontend types: API uses periodLockEnforced/autoApprovalEnabled/mailEnabled/mailFromAddress/allowedOrigins, frontend expects periodLockEnabled/autoApproveThreshold/emailNotifications/smtpFromEmail/corsAllowedOrigins
-- Changelog API may return empty results — test data may need seeding via superadmin POST /api/v1/superadmin/changelog
-- Combobox/Select interaction via agent-browser: native click on option elements may time out; use JS eval to set value programmatically as fallback
-- Toast notifications auto-dismiss quickly — verify success indirectly via API response status and form reset behavior
+Resource constraints:
+- 16 CPUs available
+- ~10GB RAM available
+- Frontend is lightweight React app
+- Backend calls are stateless
 
 ## Flow Validator Guidance: agent-browser
 
 ### Isolation Rules
-- Each validator uses its own agent-browser session (unique session ID)
-- All validators share the same admin credentials and backend
-- Read-only page checks (dashboard, roles, changelog, settings) can run concurrently without conflict
-- Write operations (send notification) should be isolated — only one validator per group should mutate data
-- Validators should NOT delete or modify shared test data created by other validators
-- Each validator should navigate independently and not depend on another validator's browser state
+- Each flow validator should use a fresh browser session
+- Use distinct test user accounts if multiple validators run concurrently to avoid data conflicts
+- Users list is global - creating/deleting the same test user simultaneously causes conflicts
+- Serialize operations that mutate global state (user create, edit, delete)
 
-### Boundaries
-- App URL: http://localhost:3002
-- Login credentials: source `.env.test` for email/password/company
-- Do NOT access pages outside the admin portal (/admin/*)
-- Do NOT test pages from future milestones (api-integration, responsive-final)
-- Screenshots saved to evidence directory per group
+### Testing Approach
+1. Login with admin credentials via browser
+2. Navigate to the feature under test
+3. Perform actions and verify network calls/responses
+4. Capture screenshots and network logs as evidence
 
-### Shared State Concerns
-- Notification sending (VAL-NOTIF-002) creates a real notification — only the notifications group should do this
-- Dashboard data is read-only and shared — safe for concurrent access
-- Roles, changelog, settings are read-only admin pages — safe for concurrent access
+### Known Workarounds
+- Dropdown menu items may not click via standard click — use JS eval to find and click by text
+- Combobox/Select dropdown may need JS eval to set values
+- Network log shows duplicate entries due to React StrictMode — check presence/absence, not exact count
 
-## Flow Validator Guidance: api-integration (agent-browser)
+### Test Patterns
 
-### Assertion Groups for Concurrency
+#### Creating a Test User
+```javascript
+// Use unique email to avoid conflicts
+const email = `val-e2e-${Date.now()}@test.com`;
+const displayName = `Test User ${Date.now()}`;
+```
 
-**Group 1: Users (read-heavy + write)** — VAL-USERS-001 through VAL-USERS-012
-- Navigates to /admin/users, loads user list, performs create/edit/suspend/unsuspend/delete
-- Creates test users with unique emails (val-e2e-{timestamp}@test.com)
-- MUST clean up test users after testing (delete them)
-- Mutates user data — serialize with other write groups
+#### Verifying Network Calls
+- Look for POST /api/v1/admin/users with status 200/201 for create
+- Look for PUT /api/v1/admin/users/{id} with status 200 for update
+- Check response body is valid JSON (no 400 errors)
 
-**Group 2: Approvals (read + write)** — VAL-APPR-001 through VAL-APPR-008
-- Navigates to /admin/approvals, loads pending items
-- May approve/reject items — this mutates backend state
-- If no pending items, tests empty state instead
-- Serialize with other write groups
-
-**Group 3: Audit Trail (read-only)** — VAL-AUDIT-001 through VAL-AUDIT-005
-- Navigates to /admin/audit-trail, reads events
-- Tests pagination and actor filter
-- No data mutation — safe for concurrent execution
-
-**Group 4: Finance (read-only after select)** — VAL-FIN-001 through VAL-FIN-005
-- Navigates to /admin/finance, selects dealer, reads ledger/invoices/aging
-- No data mutation beyond selecting dealer — safe for concurrent execution
-
-**Group 5: Support Tickets (read + write)** — VAL-SUPPORT-001 through VAL-SUPPORT-004
-- Navigates to /admin/support, loads tickets
-- Creates test tickets — mutate operation
-- Safe to run concurrently with read-only groups
-
-### Concurrency Plan
-- Max 5 concurrent validators
-- Groups 1 & 2 (write-heavy) can run concurrently since they touch different data
-- Groups 3 & 4 (read-only) can always run concurrently
-- Group 5 (write) can run with all others
-- All 5 groups can safely run simultaneously
+### Evidence Requirements
+- Screenshot of success/failure state
+- Network log showing relevant API calls
+- Console errors (if any)
