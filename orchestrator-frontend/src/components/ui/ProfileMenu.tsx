@@ -37,6 +37,9 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
     <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Profile menu"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         className={clsx(
           'flex items-center gap-2 h-9 pl-1 pr-2.5 rounded-lg',
           'transition-colors duration-150',
@@ -52,6 +55,8 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
 
       {isOpen && (
         <div
+          role="menu"
+          aria-label="Profile actions"
           className="absolute right-0 top-full mt-1.5 w-52 bg-[var(--color-surface-primary)] border border-[var(--color-border-default)] rounded-xl overflow-hidden z-[var(--z-dropdown)]"
           style={{
             boxShadow: 'var(--shadow-popover)',
@@ -74,6 +79,7 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
               {items.map((item) => (
                 <button
                   key={item.label}
+                  role="menuitem"
                   onClick={() => { item.onClick?.(); setIsOpen(false); }}
                   className="w-full text-left px-3.5 py-2 text-[13px] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors duration-100"
                 >
@@ -85,6 +91,7 @@ export function ProfileMenu({ user, onLogout, onProfile, onSettings }: ProfileMe
 
           <div className="border-t border-[var(--color-border-subtle)] py-1">
             <button
+              role="menuitem"
               onClick={() => { onLogout(); setIsOpen(false); }}
               className="w-full text-left px-3.5 py-2 text-[13px] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors duration-100"
             >
