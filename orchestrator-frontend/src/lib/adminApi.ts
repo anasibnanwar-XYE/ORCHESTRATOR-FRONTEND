@@ -156,10 +156,9 @@ export const adminApi = {
   },
 
   async deleteUser(id: number): Promise<void> {
-    const response = await apiRequest.delete<ApiResponse<void>>(`/admin/users/${id}`);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+    // DELETE /admin/users/{id} returns 204 No Content — no response body.
+    // Axios will throw on non-2xx status automatically.
+    await apiRequest.delete(`/admin/users/${id}`);
   },
 
   async updateUserStatus(userId: number, enabled: boolean): Promise<void> {
@@ -173,24 +172,21 @@ export const adminApi = {
   },
 
   async suspendUser(id: number): Promise<void> {
-    const response = await apiRequest.patch<ApiResponse<void>>(`/admin/users/${id}/suspend`);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+    // PATCH /admin/users/{id}/suspend returns 204 No Content — no response body.
+    // Axios will throw on non-2xx status automatically.
+    await apiRequest.patch(`/admin/users/${id}/suspend`);
   },
 
   async unsuspendUser(id: number): Promise<void> {
-    const response = await apiRequest.patch<ApiResponse<void>>(`/admin/users/${id}/unsuspend`);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+    // PATCH /admin/users/{id}/unsuspend returns 204 No Content — no response body.
+    // Axios will throw on non-2xx status automatically.
+    await apiRequest.patch(`/admin/users/${id}/unsuspend`);
   },
 
   async disableUserMfa(id: number): Promise<void> {
-    const response = await apiRequest.patch<ApiResponse<void>>(`/admin/users/${id}/mfa/disable`);
-    if (!response.data.success) {
-      throw new Error(response.data.message);
-    }
+    // PATCH /admin/users/{id}/mfa/disable returns 204 No Content — no response body.
+    // Axios will throw on non-2xx status automatically.
+    await apiRequest.patch(`/admin/users/${id}/mfa/disable`);
   },
 
   /**
