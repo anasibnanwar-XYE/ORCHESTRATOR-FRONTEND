@@ -559,4 +559,137 @@ describe('resolvePostLoginDestination', () => {
       expect(resolvePostLoginDestination(access, '')).toBe('/hub');
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Sales-specific deep-link restoration — VAL-SHELL-002
+  // ───────────────────────────────────────────────────────────────────────────
+
+  describe('Sales deep-link restoration (VAL-SHELL-002)', () => {
+    it('ROLE_SALES → restores /sales/orders/new', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/orders/new')).toBe('/sales/orders/new');
+    });
+
+    it('ROLE_SALES → restores /sales/orders/123/timeline', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/orders/123/timeline')).toBe('/sales/orders/123/timeline');
+    });
+
+    it('ROLE_SALES → restores /sales/credit', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/credit')).toBe('/sales/credit');
+    });
+
+    it('ROLE_SALES → restores /sales/dealers', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/dealers')).toBe('/sales/dealers');
+    });
+
+    it('ROLE_SALES → restores /sales/promotions', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/promotions')).toBe('/sales/promotions');
+    });
+
+    it('ROLE_SALES → restores /sales/targets', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/sales/targets')).toBe('/sales/targets');
+    });
+
+    it('ROLE_SALES cannot access /dealer/* → falls back to /sales', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/dealer/invoices')).toBe('/sales');
+    });
+
+    it('ROLE_SALES cannot access /admin/* → falls back to /sales', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(resolvePostLoginDestination(access, '/admin/users')).toBe('/sales');
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Dealer-specific deep-link restoration — VAL-SHELL-002
+  // ───────────────────────────────────────────────────────────────────────────
+
+  describe('Dealer deep-link restoration (VAL-SHELL-002)', () => {
+    it('ROLE_DEALER → restores /dealer/invoices/INV-001', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/invoices/INV-001')).toBe('/dealer/invoices/INV-001');
+    });
+
+    it('ROLE_DEALER → restores /dealer/support/TKT-001', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/support/TKT-001')).toBe('/dealer/support/TKT-001');
+    });
+
+    it('ROLE_DEALER → restores /dealer/credit-requests', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/credit-requests')).toBe('/dealer/credit-requests');
+    });
+
+    it('ROLE_DEALER → restores /dealer/orders', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/orders')).toBe('/dealer/orders');
+    });
+
+    it('ROLE_DEALER → restores /dealer/ledger', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/ledger')).toBe('/dealer/ledger');
+    });
+
+    it('ROLE_DEALER → restores /dealer/aging', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/dealer/aging')).toBe('/dealer/aging');
+    });
+
+    it('ROLE_DEALER cannot access /sales/* → falls back to /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/sales/orders')).toBe('/dealer');
+    });
+
+    it('ROLE_DEALER cannot access /admin/* → falls back to /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/admin/users')).toBe('/dealer');
+    });
+
+    it('ROLE_DEALER cannot access /accounting/* → falls back to /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/accounting/journals')).toBe('/dealer');
+    });
+
+    it('ROLE_DEALER cannot access /factory/* → falls back to /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/factory/production/plans')).toBe('/dealer');
+    });
+
+    it('ROLE_DEALER cannot access /superadmin/* → falls back to /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(resolvePostLoginDestination(access, '/superadmin/tenants')).toBe('/dealer');
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Cross-portal isolation — Sales vs Dealer — VAL-SHELL-004
+  // ───────────────────────────────────────────────────────────────────────────
+
+  describe('Cross-portal isolation: Sales↔Dealer (VAL-SHELL-004)', () => {
+    it('ROLE_SALES cannot access /dealer', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(canAccessPortal(access, '/dealer')).toBe(false);
+    });
+
+    it('ROLE_DEALER cannot access /sales', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(canAccessPortal(access, '/sales')).toBe(false);
+    });
+
+    it('ROLE_SALES cannot access /accounting', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.SALES));
+      expect(canAccessPortal(access, '/accounting')).toBe(false);
+    });
+
+    it('ROLE_DEALER cannot access /factory', () => {
+      const access = resolvePortalAccess(makeUser(PORTAL_ROLES.DEALER));
+      expect(canAccessPortal(access, '/factory')).toBe(false);
+    });
+  });
 });

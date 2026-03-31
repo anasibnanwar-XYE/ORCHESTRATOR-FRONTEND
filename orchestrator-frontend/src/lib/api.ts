@@ -3,7 +3,7 @@
  *
  * Provides an Axios instance with:
  *  - Auto token refresh on 401 (deduplicated via singleton promise)
- *  - X-Company-Code and X-Company-Id header injection from stored session
+ *  - X-Company-Code header injection from stored session
  *  - Idempotency-Key header support for mutation endpoints (POST/PUT/PATCH/DELETE)
  *  - Response envelope unwrapping helpers
  *
@@ -12,7 +12,7 @@
  *  bbp-orchestrator-refresh-token
  *  bbp-orchestrator-user
  *  bbp-orchestrator-company-code
- *  bbp-orchestrator-company-id
+ *  bbp-orchestrator-company-id  (legacy — no longer sent as a header)
  */
 
 import axios, {
@@ -118,14 +118,11 @@ class ApiClient {
             config.headers.Authorization = `Bearer ${token}`;
           }
 
-          // Company context
+          // Company context — X-Company-Code is the only canonical tenant header.
+          // X-Company-Id was legacy drift and has been removed from request headers.
           const companyCode = localStorage.getItem(STORAGE_KEYS.COMPANY_CODE);
-          const companyId = localStorage.getItem(STORAGE_KEYS.COMPANY_ID);
           if (companyCode) {
             config.headers['X-Company-Code'] = companyCode;
-          }
-          if (companyId) {
-            config.headers['X-Company-Id'] = companyId;
           }
         }
 

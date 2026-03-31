@@ -1,6 +1,6 @@
 ---
 name: frontend-worker
-description: Implements frontend features for the ERP multi-portal application
+description: Implements Sales and Dealer portal unification features with canonical backend alignment and high-end UX quality
 ---
 
 # Frontend Worker
@@ -9,148 +9,203 @@ NOTE: Startup and cleanup are handled by `worker-base`. This skill defines the W
 
 ## When to Use This Skill
 
-Any frontend implementation feature: page builds, component work, API integration, responsiveness fixes, design system bridging, UX improvements, cleanup, or test writing.
+Use this skill for any feature that changes:
+- Sales portal routes, layouts, pages, flows, or API integration
+- Dealer portal routes, layouts, pages, flows, or API integration
+- Shared shell behavior required by Sales and Dealer
+- Playwright/browser validation harness work for this mission
+- Final Figma publishing and regression hardening for Sales + Dealer screens
+
+Do not use this skill to expand other portals unless the feature explicitly requires a shared shell change that is necessary for Sales or Dealer.
 
 ## Required Skills
 
-- `frontend-design` — Invoke FIRST before any UI implementation. This skill focuses on design quality, visual hierarchy, composition, and user experience. Use it for ALL page builds, component work, and UX improvements. The design bar is set by the login page (AuthLayout.tsx) — typography-driven, minimal, deliberate, no visual clutter.
-- `agent-browser` — For manual verification of UI changes. Invoke after implementation to verify pages render correctly, flows work end-to-end, responsive behavior is correct, and visual quality meets standards.
+- `frontend-design` — Invoke first for every feature that changes UI, layout, spacing, hierarchy, or visual polish. Use it to set the visual direction before coding.
+- `ux-engineer` — Invoke before implementing routes, page structure, or interaction-heavy flows. Use it to make navigation, actions, forms, and state handling obvious.
+- `agent-browser` — Invoke after implementation for real browser verification at desktop, tablet, and mobile widths.
 
 ## Work Procedure
 
-### 1. Read Context First (MANDATORY)
+### 1. Read the mission context before changing code
 
-Before writing ANY code:
-- Read `.factory/library/api-mismatches.md` — critical API path/shape issues
-- Read `.factory/library/rbac.md` — role boundaries for the portal you're working on
-- Read `.factory/library/architecture.md` — code organization and patterns
-- Read the feature description carefully — it contains expected behavior and verification steps
-- Read the **DesignSystemBoard.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/DesignSystemBoard.tsx` — this is the GOLD STANDARD for layout, visual style, and hierarchy
-- Read the **ComponentShowcase.tsx** at `/home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/FRONTEND/FRONTEND/FRONTEND OF BACKEND/src/shared/pages/ComponentShowcase.tsx` — this shows ALL available components and how they look
-- Check `src/components/ui/` for already-bridged components. If a component exists in the design system but NOT in production, **bridge it first** (copy from design system, adapt imports) before using it
-- **NEVER build custom markup when a design system component exists.** Reuse StatCard, ApprovalCard, AuditLog, Timeline, LedgerCard, BarChart, Changelog, etc. Adapt labels/data but keep the component's design
+Read these first:
+- mission feature description
+- mission `AGENTS.md`
+- `.factory/library/architecture.md`
+- `.factory/library/environment.md`
+- `.factory/library/user-testing.md`
 
-### 2. Verify Backend Contracts (Use codebase-scout-assistant)
+Then read the canonical backend/docs files that match the feature's route family, using `/Users/anas/Documents/FACTORY/bigbrightpaints-erp/docs` as source of truth.
 
-For ANY API integration work, spawn **parallel `codebase-scout-assistant` subagents** via the Task tool to investigate the backend. Do NOT read backend files yourself — delegate to scouts for speed.
+Minimum docs by area:
+- Shared shell/auth work: `docs/frontend-portals/README.md`, `docs/frontend-api/README.md`, `docs/frontend-api/auth-and-company-scope.md`
+- Sales work: `docs/frontend-portals/sales/{README,routes,api-contracts,role-boundaries,states-and-errors,workflows,playwright-journeys}.md`
+- Dealer work: `docs/frontend-portals/dealer-client/{README,routes,api-contracts,role-boundaries,states-and-errors,workflows,playwright-journeys}.md`
+- Cross-area parity: `docs/flows/order-to-cash.md`, `docs/flows/invoice-dealer-finance.md`
 
-**How to investigate backend:**
-- Spawn a `codebase-scout-assistant` with a prompt like: "Read the controller at /home/realnigga/Desktop/Mission-control/erp-domain/src/main/java/com/bigbrightpaints/erp/modules/{module}/controller/{Controller}.java. List all endpoints with HTTP method, path, @PreAuthorize, request/response DTOs."
-- Spawn multiple scouts in parallel if you need to check multiple modules
-- Also check `/home/realnigga/Desktop/Mission-control/openapi.json` for request/response shapes
-- Do NOT trust frontend docs — backend code is the source of truth
-- Test the endpoint with curl through the proxy: `curl -s http://localhost:3002/api/v1/...`
+### 2. Reconfirm mission invariants
 
-**When an API call fails (404, 400, 500, unexpected response):**
-1. Immediately spawn parallel codebase-scout-assistants to read the relevant backend controllers
-2. The backend has changed significantly — many frontend pages have UI for features that no longer exist
-3. If the backend endpoint is gone or changed, fix the frontend to match reality
-4. If the entire feature's backend support is gone, return to orchestrator
+Before editing, verify that your plan keeps these invariants true:
+- Sales + Dealer only; no orchestrator pages
+- no icons or emojis anywhere in Sales/Dealer nav, content, empty states, or controls
+- use only the existing component library in `src/components/ui`
+- `GET /api/v1/auth/me` is the only identity bootstrap
+- `X-Company-Code` is the only tenant header to preserve
+- Dealer portal remains self-scoped; never add dealer pickers or foreign dealer context
+- Sales may read invoice/dispatch only from current-order context; dispatch confirm belongs to Factory; approvals belong to Admin/Accounting
+- remove non-canonical routes instead of hiding them behind dead navigation
 
-### 3. Invoke frontend-skill (MANDATORY for UI work)
+If the canonical docs and the live local backend disagree in a way that changes ownership or route scope, return to the orchestrator.
 
-Before implementing any UI:
-- Invoke the `frontend-skill` via the Skill tool
-- Follow its guidance for composition, hierarchy, spacing, and visual quality
-- Ensure the result feels modern, clean, and human-designed — NOT AI-generated or cluttered
+### 3. Invoke design skills before implementation
 
-### 4. Write Tests First (TDD)
+1. Invoke `frontend-design`
+2. Invoke `ux-engineer`
 
-- Write failing unit tests BEFORE implementation
-- Tests go in co-located `__tests__/` directories
-- Use Vitest + React Testing Library
-- Cover: rendering, user interactions, API call verification, error states, loading states, empty states
+Use the skill output to decide:
+- section order
+- density and spacing
+- table vs card behavior
+- empty/loading/error states
+- primary/secondary action hierarchy
+- how to keep the UI modern and minimal without icons
 
-### 5. Implement
+### 4. Write tests first
 
-- Follow existing patterns in the codebase
-- Use design system components from `src/components/ui/` — never create one-off UI
-- Use CSS variables (`var(--color-*)`) — never hardcode hex colors
-- Use DataTable for all tabular data with `mobileCardRenderer` for mobile
-- Use responsive Tailwind classes (`sm:`, `md:`, `lg:`)
-- Ensure all forms use `grid-cols-1 sm:grid-cols-2` (never fixed grid-cols-2)
-- Add proper empty states, loading states, and error states
-- Add tooltips for non-obvious actions
-- Add helper text for form fields with non-obvious constraints
-- Ensure destructive actions require confirmation dialogs
-- Background sync: implement stale-while-revalidate where appropriate
+Write failing tests before implementation.
 
-### 6. Manual Verification (MANDATORY — Comprehensive)
+Expected testing mix:
+- Vitest + React Testing Library for route/page/component behavior
+- targeted Playwright updates for auth, shell, or end-to-end portal journeys when the feature changes browser behavior
 
-Use `agent-browser` to verify ALL of the following (not just flows):
+Test the behavior the contract cares about, not implementation details.
 
-**Functional:**
-- Page loads without errors (check browser console)
-- Data displays correctly from real backend
-- Key user flows work end-to-end (CRUD, status transitions, etc.)
+### 5. Implement using current project patterns
 
-**Visual Quality:**
-- Consistent use of design system components (Badge, Button, DataTable, etc.)
-- No hardcoded hex colors — all colors from CSS variables
-- Proper spacing and typography
-- Empty states, loading states, error states all present and well-designed
-- Tooltips on non-obvious actions
-- Confirmation dialogs on destructive actions
+Implementation rules:
+- reuse existing components from `src/components/ui`
+- do not add a second design system
+- do not hardcode colors; use CSS variables
+- prefer dedicated canonical routes over modal-only substitutes when the contract requires a route
+- remove obsolete routes/components/endpoints rather than leaving dead paths behind
+- keep all Sales/Dealer writes compatible with the local backend on `127.0.0.1:8081`
+- for real writes, use unique timestamped test data so validation runs do not collide
 
-**Responsiveness:**
-- Desktop (1366px+) renders correctly
-- Tablet (768px) adapts layout properly
-- Mobile (375px) uses card layouts for tables, single-column forms
-- No horizontal overflow at any breakpoint
-- Sidebar collapses on mobile
+### 6. Verify against the local backend
 
-**Consistency:**
-- Badge styles match other portals
-- Table patterns match other portals
-- Modal/drawer behavior matches other portals
-- Button hierarchy (primary/secondary/ghost/danger) is correct
+Use the local runtime described in `.factory/services.yaml` and `.factory/library/environment.md`.
 
-Each verification = one `interactiveChecks` entry with full action sequence and outcome.
+For any feature that touches API flows:
+- ensure the local backend is running on `127.0.0.1:8081`
+- verify real request paths and status codes in the browser
+- confirm no retired or non-canonical endpoints are called when the contract forbids them
 
-### 7. Run Validators
+### 7. Manual browser verification is mandatory
 
+Use `agent-browser` after implementation.
+
+Verify at minimum:
+- desktop width (~1366px)
+- tablet width (~768px)
+- mobile width (~375px)
+
+Check all of the following:
+- no icons/emojis/orchestrator branding in the touched Sales/Dealer surface
+- no horizontal overflow
+- loading / empty / blocked / error states look intentional
+- correct route ownership and role boundaries
+- real backend reads/writes succeed where the feature requires them
+- console stays clean
+
+### 8. Run validators before finishing
+
+Run fast targeted checks during iteration, then the relevant broader checks before handoff.
+
+Typical commands:
 ```bash
-cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend
-npx tsc --noEmit          # Must pass clean
-bun run test --run        # Must pass
+bun run typecheck
+bun run lint
+bunx vitest run <targeted test files> --reporter=verbose
 ```
 
-### 8. Commit
+When shell/auth/route contracts change, also run the relevant Playwright journeys with the local validation env loaded and `--workers=1`.
 
-- Small, logical commits
-- Format: `fix(portal): description` or `feat(portal): description`
-- Stage only files you changed
+### 9. Figma publish when the feature requires it
+
+If the feature description asks for Figma publishing:
+- publish the implemented Sales/Dealer screens to a new Figma draft file using the available Figma tools
+- return the created Figma URL or file key in the handoff
+- do not treat Figma publish as a substitute for local validation
 
 ## Example Handoff
 
 ```json
 {
-  "salientSummary": "Fixed credit request API paths in salesApi.ts from /sales/credit-requests to /credit/limit-requests, redesigned SalesCreditRequestsPage with frontend-skill for clean visual hierarchy, added mobile card renderer, verified all flows end-to-end with agent-browser at 3 breakpoints.",
-  "whatWasImplemented": "Corrected 4 API endpoint paths for credit limit requests (list, create, approve, reject) to match backend /credit/limit-requests. Updated TypeScript types to match backend CreditLimitRequestDto. Redesigned page layout using frontend-skill guidance — clean stat cards, consistent Badge usage, proper empty state. Added responsive mobile card layout. Added toast feedback for approve/reject. Added confirmation dialog for reject action.",
+  "salientSummary": "Unified the Sales and Dealer shells into the same text-first layout system, removed icon-based nav and non-canonical shell entries, fixed Playwright auth selectors for the current login form, and verified local login plus canonical route access on desktop/tablet/mobile.",
+  "whatWasImplemented": "Updated the shared Sales/Dealer shell structure to remove Lucide-based nav rendering, cleaned command palette and drawer entries, aligned auth/bootstrap flows to the local backend on 127.0.0.1:8081, and repaired stale Playwright helpers to use the current login labels and canonical route targets. Removed dealer-profile shell affordances and legacy Sales shell entries for non-canonical routes.",
   "whatWasLeftUndone": "",
   "verification": {
     "commandsRun": [
-      {"command": "npx tsc --noEmit", "exitCode": 0, "observation": "No type errors"},
-      {"command": "bun run test --run", "exitCode": 0, "observation": "14 tests passed"},
-      {"command": "curl -s -X POST http://localhost:3002/api/v1/auth/login -H 'Content-Type: application/json' -d '{...}' | head -c 80", "exitCode": 0, "observation": "Login successful"}
+      {
+        "command": "bun run typecheck",
+        "exitCode": 0,
+        "observation": "TypeScript passed after route and shell updates."
+      },
+      {
+        "command": "bun run lint",
+        "exitCode": 0,
+        "observation": "Lint passed with no new warnings."
+      },
+      {
+        "command": "bunx vitest run src/lib/__tests__/portal-routing.test.ts src/pages/auth/__tests__/LoginPage.test.tsx --reporter=verbose",
+        "exitCode": 0,
+        "observation": "Targeted auth and routing tests passed."
+      },
+      {
+        "command": ". ./.env.validation.local && bunx playwright test tests/e2e/auth-navigation.spec.ts tests/e2e/dealer-sales-mobile.spec.ts --workers=1",
+        "exitCode": 0,
+        "observation": "Playwright verified login, shell navigation, and mobile drawer behavior against the local backend."
+      }
     ],
     "interactiveChecks": [
-      {"action": "Navigated to /sales/credit-requests at 1366px with sales user", "observed": "Page loads with DataTable showing credit requests. Stat cards show pending/approved/rejected counts. Badge styles consistent with other portals. No console errors."},
-      {"action": "Created new credit request, verified form validation and submission", "observed": "Form requires amount and reason. POST goes to /credit/limit-requests (correct). Success toast shown. Table refreshes."},
-      {"action": "Resized to 768px tablet width", "observed": "Layout adapts. Table still readable. Sidebar collapsed to hamburger. No overflow."},
-      {"action": "Resized to 375px mobile width", "observed": "DataTable switches to card layout. Each card shows dealer, amount, status badge. Touch targets 44px+. No horizontal scroll."},
-      {"action": "Tested empty state by filtering to no results", "observed": "EmptyState component renders with icon, message, and 'Create Request' CTA."},
-      {"action": "Tested dark mode toggle", "observed": "All colors switch correctly. No hardcoded hex visible. Badges, cards, table all use CSS variables."}
+      {
+        "action": "Logged in as Sales, opened /sales/dashboard at 1366px, 768px, and 375px",
+        "observed": "Shell stayed text-first with no icons or emojis, active state and spacing remained consistent, and there was no horizontal overflow."
+      },
+      {
+        "action": "Logged in as Dealer and opened /dealer/invoices plus /dealer/support on desktop and mobile",
+        "observed": "Dealer shell showed only canonical entries, /dealer/profile affordances were gone, and the mobile drawer closed automatically after route changes."
+      },
+      {
+        "action": "Inspected browser network while loading protected routes",
+        "observed": "Bootstrap used GET /api/v1/auth/me and tenant requests used X-Company-Code only; no calls to /api/v1/auth/profile or X-Company-Id were observed."
+      }
     ]
   },
   "tests": {
     "added": [
-      {"file": "src/pages/sales/__tests__/SalesCreditRequestsPage.test.tsx", "cases": [
-        {"name": "renders credit requests table", "verifies": "DataTable renders with correct columns"},
-        {"name": "creates new credit request", "verifies": "Form calls /credit/limit-requests POST"},
-        {"name": "shows empty state", "verifies": "EmptyState renders when no data"},
-        {"name": "responsive mobile layout", "verifies": "Card renderer active at narrow width"}
-      ]}
+      {
+        "file": "tests/e2e/auth-navigation.spec.ts",
+        "cases": [
+          {
+            "name": "sales user lands in canonical sales shell",
+            "verifies": "Single-portal Sales login bypasses hub and restores allowed deep links."
+          },
+          {
+            "name": "dealer user cannot reach sales shell",
+            "verifies": "Cross-portal isolation stays fail-closed."
+          }
+        ]
+      },
+      {
+        "file": "src/lib/__tests__/portal-routing.test.ts",
+        "cases": [
+          {
+            "name": "dealer access remains dealer-only",
+            "verifies": "Route ownership stays aligned with portal roles."
+          }
+        ]
+      }
     ]
   },
   "discoveredIssues": []
@@ -159,10 +214,10 @@ bun run test --run        # Must pass
 
 ## When to Return to Orchestrator
 
-- Backend endpoint does not exist or returns unexpected shape not in api-mismatches.md
-- Feature requires changes to multiple portals simultaneously (scope too broad)
-- RBAC boundary unclear — cannot determine which roles should see what
-- Backend returns 500 errors consistently (backend bug)
-- Feature depends on HR/Payroll module (on hold — do not implement)
-- Design system component needed but doesn't exist and is too complex to create inline
-- Any backend contract confusion that reading the controller code doesn't resolve
+Return to the orchestrator if any of these happens:
+- canonical docs and the live backend disagree about route ownership or endpoint family
+- the feature needs backend code changes or schema changes
+- the local backend reset/runtime is unavailable or broken
+- the feature would require modifying other portals beyond a minimal shared shell dependency
+- a required canonical endpoint is missing and there is no approved fallback contract
+- Figma publishing is required but blocked by auth, plan access, or tool failure

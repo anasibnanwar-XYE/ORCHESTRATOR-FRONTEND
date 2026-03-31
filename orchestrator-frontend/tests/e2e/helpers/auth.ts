@@ -31,7 +31,12 @@ export type ValidationRole =
   | 'factory'
   | 'dealer'
   | 'rival_admin'
-  | 'rival_dealer';
+  | 'rival_dealer'
+  | 'mfa_admin'
+  | 'mustchange_admin'
+  | 'locked_admin'
+  | 'hold_admin'
+  | 'blocked_admin';
 
 /**
  * Company codes for each validation role.
@@ -46,6 +51,11 @@ const COMPANY_CODE_BY_ROLE: Record<ValidationRole, string> = {
   dealer: 'MOCK',
   rival_admin: 'RIVAL',
   rival_dealer: 'RIVAL',
+  mfa_admin: 'MOCK',
+  mustchange_admin: 'MOCK',
+  locked_admin: 'MOCK',
+  hold_admin: 'MOCK',
+  blocked_admin: 'MOCK',
 };
 
 /**
@@ -61,6 +71,11 @@ const EMAIL_ENV_BY_ROLE: Record<ValidationRole, string> = {
   dealer: 'VALIDATION_DEALER_EMAIL',
   rival_admin: 'VALIDATION_RIVAL_ADMIN_EMAIL',
   rival_dealer: 'VALIDATION_RIVAL_DEALER_EMAIL',
+  mfa_admin: 'VALIDATION_MFA_ADMIN_EMAIL',
+  mustchange_admin: 'VALIDATION_MUSTCHANGE_ADMIN_EMAIL',
+  locked_admin: 'VALIDATION_LOCKED_ADMIN_EMAIL',
+  hold_admin: 'VALIDATION_HOLD_ADMIN_EMAIL',
+  blocked_admin: 'VALIDATION_BLOCKED_ADMIN_EMAIL',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -80,10 +80,10 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://100.109.241.47:8081',
+        target: 'http://127.0.0.1:8081',
         changeOrigin: true,
         headers: {
-          Origin: 'http://100.109.241.47:8081',
+          Origin: 'http://127.0.0.1:8081',
         },
       },
     },

@@ -1,47 +1,105 @@
 # Environment
 
-## Backend Services (Docker - DO NOT MODIFY)
+Environment variables, local runtime details, external dependencies, and setup notes for the Sales + Dealer mission.
 
-| Service | Port | Container |
-|---|---|---|
-| Spring Boot API | localhost:8081 | erp_domain_app |
-| PostgreSQL | localhost:5433 | erp_db |
-| RabbitMQ | localhost:5672 (AMQP), 15672 (mgmt) | erp_rabbit |
-| MailHog | localhost:1025 (SMTP), 8025 (UI) | erp_mailhog |
+**What belongs here:** runtime locations, ports, local env files, validation actors, backend startup/reset notes, platform quirks.
+**What does NOT belong here:** feature decomposition, acceptance assertions, or service orchestration logic beyond quick reference.
 
-## Frontend Dev Server
+---
 
-- Port: 3002
-- Vite proxy: `/api` -> `http://localhost:8081`
-- Package manager: bun 1.3.5
-- Runtime: React 18 + TypeScript 5 + Vite 5 + Tailwind 3
+## Mission Runtime
 
-## Test Accounts
+- Frontend repo: `/Users/anas/Documents/New project 5/orchestrator-frontend`
+- Backend repo: `/Users/anas/Documents/FACTORY/bigbrightpaints-erp`
+- Canonical docs root: `/Users/anas/Documents/FACTORY/bigbrightpaints-erp/docs`
+- Frontend app URL: `http://127.0.0.1:3002`
+- Local backend app URL: `http://127.0.0.1:8081`
+- Local backend management URL: `http://127.0.0.1:9090`
 
-All passwords: `Validation1!cc18570e52fe48dd`
+## Local Runtime Ports
 
-| Role | Email | Company Code |
-|---|---|---|
-| Admin | validation.admin@example.com | MOCK |
-| Accounting | validation.accounting@example.com | MOCK |
-| Sales | validation.sales@example.com | MOCK |
-| Factory | validation.factory@example.com | MOCK |
-| Dealer | validation.dealer@example.com | MOCK |
-| Superadmin | validation.superadmin@example.com | SKE |
+- Frontend dev server: `3002`
+- Backend app: `8081`
+- Backend management: `9090`
+- Postgres: `5433`
+- RabbitMQ: `5672`
+- RabbitMQ management: `15672`
+- MailHog SMTP: `1025`
+- MailHog UI: `8025`
 
-## Machine Resources
+Avoid unrelated local ports already in use during planning: `5000`, `5173`, `7000`.
 
-- 16 CPU cores
-- 15GB RAM (11GB available)
-- Ubuntu Linux
+## Validation Environment File
 
-## Commands
+Use the gitignored file:
 
-- Install: `bun install`
-- Dev server: `bun run dev`
-- Build: `bun run build`
-- Typecheck: `npx tsc --noEmit`
-- Lint: `bun run lint`
-- Unit tests: `bun run test`
-- E2E tests: `bun run test:e2e`
-- Electron dev: `bun run electron:dev`
+- `/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local`
+
+This file stores local validation emails and the shared validation password. It is intentionally not committed. Workers and validators should source it when running Playwright or any browser automation that needs credentials.
+
+### Expected variables
+
+- `VALIDATION_SHARED_PASSWORD`
+- `VALIDATION_SUPERADMIN_EMAIL`
+- `VALIDATION_ADMIN_EMAIL`
+- `VALIDATION_ACCOUNTING_EMAIL`
+- `VALIDATION_SALES_EMAIL`
+- `VALIDATION_FACTORY_EMAIL`
+- `VALIDATION_DEALER_EMAIL`
+- `VALIDATION_RIVAL_ADMIN_EMAIL`
+- `VALIDATION_RIVAL_DEALER_EMAIL`
+- `VALIDATION_MFA_ADMIN_EMAIL`
+- `VALIDATION_MUSTCHANGE_ADMIN_EMAIL`
+- `VALIDATION_LOCKED_ADMIN_EMAIL`
+- `VALIDATION_HOLD_ADMIN_EMAIL`
+- `VALIDATION_BLOCKED_ADMIN_EMAIL`
+
+### Company scopes used in validation
+
+- `SKE`: platform/superadmin validation scope
+- `MOCK`: main tenant validation scope for admin, accounting, sales, factory, dealer
+- `RIVAL`: cross-tenant isolation fixtures
+
+## Backend Startup / Reset
+
+Preferred local backend reset/runtime command:
+
+```bash
+. "/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local" && \
+ERP_VALIDATION_SEED_PASSWORD="$VALIDATION_SHARED_PASSWORD" \
+ERP_SEED_MOCK_ADMIN_PASSWORD="$VALIDATION_SHARED_PASSWORD" \
+bash "/Users/anas/Documents/FACTORY/bigbrightpaints-erp/scripts/reset_final_validation_runtime.sh"
+```
+
+What this does:
+- resets and reseeds the local Colima-backed Docker runtime
+- starts app on `8081`
+- starts management on `9090`
+- starts db/rabbit/mailhog on their local ports
+- provisions deterministic validation actors and fixtures
+
+## Readiness Notes
+
+Use the app port, not actuator alone, as the primary readiness signal:
+
+```bash
+curl -i http://127.0.0.1:8081/api/v1/auth/me
+```
+
+Expected ready-state response without auth: `401` or `403`.
+
+The management port may report `DOWN` even when the application is usable for frontend validation. Treat `9090` as supporting evidence only.
+
+## CORS / Proxy Notes
+
+- For this mission, the frontend should proxy `/api` to `http://127.0.0.1:8081`
+- `X-Company-Code` is the canonical tenant header
+- `X-Company-Id` is legacy drift and should be removed from Sales + Dealer flows
+
+## Data Safety
+
+Realistic writes are allowed on validation actors, but workers must:
+- keep writes minimal
+- use unique names/references for created dealers, orders, support tickets, and credit requests
+- avoid mutating non-validation users or other tenants
+- never commit secrets from `.env.validation.local`

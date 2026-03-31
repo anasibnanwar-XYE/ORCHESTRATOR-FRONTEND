@@ -1,22 +1,22 @@
 commands:
-  install: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun install
-  typecheck: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && npx tsc --noEmit
-  build: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run build
-  test: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run test --run
-  lint: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run lint
-  test:e2e: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run test:e2e
+  install: bun install
+  typecheck: bun run typecheck
+  build: bun run build
+  test: bun run test
+  lint: bun run lint
+  test:e2e: . "/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local" && bun run test:e2e
 
 services:
   backend:
-    start: echo "Backend is managed by Docker - do NOT start/stop"
-    stop: echo "Backend is managed by Docker - do NOT stop"
-    healthcheck: curl -sf http://localhost:8081/api/v1/auth/me -o /dev/null -w '%{http_code}' | grep -q '401\|403'
+    start: . "/Users/anas/Documents/New project 5/orchestrator-frontend/.env.validation.local" && ERP_VALIDATION_SEED_PASSWORD="$VALIDATION_SHARED_PASSWORD" ERP_SEED_MOCK_ADMIN_PASSWORD="$VALIDATION_SHARED_PASSWORD" bash "/Users/anas/Documents/FACTORY/bigbrightpaints-erp/scripts/reset_final_validation_runtime.sh"
+    stop: docker rm -f erp_domain_app erp_db erp_rabbit erp_mailhog >/dev/null 2>&1 || true
+    healthcheck: sh -c 'status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8081/api/v1/auth/me); [ "$status" = "401" ] || [ "$status" = "403" ]'
     port: 8081
     depends_on: []
 
   frontend:
-    start: cd /home/realnigga/ORCHESTRATOR-FRONTEND-MISSION/orchestrator-frontend && bun run dev &
-    stop: lsof -ti :3002 | xargs kill -9 2>/dev/null || true
-    healthcheck: curl -sf http://localhost:3002 -o /dev/null
+    start: bunx vite --port 3002 --host 127.0.0.1
+    stop: sh -c 'pids=$(lsof -ti :3002); [ -z "$pids" ] || kill $pids'
+    healthcheck: curl -sf http://127.0.0.1:3002 >/dev/null
     port: 3002
     depends_on: [backend]

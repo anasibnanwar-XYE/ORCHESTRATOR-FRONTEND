@@ -2,7 +2,7 @@
  * Tests for src/lib/api.ts
  *
  * Covers:
- *  - Header injection: Authorization, X-Company-Code, X-Company-Id
+ *  - Header injection: Authorization, X-Company-Code (X-Company-Id removed)
  *  - Idempotency-Key generation for mutation methods
  *  - Public routes skip auth headers
  *  - 401 triggers token refresh (deduplicated)
@@ -11,6 +11,7 @@
  *  - isApiError() helper
  *  - getErrorCode() helper
  *  - getRawErrorMessage() helper
+ *  - X-Company-Id is NOT injected on any request (legacy drift removed)
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -296,7 +297,8 @@ describe('apiRequest interceptors', () => {
       const calledConfig = adapter.mock.calls[0][0] as { headers: Record<string, string> };
       expect(calledConfig.headers['Authorization']).toBe('Bearer test-access-token');
       expect(calledConfig.headers['X-Company-Code']).toBe('ORCH');
-      expect(calledConfig.headers['X-Company-Id']).toBe('42');
+      // X-Company-Id is legacy drift and must NOT be injected (VAL-SHELL-001, VAL-SHELL-010)
+      expect(calledConfig.headers['X-Company-Id']).toBeUndefined();
     }
   });
 
@@ -470,5 +472,100 @@ describe('public routes', () => {
         expect(capturedHeaders['X-Company-Id']).toBeUndefined();
       }
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// X-Company-Id removal — VAL-SHELL-001 / VAL-SHELL-010
+// Legacy drift header must not appear on any request, even when the storage key
+// still holds a value (kept for backward-compatible session hydration).
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('X-Company-Id header removal (VAL-SHELL-001, VAL-SHELL-010)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    seedSession(); // seeds COMPANY_ID = '42' — header must still NOT be injected
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  const protectedPaths = [
+    '/sales/orders',
+    '/sales/dealers',
+    '/sales/dashboard',
+    '/dealer-portal/orders',
+    '/dealer-portal/invoices',
+    '/dealer-portal/dashboard',
+    '/auth/me',
+    '/admin/users',
+  ];
+
+  protectedPaths.forEach((path) => {
+    it(`does NOT send X-Company-Id on GET ${path}`, async () => {
+      let capturedHeaders: Record<string, string> | undefined;
+
+      const adapter = vi.fn(async (config: { headers: Record<string, string> }) => {
+        capturedHeaders = config.headers;
+        return {
+          data: { success: true, message: 'OK', data: {}, timestamp: '' },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        };
+      });
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (apiRequest as any).defaults.adapter = adapter;
+        await apiRequest.get(path);
+      } catch {
+        // may throw
+      } finally {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (apiRequest as any).defaults.adapter;
+      }
+
+      if (capturedHeaders) {
+        // X-Company-Code should still be present
+        expect(capturedHeaders['X-Company-Code']).toBe('ORCH');
+        // X-Company-Id must NOT be present — legacy drift removed
+        expect(capturedHeaders['X-Company-Id']).toBeUndefined();
+      }
+    });
+  });
+
+  it('does NOT send X-Company-Id on POST mutations', async () => {
+    let capturedHeaders: Record<string, string> | undefined;
+
+    const adapter = vi.fn(async (config: { headers: Record<string, string> }) => {
+      capturedHeaders = config.headers;
+      return {
+        data: { success: true, message: 'OK', data: {}, timestamp: '' },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      };
+    });
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (apiRequest as any).defaults.adapter = adapter;
+      await apiRequest.post('/sales/orders', { dealerId: '123' });
+    } catch {
+      // may throw
+    } finally {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (apiRequest as any).defaults.adapter;
+    }
+
+    if (capturedHeaders) {
+      expect(capturedHeaders['X-Company-Code']).toBe('ORCH');
+      expect(capturedHeaders['X-Company-Id']).toBeUndefined();
+    }
   });
 });

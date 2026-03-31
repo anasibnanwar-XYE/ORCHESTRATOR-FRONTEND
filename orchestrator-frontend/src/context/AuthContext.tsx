@@ -164,7 +164,6 @@ function sendKeepaliveRequest(): void {
     headers: {
       Authorization: `Bearer ${token}`,
       'X-Company-Code': localStorage.getItem(STORAGE_KEYS.COMPANY_CODE) ?? '',
-      'X-Company-Id': localStorage.getItem(STORAGE_KEYS.COMPANY_ID) ?? '',
     },
     keepalive: true,
   }).catch(() => {
