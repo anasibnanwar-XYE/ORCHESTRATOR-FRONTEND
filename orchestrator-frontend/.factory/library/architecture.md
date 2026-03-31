@@ -74,6 +74,10 @@ Shared components in `src/components/ui/`:
 
 CSS variables define colors, spacing, shadows, border-radius in `styles/variables.css`. Dark mode switches variables via `.dark` class on html.
 
+**Link styling:** Use the `.link-color` CSS utility class (defined in `global.css`) for semantic link styling with hover states. It uses both `--color-link` and `--color-link-hover` tokens. Do not use inline `style={{ color: 'var(--color-link)' }}` patterns.
+
+**RoleSelector in modals:** The RoleSelector component uses `<div role='checkbox'>` instead of native checkboxes to avoid Modal focus-trap interference. When creating custom interactive elements inside modals, avoid native form elements that the Modal focus trap might capture.
+
 ## Data Flow
 
 1. Pages call API functions from `src/lib/`

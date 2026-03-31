@@ -1,0 +1,38 @@
+{
+  "featureId": "approvals-e2e-polish",
+  "reviewedAt": "2026-03-31T12:00:00.000Z",
+  "commitId": "01bd676",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Solid implementation covering all VAL-APPR requirements. Payroll exclusion, epoch date handling, responsive cards, reason validation, empty state, and all approve/reject flows are correctly implemented. Minor observation: approveEndpoint/rejectEndpoint from item payload are documented in comments but not used at runtime — the implementation routes via hardcoded switch statements against adminApi methods instead. This is a non-blocking concern because the adminApi methods already map to the correct backend endpoints, and the payload endpoints serve as documentation only.",
+    "issues": [
+      {
+        "file": "src/pages/admin/ApprovalsPage.tsx",
+        "line": 10,
+        "severity": "non_blocking",
+        "description": "Comment says 'Uses approveEndpoint/rejectEndpoint from item payload when available' but the implementation never actually reads item.approveEndpoint or item.rejectEndpoint. Instead, handleConfirm dispatches via a hardcoded switch on item.originType. This is functionally correct because adminApi methods map to the right endpoints, but the comment is misleading. If the backend ever changes endpoint paths, the switch-based routing won't adapt dynamically."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Backend returns createdAt as Unix epoch seconds (number with decimal, e.g. 1774911623.498897) rather than ISO string for approval items. This pattern may apply to other endpoints too. The formatDate helper in ApprovalsPage handles both string|number, but this could be a reusable utility if other pages encounter the same issue.",
+      "evidence": "src/pages/admin/ApprovalsPage.tsx:78-86 — formatDate handles number via `new Date(dateValue * 1000)`. The ApprovalItem.createdAt type was updated to `string | number` in src/types/index.ts."
+    },
+    {
+      "area": "conventions",
+      "observation": "The normalizeApprovals function spreads specific bucket arrays (creditRequests, periodCloseRequests, exportRequests) and excludes payrollRuns. This exclusion is done at the normalization layer rather than at the type level. If other pages need to process approval data without payroll, this filtering logic would need to be duplicated.",
+      "evidence": "src/pages/admin/ApprovalsPage.tsx:33-38 — payrollRuns removed from spread list with comment 'Exclude payrollRuns — HR/Payroll is out of scope'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "Credit override approve/reject (adminApi.approveCreditOverride / rejectCreditOverride) do not pass a reason parameter — they only take an id. This differs from credit request and export flows which all pass { reason } or { note }. This is a backend API design inconsistency worth documenting.",
+      "evidence": "src/pages/admin/ApprovalsPage.tsx:290-291 — case 'CREDIT_LIMIT_OVERRIDE_REQUEST': await adminApi.approveCreditOverride(item.id) — no reason argument. Compare to line 287: await adminApi.approveCreditRequest(item.id, { reason })."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "ApprovalsPage E2E polish is well-implemented. All 8 VAL-APPR requirements are covered: grouped approvals load from GET /admin/approvals with payroll excluded, credit/export/period-close approve/reject flows work with correct HTTP methods (POST/PUT) and reason validation, empty state renders when no pending items, cards are responsive at 375px, and epoch dates are formatted correctly. The 23 tests cover all VAL-APPR scenarios comprehensively. The only observation is that approveEndpoint/rejectEndpoint from the item payload are documented in a comment but not actually consumed at runtime — the implementation uses switch-based routing instead, which is functionally equivalent but doesn't dynamically adapt to endpoint changes in the payload."
+}

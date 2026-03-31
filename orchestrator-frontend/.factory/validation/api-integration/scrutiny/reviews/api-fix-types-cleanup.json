@@ -1,0 +1,33 @@
+{
+  "featureId": "api-fix-types-cleanup",
+  "reviewedAt": "2026-03-31T04:00:00.000Z",
+  "commitId": "95cf2cd",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Clean, well-scoped type consolidation commit that correctly addresses all four requirements: (1) SupportTicket with id:string removed and replaced with type alias to SupportTicketResponse (id:number), (2) LedgerEntry, FinanceInvoice, AgingBucket, FinanceAging, CreateTicketRequest moved from inline in adminApi.ts to src/types/index.ts, (3) MfaVerifyRequest dead type removed (replaced with explanatory comment), (4) Optional priority field properly handled throughout SupportTicketsPage. The backward-compatibility alias `export type SupportTicket = SupportTicketResponse` ensures existing imports (e.g., superadminApi.ts) continue to work. Internal API-response-shape interfaces (LedgerApiEntry, LedgerApiResponse, etc.) remain correctly local to adminApi.ts as they are raw backend mappers, not canonical types.",
+    "issues": [
+      {
+        "file": "orchestrator-frontend/src/pages/admin/SupportTicketsPage.tsx",
+        "line": 34,
+        "severity": "non_blocking",
+        "description": "Local `type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'` is redefined inline instead of importing the canonical `TicketPriority` from @/types (which now resolves to `NonNullable<SupportTicketResponse['priority']>` = the same union). Not a bug (values are identical), but a missed consolidation opportunity — two definitions of the same type exist."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md mentions 'API functions live in src/lib/adminApi.ts' but does not document the convention that canonical types should live in src/types/index.ts with re-exports from API files for backward compatibility. The worker followed this pattern correctly, but it's not written down anywhere for future workers.",
+      "evidence": "adminApi.ts line 688: `export type { ... } from '@/types'` — re-export pattern. FinanceSupportPage.tsx and SupportTicketsPage.tsx now import from '@/types' directly. AGENTS.md only says 'API functions live in src/lib/' without type guidance."
+    },
+    {
+      "area": "knowledge",
+      "observation": "There are now two similarly-named but distinct types: `AgingBucket` (admin finance, simple bucket with label/fromDays/toDays/amount) and `AgingBuckets` (accounting, record with current/1-30/31-60/61-90/90plus fields). There's also `AgingBucketDto` in the client models and types/index.ts. This naming collision could confuse future workers.",
+      "evidence": "src/types/index.ts:603 has AgingBucketDto, line 611 has AgingBuckets, line 2121 has AgingBucket. All three serve different purposes but the names are very similar."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The commit cleanly consolidates all duplicate and conflicting TypeScript types as specified. SupportTicket is now an alias to SupportTicketResponse (id:number), inline types are moved to src/types/index.ts, MfaVerifyRequest is removed, and optional priority is handled correctly. TypeScript typecheck passes clean, all tests pass. One minor non-blocking issue: SupportTicketsPage redefines TicketPriority locally instead of using the canonical export from @/types. The worker made reasonable deviations from the skill (skipping TDD and browser verification) since this was a pure type-level refactoring with no runtime or UI changes."
+}

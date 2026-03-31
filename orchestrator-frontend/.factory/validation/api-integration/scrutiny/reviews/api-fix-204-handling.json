@@ -1,0 +1,26 @@
+{
+  "featureId": "api-fix-204-handling",
+  "reviewedAt": "2026-03-31T11:10:00.000Z",
+  "commitId": "9a1185d",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly fixes all four 204 No Content API functions (deleteUser, suspendUser, unsuspendUser, disableUserMfa) in adminApi.ts by removing JSON body parsing and relying on axios's default behavior of throwing on non-2xx status codes. The auth logout in authApi.ts was already correctly handling 204 via `apiRequest.post<void>` without checking response.data.success. UsersPage handlers already used try/catch patterns that work seamlessly with the void-returning functions, requiring no changes. The 12 new unit tests comprehensively cover all four methods with three test cases each: void return on 204, no response.data.success access, and error propagation on non-2xx.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md already documents the 204 endpoint pattern correctly: 'For 204 endpoints (delete, suspend, unsuspend, mfa/disable): check HTTP status, NOT response.data.success'. The worker followed this convention, though the implementation takes an even simpler approach — just `await apiRequest.patch(url)` without explicitly checking status at all, relying on axios to throw on non-2xx. This is valid and arguably cleaner than checking status explicitly.",
+      "evidence": "AGENTS.md 'API Integration' section vs adminApi.ts:159-185 where the four functions simply await the request"
+    },
+    {
+      "area": "skills",
+      "observation": "The frontend-worker SKILL.md example handoff section still shows the older pattern of 'checking response.status < 300' for 204 endpoints. The worker's actual implementation uses the simpler `await apiRequest.patch(url)` approach (no status check). The skill example could be updated to reflect the simpler pattern, but this is a non-blocking documentation discrepancy since the skill's guidance is still technically correct (just more verbose than necessary).",
+      "evidence": "SKILL.md example handoff mentions 'check response.status < 300' but the actual implementation in adminApi.ts just does `await apiRequest.patch(url)` without any status check"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. Clean, focused fix that correctly handles 204 No Content responses for all four admin API functions. The implementation is minimal and correct — each function simply awaits the request without parsing the response body, relying on axios to throw on non-2xx errors. Auth logout was already correctly handled. UsersPage handlers required no changes since they already used try/catch patterns. 12 new unit tests provide comprehensive coverage. The worker followed procedure, verified via agent-browser (suspend→unsuspend E2E), and all validators passed."
+}

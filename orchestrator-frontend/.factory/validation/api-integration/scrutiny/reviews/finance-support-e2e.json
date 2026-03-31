@@ -1,0 +1,38 @@
+{
+  "featureId": "finance-support-e2e",
+  "reviewedAt": "2026-03-31T04:30:00.000Z",
+  "commitId": "485fcb2",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation solidly covers the feature requirements: Math.random() key bug fixed with deterministic composite key, dealer loading handles both array and PageResponse shapes, all three finance API endpoints (ledger, invoices, aging) now properly normalize backend response shapes (date arrays→strings, memo→description, runningBalance→balance, wrapped invoice objects, aging key/value maps→structured arrays). StatCards use the unified component. Empty state, dealer selector with search/filter, and three tabs with data loading all work correctly. Interactive verification by the worker confirmed all flows end-to-end.",
+    "issues": [
+      {
+        "file": "src/pages/admin/FinanceSupportPage.tsx",
+        "line": 612,
+        "severity": "non_blocking",
+        "description": "Click-outside handler for dealer dropdown is a dead no-op: the handleClick function checks `!target.closest('.dealer-selector')` but the body is an empty comment `// Close any open dropdowns` — it never actually sets isOpen to false via state. The dropdown only closes when a dealer is selected. Users cannot dismiss the dropdown by clicking outside. This is a UX issue but not blocking since the dropdown is still usable via dealer selection."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Backend returns dates as `[year, month, day]` integer arrays (Java LocalDate serialization) rather than ISO strings. The worker had to build a `normaliseDateField()` helper to handle this. This is a recurring pattern — other pages may encounter the same issue. This should be documented in `.factory/library/api-mismatches.md` under a new section for data format mismatches.",
+      "evidence": "adminApi.ts `normaliseDateField()` function and `LedgerApiEntry.date: number[] | string` type — the backend serializes LocalDate as [2026, 3, 20] arrays"
+    },
+    {
+      "area": "knowledge",
+      "observation": "Backend finance endpoints return data in nested/wrapped objects rather than flat arrays: ledger returns `{ entries: [...] }` (not flat array), invoices returns `{ invoices: [...] }` (not flat array), aging returns `{ agingBuckets: { '1-30 days': 8407.50 } }` as a key/value map (not structured AgingBucket[]). The worker had to write response-shape normalization for all three endpoints. This should be documented in `api-mismatches.md` under Response Shape Mismatches.",
+      "evidence": "adminApi.ts lines 560-640: LedgerApiResponse, InvoicesApiResponse, AgingApiResponse interfaces and parseAgingBuckets() mapping function"
+    },
+    {
+      "area": "conventions",
+      "observation": "The `parseAgingBuckets()` function uses a hardcoded mapping of known bucket key names ('current', '1-30 days', '31-60 days', etc.). If the backend adds or changes bucket names, the mapping would silently drop data. This is an acceptable pragmatic choice for now but could be noted as a fragility point.",
+      "evidence": "adminApi.ts `parseAgingBuckets()`: the `mapping` array defines exact key-to-label translations, with `.filter((m) => m.key in buckets)` silently ignoring unknown keys"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The finance-support-e2e feature is well-implemented. The Math.random() key bug is fixed, all three finance API endpoints properly normalize backend response shapes (date arrays, nested objects, key/value aging maps), dealer loading handles both response formats, and the unified StatCard component is used throughout. All 17 tests pass including a static analysis test for Math.random(). One non-blocking UX issue: the click-outside dropdown handler is a no-op (doesn't actually close the dropdown). The worker discovered important backend serialization quirks (LocalDate as integer arrays, nested response wrappers, key/value aging maps) that should be documented in the shared knowledge library."
+}

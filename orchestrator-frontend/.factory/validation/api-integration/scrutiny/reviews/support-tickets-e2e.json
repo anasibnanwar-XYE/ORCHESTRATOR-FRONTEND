@@ -1,0 +1,49 @@
+{
+  "featureId": "support-tickets-e2e",
+  "reviewedAt": "2026-03-31T05:30:00.000Z",
+  "commitId": "a59f26b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation thoroughly covers all feature requirements: color-coded stat cards (Open=info, In Progress=warning, Resolved=success) via new StatCard variant/labelColor props, epoch date formatting fix, --color-link-hover CSS token wiring, createTicket API payload fix (stripping priority field), and inline error clearing. The StatCard component changes are well-designed with backward compatibility. The formatDate helper robustly handles epoch seconds, epoch milliseconds, and ISO strings. The link-color CSS utility class properly uses both --color-link and --color-link-hover tokens. Tests are comprehensive with 11 StatCard tests and 26 SupportTicketsPage tests covering validation, create flow, detail drawer, and stat card counts. The test for create ticket verifies the API is called with the full form payload including category and priority, while the actual API implementation correctly strips the priority field before sending to the backend — this is fine since the test validates the component's contract (it calls createTicket with the form data) while the API layer handles backend field restrictions independently.",
+    "issues": [
+      {
+        "file": "src/pages/admin/SupportTicketsPage.tsx",
+        "line": 344,
+        "severity": "non_blocking",
+        "description": "GitHub issue link section uses `ticket as unknown as { githubIssueNumber?: number }` and `ticket as unknown as { githubIssueUrl?: string }` type assertions. The SupportTicketResponse type already includes these fields (githubIssueNumber, githubIssueUrl, etc.) at lines 1749-1750 of types/index.ts, so the `as unknown as` casts are unnecessary. This works correctly but is technically a code smell — direct property access would be cleaner and type-safe."
+      },
+      {
+        "file": "src/pages/admin/__tests__/SupportTicketsPage.test.tsx",
+        "line": 506,
+        "severity": "non_blocking",
+        "description": "The create ticket test verifies `adminSupportApi.createTicket` is called with a payload containing `priority: 'MEDIUM'`, but the actual API implementation (adminApi.ts:677) strips the priority field before sending to the backend. This is not a bug — the test correctly verifies the component passes the full form data to the API function, and the API function handles backend contract internally. However, it would be more precise if there were a separate unit test for the API layer confirming the field stripping behavior."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "The worker introduced a `.link-color` CSS utility class in global.css for semantic link styling with hover states. This is a reusable pattern that other pages could benefit from, but it's not documented in AGENTS.md or architecture.md as a project convention. Other pages may still be using inline `style={{ color: 'var(--color-link)' }}` patterns.",
+      "evidence": "src/styles/global.css:99-104 defines .link-color class. Used in SupportTicketsPage.tsx:347 and :593. architecture.md documents CSS variables but doesn't mention this utility pattern."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The backend returns epoch seconds (not milliseconds, not ISO strings) for date fields on support ticket endpoints, despite the TypeScript type declaring `createdAt: string`. The formatDate helper was enhanced to handle epoch seconds, epoch milliseconds, and ISO strings. This backend date format mismatch could affect other pages if they encounter similar epoch-second responses.",
+      "evidence": "SupportTicketsPage.tsx:41-60 — formatDate was rewritten to handle epoch seconds. The handoff notes: 'Date column showed Today, 04:30 am instead of previous 21 Jan 1970. The formatDate function now correctly handles epoch seconds from backend.' The type says `createdAt: string` (types/index.ts:1759) but backend returns numbers."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The backend support ticket creation endpoint (POST /portal/support/tickets) rejects requests with unknown fields like `priority`. The API layer now destructures only `{ subject, category, description }` from the request. This is a backend DTO pattern worth noting for other endpoints that may have similar field restrictions.",
+      "evidence": "adminApi.ts:676-679 — `const { subject, category, description } = request;` strips extra fields. Handoff notes: 'Fixed adminSupportApi.createTicket to strip priority field (backend DTO only accepts subject/category/description)'."
+    },
+    {
+      "area": "skills",
+      "observation": "The worker noted they skipped the frontend-skill invocation since 'changes were primarily data/API fixes rather than visual design work.' The skill says to invoke frontend-skill FIRST for UI work. The worker's assessment seems reasonable given the changes were primarily prop additions, bug fixes, and API integration — but the skill feedback acknowledges this deviation. No skill update needed, but the feedback is useful context.",
+      "evidence": "Handoff skillFeedback.suggestedChanges: 'The frontend-skill invocation was skipped since the changes were primarily data/API fixes rather than visual design work.' skillFeedback.followedProcedure: true"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The support-tickets-e2e feature is well-implemented and covers all requirements. The StatCard variant/labelColor props are cleanly designed with backward compatibility. The epoch date formatting fix is robust (handles seconds, milliseconds, and ISO strings). The --color-link-hover CSS token is properly wired via a reusable .link-color utility class. The createTicket API payload fix correctly strips the priority field. Form validation with inline error clearing improves UX. Tests are comprehensive (37 total across StatCard and SupportTicketsPage). Two minor non-blocking observations: unnecessary `as unknown as` type assertions in the GitHub issue section (the fields already exist on SupportTicketResponse), and the test verifies the component-to-API contract but doesn't test the API-layer field stripping independently."
+}

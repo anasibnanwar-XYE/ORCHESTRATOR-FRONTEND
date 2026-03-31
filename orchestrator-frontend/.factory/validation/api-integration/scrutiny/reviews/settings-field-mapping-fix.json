@@ -1,0 +1,33 @@
+{
+  "featureId": "settings-field-mapping-fix",
+  "reviewedAt": "2026-03-31T05:30:00.000Z",
+  "commitId": "a8595093aa09b97ab15ef69a548ca7a45cc6363a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly remaps SettingsPage fields from the old wrong names to match the backend SystemSettingsDto. General section now sources company data from GET /api/v1/companies instead of the settings API. A clean BooleanField helper component was extracted for reusable boolean display. Tests were rewritten to match the new data shape and cover the new company data sourcing path. One minor observation: the hand-crafted SystemSettings interface includes 2 fields (exportApprovalRequired, platformAuthCode) not present in the auto-generated SystemSettingsDto, but the worker verified these are returned by the actual running backend during manual testing, which is reasonable — the OpenAPI spec may lag behind the deployed backend.",
+    "issues": [
+      {
+        "file": "src/types/index.ts",
+        "line": 1510,
+        "severity": "non_blocking",
+        "description": "SystemSettings interface includes `exportApprovalRequired` and `platformAuthCode` which are not in the auto-generated SystemSettingsDto (src/lib/client/models/SystemSettingsDto.ts has only 8 fields). These fields likely exist in the running backend but not yet in the OpenAPI spec. If the OpenAPI spec is regenerated later, these fields may disappear. Consider adding a comment noting the discrepancy, or confirming with backend team that the OpenAPI spec needs updating."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The auto-generated OpenAPI client (src/lib/client/models/SystemSettingsDto.ts) has 8 fields while the actual running backend returns 10 fields (adding exportApprovalRequired and platformAuthCode). This means the OpenAPI spec is out of date. Other workers consuming the settings endpoint should rely on the hand-crafted SystemSettings type in src/types/index.ts, NOT the generated SystemSettingsDto, until the spec is regenerated.",
+      "evidence": "src/lib/client/models/SystemSettingsDto.ts has 8 fields (allowedOrigins, autoApprovalEnabled, periodLockEnforced, mailEnabled, mailFromAddress, mailBaseUrl, sendCredentials, sendPasswordReset). src/types/index.ts SystemSettings has 10 fields adding exportApprovalRequired and platformAuthCode. Worker's manual verification confirmed all 10 fields are returned by the backend."
+    },
+    {
+      "area": "conventions",
+      "observation": "Pattern established: when the OpenAPI-generated types don't match the running backend, create a hand-crafted type in src/types/index.ts with the correct shape and deprecate the old type aliases for backward compatibility. The worker followed this pattern well (AdminSettings → deprecated alias → SystemSettings).",
+      "evidence": "src/types/index.ts lines 1522-1529: AdminSettings and ExtendedAdminSettings are both typed as aliases to SystemSettings with @deprecated JSDoc tags."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The settings-field-mapping-fix correctly replaces all wrong field names (periodLockEnabled → periodLockEnforced, autoApproveThreshold → autoApprovalEnabled, emailNotifications → mailEnabled, smtpFromEmail → mailFromAddress, corsAllowedOrigins → allowedOrigins, etc.) and sources General section company data from GET /api/v1/companies instead of the settings API. The SystemSettings type matches the backend shape (10 fields, verified via agent-browser). Tests were comprehensively rewritten (19 tests covering all 4 sections, company data sourcing, error handling, boolean display). The deprecated AdminSettings/ExtendedAdminSettings type aliases maintain backward compatibility. One non-blocking note: 2 fields (exportApprovalRequired, platformAuthCode) are not in the auto-generated OpenAPI spec but are confirmed present in the running backend — the OpenAPI spec may need regeneration."
+}

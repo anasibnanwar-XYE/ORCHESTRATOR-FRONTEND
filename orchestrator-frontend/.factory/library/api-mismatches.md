@@ -88,6 +88,37 @@ Critical mismatches discovered during codebase investigation. Workers MUST fix t
 - `ProductionCatalogController` - empty final class (retired)
 - All `/accounting/catalog/**` paths - replaced by `/catalog/**`
 
+## Backend Data Serialization Quirks
+
+### Dates as Integer Arrays (LocalDate)
+Backend serializes Java `LocalDate` as `[year, month, day]` integer arrays rather than ISO strings.
+Example: `[2026, 3, 20]` instead of `"2026-03-20"`.
+The `normaliseDateField()` helper in `adminApi.ts` handles this for finance ledger entries.
+Other pages encountering date arrays should use the same normalization pattern.
+
+### Epoch Seconds (Not Milliseconds)
+Several backend endpoints return timestamps as **epoch seconds** (e.g., `1774911623.498897`) rather than ISO strings.
+Known endpoints: support tickets (`createdAt`), approvals (`createdAt`), users (`lastLoginAt`).
+The TypeScript types often declare these as `string` but the actual backend returns `number`.
+The `formatDate()` helper in SupportTicketsPage and `formatEpoch()` in UsersPage handle this.
+Consider a shared `formatEpochOrISO()` utility if more endpoints exhibit this pattern.
+
+### Nested/Wrapped Response Objects
+Finance endpoints return data in nested wrappers rather than flat arrays:
+- Ledger: `{ entries: [...] }` (not flat array)
+- Invoices: `{ invoices: [...] }` (not flat array)  
+- Aging: `{ agingBuckets: { '1-30 days': 8407.50 } }` (key/value map, not structured array)
+
+### Backend Field Restrictions on POST
+`POST /portal/support/tickets` rejects requests with unknown fields (e.g., `priority`).
+The API layer in `adminApi.ts` strips extra fields before sending.
+Workers should test POST endpoints against the actual backend rather than assuming all form fields are accepted.
+
+### OpenAPI Spec Lag
+The auto-generated OpenAPI client (`src/lib/client/models/`) may be out of date with the running backend.
+Example: `SystemSettingsDto` has 8 fields but backend returns 10 (adds `exportApprovalRequired`, `platformAuthCode`).
+When the generated types don't match reality, use hand-crafted types in `src/types/index.ts` with `@deprecated` aliases for backward compatibility.
+
 ## HR/Payroll - ON HOLD
 
 HR/Payroll module is on hold from the backend side. Do NOT build frontend UI for:

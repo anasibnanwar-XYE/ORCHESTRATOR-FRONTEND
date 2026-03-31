@@ -1,0 +1,81 @@
+{
+  "milestone": "api-integration",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx vitest run src/pages/admin/ src/lib/adminApi.ts src/lib/accountingApi.ts src/types/",
+      "exitCode": 0,
+      "details": "13 test files, 223 tests passed, 0 failed in 2.46s. Full suite times out (>10min) but admin-relevant tests all pass."
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "npx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "bun run lint",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [
+    {
+      "target": "library/api-mismatches.md",
+      "description": "Added Backend Data Serialization Quirks section documenting: LocalDate as integer arrays, epoch seconds timestamps, nested/wrapped response objects for finance, POST field restrictions, and OpenAPI spec lag",
+      "sourceFeature": "multiple (finance-support-e2e, support-tickets-e2e, users-page-e2e-polish, settings-field-mapping-fix)"
+    },
+    {
+      "target": "library/architecture.md",
+      "description": "Added documentation for .link-color CSS utility class convention and RoleSelector focus-trap workaround pattern",
+      "sourceFeature": "support-tickets-e2e"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add convention: canonical TypeScript types should live in src/types/index.ts with backward-compatible re-exports from API files. Document the pattern of hand-crafted types when OpenAPI-generated types don't match the running backend.",
+      "evidence": "api-fix-types-cleanup established this pattern (SupportTicket alias, moved inline types to types/index.ts). Multiple workers followed it but it's not documented in AGENTS.md.",
+      "isSystemic": true
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add note: epoch seconds date format. Backend returns epoch seconds (not milliseconds, not ISO strings) for many date fields (approvals.createdAt, supportTickets.createdAt, users.lastLoginAt) despite TypeScript types declaring `string`. Workers should use formatEpoch/formatDate helpers that handle both number and string inputs.",
+      "evidence": "Discovered by approvals-e2e-polish, support-tickets-e2e, and users-page-e2e-polish independently. Each page created its own helper. A shared utility would prevent rediscovery.",
+      "isSystemic": true
+    },
+    {
+      "target": "frontend-worker skill",
+      "suggestion": "Clarify when frontend-skill invocation is mandatory vs optional. Multiple workers (users-page-e2e-polish, support-tickets-e2e, api-fix-types-cleanup) skipped frontend-skill because their work was code-level polish/API integration rather than visual design. The skill should distinguish 'new UI creation' (mandatory) from 'polish/refactoring/API integration' (optional).",
+      "evidence": "3 out of 8 workers deviated from the skill on this point with consistent justification. Previous page-polish scrutiny also flagged this.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "superadminApi.ts still uses old /audit/business-events endpoint path",
+      "reason": "out-of-scope. This is in the superadmin portal, not the admin portal. The api-fix-audit-trail-endpoints feature was scoped to adminApi.ts and accountingApi.ts only."
+    },
+    {
+      "observation": "Edit modal email field is editable but changes silently discarded (UsersPage)",
+      "reason": "pre-existing issue, not introduced by any api-integration feature. Noted but not actionable for this milestone."
+    },
+    {
+      "observation": "FinanceSupportPage click-outside dropdown handler is a dead no-op",
+      "reason": "non-blocking UX issue. Dropdown closes on selection, which is functional. Should be tracked separately if needed."
+    },
+    {
+      "observation": "ApprovalsPage comment claims to use approveEndpoint/rejectEndpoint from payload but uses switch-based routing instead",
+      "reason": "non-blocking. The switch-based routing is functionally correct and maps to the right adminApi methods. Misleading comment but no functional impact."
+    }
+  ],
+  "previousRound": null
+}

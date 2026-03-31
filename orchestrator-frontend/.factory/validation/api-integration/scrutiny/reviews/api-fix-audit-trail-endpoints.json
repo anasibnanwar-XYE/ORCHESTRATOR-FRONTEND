@@ -1,0 +1,33 @@
+{
+  "featureId": "api-fix-audit-trail-endpoints",
+  "reviewedAt": "2026-03-31T09:30:00.000Z",
+  "commitId": "934f0cd",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The commit correctly updates the three in-scope audit trail endpoint paths (adminApi.ts getBusinessEvents: /audit/business-events → /admin/audit/events, adminApi.ts getAccountingAuditTrail: /accounting/audit-trail → /accounting/audit/events, accountingApi.ts getAuditTrail: /accounting/audit-trail → /accounting/audit/events). Query parameter names are updated correctly (resource → module/status, user → actor). The AuditEventFilters type is updated to use 'module' and 'status' instead of 'resource'. AuditTrailPage.tsx correctly renames userFilter → actorFilter throughout. JSDoc comments are updated to reference canonical endpoints. The superadminApi.ts filter params were also updated (module/status) though its endpoint path was left at /audit/business-events — this appears intentional since superadmin may use a different endpoint scope, but warrants noting.",
+    "issues": [
+      {
+        "file": "src/lib/superadminApi.ts",
+        "line": 289,
+        "severity": "non_blocking",
+        "description": "superadminAuditApi.getBusinessEvents() still uses the old endpoint path `/audit/business-events` while the filter params were updated to use module/status. The feature description only mentions adminApi.ts and accountingApi.ts, so this is out of scope, but the SuperadminAuditTrailPage.tsx JSDoc still references GET /api/v1/audit/business-events. If the backend canonical endpoint is /admin/audit/events for all business events, the superadmin API might also need updating — or it may intentionally use a different endpoint (e.g., superadmin-specific). This should be verified against the backend contract."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md already documents the canonical audit trail endpoints (GET /api/v1/admin/audit/events and GET /api/v1/accounting/audit/events), which is good. The architecture.md also correctly reflects these endpoints in the Admin Portal Routes table. No gap here.",
+      "evidence": "AGENTS.md 'Backend Contract Spec' section lists canonical endpoints. architecture.md Admin Portal Routes table shows '/admin/audit-trail → GET /admin/audit/events, GET /accounting/audit/events'"
+    },
+    {
+      "area": "knowledge",
+      "observation": "The superadmin API (superadminApi.ts) has a parallel getBusinessEvents function that was partially updated (filter params) but its endpoint path was NOT changed. This suggests either: (a) superadmin intentionally uses a different endpoint, or (b) it was an oversight. The architecture.md does not document the superadmin audit trail endpoint path, creating ambiguity for future workers.",
+      "evidence": "superadminApi.ts line 289 still uses `/audit/business-events`. SuperadminAuditTrailPage.tsx JSDoc line 8 references GET /api/v1/audit/business-events. architecture.md only documents Admin portal routes, not Superadmin routes."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Clean, well-scoped implementation that correctly updates all three audit trail endpoint paths (adminApi getBusinessEvents, adminApi getAccountingAuditTrail, accountingApi getAuditTrail) to match the backend contract. Filter parameters are properly renamed (resource→module/status, user→actor). The AuditTrailPage.tsx is correctly updated throughout (userFilter→actorFilter). Type definitions (AuditEventFilters) are updated consistently. All 32 existing tests pass, typecheck is clean, and browser verification confirms both tabs hit the correct canonical endpoints with working pagination and actor filtering. One non-blocking note: superadminApi.ts still uses /audit/business-events path (filter params were updated) — this is out of scope for this feature but may need attention if the superadmin endpoint should also be canonical."
+}
