@@ -1120,7 +1120,7 @@ export interface PurchaseRef {
      return response.data;
    },
 
-   /** GET /api/v1/accounting/audit-trail — paginated */
+   /** GET /api/v1/accounting/audit/events — paginated */
    async getAuditTrail(params?: {
      page?: number;
      size?: number;
@@ -1130,7 +1130,7 @@ export interface PurchaseRef {
      if (params?.size !== undefined) search.set('size', String(params.size));
      const query = search.toString() ? `?${search.toString()}` : '';
      const response = await apiRequest.get<ApiResponse<AuditTrailPageResponse>>(
-       `/accounting/audit-trail${query}`
+       `/accounting/audit/events${query}`
      );
      return response.data.data;
    },

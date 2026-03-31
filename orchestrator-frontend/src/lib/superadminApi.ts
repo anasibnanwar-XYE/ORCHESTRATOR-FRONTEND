@@ -276,7 +276,8 @@ export const superadminAuditApi = {
     const params = new URLSearchParams();
     if (filters.actor) params.set('actor', filters.actor);
     if (filters.action) params.set('action', filters.action);
-    if (filters.resource) params.set('resource', filters.resource);
+    if (filters.module) params.set('module', filters.module);
+    if (filters.status) params.set('status', filters.status);
     if (filters.tenant) params.set('tenant', filters.tenant);
     if (filters.from) params.set('from', filters.from);
     if (filters.to) params.set('to', filters.to);

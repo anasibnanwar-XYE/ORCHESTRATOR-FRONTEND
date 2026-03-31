@@ -445,14 +445,15 @@ export const auditApi = {
     const params = new URLSearchParams();
     if (filters.actor) params.set('actor', filters.actor);
     if (filters.action) params.set('action', filters.action);
-    if (filters.resource) params.set('resource', filters.resource);
+    if (filters.module) params.set('module', filters.module);
+    if (filters.status) params.set('status', filters.status);
     if (filters.from) params.set('from', filters.from);
     if (filters.to) params.set('to', filters.to);
     if (filters.page !== undefined) params.set('page', String(filters.page));
     if (filters.size !== undefined) params.set('size', String(filters.size));
     const qs = params.toString();
     const response = await apiRequest.get<ApiResponse<PageResponse<BusinessEvent>>>(
-      `/audit/business-events${qs ? `?${qs}` : ''}`
+      `/admin/audit/events${qs ? `?${qs}` : ''}`
     );
     return response.data.data;
   },
@@ -473,7 +474,7 @@ export const auditApi = {
     size?: number;
     from?: string;
     to?: string;
-    user?: string;
+    actor?: string;
     actionType?: string;
     entityType?: string;
   } = {}): Promise<PageResponse<AccountingAuditTrailEntry>> {
@@ -482,12 +483,12 @@ export const auditApi = {
     if (filters.size !== undefined) params.set('size', String(filters.size));
     if (filters.from) params.set('from', filters.from);
     if (filters.to) params.set('to', filters.to);
-    if (filters.user) params.set('user', filters.user);
+    if (filters.actor) params.set('actor', filters.actor);
     if (filters.actionType) params.set('actionType', filters.actionType);
     if (filters.entityType) params.set('entityType', filters.entityType);
     const qs = params.toString();
     const response = await apiRequest.get<ApiResponse<PageResponse<AccountingAuditTrailEntry>>>(
-      `/accounting/audit-trail${qs ? `?${qs}` : ''}`
+      `/accounting/audit/events${qs ? `?${qs}` : ''}`
     );
     return response.data.data;
   },

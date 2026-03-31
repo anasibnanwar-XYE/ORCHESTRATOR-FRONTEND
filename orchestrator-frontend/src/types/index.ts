@@ -1022,7 +1022,7 @@ export interface PortalWorkforce {
 
 export interface BusinessEvent {
   /**
-   * GET /api/v1/audit/business-events — BusinessAuditEventResponse DTO
+   * GET /api/v1/admin/audit/events — BusinessAuditEventResponse DTO
    * Wrapped in ApiResponse<PageResponse<BusinessAuditEventResponse>>.
    */
   id: string | number;
@@ -1080,7 +1080,8 @@ export interface MlEvent {
 export interface AuditEventFilters {
   actor?: string;
   action?: string;
-  resource?: string;
+  module?: string;
+  status?: string;
   from?: string;
   to?: string;
   page?: number;
@@ -1088,7 +1089,7 @@ export interface AuditEventFilters {
 }
 
 /**
- * GET /api/v1/accounting/audit-trail — AccountingAuditTrailEntryDto
+ * GET /api/v1/accounting/audit/events — AccountingAuditTrailEntryDto
  * Wrapped in ApiResponse<PageResponse<AccountingAuditTrailEntryDto>>.
  */
 export interface AccountingAuditTrailEntry {

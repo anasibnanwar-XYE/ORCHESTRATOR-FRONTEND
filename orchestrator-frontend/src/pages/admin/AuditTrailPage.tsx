@@ -3,11 +3,11 @@
  *
  * Paginated, filterable audit trail with two tabs:
  *  - Business Events: BusinessAuditEventResponse (occurredAt, actorIdentifier, action, entityType, entityId, status, module)
- *    GET /api/v1/audit/business-events  (wrapped in ApiResponse<PageResponse<...>>)
+ *    GET /api/v1/admin/audit/events  (wrapped in ApiResponse<PageResponse<...>>)
  *    NOTE: May return 500 if audit private key is not configured on the backend — handled gracefully.
  *
  *  - Accounting: AccountingAuditTrailEntryDto (timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, ...)
- *    GET /api/v1/accounting/audit-trail  (wrapped in ApiResponse<PageResponse<...>>)
+ *    GET /api/v1/accounting/audit/events  (wrapped in ApiResponse<PageResponse<...>>)
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -336,7 +336,7 @@ function BusinessEventsTab() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Accounting Audit Trail Tab
 // Fields: id, timestamp, actorIdentifier, actionType, entityType, entityId, referenceNumber, sensitiveOperation
-// GET /api/v1/accounting/audit-trail
+// GET /api/v1/accounting/audit/events
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AccountingAuditTab() {
@@ -347,14 +347,14 @@ function AccountingAuditTab() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [userFilter, setUserFilter] = useState<string | undefined>(undefined);
+  const [actorFilter, setActorFilter] = useState<string | undefined>(undefined);
 
-  const load = useCallback(async (p = 0, user?: string) => {
+  const load = useCallback(async (p = 0, actor?: string) => {
     setLoading(true);
     setError(null);
     setBackendError(false);
     try {
-      const result = await auditApi.getAccountingAuditTrail({ page: p, size: PAGE_SIZE, user });
+      const result = await auditApi.getAccountingAuditTrail({ page: p, size: PAGE_SIZE, actor });
       setData(result);
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
@@ -368,13 +368,13 @@ function AccountingAuditTab() {
     }
   }, []);
 
-  useEffect(() => { void load(page, userFilter); }, [load, page, userFilter]);
+  useEffect(() => { void load(page, actorFilter); }, [load, page, actorFilter]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setUserFilter(value || undefined);
+      setActorFilter(value || undefined);
       setPage(0);
     }, 400);
   };
@@ -468,7 +468,7 @@ function AccountingAuditTab() {
         </div>
         <button
           type="button"
-          onClick={() => void load(page, userFilter)}
+          onClick={() => void load(page, actorFilter)}
           className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors"
         >
           <RefreshCcw size={13} />
@@ -491,7 +491,7 @@ function AccountingAuditTab() {
           </p>
           <button
             type="button"
-            onClick={() => void load(page, userFilter)}
+            onClick={() => void load(page, actorFilter)}
             className="mt-4 flex items-center gap-1.5 mx-auto h-8 px-3 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-tertiary)] rounded-lg transition-colors border border-[var(--color-border-default)]"
           >
             <RefreshCcw size={13} />
@@ -502,7 +502,7 @@ function AccountingAuditTab() {
         <div className="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] text-[13px]">
           <AlertCircle size={16} className="shrink-0" />
           <span>{error}</span>
-          <button type="button" onClick={() => void load(page, userFilter)} className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80">
+          <button type="button" onClick={() => void load(page, actorFilter)} className="ml-auto flex items-center gap-1.5 text-[12px] hover:opacity-80">
             <RefreshCcw size={13} /> Retry
           </button>
         </div>
