@@ -1401,7 +1401,8 @@ export interface ApprovalItem {
   actionLabel?: string;
   approveEndpoint?: string;
   rejectEndpoint?: string;
-  createdAt: string;
+  /** Backend returns Unix epoch seconds (number) or ISO string */
+  createdAt: string | number;
 }
 
 export interface ApprovalsResponse {

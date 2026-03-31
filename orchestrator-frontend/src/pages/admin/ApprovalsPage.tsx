@@ -1,19 +1,17 @@
- /**
-  * ApprovalsPage — Admin Approvals Queue
-  *
-  * Displays all pending approval items grouped by type:
-  *   - Credit Request   → approve (POST /sales/credit-requests/{id}/approve)
-  *                         reject  (POST /sales/credit-requests/{id}/reject)
-  *   - Payroll Run      → approve only (POST /payroll/runs/{id}/approve)
-  *                         reject shows error toast
-  *   - Credit Override  → approve (POST /credit/override-requests/{id}/approve)
-  *                         reject  (POST /credit/override-requests/{id}/reject)
-  *
-  * Each item shows: type badge, reference, summary, status badge, created date
-  * Approve shows a confirmation dialog; Reject shows a danger confirmation dialog.
-  *
-  * VAL-ADMIN-018 through VAL-ADMIN-022
-  */
+/**
+ * ApprovalsPage — Admin Approvals Queue
+ *
+ * Displays pending approval items grouped by type from GET /admin/approvals:
+ *   - Credit Request   → POST /credit/limit-requests/{id}/approve|reject with reason
+ *   - Export Request    → PUT /admin/exports/{id}/approve|reject with reason
+ *   - Period Close      → POST /accounting/periods/{id}/approve-close|reject-close with note
+ *   - Credit Override   → POST /credit/override-requests/{id}/approve|reject
+ *
+ * Uses approveEndpoint/rejectEndpoint from item payload when available.
+ * Payroll items (HR/Payroll) are excluded — out of scope.
+ *
+ * VAL-APPR-001 through VAL-APPR-008
+ */
  
  import { useEffect, useState, useCallback } from 'react';
  import {
@@ -40,9 +38,9 @@
 
 function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
   const mapBucket = (items: ApprovalItem[] | undefined): ApprovalItem[] => items ?? [];
+  // Exclude payrollRuns — HR/Payroll is out of scope
   return [
     ...mapBucket(raw.creditRequests),
-    ...mapBucket(raw.payrollRuns),
     ...mapBucket(raw.periodCloseRequests),
     ...mapBucket(raw.exportRequests),
   ].filter((item) => item.status?.toUpperCase() === 'PENDING' || !item.status);
@@ -52,27 +50,25 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
  // Type badge helpers
  // ─────────────────────────────────────────────────────────────────────────────
  
- function getTypeLabel(type: string): string {
-   switch (type) {
-     case 'CREDIT_REQUEST': return 'Credit Request';
-     case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'Credit Override';
-     case 'PAYROLL_RUN': return 'Payroll Run';
-     case 'PERIOD_CLOSE_REQUEST': return 'Period Close';
-     case 'EXPORT_REQUEST': return 'Export Request';
-     default: return type.replace(/_/g, ' ');
-   }
- }
- 
- function getTypeBadgeVariant(type: string): 'info' | 'warning' | 'success' | 'default' {
-   switch (type) {
-     case 'CREDIT_REQUEST': return 'info';
-     case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'success';
-     case 'PAYROLL_RUN': return 'warning';
-     case 'PERIOD_CLOSE_REQUEST': return 'default';
-     case 'EXPORT_REQUEST': return 'default';
-     default: return 'default';
-   }
- }
+function getTypeLabel(type: string): string {
+  switch (type) {
+    case 'CREDIT_REQUEST': return 'Credit Request';
+    case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'Credit Override';
+    case 'PERIOD_CLOSE_REQUEST': return 'Period Close';
+    case 'EXPORT_REQUEST': return 'Export Request';
+    default: return type.replace(/_/g, ' ');
+  }
+}
+
+function getTypeBadgeVariant(type: string): 'info' | 'warning' | 'success' | 'default' {
+  switch (type) {
+    case 'CREDIT_REQUEST': return 'info';
+    case 'CREDIT_LIMIT_OVERRIDE_REQUEST': return 'success';
+    case 'PERIOD_CLOSE_REQUEST': return 'default';
+    case 'EXPORT_REQUEST': return 'warning';
+    default: return 'default';
+  }
+}
  
  function getStatusBadgeVariant(status: string): 'success' | 'danger' | 'warning' | 'default' {
    const s = status?.toUpperCase();
@@ -82,13 +78,18 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    return 'default';
  }
  
- function formatDate(dateStr: string): string {
-   try {
-     return format(new Date(dateStr), 'd MMM yyyy, h:mm a');
-   } catch {
-     return dateStr;
-   }
- }
+function formatDate(dateValue: string | number): string {
+  try {
+    // Backend may return Unix epoch seconds (number) or ISO string
+    const date = typeof dateValue === 'number'
+      ? new Date(dateValue * 1000)
+      : new Date(dateValue);
+    if (isNaN(date.getTime())) return String(dateValue);
+    return format(date, 'd MMM yyyy, h:mm a');
+  } catch {
+    return String(dateValue);
+  }
+}
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Group items by type
@@ -105,7 +106,7 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    }, {});
  }
  
- const TYPE_ORDER = ['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PAYROLL_RUN', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'];
+const TYPE_ORDER = ['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'];
  
  function sortedGroupKeys(groups: GroupedApprovals): string[] {
    const known = TYPE_ORDER.filter((k) => groups[k]);
@@ -132,89 +133,75 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
    onReject: (item: ApprovalItem) => void;
  }
  
- function ApprovalCard({ item, onApprove, onReject }: ApprovalCardProps) {
-   const canReject = item.originType !== 'PAYROLL_RUN';
- 
-   return (
-     <div
-       className={clsx(
-         'relative flex items-start gap-4 p-4 rounded-xl',
-         'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
-         'transition-shadow duration-150',
-       )}
-     >
-       {/* Left accent border */}
-       <div
-         className={clsx(
-           'absolute left-0 top-3 bottom-3 w-[3px] rounded-full',
-           item.originType === 'CREDIT_REQUEST' && 'bg-[var(--color-primary-500)]',
-           item.originType === 'CREDIT_LIMIT_OVERRIDE_REQUEST' && 'bg-[var(--color-success-icon)]',
-           item.originType === 'PAYROLL_RUN' && 'bg-[var(--color-warning-icon)]',
-           item.originType === 'PERIOD_CLOSE_REQUEST' && 'bg-[var(--color-neutral-400)]',
-           item.originType === 'EXPORT_REQUEST' && 'bg-[var(--color-neutral-400)]',
-           !['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PAYROLL_RUN', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'].includes(item.originType) && 'bg-[var(--color-neutral-400)]',
-         )}
-       />
- 
-       <div className="flex-1 min-w-0 pl-2">
-         {/* Top row: reference + type badge + status */}
-         <div className="flex flex-wrap items-center gap-2">
-           <span className="text-[13px] font-semibold text-[var(--color-text-primary)] tabular-nums">
-             {item.reference || item.publicId}
-           </span>
-           <Badge variant={getTypeBadgeVariant(item.originType)}>
-             {getTypeLabel(item.originType)}
-           </Badge>
-           <Badge variant={getStatusBadgeVariant(item.status)} dot>
-             {item.status}
-           </Badge>
-         </div>
- 
-         {/* Summary */}
-         {item.summary && (
-           <p className="mt-1 text-[13px] text-[var(--color-text-secondary)] leading-snug">
-             {item.summary}
-           </p>
-         )}
- 
-         {/* Date */}
-         <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
-           {formatDate(item.createdAt)}
-         </p>
-       </div>
- 
-       {/* Actions */}
-       <div className="shrink-0 flex items-center gap-2 pt-0.5">
-         <Button
-           variant="primary"
-           size="sm"
-           onClick={() => onApprove(item)}
-         >
-           Approve
-         </Button>
-         {canReject ? (
-           <Button
-             variant="ghost"
-             size="sm"
-             className="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-             onClick={() => onReject(item)}
-           >
-             Reject
-           </Button>
-         ) : (
-           <Button
-             variant="ghost"
-             size="sm"
-             className="opacity-40 cursor-not-allowed"
-             onClick={() => onReject(item)}
-           >
-             Reject
-           </Button>
-         )}
-       </div>
-     </div>
-   );
- }
+function ApprovalCard({ item, onApprove, onReject }: ApprovalCardProps) {
+  return (
+    <div
+      className={clsx(
+        'relative flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-4 rounded-xl',
+        'bg-[var(--color-surface-primary)] border border-[var(--color-border-default)]',
+        'transition-shadow duration-150',
+      )}
+    >
+      {/* Left accent border */}
+      <div
+        className={clsx(
+          'absolute left-0 top-3 bottom-3 w-[3px] rounded-full',
+          item.originType === 'CREDIT_REQUEST' && 'bg-[var(--color-primary-500)]',
+          item.originType === 'CREDIT_LIMIT_OVERRIDE_REQUEST' && 'bg-[var(--color-success-icon)]',
+          item.originType === 'PERIOD_CLOSE_REQUEST' && 'bg-[var(--color-neutral-400)]',
+          item.originType === 'EXPORT_REQUEST' && 'bg-[var(--color-warning-icon)]',
+          !['CREDIT_REQUEST', 'CREDIT_LIMIT_OVERRIDE_REQUEST', 'PERIOD_CLOSE_REQUEST', 'EXPORT_REQUEST'].includes(item.originType) && 'bg-[var(--color-neutral-400)]',
+        )}
+      />
+
+      <div className="flex-1 min-w-0 pl-2">
+        {/* Top row: reference + type badge + status */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] font-semibold text-[var(--color-text-primary)] tabular-nums">
+            {item.reference || item.publicId}
+          </span>
+          <Badge variant={getTypeBadgeVariant(item.originType)}>
+            {getTypeLabel(item.originType)}
+          </Badge>
+          <Badge variant={getStatusBadgeVariant(item.status)} dot>
+            {item.status}
+          </Badge>
+        </div>
+
+        {/* Summary */}
+        {item.summary && (
+          <p className="mt-1 text-[13px] text-[var(--color-text-secondary)] leading-snug line-clamp-2">
+            {item.summary}
+          </p>
+        )}
+
+        {/* Date */}
+        <p className="mt-1.5 text-[11px] text-[var(--color-text-tertiary)]">
+          {formatDate(item.createdAt)}
+        </p>
+      </div>
+
+      {/* Actions — stack vertically on mobile */}
+      <div className="shrink-0 flex items-center gap-2 pl-2 sm:pl-0 sm:pt-0.5">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => onApprove(item)}
+        >
+          Approve
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          onClick={() => onReject(item)}
+        >
+          Reject
+        </Button>
+      </div>
+    </div>
+  );
+}
  
  // ─────────────────────────────────────────────────────────────────────────────
  // Loading skeleton
@@ -284,94 +271,85 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
      setPendingAction({ item, action: 'approve' });
    }, []);
  
-   const handleReject = useCallback((item: ApprovalItem) => {
-     if (item.originType === 'PAYROLL_RUN') {
-       toastError('Payroll runs can only be approved, not rejected.');
-       return;
-     }
-     setRejectReason('');
-     setRejectReasonError(null);
-     setPendingAction({ item, action: 'reject' });
-   }, [toastError]);
+  const handleReject = useCallback((item: ApprovalItem) => {
+    setRejectReason('');
+    setRejectReasonError(null);
+    setPendingAction({ item, action: 'reject' });
+  }, []);
  
-   const handleConfirm = useCallback(async () => {
-     if (!pendingAction) return;
-     const { item, action } = pendingAction;
- 
-     // Validate approval reason
-     if (action === 'approve') {
-       if (!approveReason.trim()) {
-         setApproveReasonError('Please provide a reason for approval.');
-         return;
-       }
-     }
- 
-     // Validate rejection reason
-     if (action === 'reject') {
-       if (!rejectReason.trim()) {
-         setRejectReasonError('Please provide a reason for rejection.');
-         return;
-       }
-     }
- 
-     setIsActing(true);
-     try {
-       if (action === 'approve') {
-         const reason = approveReason.trim();
-         switch (item.originType) {
-           case 'CREDIT_REQUEST':
-             await adminApi.approveCreditRequest(item.id, { reason });
-             break;
-           case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
-             await adminApi.approveCreditOverride(item.id);
-             break;
-           case 'PAYROLL_RUN':
-             await adminApi.approvePayroll(item.id);
-             break;
-           case 'PERIOD_CLOSE_REQUEST':
-             await adminApi.approvePeriodClose(item.id, { note: reason });
-             break;
-           case 'EXPORT_REQUEST':
-             await adminApi.approveExport(item.id, { reason });
-             break;
-           default:
-             await adminApi.approveCreditRequest(item.id, { reason });
-         }
-         success('Approved successfully.');
-       } else {
-         const reason = rejectReason.trim();
-         switch (item.originType) {
-           case 'CREDIT_REQUEST':
-             await adminApi.rejectCreditRequest(item.id, { reason });
-             break;
-           case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
-             await adminApi.rejectCreditOverride(item.id);
-             break;
-           case 'PERIOD_CLOSE_REQUEST':
-             await adminApi.rejectPeriodClose(item.id, { note: reason });
-             break;
-           case 'EXPORT_REQUEST':
-             await adminApi.rejectExport(item.id, { reason });
-             break;
-           default:
-             await adminApi.rejectCreditRequest(item.id, { reason });
-         }
-         success('Rejected successfully.');
-       }
-       setPendingAction(null);
-       setApproveReason('');
-       setApproveReasonError(null);
-       setRejectReason('');
-       setRejectReasonError(null);
-       // Reload to remove the acted-upon item
-       await load();
-     } catch (err) {
-       const msg = err instanceof Error ? err.message : 'Action failed. Please try again.';
-       toastError(msg);
-     } finally {
-       setIsActing(false);
-     }
-   }, [pendingAction, approveReason, rejectReason, success, toastError, load]);
+  const handleConfirm = useCallback(async () => {
+    if (!pendingAction) return;
+    const { item, action } = pendingAction;
+
+    // Validate reason
+    if (action === 'approve') {
+      if (!approveReason.trim()) {
+        setApproveReasonError('Please provide a reason for approval.');
+        return;
+      }
+    }
+    if (action === 'reject') {
+      if (!rejectReason.trim()) {
+        setRejectReasonError('Please provide a reason for rejection.');
+        return;
+      }
+    }
+
+    setIsActing(true);
+    try {
+      if (action === 'approve') {
+        const reason = approveReason.trim();
+        switch (item.originType) {
+          case 'CREDIT_REQUEST':
+            await adminApi.approveCreditRequest(item.id, { reason });
+            break;
+          case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
+            await adminApi.approveCreditOverride(item.id);
+            break;
+          case 'PERIOD_CLOSE_REQUEST':
+            await adminApi.approvePeriodClose(item.id, { note: reason });
+            break;
+          case 'EXPORT_REQUEST':
+            await adminApi.approveExport(item.id, { reason });
+            break;
+          default:
+            await adminApi.approveCreditRequest(item.id, { reason });
+        }
+        success('Approved successfully.');
+      } else {
+        const reason = rejectReason.trim();
+        switch (item.originType) {
+          case 'CREDIT_REQUEST':
+            await adminApi.rejectCreditRequest(item.id, { reason });
+            break;
+          case 'CREDIT_LIMIT_OVERRIDE_REQUEST':
+            await adminApi.rejectCreditOverride(item.id);
+            break;
+          case 'PERIOD_CLOSE_REQUEST':
+            await adminApi.rejectPeriodClose(item.id, { note: reason });
+            break;
+          case 'EXPORT_REQUEST':
+            await adminApi.rejectExport(item.id, { reason });
+            break;
+          default:
+            await adminApi.rejectCreditRequest(item.id, { reason });
+        }
+        success('Rejected successfully.');
+      }
+      setPendingAction(null);
+      setApproveReason('');
+      setApproveReasonError(null);
+      setRejectReason('');
+      setRejectReasonError(null);
+      // Reload to remove the acted-upon item
+      await load();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Action failed. Please try again.';
+      toastError(msg);
+    } finally {
+      setIsActing(false);
+    }
+  }, [pendingAction, approveReason, rejectReason, success, toastError, load]);
  
    const handleCancel = useCallback(() => {
      if (!isActing) {
@@ -435,7 +413,7 @@ function normalizeApprovals(raw: ApprovalsResponse): ApprovalItem[] {
          <EmptyState
            icon={<CheckCircle size={32} />}
            title="No pending approvals"
-           description="All items have been reviewed. Check back later."
+           description="All items have been reviewed."
            action={
              <Button variant="ghost" size="sm" onClick={load}>
                <RefreshCcw size={13} className="mr-1.5" />
