@@ -1,0 +1,74 @@
+{
+  "groupId": "settings-r2",
+  "testedAt": "2026-03-31T12:45:00Z",
+  "isolation": {
+    "appUrl": "http://localhost:3002",
+    "credentials": "validation.admin@example.com / MOCK",
+    "browserSession": "ecdc5babd961__settings"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-SET-001",
+      "title": "Settings page loads system configuration",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Navigate to http://localhost:3002/login",
+          "expected": "Login form displayed",
+          "observed": "Login form displayed with Email, Password, Company code fields"
+        },
+        {
+          "action": "Fill email=validation.admin@example.com, password=Validation1!cc18570e52fe48dd, company=MOCK and click Sign in",
+          "expected": "Redirect to admin/hub page",
+          "observed": "Redirected to /hub after successful login"
+        },
+        {
+          "action": "Navigate to /admin/settings",
+          "expected": "Settings page loads, GET /api/v1/admin/settings returns 200",
+          "observed": "Settings page loaded. GET /api/v1/admin/settings returned 200 with { success: true, data: { allowedOrigins: ['http://localhost:3002'], autoApprovalEnabled: true, periodLockEnforced: true, exportApprovalRequired: false, platformAuthCode: 'PLATFORM', mailEnabled: true, mailFromAddress: 'noreply@bigbrightpaints.com', mailBaseUrl: 'http://localhost:3002', sendCredentials: true, sendPasswordReset: true } }"
+        },
+        {
+          "action": "Verify General section displays populated values",
+          "expected": "General section with Company Name, Company Code, Timezone, etc.",
+          "observed": "General section displays: Company Name = 'Mock Training Co', Company Code = 'MOCK', Timezone = 'UTC', Platform Auth Code = 'PLATFORM'"
+        },
+        {
+          "action": "Verify Approvals section displays populated values",
+          "expected": "Approvals section with toggle values",
+          "observed": "Approvals section displays: Auto-Approval = Enabled, Period Lock = Enabled, Export Approval Required = Disabled"
+        },
+        {
+          "action": "Verify Email section displays populated values",
+          "expected": "Email section with mail configuration",
+          "observed": "Email section displays: From Address = 'noreply@bigbrightpaints.com', Base URL = 'http://localhost:3002', Mail Enabled = Enabled, Send Credentials = Enabled, Send Password Reset = Enabled"
+        },
+        {
+          "action": "Verify Advanced section displays populated values",
+          "expected": "Advanced section with CORS settings",
+          "observed": "Advanced section displays: Allowed Origins = 'http://localhost:3002'"
+        },
+        {
+          "action": "Check console errors",
+          "expected": "No console errors related to settings loading",
+          "observed": "No console.error entries related to settings. Only standard React Router future flag warnings and a 403 from an unauthenticated direct fetch test (not related to page loading)."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "page-polish/settings/VAL-SET-001-login-page.png",
+          "page-polish/settings/VAL-SET-001-settings-page.png",
+          "page-polish/settings/VAL-SET-001-settings-full.png",
+          "page-polish/settings/VAL-SET-001-settings-annotated.png"
+        ],
+        "consoleErrors": "none (only React Router future flag warnings)",
+        "network": "GET /api/v1/admin/settings → 200 (verified via authenticated fetch: { success: true, message: 'Settings fetched', data: { allowedOrigins: ['http://localhost:3002'], autoApprovalEnabled: true, periodLockEnforced: true, exportApprovalRequired: false, platformAuthCode: 'PLATFORM', mailEnabled: true, mailFromAddress: 'noreply@bigbrightpaints.com', mailBaseUrl: 'http://localhost:3002', sendCredentials: true, sendPasswordReset: true } })"
+      },
+      "issues": null,
+      "notes": "The fix from round 1 (settings-field-mapping-fix) is confirmed working. All backend field names (periodLockEnforced, autoApprovalEnabled, mailEnabled, mailFromAddress, allowedOrigins, etc.) are now correctly mapped to their display labels. The General section now shows real values including Company Name ('Mock Training Co'), Company Code ('MOCK'), Timezone ('UTC'), and Platform Auth Code ('PLATFORM') — these fields were not returned by the API in round 1 but are now populated (companyName and timezone likely sourced from company/user context rather than settings API). All four sections (General, Approvals, Email, Advanced) display real values instead of '—' placeholders."
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 1 assertion: VAL-SET-001 passed. Settings page loads correctly with all four sections (General, Approvals, Email, Advanced) displaying populated real values from the backend API. The round 1 field mapping fix is confirmed working — backend field names (periodLockEnforced, autoApprovalEnabled, mailEnabled, mailFromAddress, allowedOrigins) are correctly mapped and displayed."
+}

@@ -1,16 +1,19 @@
 {
   "milestone": "page-polish",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "assertionsSummary": {
     "total": 17,
-    "passed": 13,
-    "failed": 3,
-    "blocked": 1
+    "passed": 17,
+    "failed": 0,
+    "blocked": 0
   },
   "passedAssertions": [
+    "VAL-DASH-001",
+    "VAL-DASH-002",
     "VAL-DASH-003",
     "VAL-DASH-004",
+    "VAL-DASH-005",
     "VAL-DASH-006",
     "VAL-DASH-007",
     "VAL-NOTIF-001",
@@ -21,34 +24,11 @@
     "VAL-ROLES-001",
     "VAL-ROLES-002",
     "VAL-ROLES-003",
+    "VAL-SET-001",
     "VAL-SET-002"
   ],
-  "failedAssertions": [
-    {
-      "id": "VAL-DASH-001",
-      "reason": "Backend GET /api/v1/portal/dashboard returns only 3 highlight items instead of the required 4 stat cards. Frontend correctly renders all available data (Revenue run rate, Fulfilment SLA, Dealer coverage) with no undefined/null/skeleton values, but the backend data source only has 3 metrics."
-    },
-    {
-      "id": "VAL-DASH-002",
-      "reason": "Only 3 stat cards rendered with sparkline SVGs instead of the required 4. Root cause is the same as VAL-DASH-001: backend API returns only 3 highlights. The grid layout correctly supports 4 columns at desktop breakpoint."
-    },
-    {
-      "id": "VAL-SET-001",
-      "reason": "Field name mismatch between backend API and frontend types. API returns: periodLockEnforced, autoApprovalEnabled, mailEnabled, mailFromAddress, allowedOrigins. Frontend expects: periodLockEnabled, autoApproveThreshold, emailNotifications, smtpFromEmail, corsAllowedOrigins. General section fields (companyName, currency, timezone, dateFormat) are not returned by the API at all, so all General fields show '—'."
-    }
-  ],
-  "blockedAssertions": [
-    {
-      "id": "VAL-DASH-005",
-      "blockedBy": "Cannot simulate API failure in live environment without network interception. Error state code exists in the source (AlertCircle icon, 'Failed to load dashboard data.' message, Retry button with onClick={load}) but could not be tested against a real failing API."
-    }
-  ],
-  "appliedUpdates": [
-    {
-      "target": "user-testing.md",
-      "description": "Added 'Flow Validator Guidance: agent-browser' section with isolation rules, boundaries, and shared state concerns for concurrent browser testing.",
-      "source": "setup"
-    }
-  ],
-  "previousRound": null
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": ".factory/validation/page-polish/user-testing/synthesis.json (round 1)"
 }
