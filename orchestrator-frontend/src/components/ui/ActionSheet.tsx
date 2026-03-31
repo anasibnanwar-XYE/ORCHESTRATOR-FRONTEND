@@ -118,7 +118,7 @@ export function ActionSheet({
                   item.disabled
                     ? 'opacity-40 cursor-not-allowed'
                     : 'hover:bg-[var(--color-surface-tertiary)] active:bg-[var(--color-neutral-100)]',
-                  item.variant === 'danger' && !item.disabled && 'text-red-600',
+                  item.variant === 'danger' && !item.disabled && 'text-[var(--color-error)]',
                 )}
               >
                 {item.icon &&
@@ -171,7 +171,7 @@ export function ActionSheet({
                 'active:bg-[var(--color-surface-tertiary)]',
                 item.disabled && 'opacity-40',
                 item.variant === 'danger'
-                  ? 'text-red-600'
+                  ? 'text-[var(--color-error)]'
                   : 'text-[var(--color-text-primary)]',
                 i < items.length - 1 && 'border-b border-[var(--color-border-subtle)]',
               )}

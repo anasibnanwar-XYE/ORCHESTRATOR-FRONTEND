@@ -53,8 +53,8 @@
   }
 
   .btn-danger {
-    @apply btn bg-[var(--color-surface-primary)] text-red-600;
-    @apply border border-red-200 hover:bg-red-50 hover:border-red-300;
+    @apply btn bg-[var(--color-surface-primary)] text-[var(--color-error)];
+    @apply border border-[var(--color-error-border-subtle)] hover:bg-[var(--color-error-bg)] hover:border-[var(--color-error-border)];
     @apply active:scale-[0.98];
   }
 

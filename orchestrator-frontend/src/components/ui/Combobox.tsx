@@ -68,7 +68,7 @@ export function Combobox({
             'bg-[var(--color-surface-primary)] border rounded-lg text-[13px]',
             'transition-all duration-150',
             error
-              ? 'border-red-400 focus-visible:ring-2 focus-visible:ring-red-100'
+              ? 'border-[var(--color-error-border)] focus-visible:ring-2 focus-visible:ring-[var(--color-error-ring)]'
               : 'border-[var(--color-border-default)] focus-visible:ring-2 focus-visible:ring-[var(--color-neutral-900)]/10',
             disabled && 'opacity-50 cursor-not-allowed bg-[var(--color-surface-tertiary)]',
           )}
@@ -83,7 +83,7 @@ export function Combobox({
           </span>
           <div className="flex items-center pl-2 shrink-0">
             {error ? (
-              <AlertCircle size={14} className="text-red-400" />
+              <AlertCircle size={14} className="text-[var(--color-error-icon)]" />
             ) : (
               <ChevronDown size={14} className="text-[var(--color-text-tertiary)]" />
             )}
@@ -135,7 +135,7 @@ export function Combobox({
           </div>
         )}
       </div>
-      {error && <p className="text-[11px] text-red-600">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--color-error)]">{error}</p>}
       {hint && !error && <p className="text-[11px] text-[var(--color-text-tertiary)]">{hint}</p>}
     </div>
   );

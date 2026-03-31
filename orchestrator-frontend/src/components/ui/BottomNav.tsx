@@ -68,7 +68,7 @@ export function BottomNav({ items, activeId, onNavigate, className }: BottomNavP
                       'absolute -top-1 -right-2 min-w-[16px] h-4 px-1',
                       'flex items-center justify-center',
                       'text-[9px] font-bold text-white tabular-nums',
-                      'bg-red-500 rounded-full',
+                      'bg-[var(--color-error)] rounded-full',
                     )}
                   >
                     {typeof item.badge === 'number' && item.badge > 99 ? '99+' : item.badge}

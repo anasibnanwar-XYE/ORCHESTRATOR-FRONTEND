@@ -77,7 +77,7 @@ export function RichTextEditor({
         className={clsx(
           'border rounded-xl bg-[var(--color-surface-primary)] overflow-hidden transition-all duration-150',
           error
-            ? 'border-red-400 focus-within:ring-2 focus-within:ring-red-100'
+            ? 'border-[var(--color-error-border)] focus-within:ring-2 focus-within:ring-[var(--color-error-ring)]'
             : 'border-[var(--color-border-default)] focus-within:ring-2 focus-within:ring-[var(--color-neutral-900)]/10 focus-within:border-[var(--color-neutral-400)]',
         )}
       >
@@ -118,7 +118,7 @@ export function RichTextEditor({
           )}
         />
       </div>
-      {error && <p className="text-[11px] text-red-600">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--color-error)]">{error}</p>}
     </div>
   );
 }

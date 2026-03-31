@@ -38,7 +38,7 @@ export function DateRangePicker({ value, onChange, label, error, className }: Da
           className="w-full sm:flex-1"
         />
       </div>
-      {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--color-error)] mt-1">{error}</p>}
     </div>
   );
 }
