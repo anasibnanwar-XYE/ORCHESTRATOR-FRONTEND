@@ -269,7 +269,7 @@ function LedgerTab({ entries, isLoading }: { entries: LedgerEntry[]; isLoading: 
         <DataTable<LedgerEntry>
           columns={columns}
           data={entries}
-          keyExtractor={(row) => `${row.date}-${Math.random().toString(36).substr(2, 9)}`}
+          keyExtractor={(row) => `${row.date}-${row.reference || ''}-${row.debit}-${row.credit}-${row.balance}`}
           isLoading={isLoading}
           emptyMessage="No ledger entries found"
           searchable
@@ -548,9 +548,10 @@ export function FinanceSupportPage() {
     setIsLoadingDealers(true);
     try {
       // Fetch dealers using salesApi (which uses /dealers endpoint)
+      // Backend may return a plain array or a PageResponse with .content
       const response = await salesApi.listDealers({ size: 500 });
-      const dealerList = response.content || [];
-      setDealers(dealerList.map((d) => ({ id: d.id, name: d.name || '', code: d.code || '' })));
+      const dealerList = Array.isArray(response) ? response : (response.content || []);
+      setDealers(dealerList.map((d: { id: number; name?: string; code?: string }) => ({ id: d.id, name: d.name || '', code: d.code || '' })));
     } catch (err) {
       setError('Failed to load dealers');
     } finally {

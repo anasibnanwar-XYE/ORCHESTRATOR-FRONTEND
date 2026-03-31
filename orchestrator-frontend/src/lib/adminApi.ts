@@ -38,6 +38,7 @@ import type {
   PageResponse,
   LedgerEntry,
   FinanceInvoice,
+  AgingBucket,
   FinanceAging,
   SupportTicketResponse,
   CreateTicketRequest,
@@ -530,29 +531,122 @@ export const tenantApi = {
 // Types (LedgerEntry, FinanceInvoice, AgingBucket, FinanceAging) are in @/types
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Backend response shapes (internal – not exported) ──
+
+interface LedgerApiEntry {
+  date: number[] | string;
+  reference?: string;
+  memo?: string;
+  description?: string;
+  debit: number;
+  credit: number;
+  runningBalance?: number;
+  balance?: number;
+}
+
+interface LedgerApiResponse {
+  dealerId?: number;
+  dealerName?: string;
+  currentBalance?: number;
+  entries?: LedgerApiEntry[];
+}
+
+interface InvoicesApiResponse {
+  dealerId?: number;
+  dealerName?: string;
+  totalOutstanding?: number;
+  invoiceCount?: number;
+  invoices?: FinanceInvoice[];
+}
+
+interface AgingApiResponse {
+  dealerId: number;
+  dealerName: string;
+  creditLimit?: number;
+  totalOutstanding: number;
+  agingBuckets?: Record<string, number>;
+  buckets?: AgingBucket[];
+  overdueInvoices?: unknown[];
+}
+
+/** Convert a date that may be [year,month,day] array to ISO string */
+function normaliseDateField(d: number[] | string | undefined): string {
+  if (!d) return '';
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d) && d.length >= 3) {
+    const [y, m, day] = d;
+    return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+  return String(d);
+}
+
+/** Map aging bucket keys to fromDays/toDays ranges */
+function parseAgingBuckets(buckets: Record<string, number>): AgingBucket[] {
+  const mapping: { key: string; label: string; fromDays: number; toDays: number }[] = [
+    { key: 'current', label: 'Current', fromDays: 0, toDays: 0 },
+    { key: '1-30 days', label: '1-30 days', fromDays: 1, toDays: 30 },
+    { key: '31-60 days', label: '31-60 days', fromDays: 31, toDays: 60 },
+    { key: '61-90 days', label: '61-90 days', fromDays: 61, toDays: 90 },
+    { key: '90+ days', label: '90+ days', fromDays: 91, toDays: 999 },
+  ];
+
+  return mapping
+    .filter((m) => m.key in buckets)
+    .map((m) => ({ label: m.label, fromDays: m.fromDays, toDays: m.toDays, amount: buckets[m.key] ?? 0 }));
+}
+
 export const financeSupportApi = {
-  /** Get dealer ledger entries */
+  /** Get dealer ledger entries — normalises backend shape to LedgerEntry[] */
   async getLedger(dealerId: number): Promise<LedgerEntry[]> {
-    const response = await apiRequest.get<ApiResponse<LedgerEntry[]>>(
+    const response = await apiRequest.get<ApiResponse<LedgerApiResponse | LedgerEntry[]>>(
       `/portal/finance/ledger?dealerId=${dealerId}`
     );
-    return response.data.data;
+    const raw = response.data.data;
+
+    // Backend may return { entries: [...] } or a flat array
+    const entries: LedgerApiEntry[] = Array.isArray(raw) ? raw : (raw as LedgerApiResponse).entries ?? [];
+
+    return entries.map((e) => ({
+      date: normaliseDateField(e.date),
+      reference: e.reference ?? '',
+      description: e.memo ?? e.description ?? '',
+      debit: e.debit ?? 0,
+      credit: e.credit ?? 0,
+      balance: e.runningBalance ?? e.balance ?? 0,
+    }));
   },
 
-  /** Get dealer invoices */
+  /** Get dealer invoices — normalises backend shape to FinanceInvoice[] */
   async getInvoices(dealerId: number): Promise<FinanceInvoice[]> {
-    const response = await apiRequest.get<ApiResponse<FinanceInvoice[]>>(
+    const response = await apiRequest.get<ApiResponse<InvoicesApiResponse | FinanceInvoice[]>>(
       `/portal/finance/invoices?dealerId=${dealerId}`
     );
-    return response.data.data;
+    const raw = response.data.data;
+
+    // Backend may return { invoices: [...] } or a flat array
+    return Array.isArray(raw) ? raw : (raw as InvoicesApiResponse).invoices ?? [];
   },
 
-  /** Get dealer aging report */
+  /** Get dealer aging report — normalises backend shape to FinanceAging */
   async getAging(dealerId: number): Promise<FinanceAging> {
-    const response = await apiRequest.get<ApiResponse<FinanceAging>>(
+    const response = await apiRequest.get<ApiResponse<AgingApiResponse>>(
       `/portal/finance/aging?dealerId=${dealerId}`
     );
-    return response.data.data;
+    const raw = response.data.data;
+
+    // Backend may return agingBuckets as a key/value object or already-structured buckets array
+    const buckets: AgingBucket[] = raw.buckets
+      ? raw.buckets
+      : raw.agingBuckets
+        ? parseAgingBuckets(raw.agingBuckets)
+        : [];
+
+    return {
+      dealerId: raw.dealerId,
+      dealerName: raw.dealerName,
+      totalOutstanding: raw.totalOutstanding ?? 0,
+      buckets,
+    };
   },
 };
 

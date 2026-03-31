@@ -366,4 +366,22 @@ describe('FinanceSupportPage', () => {
                        container.innerHTML.includes('var(--color-surface');
     expect(hasCssVars).toBe(true);
   });
+
+  it('does not use Math.random() in React keys', async () => {
+    // Static analysis: read the source file and verify no Math.random() in keyExtractor
+    const fs = await import('fs');
+    const path = await import('path');
+    const sourceFile = path.resolve(__dirname, '../FinanceSupportPage.tsx');
+    const source = fs.readFileSync(sourceFile, 'utf-8');
+    
+    // Find all keyExtractor usages and ensure none use Math.random()
+    const keyExtractorMatches = source.match(/keyExtractor[^}]*}/g) || [];
+    for (const match of keyExtractorMatches) {
+      expect(match).not.toContain('Math.random');
+    }
+    
+    // Also verify globally that no Math.random usage exists in this file
+    // (except possibly in non-key contexts, but for this page there should be none)
+    expect(source).not.toContain('Math.random');
+  });
 });
