@@ -616,7 +616,6 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
        email: data.email,
        displayName: data.displayName,
        roles: data.roles,
-       companyId: data.companyId,
      };
      try {
        await adminApi.createUser(payload);
@@ -639,7 +638,6 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
      const payload: UpdateUserRequest = {
        displayName: data.displayName,
        roles: data.roles,
-       companyId: data.companyId,
      };
      try {
        await adminApi.updateUser(editingUser.id, payload);

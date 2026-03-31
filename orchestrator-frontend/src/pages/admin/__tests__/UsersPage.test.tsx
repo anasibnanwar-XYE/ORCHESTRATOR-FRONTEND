@@ -591,7 +591,7 @@ const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
 
   // ─── Create user with correct payload — VAL-USERS-002 ─────────────────────
 
-  it('create user sends correct POST payload with companyId as number — VAL-USERS-002', async () => {
+  it('create user sends correct POST payload without companyId — VAL-USERS-002', async () => {
     (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
     (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
     (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
@@ -633,7 +633,6 @@ const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
         email: 'newuser@test.com',
         displayName: 'New User',
         roles: ['ROLE_ADMIN'],
-        companyId: 1,
       });
     });
   });

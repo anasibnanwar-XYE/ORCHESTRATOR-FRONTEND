@@ -151,12 +151,16 @@ export const adminApi = {
   },
 
   async createUser(data: CreateUserRequest): Promise<User> {
-    const response = await apiRequest.post<ApiResponse<User>>('/admin/users', data);
+    // Backend rejects unrecognized field "companyId" — strip it before sending.
+    const { companyId, ...payload } = data as CreateUserRequest & { companyId?: unknown };
+    const response = await apiRequest.post<ApiResponse<User>>('/admin/users', payload);
     return response.data.data;
   },
 
   async updateUser(id: number, data: UpdateUserRequest): Promise<User> {
-    const response = await apiRequest.put<ApiResponse<User>>(`/admin/users/${id}`, data);
+    // Backend rejects unrecognized field "companyId" — strip it before sending.
+    const { companyId, ...payload } = data as UpdateUserRequest & { companyId?: unknown };
+    const response = await apiRequest.put<ApiResponse<User>>(`/admin/users/${id}`, payload);
     return response.data.data;
   },
 

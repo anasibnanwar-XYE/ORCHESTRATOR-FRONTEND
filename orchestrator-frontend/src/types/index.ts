@@ -1349,13 +1349,11 @@ export interface CreateUserRequest {
   displayName: string;
   roles: string[];
   password?: string;
-  companyId: number;
 }
 
 export interface UpdateUserRequest {
   displayName: string;
   roles: string[];
-  companyId: number;
   enabled?: boolean;
 }
 
