@@ -1489,6 +1489,7 @@ export interface Company {
   id: number;
   code: string;
   name: string;
+  timezone?: string;
   address?: string;
   phone?: string;
   email?: string;
@@ -1502,29 +1503,32 @@ export interface Company {
 // Settings Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface AdminSettings {
-  companyName: string;
-  timezone: string;
-  dateFormat: string;
-  currency: string;
-  emailNotifications: boolean;
-  autoApproveThreshold?: number;
+/**
+ * System settings returned by GET /api/v1/admin/settings.
+ * Matches the backend SystemSettingsDto exactly.
+ */
+export interface SystemSettings {
+  allowedOrigins?: string[];
+  autoApprovalEnabled?: boolean;
+  periodLockEnforced?: boolean;
+  exportApprovalRequired?: boolean;
+  platformAuthCode?: string;
+  mailEnabled?: boolean;
+  mailFromAddress?: string;
+  mailBaseUrl?: string;
+  sendCredentials?: boolean;
+  sendPasswordReset?: boolean;
 }
- 
- /**
-  * Extended AdminSettings — mirrors the backend AdminSettingsResponse.
-  * The backend GET /admin/settings may return any combination of these fields.
-  */
- export interface ExtendedAdminSettings extends AdminSettings {
-   periodLockEnabled?: boolean;
-   exportApprovalRequired?: boolean;
-   corsAllowedOrigins?: string;
-   smtpHost?: string;
-   smtpPort?: number;
-   smtpUsername?: string;
-   smtpFromEmail?: string;
-   smtpFromName?: string;
- }
+
+/**
+ * @deprecated Use SystemSettings instead. Kept for backward compatibility during migration.
+ */
+export type AdminSettings = SystemSettings;
+
+/**
+ * @deprecated Use SystemSettings instead. Kept for backward compatibility during migration.
+ */
+export type ExtendedAdminSettings = SystemSettings;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard Types

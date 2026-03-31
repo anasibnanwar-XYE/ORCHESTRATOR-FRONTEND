@@ -14,7 +14,7 @@ import type {
   Role,
   CreateRoleRequest,
   Company,
-  AdminSettings,
+  SystemSettings,
   CreditRequestDecisionRequest,
   PeriodCloseActionRequest,
   AdminNotifyRequest,
@@ -260,13 +260,13 @@ export const adminApi = {
   // Settings
   // ─────────────────────────────────────────────────────────────────────────
 
-  async getSettings(): Promise<AdminSettings> {
-    const response = await apiRequest.get<ApiResponse<AdminSettings>>('/admin/settings');
+  async getSettings(): Promise<SystemSettings> {
+    const response = await apiRequest.get<ApiResponse<SystemSettings>>('/admin/settings');
     return response.data.data;
   },
 
-  async updateSettings(data: Partial<AdminSettings>): Promise<AdminSettings> {
-    const response = await apiRequest.put<ApiResponse<AdminSettings>>('/admin/settings', data);
+  async updateSettings(data: Partial<SystemSettings>): Promise<SystemSettings> {
+    const response = await apiRequest.put<ApiResponse<SystemSettings>>('/admin/settings', data);
     return response.data.data;
   },
 
