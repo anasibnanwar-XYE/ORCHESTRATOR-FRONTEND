@@ -26,7 +26,7 @@
    CheckCircle,
    XCircle,
  } from 'lucide-react';
- import { clsx } from 'clsx';
+
  import { Button } from '@/components/ui/Button';
  import { Input } from '@/components/ui/Input';
  import { Modal } from '@/components/ui/Modal';
@@ -35,6 +35,8 @@
  import { DataTable, type Column } from '@/components/ui/DataTable';
  import { DropdownMenu } from '@/components/ui/DropdownMenu';
  import { PageHeader } from '@/components/ui/PageHeader';
+ import { Select } from '@/components/ui/Select';
+ import { RoleSelector, type RoleSelectorOption } from '@/components/ui/RoleSelector';
  import { useToast } from '@/components/ui/Toast';
  import { useAuth } from '@/context/AuthContext';
  import { adminApi } from '@/lib/adminApi';
@@ -52,8 +54,14 @@
    roles: string[];
    mfaEnabled: boolean;
    enabled: boolean;
-   companies: string[];
+   /** Backend returns companyCode as a single string */
+   companyCode?: string;
+   /** Legacy field — kept for backward compat with test fixtures */
+   companies?: string[];
    createdAt?: string;
+   /** Backend returns lastLoginAt as epoch seconds */
+   lastLoginAt?: number;
+   /** Legacy field — kept for backward compat */
    lastLogin?: string;
  }
  
@@ -125,59 +133,34 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
      return iso;
    }
  }
- 
- // ─────────────────────────────────────────────────────────────────────────────
- // Multi-select for roles / companies
- // ─────────────────────────────────────────────────────────────────────────────
- 
- interface MultiSelectProps {
-   label: string;
-   options: { value: string; label: string }[];
-   value: string[];
-   onChange: (val: string[]) => void;
+
+ function formatEpoch(epoch?: number): string {
+   if (!epoch) return '—';
+   try {
+     return new Date(epoch * 1000).toLocaleString('en-IN', {
+       day: '2-digit',
+       month: 'short',
+       year: 'numeric',
+       hour: '2-digit',
+       minute: '2-digit',
+     });
+   } catch {
+     return '—';
+   }
+ }
+
+ /** Derive display-friendly companies array from user data */
+ function getUserCompanies(user: AdminUser): string[] {
+   if (Array.isArray(user.companies) && user.companies.length > 0) {
+     return user.companies;
+   }
+   if (user.companyCode) {
+     return [user.companyCode];
+   }
+   return [];
  }
  
- function MultiSelect({ label, options, value, onChange }: MultiSelectProps) {
-   const toggle = (v: string) => {
-     if (value.includes(v)) {
-       onChange(value.filter((x) => x !== v));
-     } else {
-       onChange([...value, v]);
-     }
-   };
- 
-   return (
-     <div className="space-y-1.5">
-       <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-         {label}
-       </label>
-       <div className="border border-[var(--color-border-default)] rounded-lg overflow-hidden max-h-40 overflow-y-auto">
-         {options.length === 0 ? (
-           <p className="px-3 py-2 text-[12px] text-[var(--color-text-tertiary)]">No options available</p>
-         ) : (
-           options.map((opt) => (
-             <label
-               key={opt.value}
-               className={clsx(
-                 'flex items-center gap-2.5 px-3 py-2 cursor-pointer',
-                 'hover:bg-[var(--color-surface-secondary)] transition-colors',
-                 'border-b border-[var(--color-border-subtle)] last:border-b-0',
-               )}
-             >
-               <input
-                 type="checkbox"
-                 checked={value.includes(opt.value)}
-                 onChange={() => toggle(opt.value)}
-                 className="h-3.5 w-3.5 accent-[var(--color-neutral-900)]"
-               />
-               <span className="text-[13px] text-[var(--color-text-primary)]">{opt.label}</span>
-             </label>
-           ))
-         )}
-       </div>
-     </div>
-   );
- }
+
  
  // ─────────────────────────────────────────────────────────────────────────────
  // User Detail Modal (read-only)
@@ -291,13 +274,14 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
  
          <UserDetailField
            icon={<Building2 size={13} />}
-           label="Companies"
-           value={
-             user.companies.length === 0 ? (
-               <span className="text-[var(--color-text-tertiary)]">No companies assigned</span>
+           label="Company"
+           value={(() => {
+             const comps = getUserCompanies(user);
+             return comps.length === 0 ? (
+               <span className="text-[var(--color-text-tertiary)]">No company assigned</span>
              ) : (
                <div className="flex flex-wrap gap-1 mt-0.5">
-                 {user.companies.map((c) => (
+                 {comps.map((c) => (
                    <span
                      key={c}
                      className="inline-block px-2 py-0.5 text-[11px] rounded-md bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]"
@@ -306,8 +290,8 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
                    </span>
                  ))}
                </div>
-             )
-           }
+             );
+           })()}
          />
  
          <UserDetailField
@@ -326,8 +310,8 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
            }
          />
  
-         {(user.createdAt || user.lastLogin) && (
-           <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border-subtle)]">
+         {(user.createdAt || user.lastLoginAt || user.lastLogin) && (
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border-subtle)]">
              {user.createdAt && (
                <div>
                  <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
@@ -338,13 +322,13 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
                  </p>
                </div>
              )}
-             {user.lastLogin && (
+             {(user.lastLoginAt || user.lastLogin) && (
                <div>
                  <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-semibold mb-0.5">
                    Last Login
                  </p>
                  <p className="text-[12px] text-[var(--color-text-secondary)]">
-                   {formatDate(user.lastLogin)}
+                   {user.lastLoginAt ? formatEpoch(user.lastLoginAt) : formatDate(user.lastLogin)}
                  </p>
                </div>
              )}
@@ -411,7 +395,7 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
      }
    };
  
-  const roleOptions = Array.from(
+  const roleOptions: RoleSelectorOption[] = Array.from(
     roles
       .reduce((options, role) => {
         const value = getRoleOptionValue(role as RoleOptionSource);
@@ -425,7 +409,7 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
         });
 
         return options;
-      }, new Map<string, { value: string; label: string }>())
+      }, new Map<string, RoleSelectorOption>())
       .values(),
   );
    const companyOptions = companies.map((c) => ({
@@ -468,29 +452,19 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
            placeholder="Jane Smith"
            autoComplete="off"
          />
-         <MultiSelect
+         <RoleSelector
            label="Roles"
            options={roleOptions}
            value={form.roles}
            onChange={(newRoles) => setForm((f) => ({ ...f, roles: newRoles }))}
          />
-         <div className="space-y-1.5">
-           <label className="block text-[13px] font-medium text-[var(--color-text-primary)]">
-             Company
-           </label>
-           <select
-             value={form.companyId ?? ''}
-             onChange={(e) => setForm((f) => ({ ...f, companyId: e.target.value ? Number(e.target.value) : null }))}
-             className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-primary)] px-3 py-2 text-[13px] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-active)]"
-           >
-             <option value="">Select a company</option>
-             {companyOptions.map((opt) => (
-               <option key={opt.value} value={opt.value}>
-                 {opt.label}
-               </option>
-             ))}
-           </select>
-         </div>
+         <Select
+           label="Company"
+           options={companyOptions}
+           placeholder="Select a company"
+           value={form.companyId != null ? String(form.companyId) : ''}
+           onChange={(e) => setForm((f) => ({ ...f, companyId: e.target.value ? Number(e.target.value) : null }))}
+         />
        </div>
      </Modal>
    );
@@ -817,9 +791,12 @@ function getRoleOptionLabel(role: RoleOptionSource, value: string): string {
          email: editingUser.email,
          displayName: editingUser.displayName,
          roles: editingUser.roles,
-         companyId: companies
-           .filter((c) => editingUser.companies.includes(c.code))
-           .map((c) => c.id)[0] ?? null,
+         companyId: (() => {
+           const userCompanies = getUserCompanies(editingUser);
+           return companies
+             .filter((c) => userCompanies.includes(c.code))
+             .map((c) => c.id)[0] ?? null;
+         })(),
        }
      : undefined;
  

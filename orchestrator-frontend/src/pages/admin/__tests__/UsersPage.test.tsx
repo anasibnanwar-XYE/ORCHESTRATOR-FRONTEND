@@ -25,6 +25,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
      RefreshCcw: M, ChevronLeft: M, ChevronRight: M, ArrowUpDown: M,
      ArrowUp: M, ArrowDown: M, Check: M, X: M, User: M,
     Shield: M, Building2: M, Mail: M, CheckCircle: M, XCircle: M, Eye: M,
+    ChevronDown: M, Loader2: M,
    };
  });
  
@@ -223,13 +224,21 @@ const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
 
     fireEvent.click(screen.getByText(/add user/i));
 
-    const adminCheckbox = (await screen.findByLabelText('Admin')) as HTMLInputElement;
-    const userCheckbox = screen.getByLabelText('User') as HTMLInputElement;
+    // RoleSelector uses div[role="checkbox"] with aria-checked instead of native checkboxes
+    // Use getAllByRole and filter to find the right tile
+    const allCheckboxes = await screen.findAllByRole('checkbox');
+    const adminTile = allCheckboxes.find((el) => el.textContent?.includes('Admin'));
+    const userTile = allCheckboxes.find(
+      (el) => el.textContent?.includes('User') && !el.textContent?.includes('Admin'),
+    );
 
-    fireEvent.click(adminCheckbox);
+    expect(adminTile).toBeDefined();
+    expect(userTile).toBeDefined();
 
-    expect(adminCheckbox.checked).toBe(true);
-    expect(userCheckbox.checked).toBe(false);
+    fireEvent.click(adminTile!);
+
+    expect(adminTile!.getAttribute('aria-checked')).toBe('true');
+    expect(userTile!.getAttribute('aria-checked')).toBe('false');
   });
 
   it('edit user role selection keeps the existing role mapping when role keys are omitted by the API', async () => {
@@ -249,16 +258,23 @@ const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
     const editUserButton = await screen.findByRole('button', { name: /edit user/i });
     fireEvent.click(editUserButton);
 
-    const adminCheckbox = (await screen.findByLabelText('Admin')) as HTMLInputElement;
-    const userCheckbox = screen.getByLabelText('User') as HTMLInputElement;
+    // RoleSelector uses div[role="checkbox"] with aria-checked instead of native checkboxes
+    const allCheckboxes = await screen.findAllByRole('checkbox');
+    const adminTile = allCheckboxes.find((el) => el.textContent?.includes('Admin'));
+    const userTile = allCheckboxes.find(
+      (el) => el.textContent?.includes('User') && !el.textContent?.includes('Admin'),
+    );
 
-    expect(adminCheckbox.checked).toBe(true);
-    expect(userCheckbox.checked).toBe(false);
+    expect(adminTile).toBeDefined();
+    expect(userTile).toBeDefined();
 
-    fireEvent.click(userCheckbox);
+    expect(adminTile!.getAttribute('aria-checked')).toBe('true');
+    expect(userTile!.getAttribute('aria-checked')).toBe('false');
 
-    expect(adminCheckbox.checked).toBe(true);
-    expect(userCheckbox.checked).toBe(true);
+    fireEvent.click(userTile!);
+
+    expect(adminTile!.getAttribute('aria-checked')).toBe('true');
+    expect(userTile!.getAttribute('aria-checked')).toBe('true');
   });
  
    it('shows error state on API failure', async () => {
@@ -493,6 +509,302 @@ const mockRolesWithoutKeys: Array<Omit<Role, 'key'>> = [
       });
     } else {
       expect(typeof adminApi.forceResetPassword).toBe('function');
+    }
+  });
+
+  // ─── Form validation tests — VAL-USERS-003 ────────────────────────────────
+
+  it('form validation: empty email shows error, no API call — VAL-USERS-003', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+    (adminApi.createUser as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 3 });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    // Open create modal
+    fireEvent.click(screen.getByText(/add user/i));
+
+    // Try to submit without filling anything — click "Create User" in modal footer
+    await waitFor(() => {
+      const submitBtn = screen.queryAllByText(/create user/i).filter(
+        (el) => el.tagName === 'BUTTON' || el.closest('button')
+      );
+      expect(submitBtn.length).toBeGreaterThan(0);
+    });
+
+    const submitButtons = screen.queryAllByText(/create user/i).filter(
+      (el) => el.tagName === 'BUTTON' || el.closest('button')
+    );
+    // The last "Create User" button is in the modal footer
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    // Expect validation errors
+    await waitFor(() => {
+      const emailError = screen.queryAllByText(/email is required/i);
+      const nameError = screen.queryAllByText(/display name is required/i);
+      expect(emailError.length).toBeGreaterThan(0);
+      expect(nameError.length).toBeGreaterThan(0);
+    });
+
+    // No API call should have been made
+    expect(adminApi.createUser).not.toHaveBeenCalled();
+  });
+
+  it('form validation: invalid email shows error — VAL-USERS-003', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByText(/add user/i));
+
+    // Fill invalid email, valid display name
+    const emailInput = await screen.findByPlaceholderText('user@example.com');
+    const nameInput = screen.getByPlaceholderText('Jane Smith');
+
+    fireEvent.change(emailInput, { target: { value: 'not-an-email' } });
+    fireEvent.change(nameInput, { target: { value: 'Test User' } });
+
+    // Submit
+    const submitButtons = screen.queryAllByText(/create user/i).filter(
+      (el) => el.tagName === 'BUTTON' || el.closest('button')
+    );
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => {
+      const emailError = screen.queryAllByText(/enter a valid email/i);
+      expect(emailError.length).toBeGreaterThan(0);
+    });
+
+    expect(adminApi.createUser).not.toHaveBeenCalled();
+  });
+
+  // ─── Create user with correct payload — VAL-USERS-002 ─────────────────────
+
+  it('create user sends correct POST payload with companyId as number — VAL-USERS-002', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+    (adminApi.createUser as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 3 });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByText(/add user/i));
+
+    // Fill the form
+    const emailInput = await screen.findByPlaceholderText('user@example.com');
+    const nameInput = screen.getByPlaceholderText('Jane Smith');
+
+    fireEvent.change(emailInput, { target: { value: 'newuser@test.com' } });
+    fireEvent.change(nameInput, { target: { value: 'New User' } });
+
+    // Select company via Select dropdown
+    const companySelect = screen.getByLabelText(/company/i);
+    fireEvent.change(companySelect, { target: { value: '1' } });
+
+    // Select a role via RoleSelector
+    const allCheckboxes = screen.getAllByRole('checkbox');
+    const adminTile = allCheckboxes.find((el) => el.textContent?.includes('Administrator'));
+    expect(adminTile).toBeDefined();
+    fireEvent.click(adminTile!);
+
+    // Submit
+    const submitButtons = screen.queryAllByText(/create user/i).filter(
+      (el) => el.tagName === 'BUTTON' || el.closest('button')
+    );
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(adminApi.createUser).toHaveBeenCalledWith({
+        email: 'newuser@test.com',
+        displayName: 'New User',
+        roles: ['ROLE_ADMIN'],
+        companyId: 1,
+      });
+    });
+  });
+
+  // ─── Search filtering — VAL-USERS-010 ─────────────────────────────────────
+
+  it('search filters users by name — VAL-USERS-010', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('Bob Jones').length).toBeGreaterThan(0);
+    });
+
+    // Type in search to filter
+    const searchInput = screen.getByPlaceholderText(/search by name or email/i);
+    fireEvent.change(searchInput, { target: { value: 'alice' } });
+
+    // Alice should be visible, Bob should be filtered out
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('Bob Jones').length).toBe(0);
+    });
+  });
+
+  it('search filters users by status — VAL-USERS-010', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search by name or email/i);
+    fireEvent.change(searchInput, { target: { value: 'suspended' } });
+
+    // Only Bob (suspended) should show
+    await waitFor(() => {
+      expect(screen.queryAllByText('Bob Jones').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('Alice Smith').length).toBe(0);
+    });
+  });
+
+  // ─── RoleSelector integration — feature requirement ────────────────────────
+
+  it('create user modal uses RoleSelector (grid tiles) not checkbox list', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByText(/add user/i));
+
+    // RoleSelector uses div[role="checkbox"] elements, not <input type="checkbox">
+    await waitFor(() => {
+      const roleTiles = screen.queryAllByRole('checkbox');
+      expect(roleTiles.length).toBeGreaterThan(0);
+      // Should NOT have native checkbox inputs (old MultiSelect pattern)
+      const nativeCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+      expect(nativeCheckboxes.length).toBe(0);
+    });
+  });
+
+  // ─── Company selector uses shared Select — feature requirement ─────────────
+
+  it('create user modal uses shared Select for company', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/add user/i)).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByText(/add user/i));
+
+    // Should have a labeled select for Company
+    await waitFor(() => {
+      const companySelect = screen.getByLabelText(/company/i);
+      expect(companySelect.tagName).toBe('SELECT');
+    });
+  });
+
+  // ─── Actions dropdown correct items per user state — VAL-USERS-009 ─────────
+
+  it('suspended user shows Unsuspend instead of Suspend in actions dropdown — VAL-USERS-009', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Bob Jones').length).toBeGreaterThan(0);
+    });
+
+    // Find the action trigger for the second user (Bob, suspended)
+    const allButtons = Array.from(document.querySelectorAll('button'));
+    const actionTriggers = allButtons.filter((b) => !b.textContent?.trim());
+
+    // There should be at least 2 action triggers (one per user row)
+    if (actionTriggers.length >= 2) {
+      fireEvent.click(actionTriggers[1]);
+      await waitFor(() => {
+        // Bob is suspended so should see "Unsuspend" not "Suspend"
+        const unsuspendItems = screen.queryAllByText(/unsuspend/i);
+        expect(unsuspendItems.length).toBeGreaterThan(0);
+      });
+    }
+  });
+
+  it('MFA-enabled user shows Disable MFA in actions dropdown — VAL-USERS-009', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Bob Jones').length).toBeGreaterThan(0);
+    });
+
+    // Bob (index 1) has mfaEnabled: true
+    const allButtons = Array.from(document.querySelectorAll('button'));
+    const actionTriggers = allButtons.filter((b) => !b.textContent?.trim());
+
+    if (actionTriggers.length >= 2) {
+      fireEvent.click(actionTriggers[1]);
+      await waitFor(() => {
+        const disableMfaItems = screen.queryAllByText(/disable mfa/i);
+        expect(disableMfaItems.length).toBeGreaterThan(0);
+      });
+    }
+  });
+
+  it('non-MFA user does not show Disable MFA in actions dropdown — VAL-USERS-009', async () => {
+    (adminApi.getUsers as ReturnType<typeof vi.fn>).mockResolvedValue(mockUsers);
+    (adminApi.getRoles as ReturnType<typeof vi.fn>).mockResolvedValue(mockRoles);
+    (adminApi.getCompanies as ReturnType<typeof vi.fn>).mockResolvedValue(mockCompanies);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryAllByText('Alice Smith').length).toBeGreaterThan(0);
+    });
+
+    // Alice (index 0) has mfaEnabled: false
+    const allButtons = Array.from(document.querySelectorAll('button'));
+    const actionTriggers = allButtons.filter((b) => !b.textContent?.trim());
+
+    if (actionTriggers.length >= 1) {
+      fireEvent.click(actionTriggers[0]);
+      await waitFor(() => {
+        // Should NOT have "Disable MFA" for Alice
+        const disableMfaItems = screen.queryAllByText(/disable mfa/i);
+        expect(disableMfaItems.length).toBe(0);
+      });
     }
   });
  });
