@@ -372,6 +372,7 @@ export interface AgedReceivablesReport {
  export interface AccrualRequest {
    debitAccountId: number;
    creditAccountId: number;
+  supplierId?: number;
    amount: number;
    entryDate?: string;
    referenceNumber?: string;
@@ -514,6 +515,7 @@ export interface PurchaseRef {
  export interface ManualJournalRequest {
    narration?: string;
    entryDate: string;
+  supplierId?: number;
    idempotencyKey?: string;
    lines: Array<{
      accountId: number;

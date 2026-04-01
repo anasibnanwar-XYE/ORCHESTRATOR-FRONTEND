@@ -33,6 +33,7 @@ import {
   type InvoiceRef,
   type PurchaseRef,
 } from '@/lib/accountingApi';
+import { requiresSupplierContextAccount } from '@/lib/accountingAccountHelpers';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab definitions
@@ -1430,12 +1431,14 @@ function SupplierAutoSettleForm({ suppliers, accounts }: SupplierAutoSettleFormP
 
 interface AccrualFormProps {
   accounts: AccountDto[];
+  suppliers: SupplierResponse[];
 }
 
-function AccrualForm({ accounts }: AccrualFormProps) {
+function AccrualForm({ accounts, suppliers }: AccrualFormProps) {
   const toast = useToast();
   const [debitAccountId, setDebitAccountId] = useState('');
   const [creditAccountId, setCreditAccountId] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
   const [entryDate, setEntryDate] = useState(todayISO());
@@ -1444,10 +1447,17 @@ function AccrualForm({ accounts }: AccrualFormProps) {
   const [result, setResult] = useState<{ refNumber: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const debitAccount = accounts.find((account) => String(account.id) === debitAccountId);
+  const creditAccount = accounts.find((account) => String(account.id) === creditAccountId);
+  const supplierRequired =
+    requiresSupplierContextAccount(debitAccount) ||
+    requiresSupplierContextAccount(creditAccount);
+
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!debitAccountId) errs.debitAccountId = 'Select debit account';
     if (!creditAccountId) errs.creditAccountId = 'Select credit account';
+    if (supplierRequired && !supplierId) errs.supplierId = 'Select a supplier';
     if (!amount || Number(amount) <= 0) errs.amount = 'Enter a valid amount';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -1460,6 +1470,7 @@ function AccrualForm({ accounts }: AccrualFormProps) {
       const entry = await accountingApi.recordAccrual({
         debitAccountId: Number(debitAccountId),
         creditAccountId: Number(creditAccountId),
+        supplierId: supplierRequired ? Number(supplierId) : undefined,
         amount: Number(amount),
         entryDate: entryDate || undefined,
         autoReverseDate: autoReverseDate || undefined,
@@ -1492,6 +1503,16 @@ function AccrualForm({ accounts }: AccrualFormProps) {
     { value: '', label: 'Select account...' },
     ...accounts.map((a) => ({ value: String(a.id), label: `${a.code} — ${a.name}` })),
   ];
+  const supplierOptions = [
+    {
+      value: '',
+      label: suppliers.length > 0 ? 'Select supplier...' : 'No suppliers available',
+    },
+    ...suppliers.map((supplier) => ({
+      value: String(supplier.id),
+      label: supplier.code ? `${supplier.name} (${supplier.code})` : supplier.name,
+    })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -1501,6 +1522,20 @@ function AccrualForm({ accounts }: AccrualFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label="Debit Account" options={accountOptions} value={debitAccountId} onChange={(e) => setDebitAccountId(e.target.value)} error={errors.debitAccountId} />
         <Select label="Credit Account" options={accountOptions} value={creditAccountId} onChange={(e) => setCreditAccountId(e.target.value)} error={errors.creditAccountId} />
+        {supplierRequired && (
+          <Select
+            label="Supplier *"
+            options={supplierOptions}
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+            error={errors.supplierId}
+            hint={
+              suppliers.length > 0
+                ? 'Required because one selected account posts to Accounts Payable.'
+                : 'No suppliers are available yet, so Accounts Payable accruals cannot be recorded.'
+            }
+          />
+        )}
         <Input label="Amount" type="number" min="0.01" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} error={errors.amount} />
         <Input label="Entry Date" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
         <Input label="Auto-Reverse Date (optional)" type="date" value={autoReverseDate} onChange={(e) => setAutoReverseDate(e.target.value)} hint="Leave blank to skip auto-reversal" />
@@ -1509,7 +1544,7 @@ function AccrualForm({ accounts }: AccrualFormProps) {
         </div>
       </div>
       <div className="flex justify-end pt-2">
-        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isLoading}>
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isLoading || (supplierRequired && !supplierId)}>
           {isLoading ? 'Recording...' : 'Record Accrual'}
         </Button>
       </div>
@@ -1582,7 +1617,7 @@ export function SettlementsPage() {
       case 'credit-note': return <CreditNoteForm dealers={dealers} accounts={accounts} />;
       case 'debit-note': return <DebitNoteForm suppliers={suppliers} />;
       case 'bad-debt': return <BadDebtForm accounts={accounts} dealers={dealers} />;
-      case 'accrual': return <AccrualForm accounts={accounts} />;
+      case 'accrual': return <AccrualForm accounts={accounts} suppliers={suppliers} />;
     }
   };
 

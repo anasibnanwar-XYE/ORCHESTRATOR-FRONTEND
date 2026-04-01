@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ProfilePage } from '../ProfilePage';
 import type { Profile } from '@/types';
@@ -113,6 +113,29 @@ function renderProfilePage() {
   );
 }
 
+async function openSecurityTab() {
+  fireEvent.click(screen.getByRole('button', { name: /^security$/i }));
+  await waitFor(() => {
+    expect(screen.getByText('Two-factor authentication')).toBeInTheDocument();
+  });
+}
+
+async function openAccountTab() {
+  fireEvent.click(screen.getByRole('button', { name: /^account$/i }));
+  await waitFor(() => {
+    expect(screen.getByText('Account created')).toBeInTheDocument();
+  });
+}
+
+async function beginMfaSetup() {
+  await openSecurityTab();
+  fireEvent.click(screen.getByRole('button', { name: /^set up$/i }));
+  await waitFor(() => {
+    expect(screen.getByText(/set up two-factor authentication/i)).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByRole('button', { name: /begin setup/i }));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,8 +152,7 @@ describe('ProfilePage', () => {
       // Never resolves during this test
       mockGetProfile.mockImplementation(() => new Promise(() => {}));
       renderProfilePage();
-      // Skeleton elements should be present (3 skeletons during loading)
-      const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+      const skeletons = document.querySelectorAll('.pm-skel');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
@@ -157,7 +179,9 @@ describe('ProfilePage', () => {
         expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+      const emailField = screen.getByText('Email').closest('.pm-readonly');
+      expect(emailField).not.toBeNull();
+      expect(within(emailField as HTMLElement).getByText('admin@example.com')).toBeInTheDocument();
     });
 
     it('shows error toast when profile load fails', async () => {
@@ -169,7 +193,7 @@ describe('ProfilePage', () => {
       });
     });
 
-    it('calls PUT /auth/profile on save and shows success toast', async () => {
+    it('calls PUT /auth/profile on save and shows inline success state', async () => {
       mockUpdateProfile.mockResolvedValue({ ...mockProfile, displayName: 'Updated Name' });
       renderProfilePage();
 
@@ -193,7 +217,8 @@ describe('ProfilePage', () => {
           phoneSecondary: '+1 (555) 123-4567',
           secondaryEmail: 'backup@example.com',
         });
-        expect(mockToastSuccess).toHaveBeenCalledWith('Profile updated');
+        expect(mockUpdateUser).toHaveBeenCalledWith({ ...mockUser, displayName: 'Updated Name' });
+        expect(screen.getByText('Saved')).toBeInTheDocument();
       });
     });
 
@@ -213,8 +238,8 @@ describe('ProfilePage', () => {
       });
     });
 
-    it('shows "Could not load profile data" message when profile returns null', async () => {
-      mockGetProfile.mockRejectedValue(new Error('Not found'));
+    it('shows "Could not load profile." message when profile returns null', async () => {
+      mockGetProfile.mockResolvedValue(null);
       renderProfilePage();
 
       await waitFor(() => {
@@ -266,29 +291,31 @@ describe('ProfilePage', () => {
   });
 
   describe('MFA section', () => {
-    it('shows "MFA is not enabled" when mfaEnabled=false', async () => {
+    it('shows "MFA not enabled" when mfaEnabled=false', async () => {
       mockGetProfile.mockResolvedValue(mockProfile);
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByText(/mfa is not enabled/i)).toBeInTheDocument();
-      });
+      await openSecurityTab();
 
-      expect(screen.getByRole('button', { name: /set up mfa/i })).toBeInTheDocument();
+      expect(screen.getByText(/mfa not enabled/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^set up$/i })).toBeInTheDocument();
     });
 
-    it('shows "MFA is enabled" badge when mfaEnabled=true', async () => {
+    it('shows "MFA active" status when mfaEnabled=true', async () => {
       mockGetProfile.mockResolvedValue(mockProfileMfaEnabled);
       renderProfilePage();
 
+      await openSecurityTab();
+
       await waitFor(() => {
-        expect(screen.getByText(/mfa is enabled/i)).toBeInTheDocument();
+        expect(screen.getByText(/mfa active/i)).toBeInTheDocument();
       });
 
-      expect(screen.getByRole('button', { name: /disable mfa/i })).toBeInTheDocument();
+      expect(screen.getByText('On')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^disable$/i })).toBeInTheDocument();
     });
 
-    it('calls POST /auth/mfa/setup and shows QR code when "Set up MFA" is clicked', async () => {
+    it('calls POST /auth/mfa/setup and shows QR code after beginning setup', async () => {
       const mfaSetupData = {
         qrUri: 'otpauth://totp/test?secret=ABC123',
         secret: 'ABC123',
@@ -297,17 +324,13 @@ describe('ProfilePage', () => {
       mockSetupMfa.mockResolvedValue(mfaSetupData);
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /set up mfa/i })).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /set up mfa/i }));
+      await beginMfaSetup();
 
       await waitFor(() => {
         expect(mockSetupMfa).toHaveBeenCalled();
         expect(screen.getByTestId('qr-code-svg')).toBeInTheDocument();
-        expect(screen.getByTestId('mfa-secret')).toHaveTextContent('ABC123');
-        expect(screen.getByTestId('mfa-recovery-codes')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('ABC123')).toBeInTheDocument();
+        expect(screen.getByText('Recovery codes — save these now')).toBeInTheDocument();
       });
     });
 
@@ -321,19 +344,12 @@ describe('ProfilePage', () => {
       mockActivateMfa.mockResolvedValue(undefined);
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /set up mfa/i })).toBeInTheDocument();
-      });
-
-      // Open MFA setup
-      fireEvent.click(screen.getByRole('button', { name: /set up mfa/i }));
-
+      await beginMfaSetup();
       await waitFor(() => {
         expect(screen.getByTestId('qr-code-svg')).toBeInTheDocument();
       });
 
-      // Enter activation code without acknowledging recovery codes
-      // Activate button should be disabled
+      fireEvent.change(screen.getByLabelText(/enter code to activate/i), { target: { value: '123456' } });
       const activateBtn = screen.getByRole('button', { name: /activate mfa/i });
       expect(activateBtn).toBeDisabled();
     });
@@ -349,24 +365,16 @@ describe('ProfilePage', () => {
       mockGetProfile.mockResolvedValueOnce(mockProfile).mockResolvedValue(mockProfileMfaEnabled);
       renderProfilePage();
 
+      await beginMfaSetup();
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /set up mfa/i })).toBeInTheDocument();
+        expect(screen.getByLabelText(/i have saved my recovery codes/i)).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: /set up mfa/i }));
+      fireEvent.click(screen.getByLabelText(/i have saved my recovery codes/i));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('mfa-recovery-ack-checkbox')).toBeInTheDocument();
-      });
-
-      // Acknowledge recovery codes
-      fireEvent.click(screen.getByTestId('mfa-recovery-ack-checkbox'));
-
-      // Enter a 6-digit code - find activate form input
-      const codeInput = screen.getByPlaceholderText('000000');
+      const codeInput = screen.getByLabelText(/enter code to activate/i);
       fireEvent.change(codeInput, { target: { value: '123456' } });
 
-      // Now activate button should be enabled
       const activateBtn = screen.getByRole('button', { name: /activate mfa/i });
       expect(activateBtn).not.toBeDisabled();
 
@@ -374,21 +382,24 @@ describe('ProfilePage', () => {
 
       await waitFor(() => {
         expect(mockActivateMfa).toHaveBeenCalledWith('123456');
+        expect(mockToastSuccess).toHaveBeenCalledWith('MFA enabled', 'Two-factor authentication is now active.');
       });
     });
 
-    it('shows disable MFA dialog when "Disable MFA" is clicked', async () => {
+    it('shows disable MFA dialog when "Disable" is clicked', async () => {
       mockGetProfile.mockResolvedValue(mockProfileMfaEnabled);
       renderProfilePage();
 
+      await openSecurityTab();
+
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /disable mfa/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^disable$/i })).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('button', { name: /disable mfa/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disable$/i }));
 
       expect(screen.getByText(/disable two-factor authentication/i)).toBeInTheDocument();
-      expect(screen.getByTestId('mfa-disable-code-input')).toBeInTheDocument();
+      expect(screen.getByLabelText(/authenticator code/i)).toBeInTheDocument();
     });
 
     it('calls POST /auth/mfa/disable with TOTP code', async () => {
@@ -396,53 +407,51 @@ describe('ProfilePage', () => {
       mockDisableMfa.mockResolvedValue(undefined);
       renderProfilePage();
 
+      await openSecurityTab();
+
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /disable mfa/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^disable$/i })).toBeInTheDocument();
       });
+
+      fireEvent.click(screen.getByRole('button', { name: /^disable$/i }));
+
+      const codeInput = screen.getByLabelText(/authenticator code/i);
+      fireEvent.change(codeInput, { target: { value: '654321' } });
 
       fireEvent.click(screen.getByRole('button', { name: /disable mfa/i }));
 
-      // Enter 6-digit code
-      const codeInput = screen.getByTestId('mfa-disable-code-input');
-      fireEvent.change(codeInput, { target: { value: '654321' } });
-
-      // Click the confirm disable button inside the dialog (red button)
-      const allDisableBtns = screen.getAllByRole('button', { name: /disable mfa/i });
-      // The last one is the confirm button inside the dialog
-      const disableBtn = allDisableBtns[allDisableBtns.length - 1];
-      fireEvent.click(disableBtn);
-
       await waitFor(() => {
         expect(mockDisableMfa).toHaveBeenCalledWith({ code: '654321' });
-        expect(mockToastSuccess).toHaveBeenCalledWith('MFA disabled', expect.any(String));
+        expect(mockToastSuccess).toHaveBeenCalledWith('MFA disabled');
       });
     });
   });
 
   describe('Responsive layout', () => {
-    it('preferred name and job title grid uses sm:grid-cols-2', async () => {
+    it('preferred name and job title fields share the custom field row layout', async () => {
       renderProfilePage();
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
       });
 
-      // Find the grid div containing preferred name and job title
       const preferredNameInput = screen.getByDisplayValue('Admin');
-      const gridDiv = preferredNameInput.closest('.grid');
-      expect(gridDiv).toHaveClass('grid-cols-1', 'sm:grid-cols-2');
+      const row = preferredNameInput.closest('.pm-field-row');
+      expect(row).not.toBeNull();
+      expect(row).toHaveClass('pm-field-row');
     });
 
-    it('read-only fields grid uses sm:grid-cols-2', async () => {
+    it('read-only fields use the custom read-only grid layout', async () => {
       renderProfilePage();
 
       await waitFor(() => {
-        expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Admin User')).toBeInTheDocument();
       });
 
-      const emailEl = screen.getByText('admin@example.com');
-      const gridDiv = emailEl.closest('.grid');
-      expect(gridDiv).toHaveClass('grid-cols-1', 'sm:grid-cols-2');
+      const emailField = screen.getByText('Email').closest('.pm-readonly');
+      const gridDiv = emailField?.closest('.pm-readonly-grid');
+      expect(gridDiv).not.toBeNull();
+      expect(gridDiv).toHaveClass('pm-readonly-grid');
     });
   });
 
@@ -450,9 +459,7 @@ describe('ProfilePage', () => {
     it('shows account creation date', async () => {
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByText('Account information')).toBeInTheDocument();
-      });
+      await openAccountTab();
 
       expect(screen.getByText('Account created')).toBeInTheDocument();
       expect(screen.getByText('Jan 1, 2024')).toBeInTheDocument();
@@ -461,11 +468,9 @@ describe('ProfilePage', () => {
     it('shows company memberships count', async () => {
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByText('Account information')).toBeInTheDocument();
-      });
+      await openAccountTab();
 
-      expect(screen.getByText('Company memberships')).toBeInTheDocument();
+      expect(screen.getByText('Companies')).toBeInTheDocument();
       expect(screen.getByText('1 company')).toBeInTheDocument();
       expect(screen.getByText('Company A')).toBeInTheDocument();
     });
@@ -473,20 +478,19 @@ describe('ProfilePage', () => {
     it('shows public user ID', async () => {
       renderProfilePage();
 
-      await waitFor(() => {
-        expect(screen.getByText('Account information')).toBeInTheDocument();
-      });
+      await openAccountTab();
 
       expect(screen.getByText('User ID')).toBeInTheDocument();
       expect(screen.getByText('usr_123')).toBeInTheDocument();
     });
 
-    it('shows skeleton while loading account info', async () => {
+    it('shows skeleton while loading account info', () => {
       mockGetProfile.mockImplementation(() => new Promise(() => {}));
       renderProfilePage();
 
-      // Should show skeleton elements for account section
-      const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+      fireEvent.click(screen.getByRole('button', { name: /^account$/i }));
+
+      const skeletons = document.querySelectorAll('.pm-account-grid .pm-skel');
       expect(skeletons.length).toBeGreaterThan(0);
     });
   });

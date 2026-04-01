@@ -12,15 +12,13 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     Building2: M, ShieldCheck: M, Users: M, Activity: M, HardDrive: M,
-     ArrowRight: M, AlertCircle: M, RefreshCcw: M, Plus: M, TrendingUp: M,
-     Shield: M, BarChart2: M, CheckCircle: M, PauseCircle: M, XCircle: M,
-     LifeBuoy: M, Globe: M, Server: M,
-   };
- });
+ vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const M = () => null;
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
+});
  
  vi.mock('@/lib/superadminApi', () => ({
    superadminDashboardApi: {

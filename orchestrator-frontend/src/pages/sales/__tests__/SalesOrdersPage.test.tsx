@@ -20,6 +20,7 @@
    return {
      Plus: M, AlertCircle: M, RefreshCcw: M, Search: M, X: M,
      ChevronLeft: M, ChevronRight: M,
+     ArrowUpDown: M, ArrowUp: M, ArrowDown: M,
    };
  });
  

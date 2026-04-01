@@ -116,4 +116,21 @@
        expect(screen.getByText(/Failed to load inventory adjustments/i)).toBeInTheDocument();
      });
    });
+
+  it('shows permission state when finished goods access is unavailable', async () => {
+    vi.mocked(inventoryApi.getFinishedGoods).mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 404 },
+      message: 'Request failed with status code 404',
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Access restricted')).toBeInTheDocument();
+      expect(
+        screen.getByText(/Finished goods inventory is unavailable for this accounting role/i),
+      ).toBeInTheDocument();
+    });
+  });
  });

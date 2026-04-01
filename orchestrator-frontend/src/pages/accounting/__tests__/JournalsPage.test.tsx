@@ -23,13 +23,15 @@
    return {
      Plus: M, Search: M, AlertCircle: M, RefreshCcw: M, RotateCcw: M,
      ChevronsRight: M, Trash2: M, ChevronLeft: M, ChevronRight: M,
-     X: M, Calendar: M,
+     ChevronDown: M, Loader2: M, X: M, Calendar: M,
    };
  });
 
- // Mock uuid
+let uuidCounter = 0;
+
+// Mock uuid
  vi.mock('uuid', () => ({
-   v4: () => 'test-uuid-123',
+  v4: () => `test-uuid-${++uuidCounter}`,
  }));
 
  // Mock accounting API
@@ -37,6 +39,7 @@
    accountingApi: {
      getJournalsFiltered: vi.fn(),
      getAccounts: vi.fn(),
+     getSuppliers: vi.fn(),
      createManualJournal: vi.fn(),
      reverseJournal: vi.fn(),
      cascadeReverseJournal: vi.fn(),
@@ -98,7 +101,37 @@
  const mockAccounts = [
    { id: 1, publicId: 'a1', code: '1010', name: 'Cash', type: 'ASSET' as const, balance: 100000 },
    { id: 2, publicId: 'a2', code: '4010', name: 'Revenue', type: 'REVENUE' as const, balance: 0 },
+   { id: 3, publicId: 'a3', code: '2010', name: 'Accounts Payable', type: 'LIABILITY' as const, balance: 0 },
  ];
+
+ const mockSuppliers = [
+   { id: 1, name: 'Supplier One', code: 'SUP001', status: 'ACTIVE', outstandingBalance: 0 },
+ ];
+
+ const mockCreatedJournal = {
+   id: 99,
+   publicId: 'je-099',
+   referenceNumber: 'JE-2026-099',
+   entryDate: '2026-03-01',
+   memo: 'Payable adjustment',
+   status: 'POSTED',
+   dealerId: null,
+   dealerName: null,
+   supplierId: 1,
+   supplierName: 'Supplier One',
+   accountingPeriodId: null,
+   accountingPeriodLabel: null,
+   accountingPeriodStatus: null,
+   reversalOfEntryId: null,
+   reversalEntryId: null,
+   createdAt: '2026-03-01T10:00:00Z',
+   updatedAt: '2026-03-01T10:00:00Z',
+   createdBy: 'tester',
+   lines: [
+     { id: 1, accountId: 1, accountCode: '1010', accountName: 'Cash', debit: 100, credit: 0, description: '' },
+     { id: 2, accountId: 3, accountCode: '2010', accountName: 'Accounts Payable', debit: 0, credit: 100, description: '' },
+   ],
+ };
 
  function renderPage() {
    return render(
@@ -114,9 +147,11 @@
 
  describe('JournalsPage', () => {
    beforeEach(() => {
+     uuidCounter = 0;
      vi.clearAllMocks();
      vi.mocked(accountingApi.getJournalsFiltered).mockResolvedValue(mockJournals);
      vi.mocked(accountingApi.getAccounts).mockResolvedValue(mockAccounts);
+     vi.mocked(accountingApi.getSuppliers).mockResolvedValue(mockSuppliers);
    });
 
    it('renders page heading', () => {
@@ -183,6 +218,44 @@
      const submitBtn = screen.getByText('Post Entry').closest('button');
      expect(submitBtn).toBeTruthy();
      expect(submitBtn?.disabled).toBe(true);
+   });
+
+   it('requires supplier context for accounts payable journals', async () => {
+     vi.mocked(accountingApi.createManualJournal).mockResolvedValue(mockCreatedJournal);
+
+     renderPage();
+     await waitFor(() => screen.getByText('New Journal'));
+     fireEvent.click(screen.getByText('New Journal'));
+     await waitFor(() => screen.getByText('Post Entry'));
+
+     const accountSelects = Array.from(document.querySelectorAll('select')).slice(0, 4);
+     fireEvent.change(accountSelects[0], { target: { value: '3' } });
+     fireEvent.change(accountSelects[1], { target: { value: '1' } });
+     fireEvent.change(accountSelects[2], { target: { value: '3' } });
+     fireEvent.change(accountSelects[3], { target: { value: '1' } });
+
+     const amountInputs = screen.getAllByPlaceholderText('0.00');
+     fireEvent.change(amountInputs[1], { target: { value: '100' } });
+     fireEvent.change(amountInputs[2], { target: { value: '100' } });
+     fireEvent.change(amountInputs[5], { target: { value: '100' } });
+     fireEvent.change(amountInputs[6], { target: { value: '100' } });
+
+     await waitFor(() => {
+       expect(screen.getByLabelText(/Supplier \*/i)).toBeInTheDocument();
+     });
+
+     const submitBtn = screen.getByText('Post Entry').closest('button');
+     expect(submitBtn).toBeDisabled();
+     expect(accountingApi.createManualJournal).not.toHaveBeenCalled();
+
+     fireEvent.change(screen.getByLabelText(/Supplier \*/i), { target: { value: '1' } });
+     fireEvent.click(screen.getByText('Post Entry'));
+
+     await waitFor(() => {
+       expect(accountingApi.createManualJournal).toHaveBeenCalledWith(
+         expect.objectContaining({ supplierId: 1 }),
+       );
+     });
    });
 
    it('navigates to journal detail on row click', async () => {

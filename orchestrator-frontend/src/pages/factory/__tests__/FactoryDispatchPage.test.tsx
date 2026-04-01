@@ -16,17 +16,13 @@
  import { render, screen, waitFor } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
 
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     Plus: M, ChevronRight: M, X: M, Check: M, CheckCircle: M, CheckCircle2: M,
-     Search: M, ArrowUpDown: M, ArrowUp: M, ArrowDown: M,
-     ChevronLeft: M, ChevronDown: M, Loader2: M, AlertCircle: M,
-     Truck: M, Eye: M, Package: M, RefreshCcw: M, Printer: M,
-     RotateCcw: M, FileText: M, Clock: M, Ban: M, Info: M,
-     XCircle: M, AlertTriangle: M,
-   };
- });
+ vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const M = () => null;
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
+});
 
  vi.mock('@/components/ui/Toast', () => ({
    useToast: () => ({

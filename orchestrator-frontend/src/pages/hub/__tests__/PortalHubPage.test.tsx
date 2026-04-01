@@ -69,7 +69,7 @@ describe('PortalHubPage', () => {
 
   it('renders greeting with user first name', () => {
     renderHubPage();
-    expect(screen.getByText(/welcome back, alice admin/i)).toBeInTheDocument();
+    expect(screen.getByText(/welcome back, alice/i)).toBeInTheDocument();
   });
 
   it('renders portal cards for ROLE_ADMIN (Admin, Accounting, Sales, Factory)', () => {

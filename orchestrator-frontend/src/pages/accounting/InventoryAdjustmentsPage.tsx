@@ -31,6 +31,7 @@
  import { Select } from '@/components/ui/Select';
  import { PageHeader } from '@/components/ui/PageHeader';
  import { useToast } from '@/components/ui/Toast';
+import { isApiError } from '@/lib/api';
  import {
    inventoryApi,
    type InventoryAdjustmentDto,
@@ -63,6 +64,10 @@
  function generateIdempotencyKey(): string {
    return uuidv4();
  }
+
+function isInventoryAccessError(error: unknown): boolean {
+  return isApiError(error) && [403, 404].includes(error.response?.status ?? 0);
+}
  
  const ADJUSTMENT_TYPES: { value: AdjustmentType; label: string; variant: 'danger' | 'warning' | 'default' | 'success' | 'info' }[] = [
    { value: 'DAMAGED', label: 'Damaged', variant: 'danger' },
@@ -296,12 +301,14 @@
    const [accounts, setAccounts] = useState<AccountDto[]>([]);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
+  const [errorVariant, setErrorVariant] = useState<'default' | 'permission'>('default');
    const [showCreate, setShowCreate] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
  
    const load = useCallback(async () => {
      setIsLoading(true);
      setError(null);
+    setErrorVariant('default');
      try {
        const [adj, fg, accs] = await Promise.all([
          inventoryApi.getAdjustments(),
@@ -311,8 +318,15 @@
        setAdjustments(adj);
        setFinishedGoods(fg);
        setAccounts(accs);
-     } catch {
-       setError('Failed to load inventory adjustments. Please try again.');
+    } catch (err) {
+      if (isInventoryAccessError(err)) {
+        setErrorVariant('permission');
+        setError(
+          'Finished goods inventory is unavailable for this accounting role, so adjustments cannot be loaded.'
+        );
+      } else {
+        setError('Failed to load inventory adjustments. Please try again.');
+      }
      } finally {
        setIsLoading(false);
      }
@@ -407,8 +421,16 @@
    if (error) {
      return (
        <div className="flex flex-col items-center justify-center py-16 gap-3">
-         <AlertCircle size={22} className="text-[var(--color-danger-text)]" />
-         <p className="text-[13px] text-[var(--color-text-secondary)]">{error}</p>
+        <AlertCircle
+          size={22}
+          className={errorVariant === 'permission'
+            ? 'text-[var(--color-warning-icon)]'
+            : 'text-[var(--color-danger-text)]'}
+        />
+        {errorVariant === 'permission' && (
+          <p className="text-[13px] font-medium text-[var(--color-text-primary)]">Access restricted</p>
+        )}
+        <p className="text-[13px] text-[var(--color-text-secondary)]">{error}</p>
          <Button size="sm" variant="secondary" leftIcon={<RefreshCcw size={13} />} onClick={load}>
            Retry
          </Button>

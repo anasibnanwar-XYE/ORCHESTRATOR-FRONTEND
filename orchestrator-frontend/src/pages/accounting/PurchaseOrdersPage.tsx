@@ -16,7 +16,7 @@
   *  GET  /api/v1/inventory/raw-materials (for line item dropdown)
   */
  
- import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
  import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -25,9 +25,10 @@ import { format, parseISO } from 'date-fns';
  import { Skeleton } from '@/components/ui/Skeleton';
  import { Modal } from '@/components/ui/Modal';
  import { Input } from '@/components/ui/Input';
- import { Select } from '@/components/ui/Select';
-  import { PageHeader } from '@/components/ui/PageHeader';
+import { Select } from '@/components/ui/Select';
+import { PageHeader } from '@/components/ui/PageHeader';
  import { useToast } from '@/components/ui/Toast';
+import { getRawErrorMessage, isApiError } from '@/lib/api';
  import {
    purchasingApi,
    type PurchaseOrderResponse,
@@ -57,6 +58,24 @@ import { format, parseISO } from 'date-fns';
  function todayISO(): string {
    return new Date().toISOString().split('T')[0];
  }
+
+function getMaterialsUnavailableMessage(error: unknown): string {
+  if (isApiError(error) && [403, 404].includes(error.response?.status ?? 0)) {
+    return 'Raw materials are unavailable for this accounting role, so new purchase orders are temporarily disabled.';
+  }
+
+  const message = getRawErrorMessage(error);
+  if (
+    message &&
+    message !== 'An error occurred' &&
+    message !== 'An unexpected error occurred' &&
+    !message.startsWith('Request failed with status code')
+  ) {
+    return `${message} New purchase orders are temporarily disabled until raw materials can be loaded.`;
+  }
+
+  return 'Raw materials could not be loaded, so new purchase orders are temporarily disabled.';
+}
  
  type POStatusMeta = { variant: 'success' | 'warning' | 'danger' | 'default' | 'info'; label: string };
  
@@ -340,11 +359,18 @@ import { format, parseISO } from 'date-fns';
  interface CreatePOFormProps {
    suppliers: SupplierFullResponse[];
    materials: RawMaterialDto[];
+  materialsBlockedMessage?: string | null;
    onSaved: () => void;
    onCancel: () => void;
  }
  
- function CreatePOForm({ suppliers, materials, onSaved, onCancel }: CreatePOFormProps) {
+function CreatePOForm({
+  suppliers,
+  materials,
+  materialsBlockedMessage,
+  onSaved,
+  onCancel,
+}: CreatePOFormProps) {
    const toast = useToast();
    const [supplierId, setSupplierId] = useState('');
    const [orderNumber, setOrderNumber] = useState('');
@@ -354,7 +380,12 @@ import { format, parseISO } from 'date-fns';
    const [errors, setErrors] = useState<Record<string, string>>({});
    const [isSaving, setIsSaving] = useState(false);
  
-   const activeSuppliers = suppliers.filter((s) => s.status === 'ACTIVE');
+  const activeSuppliers = suppliers.filter((s) => s.status === 'ACTIVE');
+  const creationBlockedMessage =
+    materialsBlockedMessage ??
+    (materials.length === 0
+      ? 'Add at least one raw material in inventory before creating a purchase order.'
+      : null);
  
    function addLine() {
      setLines([...lines, emptyLine()]);
@@ -377,6 +408,7 @@ import { format, parseISO } from 'date-fns';
  
    function validate(): boolean {
      const errs: Record<string, string> = {};
+    if (creationBlockedMessage) errs.lines = creationBlockedMessage;
      if (!supplierId) errs.supplierId = 'Select a supplier';
      if (!orderNumber.trim()) errs.orderNumber = 'Order number is required';
      if (!orderDate) errs.orderDate = 'Order date is required';
@@ -452,6 +484,14 @@ import { format, parseISO } from 'date-fns';
        }
      >
        <div className="overflow-y-auto max-h-[65vh] space-y-4">
+         {creationBlockedMessage && (
+           <div className="rounded-xl border border-[var(--color-warning)] bg-[var(--color-warning-bg)] px-4 py-3">
+             <p className="text-[12px] font-medium text-[var(--color-text-primary)]">
+               {creationBlockedMessage}
+             </p>
+           </div>
+         )}
+
          {/* Header fields */}
          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
            <Select
@@ -585,6 +625,7 @@ import { format, parseISO } from 'date-fns';
    const [orders, setOrders] = useState<PurchaseOrderResponse[]>([]);
    const [suppliers, setSuppliers] = useState<SupplierFullResponse[]>([]);
    const [materials, setMaterials] = useState<RawMaterialDto[]>([]);
+  const [materialsBlockedMessage, setMaterialsBlockedMessage] = useState<string | null>(null);
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState<string | null>(null);
  
@@ -597,15 +638,21 @@ import { format, parseISO } from 'date-fns';
    const load = useCallback(async () => {
      setIsLoading(true);
      setError(null);
+    setMaterialsBlockedMessage(null);
      try {
-       const [ordersData, suppliersData, materialsData] = await Promise.all([
+      const [ordersData, suppliersData, materialsResult] = await Promise.all([
          purchasingApi.getPurchaseOrders(),
          purchasingApi.getSuppliers(),
-         purchasingApi.getRawMaterials().catch(() => [] as RawMaterialDto[]),
+        purchasingApi.getRawMaterials()
+          .then((data) => ({ data, error: null as unknown | null }))
+          .catch((error) => ({ data: [] as RawMaterialDto[], error })),
        ]);
        setOrders(ordersData);
        setSuppliers(suppliersData);
-       setMaterials(materialsData);
+      setMaterials(materialsResult.data);
+      setMaterialsBlockedMessage(
+        materialsResult.error ? getMaterialsUnavailableMessage(materialsResult.error) : null
+      );
      } catch {
        setError('Failed to load purchase orders. Please try again.');
      } finally {
@@ -706,6 +753,12 @@ import { format, parseISO } from 'date-fns';
        sortAccessor: (row) => row.status,
      },
    ];
+
+  const createDisabledMessage =
+    materialsBlockedMessage ??
+    (!isLoading && !error && materials.length === 0
+      ? 'Add at least one raw material in inventory before creating a purchase order.'
+      : null);
  
    return (
      <div className="space-y-5">
@@ -713,11 +766,29 @@ import { format, parseISO } from 'date-fns';
          title="Purchase Orders"
          description="Manage procurement from suppliers"
          actions={
-           <Button leftIcon={<Plus size={14} />} onClick={() => setShowCreate(true)}>
+          <Button
+            leftIcon={<Plus size={14} />}
+            onClick={() => setShowCreate(true)}
+            disabled={Boolean(createDisabledMessage)}
+          >
              New PO
            </Button>
          }
        />
+
+      {createDisabledMessage && !isLoading && !error && (
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--color-warning)] bg-[var(--color-warning-bg)] px-4 py-3">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-[var(--color-warning-icon)]" />
+          <div>
+            <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+              New purchase orders are unavailable
+            </p>
+            <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
+              {createDisabledMessage}
+            </p>
+          </div>
+        </div>
+      )}
  
        {/* Error */}
        {error && !isLoading && (
@@ -806,6 +877,7 @@ import { format, parseISO } from 'date-fns';
          <CreatePOForm
            suppliers={suppliers}
            materials={materials}
+          materialsBlockedMessage={createDisabledMessage}
            onSaved={() => { setShowCreate(false); load(); }}
            onCancel={() => setShowCreate(false)}
          />

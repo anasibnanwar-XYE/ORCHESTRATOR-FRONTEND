@@ -20,6 +20,8 @@
    return {
      Plus: M, AlertCircle: M, RefreshCcw: M, Search: M, X: M,
      ChevronDown: M, Lock: M, Unlock: M, Check: M,
+     ChevronLeft: M, ChevronRight: M,
+     ArrowUpDown: M, ArrowUp: M, ArrowDown: M,
    };
  });
  
@@ -125,7 +127,7 @@
    it('shows loading skeletons while data loads', () => {
      (salesApi.listDealers as ReturnType<typeof vi.fn>).mockImplementation(() => new Promise(() => {}));
      renderPage();
-     const skeletons = document.querySelectorAll('[data-testid="skeleton"]');
+    const skeletons = document.querySelectorAll('.animate-pulse');
      expect(skeletons.length).toBeGreaterThan(0);
    });
  

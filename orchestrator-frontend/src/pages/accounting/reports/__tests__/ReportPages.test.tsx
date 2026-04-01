@@ -782,7 +782,8 @@
    });
 
    it('shows error state with retry on API failure', async () => {
-     vi.mocked(gstReconciliationApi.getReconciliation).mockRejectedValue(new Error('API error'));
+    vi.mocked(gstReconciliationApi.getReconciliation).mockReset();
+    vi.mocked(gstReconciliationApi.getReconciliation).mockRejectedValue(new Error('API error'));
      wrap(<GSTReconciliationPage />, '/?period=2026-01');
      await waitFor(() => {
        expect(screen.getByText(/failed to load gst reconciliation/i)).toBeInTheDocument();
@@ -791,11 +792,13 @@
    });
 
    it('shows empty state when no data is returned', async () => {
-     // Simulate the API returning null (empty period)
-     vi.mocked(gstReconciliationApi.getReconciliation).mockRejectedValue(new Error('No data'));
+    vi.mocked(gstReconciliationApi.getReconciliation).mockReset();
+    vi.mocked(gstReconciliationApi.getReconciliation).mockResolvedValue(
+      null as unknown as Awaited<ReturnType<typeof gstReconciliationApi.getReconciliation>>,
+    );
      wrap(<GSTReconciliationPage />, '/?period=2026-01');
      await waitFor(() => {
-       expect(screen.getByText(/failed to load gst reconciliation/i)).toBeInTheDocument();
+      expect(screen.getByText(/no gst reconciliation data available for this period/i)).toBeInTheDocument();
      });
    });
 

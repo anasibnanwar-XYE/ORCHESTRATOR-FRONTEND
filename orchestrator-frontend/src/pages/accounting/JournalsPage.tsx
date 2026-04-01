@@ -40,12 +40,15 @@
  import { EmptyState } from '@/components/ui/EmptyState';
  import { Modal } from '@/components/ui/Modal';
  import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
  import {
    accountingApi,
    type JournalListItem,
    type AccountDto,
    type JournalEntryDto,
+  type SupplierResponse,
  } from '@/lib/accountingApi';
+import { requiresSupplierContextAccount } from '@/lib/accountingAccountHelpers';
 
  // ─────────────────────────────────────────────────────────────────────────────
  // Helpers
@@ -114,6 +117,7 @@
    onClose: () => void;
    onCreated: (entry: JournalEntryDto) => void;
    accounts: AccountDto[];
+  suppliers: SupplierResponse[];
  }
 
  function CreateJournalModal({
@@ -121,10 +125,12 @@
    onClose,
    onCreated,
    accounts,
+  suppliers,
  }: CreateJournalModalProps) {
    const formId = useId();
    const [entryDate, setEntryDate] = useState(todayISO);
    const [narration, setNarration] = useState('');
+  const [supplierId, setSupplierId] = useState('');
    const [lines, setLines] = useState<DraftLine[]>([emptyLine(), emptyLine()]);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [submitError, setSubmitError] = useState('');
@@ -168,9 +174,39 @@
      [accounts]
    );
 
+  const accountsById = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account])),
+    [accounts]
+  );
+
+  const supplierRequired = useMemo(
+    () =>
+      lines.some((line) =>
+        requiresSupplierContextAccount(accountsById.get(Number(line.accountId)))
+      ),
+    [accountsById, lines]
+  );
+
+  const supplierOptions = useMemo(
+    () => [
+      {
+        value: '',
+        label: suppliers.length > 0 ? 'Select supplier...' : 'No suppliers available',
+      },
+      ...suppliers
+        .filter((supplier) => supplier.status !== 'SUSPENDED')
+        .map((supplier) => ({
+          value: String(supplier.id),
+          label: supplier.code ? `${supplier.name} (${supplier.code})` : supplier.name,
+        })),
+    ],
+    [suppliers]
+  );
+
    const handleReset = () => {
      setEntryDate(todayISO());
      setNarration('');
+    setSupplierId('');
      setLines([emptyLine(), emptyLine()]);
      setSubmitError('');
    };
@@ -184,12 +220,17 @@
        setSubmitError('At least two lines with valid amounts are required.');
        return;
      }
+    if (supplierRequired && !supplierId) {
+      setSubmitError('Select a supplier when posting to Accounts Payable.');
+      return;
+    }
      setSubmitError('');
      setIsSubmitting(true);
      try {
        const result = await accountingApi.createManualJournal({
          entryDate,
          narration: narration.trim() || undefined,
+        supplierId: supplierRequired ? Number(supplierId) : undefined,
          idempotencyKey: uuidv4(),
          lines: validLines.map((l) => ({
            accountId: Number(l.accountId),
@@ -288,6 +329,22 @@
                />
              </div>
            </div>
+
+           {supplierRequired && (
+             <div>
+               <Select
+                 label="Supplier *"
+                 value={supplierId}
+                 onChange={(e) => setSupplierId(e.target.value)}
+                 options={supplierOptions}
+                 hint={
+                   suppliers.length > 0
+                     ? 'Required because one or more lines use a supplier payable account.'
+                     : 'No suppliers are available yet, so Accounts Payable journals cannot be posted.'
+                 }
+               />
+             </div>
+           )}
 
            {/* Lines — desktop table */}
            <div className="hidden sm:block border border-[var(--color-border-default)] rounded-xl overflow-hidden">
@@ -500,7 +557,7 @@
              variant="primary"
              onClick={() => void handleSubmit()}
              isLoading={isSubmitting}
-             disabled={!totals.balanced}
+             disabled={!totals.balanced || (supplierRequired && !supplierId)}
            >
              Post Entry
            </Button>
@@ -604,6 +661,7 @@
    // Data
    const [journals, setJournals] = useState<JournalListItem[]>([]);
    const [accounts, setAccounts] = useState<AccountDto[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierResponse[]>([]);
    const [loading, setLoading] = useState(true);
    const [hasError, setHasError] = useState(false);
 
@@ -627,12 +685,14 @@
      setLoading(true);
      setHasError(false);
      try {
-       const [journalsData, accountsData] = await Promise.all([
+      const [journalsData, accountsData, suppliersData] = await Promise.all([
          accountingApi.getJournalsFiltered({ fromDate, toDate }),
          accountingApi.getAccounts(),
+        accountingApi.getSuppliers().catch(() => [] as SupplierResponse[]),
        ]);
        setJournals(journalsData);
        setAccounts(accountsData);
+      setSuppliers(suppliersData);
      } catch {
        setHasError(true);
      } finally {
@@ -994,6 +1054,7 @@
          onClose={() => setCreateOpen(false)}
          onCreated={handleJournalCreated}
          accounts={accounts}
+          suppliers={suppliers}
        />
 
        {reverseTarget && (

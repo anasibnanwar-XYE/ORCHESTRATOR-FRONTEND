@@ -18,17 +18,13 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     Building2: M, Plus: M, Search: M, Filter: M, RefreshCw: M, ChevronDown: M,
-     Pencil: M, Trash2: M, MoreHorizontal: M, CheckCircle: M, PauseCircle: M,
-     XCircle: M, PlayCircle: M, AlertTriangle: M, Key: M, MessageSquare: M,
-     AlertCircle: M, ArrowRight: M, ArrowLeft: M, Check: M, X: M, Shield: M,
-     UserCheck: M, ShieldOff: M, Eye: M, Server: M, Lock: M, LifeBuoy: M,
-     ChevronLeft: M, ChevronRight: M,
-   };
- });
+ vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const M = () => null;
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
+});
  
  vi.mock('@/lib/superadminApi', () => ({
    superadminTenantsApi: {

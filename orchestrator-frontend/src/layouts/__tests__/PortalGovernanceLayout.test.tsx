@@ -1,8 +1,22 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 
 let mockUserRoles = ['ROLE_ADMIN'];
+const storage = new Map<string, string>();
+
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn((key: string) => storage.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    storage.set(key, String(value));
+  }),
+  removeItem: vi.fn((key: string) => {
+    storage.delete(key);
+  }),
+  clear: vi.fn(() => {
+    storage.clear();
+  }),
+});
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
@@ -36,6 +50,24 @@ vi.mock('@/components/ui/OrchestratorLogo', () => ({
 }));
 
 vi.mock('@/components/ui/Sidebar', () => ({
+  Sidebar: ({
+    groups,
+  }: {
+    groups: Array<{ label?: string; items: Array<{ id: string; label: string; to: string }> }>;
+  }) => (
+    <nav>
+      {groups.map((group) => (
+        <section key={group.label ?? group.items.map((item) => item.id).join('-')}>
+          {group.label && <h2>{group.label}</h2>}
+          {group.items.map((item) => (
+            <a key={item.id} href={item.to}>
+              {item.label}
+            </a>
+          ))}
+        </section>
+      ))}
+    </nav>
+  ),
   MobileSidebar: ({
     children,
     isOpen,
@@ -73,36 +105,35 @@ function renderWithRoute(element: React.ReactNode, initialEntry: string) {
 }
 
 describe('portal governance navigation layouts', () => {
-  it('admin sidebar includes all expected nav items including Analytics & Ops group', () => {
+  beforeEach(() => {
+    storage.clear();
+  });
+
+  it('admin sidebar includes the current admin navigation items', () => {
     mockUserRoles = ['ROLE_ADMIN'];
     renderWithRoute(<AdminLayout />, '/admin');
 
-    // Core nav items
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Users' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Roles' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Companies' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Notifications' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Changelog' })).toBeInTheDocument();
-
-    // Analytics & Ops group — tenant-scoped analytics accessible to admin
-    expect(screen.getByRole('link', { name: 'Orchestrator' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Portal Insights' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Audit Trail' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Tenant Runtime' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Operations' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Dealer Finance' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tickets' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('shows logical nav groups (Management, Workflows, Analytics & Ops, System)', () => {
+  it('shows logical nav groups for the current admin information architecture', () => {
     mockUserRoles = ['ROLE_ADMIN'];
     renderWithRoute(<AdminLayout />, '/admin');
 
-    // Group headings
     expect(screen.getByText('Management')).toBeInTheDocument();
     expect(screen.getByText('Workflows')).toBeInTheDocument();
-    expect(screen.getByText('Analytics & Ops')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Finance')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
     expect(screen.getByText('System')).toBeInTheDocument();
   });
 

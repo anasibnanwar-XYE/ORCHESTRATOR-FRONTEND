@@ -169,6 +169,24 @@
      });
    });
 
+   it('disables New PO when raw materials cannot be loaded', async () => {
+     vi.mocked(purchasingApi.getRawMaterials).mockRejectedValue({
+       isAxiosError: true,
+       response: { status: 404 },
+       message: 'Request failed with status code 404',
+     });
+
+     renderPage();
+
+     await waitFor(() => {
+       expect(screen.getByText('New purchase orders are unavailable')).toBeInTheDocument();
+       expect(screen.getByRole('button', { name: 'New PO' })).toBeDisabled();
+     });
+     expect(
+       screen.getByText(/Raw materials are unavailable for this accounting role/i),
+     ).toBeInTheDocument();
+   });
+
    it('shows error state on API failure', async () => {
      vi.mocked(purchasingApi.getPurchaseOrders).mockRejectedValue(new Error('Network error'));
      renderPage();

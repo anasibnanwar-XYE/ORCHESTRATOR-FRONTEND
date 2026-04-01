@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, createContext, useContext, useRef, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { clearExternalToast, setExternalToast } from './toast-bridge';
@@ -174,14 +174,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, [addToast]);
 
-  const ctx: ToastContextValue = {
+  const ctx = useMemo<ToastContextValue>(() => ({
     toast: addToast,
     dismiss,
     success: (title, description) => addToast({ type: 'success', title, description }),
     error: (title, description) => addToast({ type: 'error', title, description, duration: Infinity }),
     warning: (title, description) => addToast({ type: 'warning', title, description, duration: Infinity }),
     info: (title, description) => addToast({ type: 'info', title, description }),
-  };
+  }), [addToast, dismiss]);
 
   return (
     <ToastContext.Provider value={ctx}>

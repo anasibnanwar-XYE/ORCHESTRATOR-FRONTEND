@@ -101,7 +101,7 @@ beforeEach(() => {
 describe('LoginPage — rendering', () => {
   it('renders email field', () => {
     renderLoginPage();
-    expect(screen.getByLabelText(/work email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
   });
 
   it('renders password field', () => {
@@ -127,7 +127,7 @@ describe('LoginPage — rendering', () => {
 
   it('renders forgot password link', () => {
     renderLoginPage();
-    expect(screen.getByText(/forgot your password/i)).toBeInTheDocument();
+    expect(screen.getByText(/forgot password/i)).toBeInTheDocument();
   });
 });
 
@@ -145,7 +145,7 @@ describe('LoginPage — successful login', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -179,7 +179,7 @@ describe('LoginPage — successful login', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -207,7 +207,7 @@ describe('LoginPage — successful login', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'mfa@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -249,7 +249,7 @@ describe('LoginPage — successful login', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'newuser@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -276,7 +276,7 @@ describe('LoginPage — error handling — VAL-AUTH-001', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'bad@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -301,7 +301,7 @@ describe('LoginPage — error handling — VAL-AUTH-001', () => {
 
     const signInBtn = screen.getByRole('button', { name: /sign in/i });
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'bad@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -313,8 +313,7 @@ describe('LoginPage — error handling — VAL-AUTH-001', () => {
     });
 
     await waitFor(() => {
-      const card = signInBtn.closest('[class*="rounded-2xl"]');
-      expect(card).toBeTruthy();
+      expect(document.querySelector('.o-shake')).toBeTruthy();
     });
   });
 });
@@ -329,7 +328,7 @@ describe('LoginPage — lockout state — VAL-AUTH-002', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'locked@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -357,7 +356,7 @@ describe('LoginPage — lockout state — VAL-AUTH-002', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'locked@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -385,7 +384,7 @@ describe('LoginPage — lockout state — VAL-AUTH-002', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'x@x.com' } });
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'x@x.com' } });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
 
     await act(async () => {
@@ -419,7 +418,7 @@ describe('LoginPage — runtime denial states — VAL-AUTH-003', () => {
 
       renderLoginPage();
 
-      fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'u@x.com' } });
+      fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'u@x.com' } });
       fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
 
       await act(async () => {
@@ -445,7 +444,7 @@ describe('LoginPage — runtime denial states — VAL-AUTH-003', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), { target: { value: 'u@x.com' } });
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'u@x.com' } });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), { target: { value: 'p' } });
 
     await act(async () => {
@@ -472,7 +471,7 @@ describe('LoginPage — MFA redirect via 428 error', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'mfa@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -510,7 +509,7 @@ describe('LoginPage — MFA redirect via 428 error', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'mfa@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -558,7 +557,7 @@ describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () =>
 
     renderLoginPageWithFrom('/accounting/journals');
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -593,7 +592,7 @@ describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () =>
     // Admin tries to access a superadmin path (e.g. stale bookmark)
     renderLoginPageWithFrom('/superadmin/tenants');
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -624,7 +623,7 @@ describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () =>
 
     renderLoginPageWithFrom('/accounting/journals');
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -669,7 +668,7 @@ describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () =>
     // Normal render without any from state
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -699,7 +698,7 @@ describe('LoginPage — intended destination restoration (VAL-CROSS-002)', () =>
 
     renderLoginPageWithFrom('/dealer/invoices');
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'dealer@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {
@@ -734,7 +733,7 @@ describe('LoginPage — loading state', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByLabelText(/work email/i), {
+    fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: 'admin@bbp.com' },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter your password/i), {

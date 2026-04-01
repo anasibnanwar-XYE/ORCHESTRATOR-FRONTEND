@@ -16,16 +16,13 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
 
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     Plus: M, ChevronRight: M, X: M, Check: M, CheckCircle: M,
-     Search: M, ArrowUpDown: M, ArrowUp: M, ArrowDown: M,
-     ChevronLeft: M, ChevronDown: M, Loader2: M, AlertCircle: M,
-     Package: M, PackageCheck: M, History: M, Layers: M, Calculator: M,
-     Info: M,
-   };
- });
+ vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const M = () => null;
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
+});
 
  vi.mock('@/lib/factoryApi', () => ({
    factoryApi: {

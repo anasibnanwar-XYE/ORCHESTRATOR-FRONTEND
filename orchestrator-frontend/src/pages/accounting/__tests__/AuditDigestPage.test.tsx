@@ -8,12 +8,18 @@
  import { auditApi } from '@/lib/accountingApi';
  import { ToastProvider } from '@/components/ui/Toast';
 
+ const mockDownloadBlob = vi.fn();
+
  vi.mock('@/lib/accountingApi', () => ({
    auditApi: {
      getAuditDigest: vi.fn(),
      getAuditDigestCsv: vi.fn(),
      getAuditTrail: vi.fn(),
    },
+ }));
+
+ vi.mock('@/utils/mobileUtils', () => ({
+   downloadBlob: (...args: unknown[]) => mockDownloadBlob(...args),
  }));
 
  const mockDigest = {
@@ -126,12 +132,6 @@
        'Timestamp,User,Action,Entity,Details\n2025-03-15,admin,CREATE,JournalEntry,JE-001'
      );
 
-     // Mock URL.createObjectURL
-     const createObjectURL = vi.fn().mockReturnValue('blob:test');
-     const revokeObjectURL = vi.fn();
-     Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, writable: true });
-     Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjectURL, writable: true });
-
      renderPage();
      await waitFor(() => {
        expect(screen.getAllByText('42 journal entries posted').length).toBeGreaterThan(0);
@@ -142,6 +142,10 @@
 
      await waitFor(() => {
        expect(auditApi.getAuditDigestCsv).toHaveBeenCalled();
+       expect(mockDownloadBlob).toHaveBeenCalledWith(
+         expect.any(Blob),
+         expect.stringMatching(/^audit-trail-\d{4}-\d{2}-\d{2}\.csv$/)
+       );
      });
    });
  });

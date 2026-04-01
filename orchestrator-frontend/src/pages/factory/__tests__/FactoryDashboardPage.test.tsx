@@ -13,13 +13,13 @@
  import { render, screen, waitFor, fireEvent } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- // Mock lucide-react
- vi.mock('lucide-react', () => {
+ // Mock lucide-react — stub all icons
+ vi.mock('lucide-react', async (importOriginal) => {
+   const actual = await importOriginal<Record<string, unknown>>();
    const M = () => null;
-   return {
-     Factory: M, Activity: M, CheckCircle2: M, Layers: M, AlertTriangle: M,
-     ArrowRight: M, RefreshCcw: M, ClipboardList: M,
-   };
+   const stubs: Record<string, unknown> = {};
+   for (const key of Object.keys(actual)) stubs[key] = M;
+   return stubs;
  });
  
  // Mock factoryApi

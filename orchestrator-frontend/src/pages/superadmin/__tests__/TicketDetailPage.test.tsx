@@ -6,12 +6,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-vi.mock('lucide-react', () => {
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
   const M = () => null;
-  return {
-    ArrowLeft: M, AlertCircle: M, RefreshCw: M, User: M, Clock: M,
-    Paperclip: M, MessageSquare: M, Lock: M, Send: M, Github: M, ExternalLink: M, AlertTriangle: M,
-  };
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
 });
 
 vi.mock('@/lib/superadminApi', () => ({

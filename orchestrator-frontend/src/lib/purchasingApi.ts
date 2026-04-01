@@ -48,6 +48,7 @@
    email?: string;
    phone?: string;
    address?: string;
+  balance?: number;
    creditLimit: number;
    outstandingBalance: number;
    payableAccountId?: number;

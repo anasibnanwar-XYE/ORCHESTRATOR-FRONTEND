@@ -6,13 +6,13 @@
  import { render, screen, waitFor } from '@testing-library/react';
  import { MemoryRouter } from 'react-router-dom';
  
- vi.mock('lucide-react', () => {
-   const M = () => null;
-   return {
-     Shield: M, Plus: M, RefreshCw: M, ChevronDown: M, AlertCircle: M,
-    CheckSquare: M, Users: M, Key: M, Lock: M, ChevronRight: M,
-   };
- });
+ vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const M = () => null;
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) stubs[key] = M;
+  return stubs;
+});
  
  vi.mock('@/lib/superadminApi', () => ({
    superadminRolesApi: {

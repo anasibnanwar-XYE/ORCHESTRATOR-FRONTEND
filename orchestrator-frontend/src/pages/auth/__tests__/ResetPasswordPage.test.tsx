@@ -110,7 +110,7 @@ describe('ResetPasswordPage — rendering', () => {
 
   it('renders confirm password field', () => {
     renderPage();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/re-enter your password/i)).toBeInTheDocument();
   });
 
   it('renders reset password button', () => {
@@ -143,7 +143,7 @@ describe('ResetPasswordPage — password validation', () => {
   it('submit button enabled when all rules pass and passwords match', () => {
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/re-enter your password/i);
 
     fireEvent.change(newPasswordInput, { target: { value: 'Abcdefgh1!' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Abcdefgh1!' } });
@@ -154,7 +154,7 @@ describe('ResetPasswordPage — password validation', () => {
   it('submit disabled for weak password (missing special char)', () => {
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/re-enter your password/i);
 
     fireEvent.change(newPasswordInput, { target: { value: 'Abcdefgh12' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Abcdefgh12' } });
@@ -173,7 +173,7 @@ describe('ResetPasswordPage — submission', () => {
 
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/re-enter your password/i);
 
     fireEvent.change(newPasswordInput, { target: { value: 'Abcdefgh1!' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Abcdefgh1!' } });
@@ -194,7 +194,7 @@ describe('ResetPasswordPage — submission', () => {
 
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/re-enter your password/i);
 
     fireEvent.change(newPasswordInput, { target: { value: 'Abcdefgh1!' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Abcdefgh1!' } });
@@ -216,7 +216,7 @@ describe('ResetPasswordPage — submission', () => {
 
     renderPage();
     const newPasswordInput = screen.getByLabelText(/new password/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/re-enter your password/i);
 
     fireEvent.change(newPasswordInput, { target: { value: 'Abcdefgh1!' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Abcdefgh1!' } });
@@ -239,7 +239,7 @@ describe('ResetPasswordPage — submission', () => {
 
     renderPage();
     fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: 'Abcdefgh1!' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Abcdefgh1!' } });
+    fireEvent.change(screen.getByPlaceholderText(/re-enter your password/i), { target: { value: 'Abcdefgh1!' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
@@ -262,7 +262,7 @@ describe('ResetPasswordPage — submission', () => {
 
     renderPage();
     fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: 'Abcdefgh1!' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Abcdefgh1!' } });
+    fireEvent.change(screen.getByPlaceholderText(/re-enter your password/i), { target: { value: 'Abcdefgh1!' } });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /reset password/i }));
